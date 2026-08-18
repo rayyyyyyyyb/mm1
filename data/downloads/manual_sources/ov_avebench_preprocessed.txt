@@ -1,0 +1,7 @@
+{
+  "dataset": "ov_avebench_preprocessed",
+  "description": "Official OV-AVEBench preprocessed-data SharePoint folder.",
+  "official_url": "https://1drv.ms/f/c/10f45f3af4615f22/EsnKs9uu0cxHmPO4_BhVQwQBy3p4xCaB6bR4y8CAemuhJw?e=vBDrfb",
+  "expected_local_target_dir": "data/raw/ov_avebench_preprocessed",
+  "note": "Download the upstream release into data/raw/ov_avebench_preprocessed/ and then build source manifests from those files."
+}

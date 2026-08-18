@@ -1,0 +1,94 @@
+seed: 42
+
+project:
+  name: "ov_orthkd_weak_feat_only"
+  stage: "mm_primary"
+
+task:
+  name: "open_vocabulary_audio_visual_event_localization"
+  label_mode: "query_conditioned_binary"
+
+teachers:
+  strong_visual:
+    name: "InternVideo2-Base (CLIP-B14 line)"
+    backend: "internvideo2_clip_b14"
+    export: "segment_logits + segment_features"
+  weak_audio:
+    name: "BEATs"
+    backend: "beats"
+    export: "segment_features_only"
+  text_prototype:
+    name: "CLAP text encoder"
+    backend: "clap"
+    export: "query_embeddings"
+
+data:
+  train_manifest: "data/ov_ave/train.jsonl"
+  val_manifest: "data/ov_ave/val.jsonl"
+  test_manifest: "data/ov_ave/test.jsonl"
+  image_size: 224
+  batch_size: 12
+  num_workers: 8
+  pin_memory: true
+  max_segments: 16
+  allow_missing_modalities: true
+  strict_alignment: true
+  strong_teacher_dim: 512
+  weak_teacher_dim: 768
+  strong_teacher_logit_dim: 1
+  text_dim: 1024
+  train_augment: true
+
+student:
+  visual_backbone: "convnextv2_tiny.fcmae_ft_in22k_in1k"
+  audio_backbone: "tf_efficientnetv2_b2.in1k"
+  fusion_dim: 384
+  temporal_layers: 4
+  temporal_heads: 8
+  temporal_dropout: 0.1
+  pretrained: false
+
+loss:
+  projection_dim: 256
+  temperature: 2.0
+  text_temperature: 0.07
+  alpha_bce: 1.0
+  alpha_strong_logit: 0.0
+  alpha_strong_feat: 0.0
+  alpha_weak_feat: 0.25
+  alpha_text_align: 0.0
+  alpha_orth: 0.0
+  confidence_weighting: true
+  confidence_scale: 2.0
+
+training:
+  epochs: 30
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  grad_clip: 1.0
+  mixed_precision: true
+
+teacher_export:
+  artifact_dir: "data/teacher_cache/ov_ave"
+  device: "cuda"
+  strong_visual_backend: "internvideo2_clip_b14"
+  weak_audio_backend: "beats"
+  text_backend: "clap"
+  internvideo2:
+    repo_root: "external/teachers/InternVideo/InternVideo2/multi_modality"
+    vision_ckpt_path: "weights/internvideo2/B14_dist_1B_stage2.pth"
+    text_ckpt_path: "weights/internvideo2/mobileclip_blt.pt"
+    extra_ckpt_path: "weights/internvideo2/InternVideo2_CLIP_B14.pth"
+    num_frames: 8
+    align_dim: 512
+  beats:
+    repo_root: "external/teachers/unilm/beats"
+    checkpoint_path: "weights/beats/BEATs_iter3_plus_AS2M.pt"
+  clap:
+    repo_root: "external/teachers/microsoft-clap"
+    checkpoint_path: "weights/clap/CLAP_weights_2023.pth"
+    version: "2023"
+    normalize: false
+
+logging:
+  log_dir: "outputs/ov_orthkd_weak_feat_only"

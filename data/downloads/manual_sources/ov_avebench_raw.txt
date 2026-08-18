@@ -1,0 +1,7 @@
+{
+  "dataset": "ov_avebench_raw",
+  "description": "Official OV-AVEBench raw-video SharePoint folder.",
+  "official_url": "https://1drv.ms/f/c/10f45f3af4615f22/Et4f0M9PZdVLm9VAXx2FbbkBn9_T5yr4if_xQINp0zTiSQ?e=y9cGgf",
+  "expected_local_target_dir": "data/raw/ov_avebench_raw",
+  "note": "SharePoint public folder links are not reliably scriptable from CLI. This script writes the official URL and the expected local target directory for your teammate."
+}

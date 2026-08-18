@@ -1,0 +1,13 @@
+# Install `torch` and `torchvision` separately to match the target server CUDA runtime.
+timm>=1.0.15,<1.1
+PyYAML>=6.0,<7
+numpy>=1.26,<3
+Pillow>=10,<12
+scikit-learn>=1.5,<1.7
+tqdm>=4.66,<5
+pytest>=8.3,<9
+transformers>=4.44,<5
+open-clip-torch>=2.26,<3
+einops>=0.8,<1
+gdown>=5,<6
+huggingface_hub>=0.30,<1

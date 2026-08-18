@@ -1,0 +1,118 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dll
+
+# Environments
+.env
+.env.*
+!.env.example
+.venv
+venv/
+ENV/
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local recovery files
+hosts.backup-*
+
+# IDE/Editors
+.vscode/
+.idea/
+*.code-workspace
+.git.bak/
+
+# Data & outputs
+# Keep only the small documentation and manifest templates under data/.
+data/*
+!data/downloads/
+data/downloads/*
+!data/downloads/manual_sources/
+!data/downloads/manual_sources/*.txt
+!data/ov_ave/
+data/ov_ave/*
+!data/ov_ave/README.txt
+!data/ov_ave/*.template.jsonl
+weights/
+outputs/
+logs/
+runs/
+evaluation_results/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+# Notebooks
+*.ipynb_checkpoints/
+
+# Cache
+*.cache/
+cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+**/__pycache__/
+
+# Builds
+build/
+dist/
+*.egg-info/
+
+# Generated
+predictions.csv
+*.png
+*.html
+
+# Pip
+pip-wheel-metadata/
+
+# LaTeX build artifacts (do not commit intermediate files)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.synctex(busy)
+*.fls
+*.fdb_latexmk
+*.xdv
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+*.lof
+*.lot
+*.lol
+*.loe
+*.thm
+*.ilg
+*.ind
+*.idx
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+*.ist
+_minted-*
+*.mw
+*.pdfsync
+
+# Keep final PDFs if you want to track camera-ready outputs
+#!*.pdf
+
+# Restrict LaTeX ignores specifically in paper folders as well
+/paper/**/texput.log
+/paper_2025/**/texput.log
