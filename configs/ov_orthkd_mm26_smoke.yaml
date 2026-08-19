@@ -1,0 +1,113 @@
+seed: 42
+
+project:
+  name: "ov_orthkd_mm26_smoke"
+  stage: "r0_mock_preflight"
+
+reproduction:
+  paper: "ACM MM 2026 OV-OrthKD"
+  base_commit: "dca9f052fbe4a1e9d7982f24bdcec3edf1363fd4"
+  full_run_blocked: false
+  mock_only: true
+  implementation_mode: "camera_ready_explicit_paths"
+  blocked_archival_facts:
+    - "T=10 official labels versus 16 temporal segments stated in camera-ready implementation table"
+    - "exact InternVideo2 model class and three checkpoint identities"
+    - "meaning of step400 schedule, scheduler gamma/interval, early-stop patience"
+    - "student pretrained initialization and exact train augmentation"
+    - "visual feature L2 reduction: sum versus mean"
+    - "paper additive fusion + TransformerLayer versus current concat-MLP token fusion"
+
+task:
+  name: "open_vocabulary_audio_visual_event_localization"
+  label_mode: "query_conditioned_binary"
+
+teachers:
+  strong_visual:
+    name: "MOCK ONLY: deterministic visual teacher"
+    backend: "mock"
+    export: "segment_logits + segment_features"
+  weak_audio:
+    name: "MOCK ONLY: deterministic audio teacher"
+    backend: "mock"
+    export: "segment_features_only"
+  text_prototype:
+    name: "MOCK ONLY: deterministic text teacher"
+    backend: "mock"
+    export: "query_embeddings"
+
+data:
+  path_root: "."
+  train_manifest: "data/ov_ave_smoke/train.jsonl"
+  val_manifest: "data/ov_ave_smoke/val.jsonl"
+  test_manifest: "data/ov_ave_smoke/test.jsonl"
+  image_size: 224
+  batch_size: 2
+  num_workers: 0
+  pin_memory: true
+  max_segments: 16
+  allow_missing_modalities: false
+  strict_alignment: true
+  required_artifacts:
+    - strong_teacher_features
+    - weak_teacher_features
+    - text_embedding
+  strong_teacher_dim: 512
+  weak_teacher_dim: 768
+  strong_teacher_logit_dim: 1
+  weak_teacher_logit_dim: 1
+  text_dim: 1024
+  train_augment: false
+
+student:
+  visual_backbone: "convnextv2_tiny.fcmae_ft_in22k_in1k"
+  audio_backbone: "tf_efficientnetv2_b2.in1k"
+  fusion_dim: 384
+  projection_dim: 256
+  path_mode: "explicit_projected"
+  temporal_layers: 4
+  temporal_heads: 8
+  temporal_dropout: 0.1
+  pretrained: false
+
+loss:
+  projection_dim: 256
+  temperature: 2.0
+  alpha_bce: 1.0
+  alpha_strong_logit: 0.0
+  alpha_weak_logit: 0.0
+  alpha_strong_feat: 0.4
+  alpha_weak_feat: 0.1
+  alpha_text_align: 0.8
+  alpha_orth: 0.5
+  text_alignment_mode: "paper_probability"
+  confidence_weighting: true
+  confidence_scale: 2.0
+
+training:
+  deterministic: true
+  epochs: 2
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  grad_clip: 1.0
+  mixed_precision: true
+  max_batches_per_epoch: 2
+  max_optimizer_steps: null
+  early_stop_patience: null
+  early_stop_min_delta: 0.0
+  scheduler:
+    type: "cosine"
+    interval: "epoch"
+
+teacher_export:
+  artifact_dir: "data/teacher_cache/mm26_smoke"
+  device: "cuda"
+  strong_visual_backend: "mock"
+  weak_audio_backend: "mock"
+  text_backend: "mock"
+
+logging:
+  log_dir: "outputs/ov_orthkd_mm26_smoke"
+  save_last: true
+  save_predictions: true
+  save_environment: true

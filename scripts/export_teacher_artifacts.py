@@ -29,6 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--artifact-dir", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--copy-unprocessed-records", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
 
     parser.add_argument(
@@ -147,6 +148,7 @@ def main() -> None:
         teachers=teachers,
         overwrite=args.overwrite,
         limit=args.limit,
+        copy_unprocessed_records=args.copy_unprocessed_records,
     )
     summary["device"] = device
     summary["source_manifest"] = str(Path(args.source_manifest).resolve())

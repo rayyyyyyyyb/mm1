@@ -1,3 +1,3 @@
-from .ov_orthkd import OVOrthKDStudent
+from .ov_orthkd import OVOrthKDStudent, ProjectionHead
 
-__all__ = ["OVOrthKDStudent"]
+__all__ = ["OVOrthKDStudent", "ProjectionHead"]

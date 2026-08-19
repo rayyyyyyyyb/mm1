@@ -11,7 +11,6 @@ from typing import Any, Dict
 
 import torch
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
 
 try:
     from torch.amp import GradScaler as TorchGradScaler
@@ -38,7 +37,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.check_manifest import load_manifest, summarize_ov_avel
-from scripts.train_ov_orthkd import build_model_and_loss, evaluate, load_config, maybe_resume, set_seed
+from scripts.train_ov_orthkd import (
+    build_model_and_loss,
+    build_scheduler,
+    compute_loss_for_batch,
+    evaluate,
+    load_config,
+    maybe_resume,
+    set_seed,
+    validate_repro_config,
+)
 from src.data import create_ov_avel_data_loaders
 
 
@@ -91,6 +99,7 @@ def _run_train_probe(
     device: torch.device,
     use_amp: bool,
     grad_clip: float,
+    scheduler_interval: str,
 ) -> Dict[str, Any]:
     batch = next(iter(train_loader))
     parameters = list(student.parameters()) + list(loss_module.parameters())
@@ -108,26 +117,15 @@ def _run_train_probe(
             frame_valid=batch["frame_valid"].to(device),
             audio_valid=batch["audio_valid"].to(device),
         )
-        loss, stats = loss_module(
-            student_segment_logits=outputs["segment_logits"],
-            student_segment_features=outputs["segment_features"],
-            strong_teacher_logits=batch["strong_teacher_logits"].to(device),
-            strong_teacher_features=batch["strong_teacher_features"].to(device),
-            weak_teacher_features=batch["weak_teacher_features"].to(device),
-            text_embeddings=batch["text_embedding"].to(device),
-            segment_labels=batch["segment_label"].to(device),
-            sequence_mask=batch["sequence_mask"].to(device),
-            strong_teacher_logit_mask=batch["strong_teacher_logit_mask"].to(device),
-            strong_teacher_feature_mask=batch["strong_teacher_feature_mask"].to(device),
-            weak_teacher_mask=(batch["weak_teacher_mask"] * batch["audio_valid"]).to(device),
-            text_valid=batch["text_valid"].to(device),
-        )
+        loss, stats = compute_loss_for_batch(loss_module, outputs, batch, device)
 
     scaler.scale(loss).backward()
     scaler.unscale_(optimizer)
     torch.nn.utils.clip_grad_norm_(parameters, grad_clip)
     scaler.step(optimizer)
     scaler.update()
+    if scheduler_interval not in {"epoch", "optimizer_step"}:
+        raise ValueError(f"Unsupported scheduler interval: {scheduler_interval}")
     scheduler.step()
 
     return {
@@ -135,6 +133,7 @@ def _run_train_probe(
         "padded_segments": int(batch["frame"].shape[1]),
         "loss": float(loss.detach()),
         "loss_breakdown": stats,
+        "scheduler_interval": scheduler_interval,
     }
 
 
@@ -145,7 +144,16 @@ def run_preflight(
     probe_samples: int = 4,
     max_eval_batches: int = 2,
 ) -> Dict[str, Any]:
-    set_seed(int(config.get("seed", 42)))
+    validate_repro_config(
+        config,
+        allow_blocked=False,
+        preflight=True,
+        output_dir=output_dir,
+    )
+    set_seed(
+        int(config.get("seed", 42)),
+        deterministic=bool(config.get("training", {}).get("deterministic", True)),
+    )
     device = torch.device(device_name or ("cuda" if torch.cuda.is_available() else "cpu"))
 
     summaries = {
@@ -169,7 +177,12 @@ def run_preflight(
         lr=float(train_cfg.get("learning_rate", 2e-4)),
         weight_decay=float(train_cfg.get("weight_decay", 1e-4)),
     )
-    scheduler = CosineAnnealingLR(optimizer, T_max=int(train_cfg.get("epochs", 30)))
+    scheduler, scheduler_interval = build_scheduler(
+        optimizer,
+        train_cfg,
+        epochs=int(train_cfg.get("epochs", 30)),
+        steps_per_epoch=max(len(train_loader), 1),
+    )
     use_amp = bool(train_cfg.get("mixed_precision", True)) and device.type == "cuda"
     scaler = make_grad_scaler(device.type, use_amp)
 
@@ -183,6 +196,7 @@ def run_preflight(
         device=device,
         use_amp=use_amp,
         grad_clip=float(train_cfg.get("grad_clip", 1.0)),
+        scheduler_interval=scheduler_interval,
     )
     val_metrics = evaluate(student, val_loader, device, max_batches=max_eval_batches)
     test_metrics = evaluate(student, test_loader, device, max_batches=max_eval_batches) if test_loader is not None else None
@@ -202,6 +216,10 @@ def run_preflight(
         "optimizer_state_dict": optimizer.state_dict(),
         "scheduler_state_dict": scheduler.state_dict(),
         "scaler_state_dict": scaler.state_dict() if use_amp else None,
+        "implementation_mode": config.get("reproduction", {}).get(
+            "implementation_mode", "legacy_collaboration"
+        ),
+        "global_step": 1,
         "config": config,
     }
     torch.save(checkpoint, checkpoint_path)
@@ -212,7 +230,12 @@ def run_preflight(
         lr=float(train_cfg.get("learning_rate", 2e-4)),
         weight_decay=float(train_cfg.get("weight_decay", 1e-4)),
     )
-    resume_scheduler = CosineAnnealingLR(resume_optimizer, T_max=int(train_cfg.get("epochs", 30)))
+    resume_scheduler, _ = build_scheduler(
+        resume_optimizer,
+        train_cfg,
+        epochs=int(train_cfg.get("epochs", 30)),
+        steps_per_epoch=max(len(train_loader), 1),
+    )
     resume_scaler = make_grad_scaler(device.type, use_amp)
     resume_epoch, resume_best = maybe_resume(
         student=resume_student,
@@ -226,6 +249,10 @@ def run_preflight(
     summary = {
         "device": str(device),
         "use_amp": use_amp,
+        "mock_only": bool(config.get("reproduction", {}).get("mock_only", False)),
+        "implementation_mode": config.get("reproduction", {}).get(
+            "implementation_mode", "legacy_collaboration"
+        ),
         "manifest_summary": summaries,
         "dataset_probe": dataset_probe,
         "train_probe": train_probe,

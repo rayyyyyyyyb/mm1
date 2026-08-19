@@ -1,0 +1,10 @@
+{
+  "device": "cuda",
+  "segments": 10,
+  "segment_label": "T=10",
+  "average_latency_ms": 29.689651489257812,
+  "throughput_clips_per_second": 33.68176956748098,
+  "trainable_parameters": 46278129,
+  "visual_parameters": 27866496,
+  "audio_parameters": 8687086
+}

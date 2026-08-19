@@ -8,7 +8,7 @@ import torch
 from PIL import Image
 
 from src.data import QueryConditionedOVAvelDataset, create_ov_avel_data_loaders
-from src.losses import OVOrthKDLoss
+from src.losses import OVOrthKDLegacyLoss
 from src.models import OVOrthKDStudent
 from scripts.train_ov_orthkd import evaluate
 
@@ -112,6 +112,7 @@ def test_ov_orthkd_vertical_slice(tmp_path: Path) -> None:
         audio_backbone="mobilenetv3_small_100",
         text_dim=16,
         fusion_dim=64,
+        path_mode="legacy_shared",
         temporal_layers=2,
         temporal_heads=4,
         temporal_dropout=0.1,
@@ -127,7 +128,7 @@ def test_ov_orthkd_vertical_slice(tmp_path: Path) -> None:
         audio_valid=batch["audio_valid"],
     )
 
-    loss_module = OVOrthKDLoss(
+    loss_module = OVOrthKDLegacyLoss(
         student_dim=64,
         strong_teacher_dim=32,
         weak_teacher_dim=24,

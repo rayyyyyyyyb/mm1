@@ -1,0 +1,62 @@
+{
+  "stage": "exported",
+  "artifact_scan": "full",
+  "path_root": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0",
+  "split_counts": {
+    "train": 4,
+    "val": 4,
+    "test": 4
+  },
+  "canonical_expected_split_counts": {
+    "train": 13182,
+    "val": 5798,
+    "test": 5820
+  },
+  "canonical_split_count_matches": {
+    "train": false,
+    "val": false,
+    "test": false
+  },
+  "record_count": 12,
+  "category_count": 4,
+  "category_counts": {
+    "dog barking": 3,
+    "engine idling": 3,
+    "glass breaking": 3,
+    "playing violin": 3
+  },
+  "seen_classes": 2,
+  "unseen_classes": 2,
+  "split_type_counts": {
+    "seen": 6,
+    "unseen": 6
+  },
+  "duplicate_ids": {
+    "train": [],
+    "val": [],
+    "test": []
+  },
+  "split_overlap": [],
+  "label_histogram": {
+    "0": 12,
+    "1": 12
+  },
+  "segment_length_histogram": {
+    "2": 12
+  },
+  "frame_count_histogram": {
+    "2": 12
+  },
+  "manifest_sha256": {
+    "train": "eb8b0c6ea6341f232464a55b64825b32870ee29726b53a6e8e4cdd324d2594a6",
+    "val": "8ff29fb3a186a4fbe1891f010812e54c06a1bb242234fd03ecd429dded76adce",
+    "test": "9217abae8b224a3ffb3aeb95db3de66b5898726b71aa24e4da02f42fcf0bbd7f"
+  },
+  "configured_max_segments": 16,
+  "resampling_performed_by_dataset": false,
+  "artifacts_scanned": 12,
+  "path_errors": [],
+  "artifact_errors": [],
+  "errors": [],
+  "warnings": []
+}

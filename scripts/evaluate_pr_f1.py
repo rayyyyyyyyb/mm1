@@ -22,6 +22,12 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data import create_ov_avel_data_loaders
 from src.models import OVOrthKDStudent
+from scripts.train_ov_orthkd import (
+    build_model_and_loss,
+    collect_predictions,
+    compute_grouped_metrics,
+    save_predictions_npz,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,19 +62,7 @@ def parse_model_specs(specs: Iterable[str]) -> List[Tuple[str, Path]]:
 
 
 def build_student(config: Dict[str, Any], device: torch.device) -> OVOrthKDStudent:
-    data_cfg = config["data"]
-    student_cfg = config["student"]
-    student = OVOrthKDStudent(
-        visual_backbone=student_cfg["visual_backbone"],
-        audio_backbone=student_cfg["audio_backbone"],
-        text_dim=int(data_cfg.get("text_dim", 512)),
-        fusion_dim=int(student_cfg.get("fusion_dim", 384)),
-        temporal_layers=int(student_cfg.get("temporal_layers", 4)),
-        temporal_heads=int(student_cfg.get("temporal_heads", 8)),
-        temporal_dropout=float(student_cfg.get("temporal_dropout", 0.1)),
-        max_segments=int(data_cfg.get("max_segments", 16)),
-        pretrained=bool(student_cfg.get("pretrained", False)),
-    ).to(device)
+    student, _ = build_model_and_loss(config, device)
     return student
 
 
@@ -151,6 +145,36 @@ def metrics_at_threshold(labels: np.ndarray, probs: np.ndarray, threshold: float
     }
 
 
+def evaluate_prediction_sets(
+    validation_predictions: Dict[str, np.ndarray],
+    test_predictions: Dict[str, np.ndarray],
+) -> Dict[str, Any]:
+    val_labels = validation_predictions["labels"]
+    val_probs = validation_predictions["probabilities"]
+    best = best_threshold_from_pr(val_labels, val_probs)
+    precision, recall, thresholds = precision_recall_curve(val_labels, val_probs)
+    frozen_threshold = float(best["best_threshold"])
+    return {
+        "validation_calibration": {
+            "best_threshold": frozen_threshold,
+            "best_f1": float(best["best_f1"]),
+            "precision_at_best_f1": float(best["precision"]),
+            "recall_at_best_f1": float(best["recall"]),
+            "precision": precision,
+            "recall": recall,
+            "thresholds": thresholds,
+        },
+        "validation": {
+            "threshold": frozen_threshold,
+            "metrics": compute_grouped_metrics(validation_predictions, frozen_threshold),
+        },
+        "test": {
+            "threshold": frozen_threshold,
+            "metrics": compute_grouped_metrics(test_predictions, frozen_threshold),
+        },
+    }
+
+
 def plot_pr_curves(
     curves: Dict[str, Tuple[np.ndarray, np.ndarray]],
     output_path: Path,
@@ -193,28 +217,50 @@ def main() -> None:
         student.load_state_dict(checkpoint["student_state_dict"])
 
         _, val_loader, test_loader = create_ov_avel_data_loaders(config)
-        val_probs, val_labels = collect_probs_and_labels(student, val_loader, device, max_batches=args.max_batches)
-        test_probs, test_labels = collect_probs_and_labels(student, test_loader, device, max_batches=args.max_batches)
+        if test_loader is None:
+            raise ValueError(f"Checkpoint config has no test manifest: {checkpoint_path}")
+        validation_predictions = collect_predictions(
+            student,
+            val_loader,
+            device,
+            max_batches=args.max_batches,
+        )
+        test_predictions = collect_predictions(
+            student,
+            test_loader,
+            device,
+            max_batches=args.max_batches,
+        )
+        evaluation_report = evaluate_prediction_sets(
+            validation_predictions,
+            test_predictions,
+        )
+        calibration = evaluation_report["validation_calibration"]
+        validation_total = evaluation_report["validation"]["metrics"]["total"]
+        test_total = evaluation_report["test"]["metrics"]["total"]
+        save_predictions_npz(output_dir / f"{name}_validation_predictions.npz", validation_predictions)
+        save_predictions_npz(output_dir / f"{name}_test_predictions.npz", test_predictions)
 
-        val_best = best_threshold_from_pr(val_labels, val_probs)
-        test_at_val_best = metrics_at_threshold(test_labels, test_probs, val_best["best_threshold"])
-
-        val_precision, val_recall, _ = precision_recall_curve(val_labels, val_probs)
-        test_precision, test_recall, _ = precision_recall_curve(test_labels, test_probs)
-        val_curves[name] = (val_precision, val_recall)
+        test_precision, test_recall, _ = precision_recall_curve(
+            test_predictions["labels"],
+            test_predictions["probabilities"],
+        )
+        val_curves[name] = (calibration["precision"], calibration["recall"])
         test_curves[name] = (test_precision, test_recall)
 
         summary.append(
             {
                 "name": name,
                 "checkpoint": str(checkpoint_path),
-                "val_best_threshold": val_best["best_threshold"],
-                "val_best_f1": val_best["best_f1"],
-                "val_precision_at_best_f1": val_best["precision"],
-                "val_recall_at_best_f1": val_best["recall"],
-                "test_f1_at_val_best_threshold": test_at_val_best["f1"],
-                "test_precision_at_val_best_threshold": test_at_val_best["precision"],
-                "test_recall_at_val_best_threshold": test_at_val_best["recall"],
+                "val_best_threshold": calibration["best_threshold"],
+                "val_best_f1": calibration["best_f1"],
+                "val_precision_at_best_f1": calibration["precision_at_best_f1"],
+                "val_recall_at_best_f1": calibration["recall_at_best_f1"],
+                "test_f1_at_val_best_threshold": test_total["f1"],
+                "test_precision_at_val_best_threshold": test_total["precision"],
+                "test_recall_at_val_best_threshold": test_total["recall"],
+                "validation_grouped_metrics": evaluation_report["validation"]["metrics"],
+                "test_grouped_metrics": evaluation_report["test"]["metrics"],
             }
         )
 

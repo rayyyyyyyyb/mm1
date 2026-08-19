@@ -26,6 +26,21 @@ class SequenceImageEncoder(nn.Module):
         return encoded.reshape(batch_size, seq_len, -1)
 
 
+class ProjectionHead(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, hidden_dim: int | None = None) -> None:
+        super().__init__()
+        hidden_dim = hidden_dim or out_dim
+        self.net = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.GELU(),
+            nn.LayerNorm(hidden_dim),
+            nn.Linear(hidden_dim, out_dim),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
+
+
 class OVOrthKDStudent(nn.Module):
     def __init__(
         self,
@@ -33,6 +48,8 @@ class OVOrthKDStudent(nn.Module):
         audio_backbone: str,
         text_dim: int,
         fusion_dim: int = 384,
+        projection_dim: int = 256,
+        path_mode: str = "explicit_projected",
         temporal_layers: int = 4,
         temporal_heads: int = 8,
         temporal_dropout: float = 0.1,
@@ -40,12 +57,17 @@ class OVOrthKDStudent(nn.Module):
         pretrained: bool = False,
     ) -> None:
         super().__init__()
+        if path_mode not in {"explicit_projected", "legacy_shared"}:
+            raise ValueError(f"Unsupported path_mode: {path_mode}")
+
         self.visual_encoder = SequenceImageEncoder(visual_backbone, pretrained=pretrained)
         self.audio_encoder = SequenceImageEncoder(audio_backbone, pretrained=pretrained)
         self.visual_dim = self.visual_encoder.feature_dim
         self.audio_dim = self.audio_encoder.feature_dim
         self.text_dim = text_dim
         self.fusion_dim = fusion_dim
+        self.projection_dim = projection_dim
+        self.path_mode = path_mode
         self.max_segments = max_segments
 
         self.visual_proj = nn.Sequential(
@@ -94,7 +116,13 @@ class OVOrthKDStudent(nn.Module):
             num_layers=temporal_layers,
             enable_nested_tensor=False,
         )
-        self.segment_head = nn.Linear(fusion_dim, 1)
+        if path_mode == "explicit_projected":
+            self.decision_proj = ProjectionHead(fusion_dim, projection_dim)
+            self.audio_aux_proj = ProjectionHead(fusion_dim, projection_dim)
+            self.query_proj = ProjectionHead(fusion_dim, projection_dim)
+            self.segment_head = nn.Linear(projection_dim, 1)
+        else:
+            self.segment_head = nn.Linear(fusion_dim, 1)
 
     def forward(
         self,
@@ -104,7 +132,7 @@ class OVOrthKDStudent(nn.Module):
         sequence_mask: torch.Tensor,
         frame_valid: Optional[torch.Tensor] = None,
         audio_valid: Optional[torch.Tensor] = None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Dict[str, torch.Tensor | None]:
         visual_tokens = self.visual_proj(self.visual_encoder(frame))
         audio_tokens = self.audio_proj(self.audio_encoder(spectrogram))
         text_token = self.text_proj(text_embedding).unsqueeze(1).expand(-1, visual_tokens.size(1), -1)
@@ -137,17 +165,32 @@ class OVOrthKDStudent(nn.Module):
 
         seq_len = fused_tokens.size(1)
         fused_tokens = fused_tokens + self.position_embedding[:, :seq_len, :]
-        encoded_tokens = self.temporal_encoder(
+        shared_features = self.temporal_encoder(
             fused_tokens,
             src_key_padding_mask=~sequence_mask.bool(),
         )
-        segment_logits = self.segment_head(encoded_tokens).squeeze(-1)
+
+        decision_features: torch.Tensor | None = None
+        audio_aux_features: torch.Tensor | None = None
+        query_features: torch.Tensor | None = None
+        if self.path_mode == "explicit_projected":
+            decision_features = self.decision_proj(shared_features)
+            audio_aux_features = self.audio_aux_proj(shared_features)
+            query_features = self.query_proj(shared_features)
+            segment_logits = self.segment_head(decision_features).squeeze(-1)
+        else:
+            segment_logits = self.segment_head(shared_features).squeeze(-1)
 
         return {
             "segment_logits": segment_logits,
-            "segment_features": encoded_tokens,
+            "shared_features": shared_features,
+            "decision_features": decision_features,
+            "audio_aux_features": audio_aux_features,
+            "query_features": query_features,
+            "segment_features": shared_features,
             "visual_tokens": visual_tokens,
             "audio_tokens": audio_tokens,
             "text_tokens": text_token,
+            "gate_logits": gate_logits,
             "gate_weights": gate_weights,
         }

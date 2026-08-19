@@ -52,6 +52,7 @@ def export_manifest_records(
     teachers: TeacherExportBundle,
     overwrite: bool = False,
     limit: Optional[int] = None,
+    copy_unprocessed_records: bool = False,
 ) -> Dict[str, Any]:
     updated_records = []
     artifact_root = Path(artifact_dir)
@@ -100,9 +101,10 @@ def export_manifest_records(
         updated_records.append(record)
         records_written += 1
 
-    for index in range(max_records, len(records)):
-        updated_records.append(deepcopy(records[index]))
-        records_skipped += 1
+    if copy_unprocessed_records:
+        for index in range(max_records, len(records)):
+            updated_records.append(deepcopy(records[index]))
+            records_skipped += 1
 
     write_records(output_manifest, updated_records)
     return {
@@ -125,6 +127,7 @@ def export_manifest_file(
     teachers: TeacherExportBundle,
     overwrite: bool = False,
     limit: Optional[int] = None,
+    copy_unprocessed_records: bool = False,
 ) -> Dict[str, Any]:
     records = load_records(source_manifest)
     return export_manifest_records(
@@ -134,4 +137,5 @@ def export_manifest_file(
         teachers=teachers,
         overwrite=overwrite,
         limit=limit,
+        copy_unprocessed_records=copy_unprocessed_records,
     )

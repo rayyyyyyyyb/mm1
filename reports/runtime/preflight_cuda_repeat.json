@@ -1,0 +1,180 @@
+{
+  "device": "cuda",
+  "use_amp": true,
+  "mock_only": true,
+  "implementation_mode": "camera_ready_explicit_paths",
+  "manifest_summary": {
+    "train": {
+      "task": "ov_avel",
+      "manifest_stage": "exported",
+      "num_records": 4,
+      "avg_segments": 2.0,
+      "top_domains": [
+        [
+          "mock_only_r0",
+          4
+        ]
+      ],
+      "top_queries": [
+        [
+          "dog barking",
+          1
+        ],
+        [
+          "glass breaking",
+          1
+        ],
+        [
+          "engine idling",
+          1
+        ],
+        [
+          "playing violin",
+          1
+        ]
+      ],
+      "missing_frames": 0,
+      "missing_spectrograms": 0,
+      "missing_audio_sources": 0,
+      "missing_strong_teacher_features": 0,
+      "missing_strong_teacher_logits": 0,
+      "missing_weak_teacher_features": 0,
+      "missing_text_embeddings": 0,
+      "manifest_path": "E:\\OV-OrthKD-R0\\repo\\data\\ov_ave_smoke\\train.jsonl"
+    },
+    "val": {
+      "task": "ov_avel",
+      "manifest_stage": "exported",
+      "num_records": 4,
+      "avg_segments": 2.0,
+      "top_domains": [
+        [
+          "mock_only_r0",
+          4
+        ]
+      ],
+      "top_queries": [
+        [
+          "dog barking",
+          1
+        ],
+        [
+          "glass breaking",
+          1
+        ],
+        [
+          "engine idling",
+          1
+        ],
+        [
+          "playing violin",
+          1
+        ]
+      ],
+      "missing_frames": 0,
+      "missing_spectrograms": 0,
+      "missing_audio_sources": 0,
+      "missing_strong_teacher_features": 0,
+      "missing_strong_teacher_logits": 0,
+      "missing_weak_teacher_features": 0,
+      "missing_text_embeddings": 0,
+      "manifest_path": "E:\\OV-OrthKD-R0\\repo\\data\\ov_ave_smoke\\val.jsonl"
+    },
+    "test": {
+      "task": "ov_avel",
+      "manifest_stage": "exported",
+      "num_records": 4,
+      "avg_segments": 2.0,
+      "top_domains": [
+        [
+          "mock_only_r0",
+          4
+        ]
+      ],
+      "top_queries": [
+        [
+          "dog barking",
+          1
+        ],
+        [
+          "glass breaking",
+          1
+        ],
+        [
+          "engine idling",
+          1
+        ],
+        [
+          "playing violin",
+          1
+        ]
+      ],
+      "missing_frames": 0,
+      "missing_spectrograms": 0,
+      "missing_audio_sources": 0,
+      "missing_strong_teacher_features": 0,
+      "missing_strong_teacher_logits": 0,
+      "missing_weak_teacher_features": 0,
+      "missing_text_embeddings": 0,
+      "manifest_path": "E:\\OV-OrthKD-R0\\repo\\data\\ov_ave_smoke\\test.jsonl"
+    }
+  },
+  "dataset_probe": {
+    "train": {
+      "samples_probed": 4,
+      "max_segments": 2,
+      "strong_teacher_feature_dim": 512,
+      "weak_teacher_feature_dim": 768,
+      "text_dim": 1024
+    },
+    "val": {
+      "samples_probed": 4,
+      "max_segments": 2,
+      "strong_teacher_feature_dim": 512,
+      "weak_teacher_feature_dim": 768,
+      "text_dim": 1024
+    }
+  },
+  "train_probe": {
+    "batch_size": 2,
+    "padded_segments": 2,
+    "loss": 1.6225866079330444,
+    "loss_breakdown": {
+      "bce": 0.678238034248352,
+      "strong_logit": 0.0,
+      "weak_logit": 0.0,
+      "strong_feat": 0.7148257493972778,
+      "weak_feat": 0.994338870048523,
+      "text_align": 0.6965197324752808,
+      "orth": 0.003537167562171817,
+      "total": 1.6225866079330444
+    },
+    "scheduler_interval": "epoch"
+  },
+  "val_metrics": {
+    "accuracy": 0.5,
+    "f1": 0.0,
+    "ap": 0.5845238095238094,
+    "mean_logit": -0.8786373138427734,
+    "mean_prob": 0.29622066020965576,
+    "pred_positive_rate": 0.0,
+    "label_positive_rate": 0.5,
+    "auroc": 0.5625
+  },
+  "test_metrics": {
+    "accuracy": 0.5,
+    "f1": 0.0,
+    "ap": 0.5595238095238095,
+    "mean_logit": -0.8875287771224976,
+    "mean_prob": 0.2940979301929474,
+    "pred_positive_rate": 0.0,
+    "label_positive_rate": 0.5,
+    "auroc": 0.5
+  },
+  "resume_probe": {
+    "checkpoint_path": "E:\\OV-OrthKD-R0\\outputs\\r0_preflight_strict_repeat\\preflight_resume.pt",
+    "resume_epoch": 1,
+    "resume_best_metric": 0.5845238095238094
+  },
+  "cuda_max_memory_mb": 1345.25927734375
+}

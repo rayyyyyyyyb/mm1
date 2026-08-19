@@ -134,3 +134,66 @@ def test_export_and_preflight_pipeline(tmp_path: Path) -> None:
     assert preflight_summary["train_probe"]["batch_size"] == 2
     assert preflight_summary["resume_probe"]["resume_epoch"] == 1
     assert "ap" in preflight_summary["val_metrics"]
+
+
+def test_export_limit_writes_only_processed_records_by_default(tmp_path: Path) -> None:
+    frame_paths = []
+    spec_paths = []
+    for idx in range(3):
+        frame_path = tmp_path / f"limit_frame_{idx}.jpg"
+        spec_path = tmp_path / f"limit_spec_{idx}.jpg"
+        _write_image(frame_path)
+        _write_image(spec_path)
+        frame_paths.append(str(frame_path))
+        spec_paths.append(str(spec_path))
+
+    source_manifest = tmp_path / "limit_source.jsonl"
+    exported_manifest = tmp_path / "limit_exported.jsonl"
+    _write_source_manifest(source_manifest, frame_paths, spec_paths)
+    teachers = TeacherExportBundle(
+        strong_visual=MockStrongVisualTeacher(feature_dim=32),
+        weak_audio=MockWeakAudioTeacher(feature_dim=24),
+        text_teacher=MockTextTeacher(feature_dim=16),
+    )
+
+    summary = export_manifest_file(
+        source_manifest=source_manifest,
+        artifact_dir=tmp_path / "limit_teacher_cache",
+        output_manifest=exported_manifest,
+        teachers=teachers,
+        overwrite=True,
+        limit=1,
+    )
+
+    assert summary["records_exported"] == 1
+    assert summary["records_copied_without_rewrite"] == 0
+    assert len(load_records(exported_manifest)) == 1
+
+
+def test_export_limit_can_explicitly_copy_unprocessed_records(tmp_path: Path) -> None:
+    frame_paths = []
+    spec_paths = []
+    for idx in range(3):
+        frame_path = tmp_path / f"copy_frame_{idx}.jpg"
+        spec_path = tmp_path / f"copy_spec_{idx}.jpg"
+        _write_image(frame_path)
+        _write_image(spec_path)
+        frame_paths.append(str(frame_path))
+        spec_paths.append(str(spec_path))
+
+    source_manifest = tmp_path / "copy_source.jsonl"
+    exported_manifest = tmp_path / "copy_exported.jsonl"
+    _write_source_manifest(source_manifest, frame_paths, spec_paths)
+
+    summary = export_manifest_file(
+        source_manifest=source_manifest,
+        artifact_dir=tmp_path / "copy_teacher_cache",
+        output_manifest=exported_manifest,
+        teachers=TeacherExportBundle(),
+        limit=1,
+        copy_unprocessed_records=True,
+    )
+
+    assert summary["records_exported"] == 1
+    assert summary["records_copied_without_rewrite"] == 1
+    assert len(load_records(exported_manifest)) == 2

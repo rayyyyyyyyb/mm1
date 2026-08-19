@@ -1,0 +1,111 @@
+{
+  "status": "blocked",
+  "teachers": {
+    "internvideo2": {
+      "wrapper_class": "InternVideo2ClipB14Teacher",
+      "upstream_class": "InternVideo2_CLIP_small",
+      "declared_name": "UNRESOLVED: exact InternVideo2 checkpoint required",
+      "declared_model_class": "InternVideo2-Base / CLIP-B14",
+      "repo_absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_repo",
+      "repo_git_sha": null,
+      "checkpoints": {
+        "vision": {
+          "absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_vision_checkpoint",
+          "exists": false,
+          "sha256": null,
+          "top_level_keys": null
+        },
+        "text": {
+          "absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_text_checkpoint",
+          "exists": false,
+          "sha256": null,
+          "top_level_keys": null
+        },
+        "extra_clip": {
+          "absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_extra_clip_checkpoint",
+          "exists": false,
+          "sha256": null,
+          "top_level_keys": null
+        }
+      },
+      "feature_dimension": 512,
+      "num_frames": 8
+    },
+    "beats": {
+      "wrapper_class": "BEATsAudioTeacher",
+      "upstream_class": "BEATs",
+      "repo_absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\beats_repo",
+      "repo_git_sha": null,
+      "checkpoint": {
+        "absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\beats_pretrained_checkpoint",
+        "exists": false,
+        "sha256": null,
+        "top_level_keys": null
+      },
+      "feature_dimension": 768,
+      "finetuned_model": null
+    },
+    "clap": {
+      "wrapper_class": "ClapTextTeacher",
+      "upstream_class": "msclap.CLAP",
+      "repo_absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\clap_repo",
+      "repo_git_sha": null,
+      "checkpoint": {
+        "absolute_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\clap_2023_checkpoint",
+        "exists": false,
+        "sha256": null,
+        "top_level_keys": null
+      },
+      "feature_dimension": 1024,
+      "version": "2023"
+    }
+  },
+  "smoke": {
+    "status": "not_requested"
+  },
+  "errors": [
+    {
+      "code": "missing_teacher_checkpoint",
+      "message": "InternVideo2 vision checkpoint does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_vision_checkpoint"
+    },
+    {
+      "code": "missing_teacher_checkpoint",
+      "message": "InternVideo2 text checkpoint does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_text_checkpoint"
+    },
+    {
+      "code": "missing_teacher_checkpoint",
+      "message": "InternVideo2 extra_clip checkpoint does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_extra_clip_checkpoint"
+    },
+    {
+      "code": "missing_teacher_checkpoint",
+      "message": "BEATs checkpoint does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\beats_pretrained_checkpoint"
+    },
+    {
+      "code": "missing_teacher_checkpoint",
+      "message": "CLAP checkpoint does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\clap_2023_checkpoint"
+    },
+    {
+      "code": "internvideo2_model_identity_mismatch",
+      "message": "Configured teacher identity 'InternVideo2-Base / CLIP-B14' conflicts with wrapper upstream class InternVideo2_CLIP_small"
+    },
+    {
+      "code": "missing_teacher_repo",
+      "message": "InternVideo2 repository does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\internvideo2_repo"
+    },
+    {
+      "code": "missing_teacher_repo",
+      "message": "BEATs repository does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\beats_repo"
+    },
+    {
+      "code": "missing_teacher_repo",
+      "message": "CLAP repository does not exist: C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\UNRESOLVED\\clap_repo"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "teacher_smoke_not_run",
+      "message": "Static inventory alone does not approve teacher export"
+    }
+  ],
+  "config": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R0\\configs\\ov_orthkd_mm26_repro.yaml"
+}

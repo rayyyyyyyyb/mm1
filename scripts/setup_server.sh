@@ -3,7 +3,7 @@ set -euo pipefail
 
 VENV_DIR=".venv"
 PYTHON_BIN="python3"
-TORCH_CHANNEL="cu124"
+TORCH_CHANNEL="cu128"
 WITH_DOWNLOAD_TOOLS=0
 WITH_EXPORT_DEPS=0
 RUN_SMOKE=1
@@ -16,7 +16,7 @@ Usage:
 Options:
   --venv <path>                Virtualenv directory. Default: .venv
   --python <python-bin>        Python executable to create the venv. Default: python3
-  --torch <cpu|cu121|cu124>    PyTorch wheel channel. Default: cu124
+  --torch <cpu|cu121|cu124|cu128>  PyTorch wheel channel. Default: cu128
   --with-download-tools        Install `gdown` and `huggingface_hub` for dataset downloads
   --with-export-deps           Install extra packages used by teacher export
   --skip-smoke                 Skip the repository smoke test at the end
@@ -71,6 +71,9 @@ case "$TORCH_CHANNEL" in
     ;;
   cu124)
     TORCH_INDEX="https://download.pytorch.org/whl/cu124"
+    ;;
+  cu128)
+    TORCH_INDEX="https://download.pytorch.org/whl/cu128"
     ;;
   *)
     echo "Unsupported torch channel: $TORCH_CHANNEL" >&2

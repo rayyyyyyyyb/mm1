@@ -1,0 +1,127 @@
+seed: 42
+
+project:
+  name: "ov_orthkd_mm26_reproduction"
+  stage: "conference_reproduction"
+
+reproduction:
+  paper: "ACM MM 2026 OV-OrthKD"
+  base_commit: "dca9f052fbe4a1e9d7982f24bdcec3edf1363fd4"
+  full_run_blocked: true
+  implementation_mode: "camera_ready_explicit_paths"
+  blocked_archival_facts:
+    - "T=10 official labels versus 16 temporal segments stated in camera-ready implementation table"
+    - "exact InternVideo2 model class and three checkpoint identities"
+    - "meaning of step400 schedule, scheduler gamma/interval, early-stop patience"
+    - "student pretrained initialization and exact train augmentation"
+    - "visual feature L2 reduction: sum versus mean"
+    - "paper additive fusion + TransformerLayer versus current concat-MLP token fusion"
+
+task:
+  name: "open_vocabulary_audio_visual_event_localization"
+  label_mode: "query_conditioned_binary"
+
+teachers:
+  strong_visual:
+    name: "UNRESOLVED: exact InternVideo2 checkpoint required"
+    backend: "internvideo2_clip_b14"
+    export: "segment_logits + segment_features"
+  weak_audio:
+    name: "BEATs pretrained"
+    backend: "beats"
+    export: "segment_features_only"
+  text_prototype:
+    name: "Microsoft CLAP text encoder"
+    backend: "clap"
+    export: "query_embeddings"
+
+data:
+  path_root: "."
+  train_manifest: "data/ov_ave/train.jsonl"
+  val_manifest: "data/ov_ave/val.jsonl"
+  test_manifest: "data/ov_ave/test.jsonl"
+  image_size: 224
+  batch_size: 12
+  num_workers: 8
+  pin_memory: true
+  max_segments: 16
+  allow_missing_modalities: false
+  strict_alignment: true
+  required_artifacts:
+    - strong_teacher_features
+    - weak_teacher_features
+    - text_embedding
+  strong_teacher_dim: 512
+  weak_teacher_dim: 768
+  strong_teacher_logit_dim: 1
+  weak_teacher_logit_dim: 1
+  text_dim: 1024
+  train_augment: true
+
+student:
+  visual_backbone: "convnextv2_tiny.fcmae_ft_in22k_in1k"
+  audio_backbone: "tf_efficientnetv2_b2.in1k"
+  fusion_dim: 384
+  projection_dim: 256
+  path_mode: "explicit_projected"
+  temporal_layers: 4
+  temporal_heads: 8
+  temporal_dropout: 0.1
+  pretrained: false
+
+loss:
+  projection_dim: 256
+  temperature: 2.0
+  alpha_bce: 1.0
+  alpha_strong_logit: 0.0
+  alpha_weak_logit: 0.0
+  alpha_strong_feat: 0.4
+  alpha_weak_feat: 0.1
+  alpha_text_align: 0.8
+  alpha_orth: 0.5
+  text_alignment_mode: "paper_probability"
+  confidence_weighting: true
+  confidence_scale: 2.0
+
+training:
+  deterministic: true
+  epochs: 30
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  grad_clip: 1.0
+  mixed_precision: true
+  max_batches_per_epoch: null
+  max_optimizer_steps: null
+  early_stop_patience: null
+  early_stop_min_delta: 0.0
+  scheduler:
+    type: "UNRESOLVED"
+
+teacher_export:
+  artifact_dir: "data/teacher_cache/mm26"
+  device: "cuda"
+  strong_visual_backend: "internvideo2_clip_b14"
+  weak_audio_backend: "beats"
+  text_backend: "clap"
+  internvideo2:
+    declared_model_class: "InternVideo2-Base / CLIP-B14"
+    repo_root: "UNRESOLVED/internvideo2_repo"
+    vision_ckpt_path: "UNRESOLVED/internvideo2_vision_checkpoint"
+    text_ckpt_path: "UNRESOLVED/internvideo2_text_checkpoint"
+    extra_ckpt_path: "UNRESOLVED/internvideo2_extra_clip_checkpoint"
+    num_frames: 8
+    align_dim: 512
+  beats:
+    repo_root: "UNRESOLVED/beats_repo"
+    checkpoint_path: "UNRESOLVED/beats_pretrained_checkpoint"
+  clap:
+    repo_root: "UNRESOLVED/clap_repo"
+    checkpoint_path: "UNRESOLVED/clap_2023_checkpoint"
+    version: "2023"
+    normalize: false
+
+logging:
+  log_dir: "outputs/ov_orthkd_mm26_reproduction"
+  save_last: true
+  save_predictions: true
+  save_environment: true

@@ -1,0 +1,36 @@
+Wed Aug 19 23:51:49 2026
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 610.88                 KMD Version: 610.88        CUDA UMD Version: 13.3     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 5090      WDDM  |   00000000:43:00.0  On |                  N/A |
+| 30%   46C    P0             67W /  450W |     725MiB /  32607MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            3440    C+G   C:\Windows\System32\dwm.exe           N/A      |
+|    0   N/A  N/A            5732    C+G   ...indows\System32\ShellHost.exe      N/A      |
+|    0   N/A  N/A            6280    C+G   ....0.4022.98\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A            7080    C+G   ...em32\ApplicationFrameHost.exe      N/A      |
+|    0   N/A  N/A           11960    C+G   ...2txyewy\CrossDeviceResume.exe      N/A      |
+|    0   N/A  N/A           14036    C+G   ...ogram Files\ToDesk\ToDesk.exe      N/A      |
+|    0   N/A  N/A           14176    C+G   C:\Windows\explorer.exe               N/A      |
+|    0   N/A  N/A           15024    C+G   ...ntrolPanel\SystemSettings.exe      N/A      |
+|    0   N/A  N/A           15500    C+G   ...IA App\CEF\NVIDIA Overlay.exe      N/A      |
+|    0   N/A  N/A           16696    C+G   ...IA App\CEF\NVIDIA Overlay.exe      N/A      |
+|    0   N/A  N/A           19024    C+G   ..._cw5n1h2txyewy\SearchHost.exe      N/A      |
+|    0   N/A  N/A           19036    C+G   ...y\StartMenuExperienceHost.exe      N/A      |
+|    0   N/A  N/A           21440    C+G   ...xyewy\ShellExperienceHost.exe      N/A      |
+|    0   N/A  N/A           21696    C+G   ...ge-WebView\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           22816    C+G   ...5n1h2txyewy\TextInputHost.exe      N/A      |
+|    0   N/A  N/A           24288    C+G   ...ray\AweSun\flutter\AweSun.exe      N/A      |
+|    0   N/A  N/A           26604    C+G   ...yb3d8bbwe\WindowsTerminal.exe      N/A      |
++-----------------------------------------------------------------------------------------+

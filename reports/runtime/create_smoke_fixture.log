@@ -1,0 +1,41 @@
+{
+  "mock_only": true,
+  "root": "E:\\OV-OrthKD-R0\\repo",
+  "records_per_split": 4,
+  "segments": 2,
+  "splits": {
+    "train": {
+      "records_total": 4,
+      "records_exported": 4,
+      "records_copied_without_rewrite": 0,
+      "output_manifest": "E:\\OV-OrthKD-R0\\repo\\data\\ov_ave_smoke\\train.jsonl",
+      "artifact_dir": "E:\\OV-OrthKD-R0\\repo\\data\\teacher_cache\\mm26_smoke\\train",
+      "strong_visual_enabled": true,
+      "weak_audio_enabled": true,
+      "text_teacher_enabled": true,
+      "unique_queries_encoded": 4
+    },
+    "val": {
+      "records_total": 4,
+      "records_exported": 4,
+      "records_copied_without_rewrite": 0,
+      "output_manifest": "E:\\OV-OrthKD-R0\\repo\\data\\ov_ave_smoke\\val.jsonl",
+      "artifact_dir": "E:\\OV-OrthKD-R0\\repo\\data\\teacher_cache\\mm26_smoke\\val",
+      "strong_visual_enabled": true,
+      "weak_audio_enabled": true,
+      "text_teacher_enabled": true,
+      "unique_queries_encoded": 4
+    },
+    "test": {
+      "records_total": 4,
+      "records_exported": 4,
+      "records_copied_without_rewrite": 0,
+      "output_manifest": "E:\\OV-OrthKD-R0\\repo\\data\\ov_ave_smoke\\test.jsonl",
+      "artifact_dir": "E:\\OV-OrthKD-R0\\repo\\data\\teacher_cache\\mm26_smoke\\test",
+      "strong_visual_enabled": true,
+      "weak_audio_enabled": true,
+      "text_teacher_enabled": true,
+      "unique_queries_encoded": 4
+    }
+  }
+}

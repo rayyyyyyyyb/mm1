@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 from typing import Any, Dict, List, Sequence
 
@@ -84,9 +85,15 @@ class QueryConditionedOVAvelDataset(Dataset):
         strong_teacher_logit_dim: int = 1,
         weak_teacher_logit_dim: int = 1,
         text_dim: int = 512,
+        path_root: str = ".",
+        required_artifacts: Sequence[str] | None = None,
         teacher_path_overrides: Dict[str, str] | None = None,
     ) -> None:
-        self.records = _load_manifest(manifest_path)
+        self.path_root = Path(path_root).expanduser().resolve()
+        manifest = Path(manifest_path).expanduser()
+        if not manifest.is_absolute():
+            manifest = self.path_root / manifest
+        self.records = _load_manifest(str(manifest.resolve()))
         self.frame_transform = _build_frame_transform(image_size, augment=augment)
         self.spec_transform = _build_spectrogram_transform(image_size)
         self.image_size = image_size
@@ -98,6 +105,7 @@ class QueryConditionedOVAvelDataset(Dataset):
         self.strong_teacher_logit_dim = strong_teacher_logit_dim
         self.weak_teacher_logit_dim = weak_teacher_logit_dim
         self.text_dim = text_dim
+        self.required_artifacts = set(required_artifacts or [])
         self.teacher_path_overrides = teacher_path_overrides or {}
 
     def __len__(self) -> int:
@@ -106,13 +114,23 @@ class QueryConditionedOVAvelDataset(Dataset):
     def _empty_image(self) -> Image.Image:
         return Image.new("RGB", (self.image_size, self.image_size))
 
+    def _resolve_path(self, value: str | Path) -> Path:
+        path = Path(value).expanduser()
+        if not path.is_absolute():
+            path = self.path_root / path
+        return path.resolve()
+
+    def _artifact_required(self, field_name: str) -> bool:
+        return field_name in self.required_artifacts
+
     def _read_image(self, path_str: str | None) -> tuple[Image.Image, float]:
         if path_str:
-            path = Path(path_str)
+            path = self._resolve_path(path_str)
             if path.exists():
                 return Image.open(path).convert("RGB"), 1.0
         if not self.allow_missing_modalities:
-            raise FileNotFoundError(f"Missing modality file: {path_str}")
+            resolved = self._resolve_path(path_str) if path_str else None
+            raise FileNotFoundError(f"Missing modality file: {path_str} (resolved: {resolved})")
         return self._empty_image(), 0.0
 
     def _select_indices(self, seq_len: int) -> List[int]:
@@ -168,11 +186,11 @@ class QueryConditionedOVAvelDataset(Dataset):
         if value is None:
             return None
         if isinstance(value, str):
-            path = Path(value)
+            path = self._resolve_path(value)
             if not path.exists():
                 if self.allow_missing_modalities:
                     return None
-                raise FileNotFoundError(f"Missing feature file: {value}")
+                raise FileNotFoundError(f"Missing feature file: {value} (resolved: {path})")
             if path.suffix == ".npy":
                 return np.load(path)
             if path.suffix == ".npz":
@@ -220,7 +238,9 @@ class QueryConditionedOVAvelDataset(Dataset):
         target_len: int,
         expected_dim: int,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        value = record.get(field_name) or record.get(f"{field_name}_path")
+        value = record.get(field_name)
+        if value is None:
+            value = record.get(f"{field_name}_path")
 
         # Robust override check: match exact field_name or the base teacher name (strong_teacher/weak_teacher)
         base_name = field_name.replace("_features", "").replace("_logits", "")
@@ -229,18 +249,38 @@ class QueryConditionedOVAvelDataset(Dataset):
         )
 
         if isinstance(value, str) and best_override_key:
-            override_root = Path(self.teacher_path_overrides[best_override_key])
+            override_root = self._resolve_path(self.teacher_path_overrides[best_override_key])
             original_path = Path(value)
             value = str(override_root / original_path.name)
 
-        array = self._load_ndarray(value)
+        try:
+            array = self._load_ndarray(value)
+        except FileNotFoundError as exc:
+            if self._artifact_required(field_name):
+                raise FileNotFoundError(
+                    f"Required artifact {field_name} is missing for record "
+                    f"{record.get('id', '<unknown>')}: {value}"
+                ) from exc
+            raise
         if array is None:
+            if self._artifact_required(field_name):
+                raise FileNotFoundError(
+                    f"Required artifact {field_name} is missing for record "
+                    f"{record.get('id', '<unknown>')}: {value}"
+                )
             return (
                 torch.zeros(target_len, expected_dim, dtype=torch.float32),
                 torch.zeros(target_len, dtype=torch.float32),
             )
 
-        selected = self._select_array_rows(np.asarray(array, dtype=np.float32), target_len, expected_dim)
+        try:
+            selected = self._select_array_rows(
+                np.asarray(array, dtype=np.float32), target_len, expected_dim
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid {field_name} for record {record.get('id', '<unknown>')}: {exc}"
+            ) from exc
         if selected.shape[-1] != expected_dim:
             raise ValueError(
                 f"Unexpected feature dim for {field_name}: {selected.shape[-1]} != {expected_dim}"
@@ -248,13 +288,28 @@ class QueryConditionedOVAvelDataset(Dataset):
         return torch.from_numpy(selected), torch.ones(target_len, dtype=torch.float32)
 
     def _load_text_embedding(self, record: Dict[str, Any]) -> tuple[torch.Tensor, torch.Tensor]:
-        value = record.get("text_embedding") or record.get("text_embedding_path")
+        value = record.get("text_embedding")
+        if value is None:
+            value = record.get("text_embedding_path")
         if isinstance(value, str) and "text" in self.teacher_path_overrides:
-            override_root = Path(self.teacher_path_overrides["text"])
+            override_root = self._resolve_path(self.teacher_path_overrides["text"])
             original_path = Path(value)
             value = str(override_root / original_path.name)
-        array = self._load_ndarray(value)
+        try:
+            array = self._load_ndarray(value)
+        except FileNotFoundError as exc:
+            if self._artifact_required("text_embedding"):
+                raise FileNotFoundError(
+                    f"Required artifact text_embedding is missing for record "
+                    f"{record.get('id', '<unknown>')}: {value}"
+                ) from exc
+            raise
         if array is None:
+            if self._artifact_required("text_embedding"):
+                raise FileNotFoundError(
+                    f"Required artifact text_embedding is missing for record "
+                    f"{record.get('id', '<unknown>')}: {value}"
+                )
             return torch.zeros(self.text_dim, dtype=torch.float32), torch.tensor(0.0, dtype=torch.float32)
 
         embedding = np.asarray(array, dtype=np.float32).reshape(-1)
@@ -315,6 +370,13 @@ class QueryConditionedOVAvelDataset(Dataset):
             expected_dim=self.weak_teacher_logit_dim,
         )
         text_embedding, text_valid = self._load_text_embedding(record)
+        meta = record.get("meta", {})
+        if not isinstance(meta, dict):
+            meta = {}
+        split_type = record.get(
+            "split_type",
+            meta.get("split_type", meta.get("seen_unseen", meta.get("novelty", "unknown"))),
+        )
 
         selected_labels = torch.from_numpy(labels_array[indices])
         sequence_mask = torch.ones(len(indices), dtype=torch.float32)
@@ -323,6 +385,7 @@ class QueryConditionedOVAvelDataset(Dataset):
             "id": record.get("id", str(index)),
             "query": record.get("query", record.get("text_query", "unknown event")),
             "domain": record.get("domain", "unknown"),
+            "split_type": str(split_type).lower(),
             "frame": frames,
             "spectrogram": spectrograms,
             "segment_label": selected_labels,
@@ -334,12 +397,13 @@ class QueryConditionedOVAvelDataset(Dataset):
             "strong_teacher_feature_mask": strong_teacher_feature_mask,
             "strong_teacher_features": strong_teacher_features,
             "weak_teacher_features": weak_teacher_features,
+            "weak_teacher_feature_mask": weak_teacher_mask,
             "weak_teacher_mask": weak_teacher_mask,
             "weak_teacher_logits": weak_teacher_logits,
             "weak_teacher_logit_mask": weak_teacher_logit_mask,
             "text_embedding": text_embedding,
             "text_valid": text_valid,
-            "meta": record.get("meta", {}),
+            "meta": meta,
         }
 
 
@@ -357,6 +421,7 @@ def ov_avel_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
         "id": [item["id"] for item in batch],
         "query": [item["query"] for item in batch],
         "domain": [item["domain"] for item in batch],
+        "split_type": [item["split_type"] for item in batch],
         "meta": [item["meta"] for item in batch],
     }
 
@@ -372,6 +437,7 @@ def ov_avel_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
         "strong_teacher_feature_mask",
         "strong_teacher_features",
         "weak_teacher_features",
+        "weak_teacher_feature_mask",
         "weak_teacher_mask",
         "weak_teacher_logits",
         "weak_teacher_logit_mask",
@@ -382,6 +448,13 @@ def ov_avel_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
     collated["text_embedding"] = torch.stack([item["text_embedding"] for item in batch], dim=0)
     collated["text_valid"] = torch.stack([item["text_valid"] for item in batch], dim=0)
     return collated
+
+
+def seed_worker(worker_id: int) -> None:
+    del worker_id
+    worker_seed = torch.initial_seed() % (2**32)
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, DataLoader, DataLoader | None]:
@@ -396,12 +469,18 @@ def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, Dat
         "strong_teacher_logit_dim": int(data_cfg.get("strong_teacher_logit_dim", 1)),
         "weak_teacher_logit_dim": int(data_cfg.get("weak_teacher_logit_dim", 1)),
         "text_dim": int(data_cfg.get("text_dim", 512)),
+        "path_root": str(data_cfg.get("path_root", ".")),
+        "required_artifacts": data_cfg.get("required_artifacts", []),
         "teacher_path_overrides": data_cfg.get("teacher_path_overrides", {}),
     }
     batch_size = int(data_cfg.get("batch_size", 4))
     num_workers = int(data_cfg.get("num_workers", 4))
     pin_memory = bool(data_cfg.get("pin_memory", True))
     persistent_workers = num_workers > 0
+    seed = int(config.get("seed", 42))
+    train_generator = torch.Generator().manual_seed(seed)
+    val_generator = torch.Generator().manual_seed(seed + 1)
+    test_generator = torch.Generator().manual_seed(seed + 2)
 
     train_dataset = QueryConditionedOVAvelDataset(
         manifest_path=data_cfg["train_manifest"],
@@ -431,6 +510,8 @@ def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, Dat
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
         collate_fn=ov_avel_collate_fn,
+        worker_init_fn=seed_worker,
+        generator=train_generator,
     )
     val_loader = DataLoader(
         val_dataset,
@@ -440,6 +521,8 @@ def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, Dat
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
         collate_fn=ov_avel_collate_fn,
+        worker_init_fn=seed_worker,
+        generator=val_generator,
     )
 
     test_loader = None
@@ -452,6 +535,8 @@ def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, Dat
             pin_memory=pin_memory,
             persistent_workers=persistent_workers,
             collate_fn=ov_avel_collate_fn,
+            worker_init_fn=seed_worker,
+            generator=test_generator,
         )
 
     return train_loader, val_loader, test_loader
