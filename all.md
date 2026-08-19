@@ -277,3 +277,455 @@
 268. 再次把权威日志同步进仓库并执行最终 index 审查：工作树相对 index 无未暂存差异，cached diff check 退出 0，51 个文件全部暂存，禁入路径/扩展名计数 0，仓库内外 `all.md` SHA256 同为 `453448D3...0F927`；提交前分支相对 main 的 commit 数仍为 0。最终 stat 为 51 files changed、7,799 insertions、321 deletions。
 269. 只读核验 Git 提交与远端条件：本分支提交身份为 `Research Artifact <research-artifact@users.noreply.github.com>`；禁用交互提示后 `git ls-remote --heads origin refs/heads/repro/r0-paper-faithfulness` 退出 0 且无输出，确认目标远端分支尚不存在，不需要覆盖、rebase 或 force push。
 270. 最终提交动作已具备全部前置证据：代码与 5090 聚合 hash 一致、最后门禁全为 0、index 范围/格式/敏感信息检查通过、目标远端分支不存在。现在把包含本条的权威日志最后一次同步并暂存，复核 cached diff 后创建任务书指定的唯一提交 `repro: harden paper-faithful OV-OrthKD baseline`；提交后不再 amend 以避免递归记录 commit 自身。
+271. 单一提交创建成功，退出码 0：commit `d8e681b2d3597f0f089ee8f0b42ef12466ffb599`，message 为 `repro: harden paper-faithful OV-OrthKD baseline`；相对 main 恰好领先 1 个 commit，提交统计为 51 files changed、7,802 insertions、321 deletions。提交后仓库 `git status --short` 无输出，工作树干净；根目录提交版 `all.md` 截止第 270 条，本条及后续 push 结果只存在外层权威日志，避免通过 amend 产生无法稳定记录自身 hash 的递归。
+272. 执行 `git push -u origin repro/r0-paper-faithfulness` 成功，退出码 0；GitHub 新建并跟踪 `origin/repro/r0-paper-faithfulness`。随后 `git ls-remote` 得到远端 SHA `d8e681b2d3597f0f089ee8f0b42ef12466ffb599`，与本地 HEAD 逐字一致；`git status --short --branch` 仅显示本地分支与 upstream 同步、无脏文件。未创建未经用户要求的 PR，GitHub 给出的可选 PR 地址为 `https://github.com/rayyyyyyyyb/mm1/pull/new/repro/r0-paper-faithfulness`。
+273. 将八项执行计划全部标记 completed：5090 环境/基线、双路径模型与损失、严格数据与确定性、训练/证据/评估、export/audit/teacher/CUDA 工具、配置/文档、完整 R0 验证/报告、最终自审/单提交/GitHub push 均已取得对应证据。R0 本轮结束；六项归档事实仍按设计阻断真实 canonical full run。
+274. 收到 R1 数据与教师就绪任务：完整阅读 `MM26_OVORTHKD_R1_DATA_TEACHER_READINESS_TASK.md`，只以 R0 提交 `d8e681b2d3597f0f089ee8f0b42ef12466ffb599` 为起点创建 `repro/r1-data-teacher-readiness`；按任务书顺序修复真实数据风险、锁定/审计官方数据、恢复六项归档事实、锁定三类教师、真实 teacher smoke/全量导出/full audit、最多一次真实一步 forward/backward preflight；禁止正式学生训练、扩刊机制和解除 canonical guard；最终只能 `READY_FOR_R2_REVIEW` 或 `BLOCKED_BEFORE_R2`，并生成报告、单提交、GitHub 上传及完整返回材料。
+275. 按新一轮规则重新完整读取 `using-superpowers`、`brainstorming`、`using-git-worktrees` 与 `writing-plans`。本任务跨数据、归档证据、教师来源/权重、全量缓存和安全门禁，分类为 architectural；任务书已经给出明确顺序、禁止项、唯一基线和“直接开始、不再询问”的预先批准，因此不重复设置人工审批停点。先只读审计任务书/仓库/远端资源，形成 R1 设计与逐步计划，再进入 TDD 实施。
+276. 只读核验 R1 起点：任务书位于外层扩刊目录，55,057 字节、1,771 行；根工作树仍在 `main`/`dca9f052...`，只把整个 `扩刊/` 视为未跟踪；现有 R0 linked worktree 在 `扩刊/OV-OrthKD-R0`，分支 HEAD 精确为 `d8e681b2...fb599`。Git 对象类型为 commit，其唯一父提交为 `dca9f052...`、message 与 R0 交付一致。
+277. 为避免首次 Raw 输出因上下文限制中段截断，随后按 1–450、451–900、901–1350、1351–1771 四个连续区间重新完整读取 R1 任务书，无缺口。冻结执行顺序 R1-0 至 R1-15；关键停止门为官方计数/ID/时间与 frame grouping、六项历史事实、InternVideo 类冲突、三类 checkpoint/variant/hash 以及 teacher smoke/full audit。任一 P0 gate 未满足时，后续真实教师全量导出、真实 preflight 和 R2 就绪必须停止，最终状态写 `BLOCKED_BEFORE_R2`，不能用相近权重或推断绕过。
+278. 创建 R1 分支前按任务书检查冲突：本地 `refs/heads/repro/r1-data-teacher-readiness` 不存在（show-ref 退出 128），远端同名分支查询退出 0 且无结果，目标目录 `扩刊/OV-OrthKD-R1` 不存在；远端 R0 分支仍指向精确基线 `d8e681b2...fb599`。现有 `.git/info/exclude` 只忽略 R0 worktree，下一步增加 R1 本地忽略规则后，从精确 commit 创建 linked worktree，不 fetch/reset/改写 R0。
+279. 在主仓库本机专用 `.git/info/exclude` 增加 `/扩刊/OV-OrthKD-R1/`，只防止嵌套 linked worktree 被 main 误认为可提交内容；没有修改版本化 `.gitignore`，也没有隐藏外层 `all.md` 或 R1 任务书。
+280. 从唯一基线 `d8e681b2d3597f0f089ee8f0b42ef12466ffb599` 创建 linked worktree `扩刊/OV-OrthKD-R1` 与新分支 `repro/r1-data-teacher-readiness`，退出码 0。新 worktree HEAD 精确匹配基线、分支名正确、`git status --short` 无输出；根工作树仍在 main，R0 worktree/分支未改动。
+281. 探索 R1 基线仓库：不存在额外 `AGENTS.md/CLAUDE.md/GEMINI.md` 指令；最近历史只有 R0 单提交和初始 main。R1 所需 train/preflight/data/teacher/export/audit/manifest 文件均存在，但 locks、fingerprint/atomic utils、官方 metadata/layout/archival 工具和五个 R1 测试文件尚不存在。`.gitignore` 已覆盖 data、weights、outputs、checkpoint、cache 和环境，但允许 `data/downloads/manual_sources/*.txt`；后续外部大资源只能落远端/ignored 路径，锁与小型 receipt/report 才纳入 Git。
+
+## 282. 5090 首次 R1 只读探测失败（2026-08-20）
+
+- 尝试通过 `ssh LXT@100.119.122.101` 只读检查远端 `E:\OV-OrthKD-R1` 是否存在，以及 R0 已验证的 Python/Git 路径。
+- 结果：SSH 在连接 `100.119.122.101:22` 时超时，退出码 1；远端命令未执行，未产生任何远端更改。
+
+## 283. 启用系统化网络排障流程（2026-08-20）
+
+- 完整阅读 `superpowers:systematic-debugging` 技能说明。
+- 决定先收集本机 Tailscale、路由、ICMP 与 TCP/22 的只读证据，再判断是临时网络、Tailscale 不在线还是远端 SSH 服务不可达；排障期间继续推进不依赖 5090 的本地工作。
+
+## 284. 5090 网络连通性证据（2026-08-20）
+
+- `tailscale status` 显示目标 `desktop-lpn6mt3 / 100.119.122.101` active，直连 `59.173.203.82:62884`。
+- `tailscale ping --timeout=5s 100.119.122.101` 成功，往返 36 ms。
+- Windows ICMP 两包均成功，0% 丢包，平均 41 ms。
+- `Test-NetConnection 100.119.122.101 -Port 22` 返回 `TcpTestSucceeded: True`，接口为 Tailscale。
+- 本机 Tailscale 同时报告 DNS 配置文件被占用的健康告警；该告警未影响目标 IP 和 TCP/22 连通性。
+- 尝试使用本机 PowerShell 不支持的 `Get-NetRoute -RemoteIPAddress` 参数，命令报告 `ParameterNotFound`；这是本地诊断命令兼容性错误，没有更改任何状态，也不影响已有直连证据。
+
+## 285. SSH 重试命令的本地引号错误（2026-08-20）
+
+- 首次重试 SSH 时，嵌套 PowerShell 命令在本机解析阶段因反引号和双引号边界错误而失败，退出码 1。
+- SSH 客户端没有向远端执行目标命令，5090 未发生任何更改；随后改为用单引号保存完整远端命令再传参。
+
+## 286. 5090 SSH 恢复并完成只读核验（2026-08-20）
+
+- 使用 `BatchMode=yes`、15 秒连接超时重新连接成功，退出码 0。
+- 远端主机：`DESKTOP-LPN6MT3`。
+- GPU：`NVIDIA GeForce RTX 5090`，驱动 `610.88`，显存 `32607 MiB`。
+- `E:\OV-OrthKD-R1` 尚不存在；`E:\OV-OrthKD-R0\env\.venv\Scripts\python.exe` 与 `E:\OV-OrthKD-R0\env\Git\cmd\git.exe` 均存在。
+- 结合 Tailscale、ICMP、TCP/22 和本次 SSH 证据，判定先前超时为瞬时故障，当前无需修改任何网络或 SSH 配置。
+
+## 287. 在 5090 建立 R1 精确基线副本（2026-08-20）
+
+- 从本地分支 `repro/r1-data-teacher-readiness` 创建只包含精确基线的 Git bundle，并上传至 `E:\OV-OrthKD-R1\installers\r1-baseline.bundle`。
+- 在远端新建 `E:\OV-OrthKD-R1\repo`、`outputs`、`installers`，使用 R0 已验证的 portable Git 克隆 bundle。
+- 将远端 repo 的 `origin` 设为 `https://github.com/rayyyyyyyyb/mm1.git`。
+- 远端核验：HEAD `d8e681b2d3597f0f089ee8f0b42ef12466ffb599`；分支 `repro/r1-data-teacher-readiness`；`git status --short` 无输出（clean）。
+- 本地临时 bundle 位于系统临时目录；远端保留一份安装/复现输入，未删除任何文件。
+
+## 288. R1-0 基线首轮测试发现远端会话 PATH 问题（2026-08-20）
+
+- 在远端精确基线使用 R0 已验证 Python 环境执行：`pip check` 退出 0；`compileall` 退出 0；CUDA runtime 核验退出 0。
+- CUDA 证据：PyTorch `2.10.0+cu128`、CUDA `12.8`、RTX 5090、计算能力 12.0、矩阵运算 finite。
+- 全量 pytest 首轮退出 1：`57 passed, 3 failed`。
+- 三项失败均发生在 `tests/test_teacher_identity.py` 的测试夹具执行裸 `git init` 时，错误为 `FileNotFoundError [WinError 2]`；没有进入产品代码断言。
+- 根因证据：portable Git 文件已存在，但非交互 SSH 会话的 `PATH` 未包含 `E:\OV-OrthKD-R0\env\Git\cmd`。这是环境调用问题，不修改仓库代码；下一步仅在测试会话中补 PATH 后重跑完整套件。
+- 本轮产物写入 `E:\OV-OrthKD-R1\outputs\r1_baseline`。
+
+## 289. R1-0 精确基线复验通过（2026-08-20）
+
+- 在非交互 SSH 会话 PATH 前置 `E:\OV-OrthKD-R0\env\Git\cmd`，核验解析到 `git.exe`。
+- 重跑全部测试，退出码 0：`60 passed in 14.79s`。
+- R1-0 最终基线退出码：pip check 0；compileall 0；pytest 0；CUDA runtime 0。
+- 精确基线仍为 `d8e681b2d3597f0f089ee8f0b42ef12466ffb599`，没有仓库代码修改。
+
+## 290. 进入 R1-1 前读取执行与 TDD 约束（2026-08-20）
+
+- 完整阅读 `superpowers:writing-plans`、`superpowers:executing-plans`、`superpowers:test-driven-development`。
+- 确认必须先写失败测试并观察预期失败，再写最小实现；计划必须保存至 `docs/superpowers/plans/` 并逐项执行。
+- 搜索仓库级 testing/contributing/AGENTS 指南没有匹配，`rg` 因无匹配退出 1；不代表前述技能读取失败。
+- 用户已明确要求直接开始且不再询问，因此计划完成后采用 inline execution，不暂停请求执行模式选择；开发者规则也禁止主动派生子代理。
+
+## 291. 阅读好测试规则并映射 R1 代码接口（2026-08-20）
+
+- 完整阅读 TDD 配套 `writing-good-tests.md`：每个测试必须命名可捕获的生产缺陷、独立推导期望值并运行真实行为，避免只断言 mock 或源文本。
+- 映射了数据集、训练入口、教师公共层/导出管线、现有测试与配置符号。
+- 已确认的 R0 后置风险落点包括：`QueryConditionedOVAvelDataset` 的时序选择、数组加载/广播、路径覆盖与图像句柄；`train_ov_orthkd.py` 的 eval-only scheduler、checkpoint/RNG/loader generator/fingerprint；`src/teachers/pipeline.py` 的发布原子性与收据。
+- 一次文件尺寸命令误写不存在的 `src/pipeline`，另一次误写不存在的 `configs/ov_orthkd_reproduction.yaml`，均只是只读路径错误；正确目录为 `src/teachers/pipeline.py`，正确 canonical 配置为 `configs/ov_orthkd_mm26_repro.yaml`。
+- 在 R1 工作树相对路径查找任务书失败，因为任务书权威副本位于外层 `扩刊/MM26_OVORTHKD_R1_DATA_TEACHER_READINESS_TASK.md`；此前已从该正确位置完整读取 1,771 行。
+
+## 292. 固化 R1 设计与实施计划（2026-08-20）
+
+- 新增 `docs/superpowers/specs/2026-08-20-r1-data-teacher-readiness-design.md`，定义 fail-closed 数据契约、精确恢复/fingerprint、锁文件证据链、原子 teacher cache 和 P0 gate 执行边界。
+- 新增 `docs/superpowers/plans/2026-08-20-r1-data-teacher-readiness.md`，逐项覆盖 R1-0 至 R1-15、五个要求测试文件、三类锁、真实执行停止条件与单一最终提交。
+- 自检计划与任务书要求一致；没有需要猜测的参数，也没有阻止开始 R1-1 的设计缺口。
+- 因用户要求“直接开始、不再询问”，按 `superpowers:executing-plans` 采用 inline execution；不派生子代理。
+
+## 293. R1 数据完整性测试 RED 阶段（2026-08-20）
+
+- 新增 `tests/test_r1_dataset_integrity.py`，覆盖 canonical overflow、显式 uniform 标记、singleton 禁播、合法 feature/logit shape、finite、二值标签、pickle 禁用、图像句柄、层级保留 remap、路径穿越和 close/open 映射。
+- 在 5090 精确基线同步测试文件并运行，退出码 1：`14 failed, 5 passed`。
+- 14 项失败都对应待修生产缺陷：默认仍隐式抽样、缺少 policy 参数、feature/logit singleton 被广播、NaN/Inf 未拒绝、非二值/非 finite 标签未拒绝、override 仍把映射当字符串/basename、close/open 未规范化。
+- 已直接通过的 5 项是合法 `[T,D]` 与两种 logit shape、空标签、object numpy 禁 pickle、真实图像读取后可脱离文件；这些确认了现有安全行为，没有改写期望迁就实现。
+
+## 294. R1 数据完整性 GREEN 首轮与旧夹具问题（2026-08-20）
+
+- 实现 canonical `error`/显式 `uniform` 时序策略、uniform 非 canonical 标记、严格 teacher shape、finite/binary 校验、`allow_pickle=False`、PIL 上下文 copy、安全 source-root→target-root remap、close/open 映射。
+- canonical 配置新增 `temporal_overflow_policy: error`，并按任务书把 `loss.confidence_weighting` 改为 `false`；`reproduction.full_run_blocked` 未改。
+- 5090 编译退出 0；新 R1 数据测试全部通过。
+- 联跑旧严格数据测试时出现 1 项失败：原“seen/unseen 透传”夹具为 2 段标签配置 `max_segments=1`，过去依赖隐式截断。该测试不以 overflow 为目标，因此将容量修正为 2；新 overflow 拒绝测试保持严格不变。
+
+## 295. R1 数据完整性测试全绿（2026-08-20）
+
+- 将旧 seen/unseen 测试夹具的 `max_segments` 从 1 修正为与其两段标签一致的 2，未修改任何断言，也未弱化 canonical overflow 测试。
+- 5090 复验退出码 0：`25 passed in 4.96s`（19 项 R1 数据完整性测试 + 6 项既有严格数据测试）。
+- R1-1 数据层 RED/GREEN 循环完成，进入 checkpoint/resume 与 eval-only 的 RED 阶段。
+
+## 296. R1 checkpoint/resume 测试首个 RED（2026-08-20）
+
+- 新增 `tests/test_r1_checkpoint_resume.py`，定义 manifest-aware fingerprint、RNG/loader generator round-trip、epoch 边界 resumed vs uninterrupted、fingerprint fail-closed/显式 marker、eval-only 不建 scheduler 的行为测试。
+- 5090 首次运行在测试收集期退出 1：`ModuleNotFoundError: src.utils`，准确证明任务书要求的 fingerprint/RNG 工具尚不存在。
+- 按 TDD 分层推进：先实现最小 fingerprint/RNG 模块并跑前两项，再观察 checkpoint 和 eval-only 的后续 RED。
+
+## 297. Fingerprint/RNG GREEN 与 checkpoint/eval 第二层 RED（2026-08-20）
+
+- 新增 `src/utils/reproduction_fingerprint.py`：稳定 JSON/SHA256、manifest/lock 文件组件、Python/NumPy/torch CPU/CUDA/loader generator 状态捕获与恢复。
+- 5090 定向测试退出 0：fingerprint 对 output-only 路径稳定且会随 manifest bytes 改变；RNG 与 loader generator round-trip 精确一致（2 passed）。
+- 随后运行其余恢复测试退出 1：4 failed。三项因 `checkpoint_payload` 尚不接受 fingerprint/loader generators；eval-only 仍在分支前访问训练 loader 长度并构建 scheduler。均为预期生产缺口。
+
+## 298. Checkpoint/fingerprint 恢复 GREEN 首轮（2026-08-20）
+
+- `checkpoint_payload` 现保存 reproduction fingerprint 与全套 RNG/loader generator state；`maybe_resume` 在加载任何模型状态前校验 fingerprint，默认拒绝不匹配，显式 override 必须写 noncanonical marker，并返回 epoch/best/global_step。
+- 主训练入口在 eval-only 下于 optimizer/scheduler/scaler 构造前返回；训练恢复使用同一 fingerprint 和 loader generator 映射，best/last checkpoint 均保存新契约。
+- 5090 运行恢复测试得到 5 passed、1 failed。剩余失败来自测试替身使用裸 `object()`，缺少真实 DataLoader 固有的 `.generator` 属性；失败发生在 fixture 接口而非 scheduler 调用。
+- 将测试替身补为 `SimpleNamespace(generator=None)` 以镜像所需真实结构，不改变生产代码或断言目标。
+
+## 299. R1 checkpoint/resume 与 eval-only 全绿（2026-08-20）
+
+- 修正测试替身后在 5090 联跑 `tests/test_r1_checkpoint_resume.py` 与既有 `tests/test_training_reproducibility.py`，退出码 0：`23 passed in 6.51s`。
+- epoch-boundary 恢复已实测与 uninterrupted run 的 batch ID、逐步 loss、最终参数完全一致；fingerprint 不匹配默认 fail closed；eval-only 行为测试确认不构造 scheduler。
+- 下一步按计划进入 atomic artifact/export 的 RED/GREEN，随后统一更新 preflight 对新恢复接口的调用。
+
+## 300. R1 atomic export 首个 RED（2026-08-20）
+
+- 新增 `tests/test_r1_atomic_export.py`，覆盖中断保留旧目标、shape/finite 发布前校验、失败不替换 final manifest、成功 receipts/root hash、resume 锁失效和 sanitize 后路径碰撞。
+- 5090 首次收集退出 1：`ModuleNotFoundError: src.utils.atomic_artifacts`，准确证明原子工具模块缺失。
+- 按 TDD 先实现最小原子写/重读/根哈希原语并验证低层测试，再扩展教师导出管线。
+
+## 301. 原子写低层 GREEN 与导出管线第二层 RED（2026-08-20）
+
+- 新增 `src/utils/atomic_artifacts.py`：同目录 UUID 临时文件、flush/fsync、`allow_pickle=False` 重读、shape/finite 校验、原子 replace、失败清理和排序 `relative_path|bytes|sha256` 根哈希。
+- 5090 低层原子测试退出 0：`3 passed, 4 deselected`；模拟 `os.replace` 中断时旧目标逐字节不变且临时文件清理。
+- 运行剩余导出测试退出 1：4 failed，均因 `export_manifest_file` 尚无 `receipt_jsonl` 等新安全参数，准确进入管线 RED。
+
+## 302. R1 atomic export 管线测试全绿（2026-08-20）
+
+- 教师导出现在预扫描 sanitize 后路径碰撞；artifact 逐个原子写并重读；receipt 绑定 split、source manifest SHA256、teacher lock SHA256、shape/bytes/SHA256；resume 逐项 fail-closed 验证。
+- 任一记录异常会原子写 `export_errors.jsonl`、清理 `.partial` 并保留旧 final；全部成功后才以 `.partial` 原子替换 final。
+- 5090 编译与 `tests/test_r1_atomic_export.py` 均退出 0：`7 passed in 5.04s`。
+- 下一步为同一契约增加 CLI 边界测试与参数接线。
+
+## 303. Export CLI 测试发现可选依赖顶层导入问题（2026-08-20）
+
+- 新增 CLI 行为测试后，测试收集在导入 `scripts/export_teacher_artifacts.py` 时退出 1，错误为 `ModuleNotFoundError: librosa`。
+- 根因：脚本顶层无条件导入 BEATs/CLAP/InternVideo 包装器，使 `--help`、mock backend 和参数测试也要求安装真实教师依赖。
+- 这是实际环境边界问题；先将真实包装器改为仅在相应 backend 被选中时惰性导入，再继续验证 CLI 新参数 RED。
+
+## 304. Export CLI 精确 RED（2026-08-20）
+
+- 将三类真实教师包装器改为 backend 分支内惰性导入后，脚本无需 `librosa` 即可完成参数解析。
+- 重跑 CLI 测试退出 1，现准确报告 `--receipt-jsonl`、`--error-jsonl`、`--teacher-lock`、`--split`、`--resume` 为未识别参数。
+- 下一步仅增加这些参数、teacher-lock 文件 SHA256 计算与管线透传。
+
+## 305. Export CLI 与 atomic contract 全绿（2026-08-20）
+
+- 新增 receipt/error/teacher-lock/split/resume CLI 参数；使用 receipt 时必须提供存在的 teacher lock 文件并计算其 SHA256 后传入导出管线。
+- `--help`/参数解析/mock backend 不再依赖真实教师包。
+- 5090 重跑 `tests/test_r1_atomic_export.py`，退出码 0：`8 passed in 4.78s`。
+- 下一步先用既有端到端测试观察 preflight 对旧 checkpoint API 的预期失败，再统一升级。
+
+## 306. Preflight 旧 checkpoint 契约 RED（2026-08-20）
+
+- 运行既有 `test_export_and_preflight_pipeline`，退出码 1。
+- 导出与一步训练正常完成，失败准确发生在恢复阶段：preflight 手工保存的旧 checkpoint 缺少必需 `rng_state`，`maybe_resume` fail closed。
+- 下一步让 preflight 复用 `checkpoint_payload`、reproduction fingerprint 与三返回值恢复接口，并在摘要中明确一步 optimizer 与非论文结果标记。
+
+## 307. Preflight 新恢复契约 GREEN（2026-08-20）
+
+- preflight 已改用统一 `checkpoint_payload`、manifest-aware fingerprint、loader generator 状态和 `maybe_resume` 三返回值。
+- 5090 重跑既有端到端 export+preflight 测试退出码 0：`1 passed in 7.60s`。
+- 为避免三个非结果摘要字段缺少行为保护，先暂时移除其实现、添加精确断言并观察 RED，再恢复最小实现。
+
+## 308. Preflight 非结果标记 RED（2026-08-20）
+
+- 在既有端到端测试新增 `preflight_only is True`、`paper_result is False`、`optimizer_steps == 1` 三项断言。
+- 暂时移除尚未受保护的字段后，5090 测试退出 1，准确以 `KeyError: preflight_only` 失败。
+- 现恢复三个最小摘要字段并联跑 preflight/export、恢复和 atomic 测试。
+
+## 309. R1-1 preflight/恢复/atomic 交叉回归通过（2026-08-20）
+
+- 恢复 `preflight_only=true`、`paper_result=false`、`optimizer_steps=1` 后，5090 联跑三组相关模块退出码 0：`17 passed in 7.84s`。
+- preflight checkpoint 现在与正式训练共享 fingerprint/RNG/loader-generator 契约；mock/帮助路径不依赖真实教师包。
+- R1-1 完成，进入 R1-2 全量回归与 mock preflight；在全部通过前不开始官方数据下载。
+
+## 310. R1-2 全量代码回归通过（2026-08-20）
+
+- 在 5090 当前 R1 代码运行 `python -m pip check`，退出 0：No broken requirements found。
+- `python -m compileall -q src scripts tests` 退出 0。
+- `python -m pytest -q` 退出 0：`93 passed in 15.34s`。
+- `python scripts/smoke_test.py` 退出 0：`OV-OrthKD smoke test passed.`
+- 输出保存在 `E:\OV-OrthKD-R1\outputs\r1_2_regression`；下一步执行 mock fixture/preflight，其不属于真实数据 preflight 配额。
+
+## 311. R1-2 mock fixture 与 5090 preflight 通过（2026-08-20）
+
+- `scripts/create_mm26_smoke_fixture.py --root .` 退出 0：train/val/test 各 4 条、每条 2 segment；每个 split 生成 16 个 mock artifact，0 copied/unprocessed。
+- `scripts/preflight_ov_orthkd.py --config configs/ov_orthkd_mm26_smoke.yaml ...` 退出 0。
+- 摘要明确：`preflight_only=true`、`paper_result=false`、`optimizer_steps=1`、`mock_only=true`；设备 cuda；loss `1.6225866079330444` 且各项 finite；恢复 epoch=1/global_step=1；峰值显存 `1345.25927734375 MiB`。
+- 本次是 mock-only 管线验证，不计入任务书“最多一次真实数据 preflight”；真实数据 preflight 调用计数仍为 0。
+- R1-2 全部通过，允许进入 R1-3 官方元数据阶段。
+
+## 312. 5090 克隆官方 OV-AVEL 首次网络失败（2026-08-20）
+
+- 在远端尝试 `git clone --depth 1 https://github.com/jasongief/OV-AVEL.git external/OV-AVEL`。
+- Git 报告 `Recv failure: Connection was reset`，脚本退出 1；未取得 upstream commit，后续 hash/结构探测未执行。
+- 不把网络失败解释为数据阻塞；按系统化排障检查 GitHub/443，并改由本机从同一官方 URL 克隆后传输精确快照。
+
+## 313. GitHub 连通性诊断与官方 HEAD 预核验（2026-08-20）
+
+- 本机 `git ls-remote https://github.com/jasongief/OV-AVEL.git HEAD` 退出 0，官方 HEAD 为 `b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6`。
+- 本机与 5090 对 `github.com:443` 的 `Test-NetConnection` 均成功。
+- 远端失败 clone 没有留下 `external/OV-AVEL` 或 `.git` 半成品目录。
+- 结论：此前是瞬时 HTTPS 数据流重置；采用本机从相同官方 URL 克隆并传输快照，不更换来源或镜像。
+
+## 314. 官方 OV-AVEL 元数据快照锁定（2026-08-20）
+
+- 本机从官方 URL `https://github.com/jasongief/OV-AVEL.git` 浅克隆成功。
+- 精确 commit：`b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6`；`git status --porcelain` 为空（clean）。
+- `ovave_dataset_meta.csv`：989,749 bytes；SHA256 `f916b2a7fbaed53c95c6124efe3f11189766a2516805406639578c9a5fd4fb9d`；标准 CSV 解析 24,800 行，字段 `split, cls_name, cls_type, vid_name`。
+- `released_ovavel_dataset_anno.json`：2,999,439 bytes；SHA256 `4a1b170095c0427b1ca3e6f178ced2b0dd1efbf753959f03905fe33c6f01f009`；顶层 dict 24,800 key，记录含 `category` 与字符串化 `label`。
+- 两文件按原始 bytes 复制到被 Git 忽略的 `data/raw/ov_avebench/`；未改写官方内容。
+
+## 315. 官方元数据独立精确统计（2026-08-20）
+
+- 使用独立一次性 Python CSV/JSON 解析（不复用待实现审计器）得到：split `train=13182, val=5798, test=5820`；group `close=16497, open=8303`。
+- split/group：train-close 13182；val-close 1651；val-open 4147；test-close 1664；test-open 4156；train-open 0。
+- 类别：总 67；close 46；open 21。
+- 标签长度直方图 `{10: 24800}`；值计数 `{0: 94597, 1: 153403}`；positive segment 直方图已完整采集（0→6019 至 10→10782）。
+- CSV 重复 ID=0、CSV-only=0、annotation-only=0、category mismatch=0。
+- 这些手工统计将作为审计测试和真实审计的独立期望值。
+
+## 316. 官方元数据审计器 RED（2026-08-20）
+
+- 新增 `tests/test_r1_official_metadata.py`：一个完整 24,800 条、67 类、精确 split/group 分布的临时 fixture，以及重复 ID/双射、open-train、category mismatch、非二值标签反例。
+- 测试不访问互联网、不依赖当前目录，也不读取真实官方大文件。
+- 5090 收集退出 1：`ModuleNotFoundError: scripts.audit_official_ov_avebench_metadata`，准确证明审计器尚未实现。
+
+## 317. 官方元数据审计器测试全绿（2026-08-20）
+
+- 新增 `scripts/audit_official_ov_avebench_metadata.py`，使用标准 CSV 与安全 `ast.literal_eval`，聚合验证 schema、split/group/class、全局 ID、annotation 双射、category、二值标签及长度/positive 直方图。
+- CLI 原子写 JSON/Markdown；`--fail-on-error` 在输出证据后非零退出。
+- 5090 测试退出码 0：`3 passed in 5.83s`，其中精确 24,800 条 fixture 的全部官方计数通过，重复/孤儿/非二值/open-train 反例均被捕获。
+
+## 318. 真实官方元数据审计首次启动失败（2026-08-20）
+
+- 执行真实 `--fail-on-error` 审计退出 1，目标 JSON 未生成；随后的摘要读取因此又报告 FileNotFoundError。
+- 该结果说明脚本启动/导入失败，尚未产生任何数据审计结论；stdout/stderr 已保存在 `reports/data/official_metadata_audit.stdout.txt`，下一步先读取根因。
+
+## 319. 定位官方审计脚本直接执行导入根因（2026-08-20）
+
+- 保存输出显示 `ModuleNotFoundError: No module named 'src'`。
+- 原因：`python scripts/audit_official_ov_avebench_metadata.py` 将 `scripts/` 作为模块根，而新脚本未像仓库其他 CLI 一样先插入项目根。
+- 真实任务书命令已提供 RED；仅补 `PROJECT_ROOT`/`sys.path` 启动逻辑，不修改审计规则。
+
+## 320. 官方审计脚本第二层轻量环境导入失败（2026-08-20）
+
+- 补项目根后再次运行仍退出 1，输出显示导入 `src.utils` 会先执行 `src/__init__.py`，进而导入模型并因本机无 `timm` 失败。
+- 元数据审计只需标准库，不应耦合 PyTorch/timm。改为脚本内标准库 SHA256 和同目录临时文件原子文本写；删除 `src` 包依赖，计数逻辑不变。
+
+## 321. 真实官方元数据审计通过（2026-08-20）
+
+- 自包含标准库启动边界后，真实任务书命令 `--fail-on-error` 退出码 0。
+- `reports/data/official_metadata_audit.json` 状态 `passed`、errors=0；records/split/group/class/split-group 全部精确匹配。
+- 标签长度 `{10: 24800}`；标签值 `{0: 94597, 1: 153403}`；positive 直方图与独立统计逐项一致。
+- duplicate IDs=0、CSV-only=0、annotation-only=0；同时生成 `official_metadata_audit.md` 与 stdout 证据。
+
+## 322. 官方浅克隆 bundle 远端重建失败（2026-08-20）
+
+- 本机从浅克隆创建的 bundle 自检显示包含 main/HEAD，但 5090 克隆时报缺少父对象 `2c525d71a7d8a9840c2522041ebc34a291d44cab`，`fatal: remote did not send all necessary objects`。
+- 两份官方元数据 bytes 与最新审计脚本已先成功传到 5090；因 Git clone 随后失败，远端 HEAD/clean/hash/audit 尚未执行。
+- 外层 PowerShell 最后打印本地 bundle 路径导致整体显示退出 0，但以嵌套远端 clone 错误为真实失败判据。
+- 纠正措施：本机 `fetch --unshallow` 取得完整历史后重做 bundle；对任何失败 clone 目录先只读核验，再移入隔离目录保留，不覆盖。
+
+## 323. 官方仓库完整历史与远端元数据复核（2026-08-20）
+
+- 本机官方 repo 从 shallow=true 成功 `fetch --unshallow` 为 shallow=false，共 6 个 commit。
+- 5090 只读检查确认失败 clone 没有留下目标目录，无需删除或隔离。
+- 5090 已收到的 CSV/annotation SHA256 分别为 `f916b2...fb9d`、`4a1b17...f009`，与本机锁定值完全一致。
+
+## 324. R1-3 官方仓库与远端审计闭环通过（2026-08-20）
+
+- 从 unshallow 后完整 6-commit 仓库创建并验证 full-history bundle，上传 5090 后克隆成功。
+- 5090 官方 repo：HEAD `b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6`；clean=true；commit count=6；origin 恢复为官方 GitHub URL。
+- 5090 对同一原始元数据再次运行真实 `--fail-on-error`：exit 0、status=passed、errors=0。
+- R1-3 全部数据门禁通过，进入 R1-4 官方预处理包来源提取与下载。
+
+## 325. 提取官方预处理与 raw-video 下载来源（2026-08-20）
+
+- 锁定 README 第 21 行给出预处理包官方 SharePoint URL：`https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/Efm9NKaGQFBAsOC2ZOMZRvcB26TKXJ84H4VW6g8BR5SukQ?e=OPgMOt`。
+- 同行给出 raw videos 官方 SharePoint URL：`https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/EcVHOp2zOyVHvi1Au-i1zFQBf5wQNi-Yff9Aso_SJ4MV8Q?e=OeRlQh`。
+- 当前项目 README 仅指向 manual source 指南，没有另一份预处理 URL；因此来源以 pinned official README 为唯一依据。
+- 完整阅读 browser control 技能，因为 SharePoint 可能需要 UI 交互。
+
+## 326. 浏览器控制不可用（2026-08-20）
+
+- 按技能选择目标 SharePoint URL 时返回 `No browser is available`。
+- 阅读 bootstrap troubleshooting 后复用同一 browser runtime，执行一次 `agent.browsers.list()`，结果为空列表。
+- 当前没有可控制的 in-app/扩展浏览器；不尝试访问 cookie/profile，不切换第三方来源。继续以官方 URL 做公开 HTTP/SharePoint 下载探测。
+
+## 327. 官方 SharePoint 公开下载首次探测（2026-08-20）
+
+- 在 5090 对原始链接、`&download=1`、仅 `?download=1` 三种官方 URL 变体执行最多 1 MiB、最多 60 秒的重定向探测。
+- 三种均经过 1 次重定向后返回 HTTP 403、`text/plain; charset=utf-8`、13 bytes；curl 进程本身退出 0。
+- curl 版本不支持 `content_length_download` write-out 变量并打印 warning；不影响 HTTP 403/13-byte 判据。
+- 继续用标准 Chrome User-Agent、无 Range 在本机和 5090 做最后一次限流探测，以排除 HEAD/Range/默认 UA 的影响。
+
+## 328. Chrome UA 探测出现可用 SharePoint 页面（2026-08-20）
+
+- 本机 Chrome UA、无 Range、1 MiB 限制探测返回 HTTP 200、`text/html; charset=utf-8`、4 次重定向、25,349 bytes，无 Content-Disposition。
+- 这说明官方公开分享页仍可访问，先前 403 与请求形态有关，尚不能标记数据源阻塞。
+- 同轮远端脚本因本地 JavaScript 环境无 `btoa` 而在编码阶段报错，命令未发到 5090；不会把它当作远端 HTTP 结果。
+- 下一步仅在系统临时目录解析公开页面结构，屏蔽所有 query value/临时令牌。
+
+## 329. SharePoint 页面结构确认需要 Microsoft 登录（2026-08-20）
+
+- Chrome UA 获取的页面实际为 `TITLE=Redirecting`，25,444 bytes。
+- 页面不含 `downloadUrl`、`download.aspx`、`_api/v2.0`、`driveItem`、filename 或 FilesListView 标记。
+- 安全化 URL 摘要只出现 `login.microsoftonline.com`、AAD CDN 与自动登录端点；未输出任何 query value。
+- 结论：当前官方分享链接在匿名请求下进入 Microsoft 身份认证，而非文件下载页。
+- 最后测试由该公开分享 URL 规范编码得到的 Microsoft 官方 shares API；不使用第三方镜像或凭据。
+
+## 330. Microsoft 官方 shares API 认证判据（2026-08-20）
+
+- 旧 `api.onedrive.com/v1.0/shares/.../root/content` 返回 HTTP 308、JSON 108 bytes；安全解析得到 `generalException: User migrated.`。
+- 按迁移结果测试 Microsoft Graph `shares/.../driveItem` 与 `shares/.../root/content`，两者均返回 HTTP 401、application/json、237 bytes，无重定向。
+- 结合 SharePoint 登录页、无可用浏览器会话和 Graph 401，确认当前官方预处理包需要 Microsoft 身份认证；未取得 archive bytes、文件名、大小或 hash。
+
+## 331. R1-4 P0 gate 触发并冻结后续实际执行（2026-08-20）
+
+- R1-4 状态：`BLOCKED_AUTHENTICATION_REQUIRED`。
+- 按任务书“任一 P0 gate 失败立即停止后续步骤”，R1-5～R1-14 实际执行全部标记 `NOT_EXECUTED_GATE_BLOCKED`。
+- 不运行布局发现、smoke/full source manifest、六项 archival 搜索、teacher repo/checkpoint 下载、真实 teacher smoke/full export/full audit 或真实数据 forward/backward preflight。
+- 真实数据 preflight 调用计数保持 0；不转用第三方镜像，不猜数据布局、历史参数、teacher 类或 checkpoint。
+- 继续执行的仅是安全收口：blocked receipt/locks、最终报告、回归验证、canonical guard 验证、单一 commit 和 GitHub push。
+
+## 332. 生成 blocked data/archival evidence chain（2026-08-20）
+
+- 新增 `reports/data/official_preprocessed_source.md` 与 `official_preprocessed_download_receipt.json`，明确认证阻塞、files=[]、未解压、无凭据/token、无第三方镜像。
+- 新增 `configs/locks/mm26_data_lock.yaml`：metadata 子锁 resolved；preprocessed download blocked；layout/source manifest/preprocessing 均 `not_executed_gate_blocked`。
+- data lock SHA256：`e182a44512ed6961d5f630e08acb5f384f17b73fd9e4e378af98b647c549eae4`。
+- 新增 `configs/locks/mm26_archival_facts.yaml`、空证据 JSON 和恢复说明；六项事实全部保持 unresolved、value=null、evidence=[]，执行状态明确为早期 gate 阻断。
+- archival lock SHA256：`0e80cbccc59eeb46dbe943638cb4c34cc5e5472f663a84a2f8ff7f43eb46c2f2`。
+
+## 333. 生成 blocked teacher lock（2026-08-20）
+
+- 新增 `configs/locks/mm26_teacher_lock.yaml`，交叉引用 data/archival lock SHA256；InternVideo2、BEATs、CLAP 全部 status=unresolved，精确 repo/class/variant/checkpoint 均为 null/空。
+- teacher lock SHA256：`49d1e772738fa51b31ee67663727890cc1b0c7836471dbfd21e3f023ec68e69d`。
+- real smoke/full export/full audit 均 `not_executed_gate_blocked`；cache records=0，cache root SHA256=null。
+- 新增 `reports/teachers/TEACHER_READINESS_GATE.md`，明确没有下载任何 teacher repo/checkpoint。
+- 为满足任务书要求的 `tests/test_r1_teacher_lock.py`，只实现纯离线 lock schema/fail-closed 验证；不执行被 gate 禁止的身份恢复或下载。
+
+## 334. 教师锁测试与日志顺序自检（2026-08-20）
+
+- 确认 `tests/test_r1_teacher_lock.py` 已完整写入，包含 resolved lock、checkpoint hash 缺失、class/variant/normalize 歧义和当前 blocked lock 四类离线行为测试。
+- 确认第 333 条 teacher lock 日志已完整写入。
+- 自检发现文件尾部误重复了已在正确位置存在的第 311 条；已删除重复副本，保留原始第 311 条，并将本次校正作为第 334 条记录。
+- 紧接着的首次远程同步命令误把 5090 的 SSH 默认 shell 当成 PowerShell：`New-Item` 被 `cmd.exe` 拒绝，因目录未建立导致 lock 上传失败，测试命令也未进入 repo，故本轮未收集到测试结论。
+
+## 335. Teacher lock validator RED 与最小实现（2026-08-20）
+
+- 改用 5090 默认 `cmd.exe` 的原生 `mkdir/cd/set` 语法后，测试文件与当前 teacher lock 成功同步。
+- 5090 首次运行 `tests/test_r1_teacher_lock.py` 退出 1，在 collection 阶段按预期报告 `ModuleNotFoundError: src.utils.reproduction_locks`，证明 fail-closed validator 尚不存在。
+- 新增 `src/utils/reproduction_locks.py`：只做离线 schema 校验；resolved teacher 必须锁定 HTTPS repository、40 位 commit、module/class、非空 preprocessing、精确 variant/version 与至少一个带 bytes/SHA256/source URL 的 checkpoint；blocked/unresolved 保持不 ready 且不猜测值。
+
+## 336. Teacher lock GREEN 与最终验证规则（2026-08-20）
+
+- 同步 validator 到 5090 后重跑 `tests/test_r1_teacher_lock.py`：退出码 0，`4 passed in 4.80s`。
+- 完整阅读 `superpowers:verification-before-completion`；最终完成性声明必须基于同一候选树的新鲜全量命令、完整输出和退出码，不使用旧的部分测试代替。
+- 重读任务书 R1-0→R1-15 顺序、最终测试矩阵、两次自检、报告 17 项必备内容、返回格式和 P0 停止条件。
+- 当前证据要求 R1-5→R1-14 仍为 `NOT_EXECUTED_GATE_BLOCKED`；最终结论必须为 `BLOCKED_BEFORE_R2`，不生成 `reports/READY_FOR_R2_REVIEW.md`。
+
+## 337. 提交候选文件与 Git ignore 自检（2026-08-20）
+
+- `git status --short --untracked-files=all` 确认代码、测试、locks 与 reports 均在候选范围，但本地官方第三方快照 `external/OV-AVEL/` 尚未被 ignore。
+- 任务书要求 external repos、外部数据、checkpoint、cache、local config 和 outputs 不得进入 Git；原 `.gitignore` 已覆盖数据、权重、cache 与 outputs，现补充 `/external/` 和四种 `configs/*local*` 命名模式。
+- 确认 `reports/READY_FOR_R2_REVIEW.md` 不存在。
+- 重算三个 lock SHA256 与已记录值一致：data `e182a445...9eae4`；archival `0e80cbcc...6c2f2`；teacher `49d1e772...e69d`。
+
+## 338. Git ignore 复验与任务书入库候选（2026-08-20）
+
+- `git check-ignore -v` 分别证明 `external/OV-AVEL/.git/HEAD`、示例 local config 和官方原始 metadata 都由明确规则排除。
+- 将外层权威任务书完整复制为候选仓库根文件 `MM26_OVORTHKD_R1_DATA_TEACHER_READINESS_TASK.md`，使 GitHub 网页可同时审阅任务书、代码和阶段产物。
+- `git status --short --untracked-files=all` 不再显示 `external/`；它只作为本地/5090 的受锁官方输入，不进入提交。
+
+## 339. 最终矩阵首次包装调用失败与系统化定位（2026-08-20）
+
+- 将完整候选的 `configs/docs/reports/scripts/src/tests` 同步到 5090。
+- 首次为各命令落盘的 `cmd /v:on /c` 外层引号失效：旧 `r1_compileall.txt` 出现 `Can't list 'src'/'scripts'/'tests'`，证明 `cd` 没有生效；同一调用中 pytest 从错误目录持续单核扫描，304 秒内无测试输出。
+- 只读确认该进程的命令行是本轮 `python -m pytest -q`，然后终止了由本任务创建的两个明确 PID；终止后无遗留 Python 进程。该轮不计为测试通过。
+- 按 `systematic-debugging` 改用远程原生 `cd /d ... && command`；先运行 `pytest -vv` 定位为无产品测试挂起，退出 0，`100 passed in 17.01s`；再按任务书精确 `pytest -q` 退出 0，`100 passed in 16.53s`。
+
+## 340. 5090 最终测试矩阵落盘（2026-08-20）
+
+- 用已验证的原生工作目录调用形式逐项重跑并落盘：Python 版本 0；`pip check` 0；`compileall` 0；`pytest -q` 0，`100 passed in 16.69s`；CUDA 验证 0；smoke test 0；`nvidia-smi` 0；`pip show` 0。
+- CUDA 证据：RTX 5090，driver 610.88，32607 MiB；Python 3.11.9；PyTorch 2.10.0+cu128；CUDA 12.8；compute capability 12.0；2048 矩阵、2 warmup、5 iterations，`finite=true`。
+- 额外新鲜执行官方 metadata audit：退出 0，status=passed，errors=0，24,800 条的 hash/计数/标签直方图与 lock 一致。
+
+## 341. Canonical guard 与 R1 environment lock（2026-08-20）
+
+- 在 canonical 命令前后检查 `outputs/ov_orthkd_mm26_reproduction`，均不存在（检查退出码均为 0）。
+- `python scripts/train_ov_orthkd.py --config configs/ov_orthkd_mm26_repro.yaml` 按预期退出 1，在读取训练数据或创建正式输出前由 `full_run_blocked: true` 拒绝。
+- 将本轮 5090 的 Python/pip/compile/pytest/CUDA/smoke/GPU/package/guard 证据复制到 `reports/runtime/r1_*`，逐文件计算 SHA256。
+- 新增 `reports/runtime/r1_environment_lock.json`，锁定主机、GPU、驱动、Python/PyTorch/CUDA/关键包版本、精确命令退出码及证据文件 SHA256。
+
+## 342. 生成 R1 最终 17 节报告（2026-08-20）
+
+- 新增 `reports/R1_DATA_TEACHER_READINESS_REPORT.md`，按任务书顺序覆盖起止 commit、R0 disposition、修改文件、测试、5090 环境、metadata、download/layout、source manifests、六项 archival facts、三教师、checkpoint、smoke、full export、full audit、real preflight、R2 建议与 `NOT_EXECUTED`。
+- 报告明确区分 metadata 已 resolved 与 preprocessed data 未取得；对未执行的 missing/errors/finite/peak memory 使用 `null`/not applicable，不冒充 0-error 成功。
+- 列出最小解阻动作及需要用户/数据持有者、论文作者或实验所有者提供的授权/历史证据。
+- 报告唯一结论为 `BLOCKED_BEFORE_R2`；未创建 READY marker。
+
+## 343. 按 finishing-development-branch 规则进入收口（2026-08-20）
+
+- 完整阅读 `superpowers:finishing-a-development-branch`；用户已明确选择“单一 commit 并推送到原 GitHub 仓库”，因此按已确定的 push 路径执行，保留 worktree，不合并、不删除分支。
+- Git 环境：当前是 named-branch worktree，worktree 路径为 `扩刊/OV-OrthKD-R1`，common Git 目录为主仓库 `.git`；分支 `repro/r1-data-teacher-readiness`，HEAD 和 merge-base 都是要求的 `d8e681b2...b599`。
+- 提交前静态自检：READY marker 不存在；报告首尾状态都是 `BLOCKED_BEFORE_R2`；三个 lock 无 Windows 绝对路径；锁和 R1 证据中未匹配到 token/secret/password/Bearer 模式；`git diff --check` 退出 0。
+- environment lock SHA256 当时复核为 `f4156f2ad38c6e1f2958b7daa9900e0e98efc2cbb3aa4d8392813facff2056db`；后续受纯格式化的 pip-show 证据 hash 更新影响，最终值见第 345 条。
+
+## 344. 完整候选树最终全量测试（2026-08-20）
+
+- 将新增的最终报告、runtime evidence、design/plan 与根任务书再次同步到 5090，代码与待提交树一致。
+- 首次远程 inline schema 校验因 `cmd.exe` 剥离 `python -c` 引号而退出 1，错误为 `SyntaxError` at `import`；该结果是命令封装失败，不是 lock/report schema 结论。
+- 同一远程调用中精确全量 `python -m pytest -q` 退出 0，`100 passed in 16.79s`。
+- 改用本地 Python 3.13.9 对待提交文件执行纯解析：3 个 lock YAML 和 13 个 report JSON 全部成功，退出 0。
+- 此轮之后没有修改任何 Python/配置/测试语义；只进行 Git 暂存、格式/范围审计、单 commit 与 push。
+
+## 345. 暂存范围与空白审计修复（2026-08-20）
+
+- 首次 `git add -A` 后确认暂存 46 个文件，无 `external/`、`data/raw/`、weights、outputs、cache 或 READY marker。
+- `git diff --cached --check` 首次退出 2：仅发现任务书 5 个 Markdown 行尾双空格、`r1_pip_show.txt` 空字段行尾空格、`src/utils/__init__.py` 多余末尾空行。
+- 只清理上述空白；任务书文字、package 值和 Python 语义未改。重新暂存后 `git diff --cached --check` 退出 0。
+- 因 pip-show 证据 bytes 变化，将其新 SHA256 `9081a9dc501b31454bddb7b4d3cb74113459a4dbd93f6fd83727b5d5125562a6` 写回 environment lock。
+- 最终 environment lock SHA256：`7142186e0fc89f4a51e1e4d1dfbf3ddfbf2f7077e0037a028a621dc993d196f2`，最终报告已同步该值。
+
+## 346. 单一 commit 前的最终暂存快照（2026-08-20）
+
+- 将本 `all.md` 的完整时序记录复制到 R1 仓库根并暂存；因仓库基线已有早期 `all.md`，Git 状态为修改而非新建。
+- 暂存快照自检：47 个文件；未暂存 diff 为空；`git diff --cached --check` 退出 0；禁止路径和 READY marker 匹配数为 0。
+- 该快照在加入本条日志前的 diff stat 为 `47 files changed, 5230 insertions(+), 144 deletions(-)`；加入本条后的精确最终 stat 将由 commit 后的 base→HEAD 命令返回。
+- 下一步只执行：重新暂存本日志快照、再次 diff check、创建唯一 commit、push 并校验远程 SHA。commit SHA 无法自包含在产生它的同一 tree 中，将写入外层持续日志并在最终交付中精确返回。

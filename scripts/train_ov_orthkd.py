@@ -59,6 +59,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.data import create_ov_avel_data_loaders
 from src.losses import OVOrthKDLoss, OVOrthKDLegacyLoss
 from src.models import OVOrthKDStudent
+from src.utils.reproduction_fingerprint import (
+    build_reproduction_fingerprint,
+    capture_rng_state,
+    restore_rng_state,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,6 +80,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=None)
     parser.add_argument("--early-stop-min-delta", type=float, default=None)
     parser.add_argument("--allow-blocked-reproduction", action="store_true")
+    parser.add_argument("--allow-incompatible-resume", action="store_true")
     return parser.parse_args()
 
 
@@ -664,17 +670,89 @@ def maybe_resume(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     scaler: Optional[TorchGradScaler],
     resume_path: Optional[str],
-) -> Tuple[int, float]:
+    expected_fingerprint: Dict[str, Any] | None = None,
+    loader_generators: Dict[str, torch.Generator] | None = None,
+    allow_incompatible: bool = False,
+    incompatible_marker_path: str | Path | None = None,
+) -> Tuple[int, float, int]:
     if not resume_path:
-        return 0, 0.0
-    checkpoint = torch.load(resume_path, map_location="cpu")
+        return 0, 0.0, 0
+    checkpoint = torch.load(resume_path, map_location="cpu", weights_only=True)
+    checkpoint_fingerprint = checkpoint.get("reproduction_fingerprint")
+    checkpoint_sha = (
+        checkpoint_fingerprint.get("sha256")
+        if isinstance(checkpoint_fingerprint, dict)
+        else None
+    )
+    current_sha = (
+        expected_fingerprint.get("sha256")
+        if isinstance(expected_fingerprint, dict)
+        else None
+    )
+    if expected_fingerprint is not None and checkpoint_sha != current_sha:
+        message = (
+            "Resume fingerprint mismatch: "
+            f"checkpoint={checkpoint_sha or '<missing>'} current={current_sha or '<missing>'}"
+        )
+        if not allow_incompatible:
+            raise RuntimeError(message)
+        if incompatible_marker_path is None:
+            raise ValueError(
+                "incompatible_marker_path is required when allowing incompatible resume"
+            )
+        marker_path = Path(incompatible_marker_path)
+        marker_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_path.write_text(
+            "NON-CANONICAL INCOMPATIBLE RESUME\n\n" + message + "\n",
+            encoding="utf-8",
+        )
     student.load_state_dict(checkpoint["student_state_dict"])
     loss_module.load_state_dict(checkpoint["loss_state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
     if scaler is not None and checkpoint.get("scaler_state_dict") is not None:
         scaler.load_state_dict(checkpoint["scaler_state_dict"])
-    return int(checkpoint.get("epoch", 0)) + 1, float(checkpoint.get("best_metric", 0.0))
+    rng_state = checkpoint.get("rng_state")
+    if rng_state is None:
+        raise RuntimeError("Resume checkpoint is missing required RNG and loader-generator state")
+    restore_rng_state(rng_state, loader_generators)
+    return (
+        int(checkpoint.get("epoch", 0)) + 1,
+        float(checkpoint.get("best_metric", 0.0)),
+        int(checkpoint.get("global_step", 0)),
+    )
+
+
+def load_evaluation_checkpoint(
+    *,
+    student: OVOrthKDStudent,
+    resume_path: str,
+    expected_fingerprint: Dict[str, Any],
+    allow_incompatible: bool,
+    incompatible_marker_path: str | Path,
+) -> None:
+    checkpoint = torch.load(resume_path, map_location="cpu", weights_only=True)
+    checkpoint_fingerprint = checkpoint.get("reproduction_fingerprint")
+    checkpoint_sha = (
+        checkpoint_fingerprint.get("sha256")
+        if isinstance(checkpoint_fingerprint, dict)
+        else None
+    )
+    current_sha = expected_fingerprint.get("sha256")
+    if checkpoint_sha != current_sha:
+        message = (
+            "Resume fingerprint mismatch: "
+            f"checkpoint={checkpoint_sha or '<missing>'} current={current_sha or '<missing>'}"
+        )
+        if not allow_incompatible:
+            raise RuntimeError(message)
+        marker_path = Path(incompatible_marker_path)
+        marker_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_path.write_text(
+            "NON-CANONICAL INCOMPATIBLE RESUME\n\n" + message + "\n",
+            encoding="utf-8",
+        )
+    student.load_state_dict(checkpoint["student_state_dict"])
 
 
 def write_runtime_metadata(output_dir: Path, config: Dict[str, Any], device: torch.device) -> None:
@@ -778,6 +856,8 @@ def checkpoint_payload(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     scaler: Optional[TorchGradScaler],
     config: Dict[str, Any],
+    reproduction_fingerprint: Dict[str, Any],
+    loader_generators: Dict[str, torch.Generator],
 ) -> Dict[str, Any]:
     return {
         "epoch": epoch,
@@ -791,6 +871,8 @@ def checkpoint_payload(
         "optimizer_state_dict": optimizer.state_dict(),
         "scheduler_state_dict": scheduler.state_dict(),
         "scaler_state_dict": scaler.state_dict() if scaler is not None else None,
+        "reproduction_fingerprint": reproduction_fingerprint,
+        "rng_state": capture_rng_state(loader_generators),
         "config": config,
     }
 
@@ -831,39 +913,26 @@ def main() -> None:
     train_loader, val_loader, test_loader = create_ov_avel_data_loaders(config)
     student, loss_module = build_model_and_loss(config, device)
 
-    train_cfg = config["training"]
-    parameters = list(student.parameters()) + list(loss_module.parameters())
-    optimizer = AdamW(
-        parameters,
-        lr=float(train_cfg.get("learning_rate", 2e-4)),
-        weight_decay=float(train_cfg.get("weight_decay", 1e-4)),
-    )
-    epochs = int(train_cfg.get("epochs", 30))
-    scheduler, scheduler_interval = build_scheduler(
-        optimizer,
-        train_cfg,
-        epochs=epochs,
-        steps_per_epoch=max(len(train_loader), 1),
-    )
-    use_amp = bool(train_cfg.get("mixed_precision", True)) and device.type == "cuda"
-    scaler = make_grad_scaler(device.type, use_amp)
-
-    start_epoch, best_metric = maybe_resume(
-        student=student,
-        loss_module=loss_module,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        scaler=scaler,
-        resume_path=args.resume,
-    )
-    global_step = 0
-    if args.resume:
-        resume_checkpoint = torch.load(args.resume, map_location="cpu")
-        global_step = int(resume_checkpoint.get("global_step", 0))
-    else:
-        best_metric = float("-inf")
+    loader_generators = {
+        name: loader.generator
+        for name, loader in {
+            "train": train_loader,
+            "val": val_loader,
+            "test": test_loader,
+        }.items()
+        if loader is not None and loader.generator is not None
+    }
+    reproduction_fingerprint = build_reproduction_fingerprint(config)
 
     if args.eval_only:
+        if args.resume:
+            load_evaluation_checkpoint(
+                student=student,
+                resume_path=args.resume,
+                expected_fingerprint=reproduction_fingerprint,
+                allow_incompatible=bool(args.allow_incompatible_resume),
+                incompatible_marker_path=output_dir / "INCOMPATIBLE_RESUME.txt",
+            )
         val_predictions, val_metrics = evaluate_with_predictions(
             student,
             val_loader,
@@ -887,6 +956,38 @@ def main() -> None:
             encoding="utf-8",
         )
         return
+
+    train_cfg = config["training"]
+    parameters = list(student.parameters()) + list(loss_module.parameters())
+    optimizer = AdamW(
+        parameters,
+        lr=float(train_cfg.get("learning_rate", 2e-4)),
+        weight_decay=float(train_cfg.get("weight_decay", 1e-4)),
+    )
+    epochs = int(train_cfg.get("epochs", 30))
+    scheduler, scheduler_interval = build_scheduler(
+        optimizer,
+        train_cfg,
+        epochs=epochs,
+        steps_per_epoch=max(len(train_loader), 1),
+    )
+    use_amp = bool(train_cfg.get("mixed_precision", True)) and device.type == "cuda"
+    scaler = make_grad_scaler(device.type, use_amp)
+
+    start_epoch, best_metric, global_step = maybe_resume(
+        student=student,
+        loss_module=loss_module,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        scaler=scaler,
+        resume_path=args.resume,
+        expected_fingerprint=reproduction_fingerprint,
+        loader_generators=loader_generators,
+        allow_incompatible=bool(args.allow_incompatible_resume),
+        incompatible_marker_path=output_dir / "INCOMPATIBLE_RESUME.txt",
+    )
+    if not args.resume:
+        best_metric = float("-inf")
 
     grad_clip = float(train_cfg.get("grad_clip", 1.0))
     early_stop_patience, early_stop_min_delta = resolve_early_stopping(
@@ -992,6 +1093,8 @@ def main() -> None:
                 scheduler=scheduler,
                 scaler=scaler,
                 config=config,
+                reproduction_fingerprint=reproduction_fingerprint,
+                loader_generators=loader_generators,
             )
             torch.save(checkpoint, output_dir / "best.pt")
             save_predictions_npz(
@@ -1027,6 +1130,8 @@ def main() -> None:
             scheduler=scheduler,
             scaler=scaler,
             config=config,
+            reproduction_fingerprint=reproduction_fingerprint,
+            loader_generators=loader_generators,
         )
         torch.save(last_checkpoint, output_dir / "last.pt")
         history_record = {

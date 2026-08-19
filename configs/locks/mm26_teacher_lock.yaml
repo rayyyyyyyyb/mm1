@@ -1,0 +1,50 @@
+schema_version: 1
+status: blocked
+execution_status: not_executed_gate_blocked
+blocked_by: "R1-4 official preprocessed download authentication gate"
+data_lock:
+  path: "configs/locks/mm26_data_lock.yaml"
+  sha256: "e182a44512ed6961d5f630e08acb5f384f17b73fd9e4e378af98b647c549eae4"
+archival_facts_lock:
+  path: "configs/locks/mm26_archival_facts.yaml"
+  sha256: "0e80cbccc59eeb46dbe943638cb4c34cc5e5472f663a84a2f8ff7f43eb46c2f2"
+teachers:
+  internvideo2:
+    status: unresolved
+    repository: null
+    commit: null
+    module: null
+    imported_class: null
+    declared_variant: null
+    checkpoint_files: []
+    preprocessing: null
+  beats:
+    status: unresolved
+    repository: null
+    commit: null
+    module: null
+    imported_class: null
+    variant: null
+    checkpoint_files: []
+    preprocessing: null
+  clap:
+    status: unresolved
+    repository: null
+    commit: null
+    module: null
+    imported_class: null
+    version: null
+    normalize: null
+    checkpoint_files: []
+    preprocessing: null
+real_smoke:
+  status: not_executed_gate_blocked
+  records: 0
+full_export:
+  status: not_executed_gate_blocked
+  records: 0
+  errors: null
+  cache_root_sha256: null
+blockers:
+  - "Resume R1-8 archival recovery only after the R1-4 data gate is cleared."
+  - "Do not download or select teacher repositories/checkpoints without direct historical evidence."

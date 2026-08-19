@@ -8,6 +8,8 @@ from typing import Any, Dict, Iterable, Iterator, List, Sequence
 
 import numpy as np
 
+from src.utils.atomic_artifacts import atomic_save_array, atomic_write_jsonl
+
 
 @dataclass(frozen=True)
 class AudioSegmentSpec:
@@ -60,17 +62,12 @@ def load_records(path_str: str | Path) -> List[Dict[str, Any]]:
 
 
 def write_records(path_str: str | Path, records: Sequence[Dict[str, Any]]) -> None:
-    path = Path(path_str)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        for record in records:
-            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    atomic_write_jsonl(path_str, records)
 
 
 def save_array(path_str: str | Path, array: np.ndarray) -> None:
-    path = Path(path_str)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    np.save(path, np.asarray(array, dtype=np.float32))
+    normalized = np.asarray(array, dtype=np.float32)
+    atomic_save_array(path_str, normalized, expected_shape=normalized.shape)
 
 
 def ensure_list(value: Any) -> List[Any]:

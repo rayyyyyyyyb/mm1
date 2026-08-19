@@ -1,0 +1,54 @@
+Name: torch
+Version: 2.10.0+cu128
+Summary: Tensors and Dynamic neural networks in Python with strong GPU acceleration
+Home-page:
+Author:
+Author-email: PyTorch Team <packages@pytorch.org>
+License: BSD-3-Clause
+Location: E:\OV-OrthKD-R0\env\.venv\Lib\site-packages
+Requires: filelock, fsspec, jinja2, networkx, sympy, typing-extensions
+Required-by: open_clip_torch, timm, torchaudio, torchvision
+---
+Name: torchvision
+Version: 0.25.0+cu128
+Summary: image and video datasets and models for torch deep learning
+Home-page: https://github.com/pytorch/vision
+Author: PyTorch Core Team
+Author-email: soumith@pytorch.org
+License: BSD
+Location: E:\OV-OrthKD-R0\env\.venv\Lib\site-packages
+Requires: numpy, pillow, torch
+Required-by: open_clip_torch, timm
+---
+Name: numpy
+Version: 2.4.6
+Summary: Fundamental package for array computing in Python
+Home-page:
+Author: Travis E. Oliphant et al.
+Author-email:
+License:
+Location: E:\OV-OrthKD-R0\env\.venv\Lib\site-packages
+Requires:
+Required-by: scikit-learn, scipy, torchvision, transformers
+---
+Name: PyYAML
+Version: 6.0.3
+Summary: YAML parser and emitter for Python
+Home-page: https://pyyaml.org/
+Author: Kirill Simonov
+Author-email: xi@resolvent.net
+License: MIT
+Location: E:\OV-OrthKD-R0\env\.venv\Lib\site-packages
+Requires:
+Required-by: huggingface_hub, timm, transformers
+---
+Name: timm
+Version: 1.0.28
+Summary: PyTorch Image Models
+Home-page:
+Author:
+Author-email: Ross Wightman <ross@huggingface.co>
+License: Apache-2.0
+Location: E:\OV-OrthKD-R0\env\.venv\Lib\site-packages
+Requires: huggingface_hub, pyyaml, safetensors, torch, torchvision
+Required-by: open_clip_torch

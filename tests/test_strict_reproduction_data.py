@@ -176,7 +176,7 @@ def loader_config(manifest: Path, root: Path, seed: int) -> dict[str, Any]:
             "batch_size": 2,
             "num_workers": 0,
             "pin_memory": False,
-            "max_segments": 1,
+            "max_segments": 2,
             "allow_missing_modalities": True,
             "strict_alignment": True,
             "required_artifacts": [],

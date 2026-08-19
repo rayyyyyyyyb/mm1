@@ -1,0 +1,32 @@
+schema_version: 1
+status: blocked
+execution_status: not_executed_gate_blocked
+blocked_by: "R1-4 official preprocessed download authentication gate"
+facts:
+  temporal_protocol:
+    status: unresolved
+    value: null
+    evidence: []
+  internvideo_identity:
+    status: unresolved
+    value: null
+    evidence: []
+  scheduler_and_early_stop:
+    status: unresolved
+    value: null
+    evidence: []
+  student_initialization_and_augmentation:
+    status: unresolved
+    value: null
+    evidence: []
+  visual_l2_reduction:
+    status: unresolved
+    value: null
+    evidence: []
+  query_aware_fusion:
+    status: unresolved
+    value: null
+    evidence: []
+resolution_rule: "Only direct evidence or two independent corroborating sources may resolve a fact."
+evidence_report: "reports/archival/mm26_archival_evidence.json"
+recovery_report: "reports/archival/MM26_ARCHIVAL_FACT_RECOVERY.md"

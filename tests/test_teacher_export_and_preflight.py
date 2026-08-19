@@ -133,6 +133,9 @@ def test_export_and_preflight_pipeline(tmp_path: Path) -> None:
     assert preflight_summary["dataset_probe"]["train"]["samples_probed"] == 2
     assert preflight_summary["train_probe"]["batch_size"] == 2
     assert preflight_summary["resume_probe"]["resume_epoch"] == 1
+    assert preflight_summary["preflight_only"] is True
+    assert preflight_summary["paper_result"] is False
+    assert preflight_summary["optimizer_steps"] == 1
     assert "ap" in preflight_summary["val_metrics"]
 
 

@@ -45,6 +45,7 @@ data:
   num_workers: 8
   pin_memory: true
   max_segments: 16
+  temporal_overflow_policy: "error"
   allow_missing_modalities: false
   strict_alignment: true
   required_artifacts:
@@ -80,7 +81,7 @@ loss:
   alpha_text_align: 0.8
   alpha_orth: 0.5
   text_alignment_mode: "paper_probability"
-  confidence_weighting: true
+  confidence_weighting: false
   confidence_scale: 2.0
 
 training:

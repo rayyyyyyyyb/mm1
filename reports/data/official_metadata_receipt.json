@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "upstream_repository": "https://github.com/jasongief/OV-AVEL.git",
+  "upstream_commit": "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6",
+  "checkout_clean": true,
+  "downloaded_at_utc": "2026-08-19T18:04:37Z",
+  "files": [
+    {
+      "path": "data/raw/ov_avebench/ovave_dataset_meta.csv",
+      "bytes": 989749,
+      "sha256": "f916b2a7fbaed53c95c6124efe3f11189766a2516805406639578c9a5fd4fb9d"
+    },
+    {
+      "path": "data/raw/ov_avebench/released_ovavel_dataset_anno.json",
+      "bytes": 2999439,
+      "sha256": "4a1b170095c0427b1ca3e6f178ced2b0dd1efbf753959f03905fe33c6f01f009"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "annotation_json": {
+    "bytes": 2999439,
+    "path": "C:/Users/lwz20/Desktop/OV-OrthKD-Collaboration-Base1/扩刊/OV-OrthKD-R1/data/raw/ov_avebench/released_ovavel_dataset_anno.json",
+    "sha256": "4a1b170095c0427b1ca3e6f178ced2b0dd1efbf753959f03905fe33c6f01f009"
+  },
+  "annotation_only_ids": [],
+  "counts": {
+    "classes": 67,
+    "classes_by_group": {
+      "close": 46,
+      "open": 21
+    },
+    "groups": {
+      "close": 16497,
+      "open": 8303
+    },
+    "records": 24800,
+    "split_groups": {
+      "test/close": 1664,
+      "test/open": 4156,
+      "train/close": 13182,
+      "val/close": 1651,
+      "val/open": 4147
+    },
+    "splits": {
+      "test": 5820,
+      "train": 13182,
+      "val": 5798
+    }
+  },
+  "csv_only_ids": [],
+  "duplicate_video_ids": [],
+  "errors": [],
+  "label_length_histogram": {
+    "10": 24800
+  },
+  "label_value_histogram": {
+    "0": 94597,
+    "1": 153403
+  },
+  "meta_csv": {
+    "bytes": 989749,
+    "path": "C:/Users/lwz20/Desktop/OV-OrthKD-Collaboration-Base1/扩刊/OV-OrthKD-R1/data/raw/ov_avebench/ovave_dataset_meta.csv",
+    "sha256": "f916b2a7fbaed53c95c6124efe3f11189766a2516805406639578c9a5fd4fb9d"
+  },
+  "positive_segment_histogram": {
+    "0": 6019,
+    "1": 352,
+    "10": 10782,
+    "2": 749,
+    "3": 809,
+    "4": 822,
+    "5": 912,
+    "6": 921,
+    "7": 929,
+    "8": 1116,
+    "9": 1389
+  },
+  "schema_version": 1,
+  "status": "passed"
+}

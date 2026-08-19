@@ -15,10 +15,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.teachers import TeacherExportBundle, export_manifest_file
-from src.teachers.beats_audio import BEATsAudioTeacher
-from src.teachers.clap_text import ClapTextTeacher
-from src.teachers.internvideo2_visual import InternVideo2ClipB14Teacher
 from src.teachers.mock import MockStrongVisualTeacher, MockTextTeacher, MockWeakAudioTeacher
+from src.utils.atomic_artifacts import sha256_file
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,6 +29,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--copy-unprocessed-records", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--receipt-jsonl", type=str, default=None)
+    parser.add_argument("--error-jsonl", type=str, default=None)
+    parser.add_argument("--teacher-lock", type=str, default=None)
+    parser.add_argument("--split", type=str, choices=("train", "val", "test"), default=None)
+    parser.add_argument("--resume", action="store_true")
 
     parser.add_argument(
         "--strong-visual-backend",
@@ -100,6 +103,8 @@ def build_teachers(args: argparse.Namespace, config: Dict[str, Any]) -> tuple[Te
     if strong_backend == "mock":
         bundle.strong_visual = MockStrongVisualTeacher(int(data_cfg.get("strong_teacher_dim", 512)))
     elif strong_backend == "internvideo2_clip_b14":
+        from src.teachers.internvideo2_visual import InternVideo2ClipB14Teacher
+
         iv_cfg = export_cfg.get("internvideo2", {})
         bundle.strong_visual = InternVideo2ClipB14Teacher(
             repo_root=require(choose(args.internvideo2_repo_root, iv_cfg.get("repo_root")), "teacher_export.internvideo2.repo_root"),
@@ -114,6 +119,8 @@ def build_teachers(args: argparse.Namespace, config: Dict[str, Any]) -> tuple[Te
     if weak_backend == "mock":
         bundle.weak_audio = MockWeakAudioTeacher(int(data_cfg.get("weak_teacher_dim", 768)))
     elif weak_backend == "beats":
+        from src.teachers.beats_audio import BEATsAudioTeacher
+
         beats_cfg = export_cfg.get("beats", {})
         bundle.weak_audio = BEATsAudioTeacher(
             repo_root=require(choose(args.beats_repo_root, beats_cfg.get("repo_root")), "teacher_export.beats.repo_root"),
@@ -124,6 +131,8 @@ def build_teachers(args: argparse.Namespace, config: Dict[str, Any]) -> tuple[Te
     if text_backend == "mock":
         bundle.text_teacher = MockTextTeacher(int(data_cfg.get("text_dim", 1024)))
     elif text_backend == "clap":
+        from src.teachers.clap_text import ClapTextTeacher
+
         clap_cfg = export_cfg.get("clap", {})
         bundle.text_teacher = ClapTextTeacher(
             repo_root=require(choose(args.clap_repo_root, clap_cfg.get("repo_root")), "teacher_export.clap.repo_root"),
@@ -140,6 +149,19 @@ def main() -> None:
     args = parse_args()
     config = load_config(args.config)
     teachers, device, artifact_dir = build_teachers(args, config)
+    export_cfg = config.get("teacher_export", {})
+    receipt_jsonl = choose(args.receipt_jsonl, export_cfg.get("receipt_jsonl"))
+    error_jsonl = choose(args.error_jsonl, export_cfg.get("error_jsonl"))
+    teacher_lock_value = choose(args.teacher_lock, export_cfg.get("teacher_lock_path"))
+    teacher_lock_sha256 = "UNSPECIFIED"
+    if receipt_jsonl is not None:
+        teacher_lock_path = Path(require(teacher_lock_value, "teacher_export.teacher_lock_path"))
+        if not teacher_lock_path.is_file():
+            raise FileNotFoundError(f"Teacher lock not found: {teacher_lock_path}")
+        teacher_lock_sha256 = sha256_file(teacher_lock_path)
+    split = args.split or Path(args.output_manifest).stem
+    if split not in {"train", "val", "test"}:
+        raise ValueError("--split must be train, val, or test for receipt-bound export")
 
     summary = export_manifest_file(
         source_manifest=args.source_manifest,
@@ -149,6 +171,11 @@ def main() -> None:
         overwrite=args.overwrite,
         limit=args.limit,
         copy_unprocessed_records=args.copy_unprocessed_records,
+        receipt_jsonl=receipt_jsonl,
+        error_jsonl=error_jsonl,
+        teacher_lock_sha256=teacher_lock_sha256,
+        split=split,
+        resume=bool(args.resume),
     )
     summary["device"] = device
     summary["source_manifest"] = str(Path(args.source_manifest).resolve())

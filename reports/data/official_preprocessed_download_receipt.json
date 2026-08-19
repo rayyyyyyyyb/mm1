@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "blocked_authentication_required",
+  "source_repository": "https://github.com/jasongief/OV-AVEL.git",
+  "source_commit": "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6",
+  "source_document": "external/OV-AVEL/README.md:21",
+  "official_share_url": "https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/Efm9NKaGQFBAsOC2ZOMZRvcB26TKXJ84H4VW6g8BR5SukQ?e=OPgMOt",
+  "attempted_at_utc": "2026-08-19T18:15:00Z",
+  "browser_control_available": false,
+  "anonymous_access": {
+    "default_curl": "http_403_after_redirect",
+    "chrome_user_agent": "microsoft_login_redirect_page",
+    "legacy_onedrive_shares_api": "http_308_user_migrated",
+    "microsoft_graph_drive_item": "http_401_oauth_required",
+    "microsoft_graph_root_content": "http_401_oauth_required"
+  },
+  "download_completed": false,
+  "files": [],
+  "archive_listing_completed": false,
+  "extraction_completed": false,
+  "credentials_or_tokens_recorded": false,
+  "third_party_mirror_used": false,
+  "blocker": "The pinned official SharePoint share currently requires Microsoft authentication, and no authorized browser session is available."
+}

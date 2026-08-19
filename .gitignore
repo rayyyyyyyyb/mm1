@@ -39,11 +39,16 @@ data/downloads/*
 data/ov_ave/*
 !data/ov_ave/README.txt
 !data/ov_ave/*.template.jsonl
+/external/
 weights/
 outputs/
 logs/
 runs/
 evaluation_results/
+configs/*.local.yaml
+configs/*.local.yml
+configs/local_*.yaml
+configs/local_*.yml
 *.ckpt
 *.pt
 *.pth

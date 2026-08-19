@@ -1,0 +1,55 @@
+schema_version: 1
+status: blocked
+blocked_by: "R1-4 official preprocessed SharePoint share requires Microsoft authentication"
+upstream:
+  repository: "https://github.com/jasongief/OV-AVEL.git"
+  commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
+  checkout_clean: true
+metadata:
+  status: resolved
+  receipt: "reports/data/official_metadata_receipt.json"
+  receipt_sha256: "37e63d9154460604e4b1afbcbfac9527761365e0e04feca13bd3c47c306026e9"
+  audit: "reports/data/official_metadata_audit.json"
+  audit_sha256: "61668a80977bd86dc224cd9803503bacffd4d0ef1267f5723966966928b57a67"
+  csv_sha256: "f916b2a7fbaed53c95c6124efe3f11189766a2516805406639578c9a5fd4fb9d"
+  annotation_sha256: "4a1b170095c0427b1ca3e6f178ced2b0dd1efbf753959f03905fe33c6f01f009"
+  counts:
+    train: 13182
+    val: 5798
+    test: 5820
+    total: 24800
+  classes:
+    total: 67
+    close_seen: 46
+    open_unseen: 21
+  records_by_group:
+    close_seen: 16497
+    open_unseen: 8303
+  segment_length_histogram:
+    "10": 24800
+preprocessed_download:
+  status: blocked_authentication_required
+  receipt: "reports/data/official_preprocessed_download_receipt.json"
+  receipt_sha256: "2fa0247acf1b8d6eba2b857debc9f46df4916fe9b50aa170ee1ad820bf65c193"
+  files: []
+  archive_listing_completed: false
+  extraction_completed: false
+layout:
+  status: not_executed_gate_blocked
+  dataset_root: null
+  frame_count_histogram: null
+  wav_sample_rate_histogram: null
+manifest:
+  status: not_executed_gate_blocked
+  train_sha256: null
+  val_sha256: null
+  test_sha256: null
+  counts: null
+  segment_length_histogram: null
+preprocessing:
+  status: not_executed_gate_blocked
+  spec_version: null
+  parameters: null
+blockers:
+  - "Restore authorized access to the pinned official preprocessed share and download/hash/list archives."
+  - "Resume at R1-4; do not infer layout or manifests before official bytes are available."

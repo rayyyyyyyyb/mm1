@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "E:\OV-OrthKD-R1\repo\scripts\train_ov_orthkd.py", line 1199, in <module>
+    main()
+  File "E:\OV-OrthKD-R1\repo\scripts\train_ov_orthkd.py", line 898, in main
+    validate_repro_config(
+  File "E:\OV-OrthKD-R1\repo\scripts\train_ov_orthkd.py", line 126, in validate_repro_config
+    raise RuntimeError(
+RuntimeError: Paper reproduction full run is blocked by unresolved archival facts. Use smoke/preflight or explicitly acknowledge a non-canonical run.

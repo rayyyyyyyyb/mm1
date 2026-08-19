@@ -40,6 +40,7 @@ from scripts.check_manifest import load_manifest, summarize_ov_avel
 from scripts.train_ov_orthkd import (
     build_model_and_loss,
     build_scheduler,
+    checkpoint_payload,
     compute_loss_for_batch,
     evaluate,
     load_config,
@@ -48,6 +49,7 @@ from scripts.train_ov_orthkd import (
     validate_repro_config,
 )
 from src.data import create_ov_avel_data_loaders
+from src.utils.reproduction_fingerprint import build_reproduction_fingerprint
 
 
 def parse_args() -> argparse.Namespace:
@@ -208,20 +210,29 @@ def run_preflight(
     output_path.mkdir(parents=True, exist_ok=True)
     checkpoint_path = output_path / "preflight_resume.pt"
 
-    checkpoint = {
-        "epoch": 0,
-        "best_metric": float(val_metrics.get("ap", 0.0)),
-        "student_state_dict": student.state_dict(),
-        "loss_state_dict": loss_module.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-        "scheduler_state_dict": scheduler.state_dict(),
-        "scaler_state_dict": scaler.state_dict() if use_amp else None,
-        "implementation_mode": config.get("reproduction", {}).get(
-            "implementation_mode", "legacy_collaboration"
-        ),
-        "global_step": 1,
-        "config": config,
+    loader_generators = {
+        name: loader.generator
+        for name, loader in {
+            "train": train_loader,
+            "val": val_loader,
+            "test": test_loader,
+        }.items()
+        if loader is not None and loader.generator is not None
     }
+    reproduction_fingerprint = build_reproduction_fingerprint(config)
+    checkpoint = checkpoint_payload(
+        epoch=0,
+        global_step=1,
+        best_metric=float(val_metrics.get("ap", 0.0)),
+        student=student,
+        loss_module=loss_module,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        scaler=scaler,
+        config=config,
+        reproduction_fingerprint=reproduction_fingerprint,
+        loader_generators=loader_generators,
+    )
     torch.save(checkpoint, checkpoint_path)
 
     resume_student, resume_loss = build_model_and_loss(config, device)
@@ -237,16 +248,21 @@ def run_preflight(
         steps_per_epoch=max(len(train_loader), 1),
     )
     resume_scaler = make_grad_scaler(device.type, use_amp)
-    resume_epoch, resume_best = maybe_resume(
+    resume_epoch, resume_best, resume_global_step = maybe_resume(
         student=resume_student,
         loss_module=resume_loss,
         optimizer=resume_optimizer,
         scheduler=resume_scheduler,
         scaler=resume_scaler,
         resume_path=str(checkpoint_path),
+        expected_fingerprint=reproduction_fingerprint,
+        loader_generators=loader_generators,
     )
 
     summary = {
+        "preflight_only": True,
+        "paper_result": False,
+        "optimizer_steps": 1,
         "device": str(device),
         "use_amp": use_amp,
         "mock_only": bool(config.get("reproduction", {}).get("mock_only", False)),
@@ -262,6 +278,8 @@ def run_preflight(
             "checkpoint_path": str(checkpoint_path.resolve()),
             "resume_epoch": int(resume_epoch),
             "resume_best_metric": float(resume_best),
+            "resume_global_step": int(resume_global_step),
+            "reproduction_fingerprint_sha256": reproduction_fingerprint["sha256"],
         },
     }
     if device.type == "cuda":
