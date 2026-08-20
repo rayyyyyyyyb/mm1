@@ -10,6 +10,7 @@ from tempfile import mkdtemp
 from typing import Any, Dict
 
 import torch
+import yaml
 from torch.optim import AdamW
 
 try:
@@ -59,6 +60,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=str, default=None)
     parser.add_argument("--probe-samples", type=int, default=4)
     parser.add_argument("--max-eval-batches", type=int, default=2)
+    parser.add_argument(
+        "--real-data",
+        action="store_true",
+        help="Require the canonical readiness gate and label this as the one real-data preflight",
+    )
+    parser.add_argument(
+        "--optimizer-steps",
+        type=int,
+        default=1,
+        help="Bounded optimizer-step count; R2 permits exactly one",
+    )
     return parser.parse_args()
 
 
@@ -102,6 +114,7 @@ def _run_train_probe(
     use_amp: bool,
     grad_clip: float,
     scheduler_interval: str,
+    real_data: bool,
 ) -> Dict[str, Any]:
     batch = next(iter(train_loader))
     parameters = list(student.parameters()) + list(loss_module.parameters())
@@ -123,6 +136,49 @@ def _run_train_probe(
 
     scaler.scale(loss).backward()
     scaler.unscale_(optimizer)
+
+    named_parameters = [
+        (f"student.{name}", parameter)
+        for name, parameter in student.named_parameters()
+        if parameter.requires_grad
+    ] + [
+        (f"loss.{name}", parameter)
+        for name, parameter in loss_module.named_parameters()
+        if parameter.requires_grad
+    ]
+    missing_gradients = [name for name, parameter in named_parameters if parameter.grad is None]
+    nonfinite_gradients = [
+        name
+        for name, parameter in named_parameters
+        if parameter.grad is not None and not bool(torch.isfinite(parameter.grad).all())
+    ]
+    losses_finite = bool(torch.isfinite(loss.detach())) and all(
+        torch.isfinite(torch.tensor(value, dtype=torch.float64)).item()
+        for value in stats.values()
+    )
+    if real_data and not losses_finite:
+        raise RuntimeError("Real-data preflight produced a non-finite loss")
+    if real_data and nonfinite_gradients:
+        raise RuntimeError(
+            "Real-data preflight produced non-finite gradients: "
+            + ", ".join(nonfinite_gradients)
+        )
+    if real_data and missing_gradients:
+        raise RuntimeError(
+            "Real-data preflight has trainable parameters without gradients: "
+            + ", ".join(missing_gradients)
+        )
+
+    disabled_logit_losses: Dict[str, bool] = {}
+    for loss_name, alpha_name in (
+        ("strong_logit", "alpha_strong_logit"),
+        ("weak_logit", "alpha_weak_logit"),
+    ):
+        if float(getattr(loss_module, alpha_name, 0.0)) == 0.0:
+            disabled_logit_losses[loss_name] = stats.get(loss_name) == 0.0
+    if real_data and not all(disabled_logit_losses.values()):
+        raise RuntimeError("A disabled logit loss was not exactly zero")
+
     torch.nn.utils.clip_grad_norm_(parameters, grad_clip)
     scaler.step(optimizer)
     scaler.update()
@@ -130,12 +186,83 @@ def _run_train_probe(
         raise ValueError(f"Unsupported scheduler interval: {scheduler_interval}")
     scheduler.step()
 
+    split_types = [str(value) for value in batch.get("split_type", [])]
+    recognized_split_types = all(value in {"seen", "unseen"} for value in split_types)
+    if real_data and (not split_types or not recognized_split_types):
+        raise RuntimeError(
+            "Real-data preflight batch must contain only normalized seen/unseen split_type values"
+        )
+
     return {
         "batch_size": int(batch["frame"].shape[0]),
         "padded_segments": int(batch["frame"].shape[1]),
         "loss": float(loss.detach()),
         "loss_breakdown": stats,
+        "losses_finite": losses_finite,
+        "forward_completed": True,
+        "backward_completed": True,
+        "optimizer_step_completed": True,
         "scheduler_interval": scheduler_interval,
+        "input_shapes": {
+            key: list(batch[key].shape)
+            for key in ("frame", "spectrogram", "text_embedding", "sequence_mask")
+        },
+        "teacher_artifact_shapes": {
+            key: list(batch[key].shape)
+            for key in (
+                "strong_teacher_logits",
+                "strong_teacher_features",
+                "weak_teacher_features",
+                "text_embedding",
+            )
+        },
+        "split_types": split_types,
+        "split_types_normalized": recognized_split_types,
+        "gradient_check": {
+            "trainable_parameter_count": len(named_parameters),
+            "parameters_with_gradients": len(named_parameters) - len(missing_gradients),
+            "parameters_without_gradients": missing_gradients,
+            "nonfinite_gradients": nonfinite_gradients,
+            "all_received_gradients_finite": not missing_gradients and not nonfinite_gradients,
+        },
+        "disabled_logit_losses_exact_zero": disabled_logit_losses,
+    }
+
+
+def _expected_temporal_length(config: Dict[str, Any]) -> int | None:
+    lock_path = config.get("reproduction", {}).get("data_lock")
+    if not lock_path:
+        return None
+    resolved = Path(lock_path)
+    if not resolved.is_absolute():
+        resolved = PROJECT_ROOT / resolved
+    document = yaml.safe_load(resolved.read_text(encoding="utf-8")) or {}
+    metadata = document.get("metadata", document.get("official_metadata", {}))
+    histogram = metadata.get("segment_length_histogram", {}) if isinstance(metadata, dict) else {}
+    nonzero = [int(length) for length, count in histogram.items() if int(count) > 0]
+    return nonzero[0] if len(nonzero) == 1 else None
+
+
+def _forward_after_resume(student, loader, device: torch.device) -> Dict[str, Any]:
+    batch = next(iter(loader))
+    student.eval()
+    with torch.inference_mode():
+        outputs = student(
+            frame=batch["frame"].to(device),
+            spectrogram=batch["spectrogram"].to(device),
+            text_embedding=batch["text_embedding"].to(device),
+            sequence_mask=batch["sequence_mask"].to(device),
+            frame_valid=batch["frame_valid"].to(device),
+            audio_valid=batch["audio_valid"].to(device),
+        )
+    tensor_outputs = {key: value for key, value in outputs.items() if isinstance(value, torch.Tensor)}
+    finite = all(bool(torch.isfinite(value).all()) for value in tensor_outputs.values())
+    if not finite:
+        raise RuntimeError("Post-resume forward produced non-finite outputs")
+    return {
+        "passed": True,
+        "finite": True,
+        "output_shapes": {key: list(value.shape) for key, value in tensor_outputs.items()},
     }
 
 
@@ -145,12 +272,24 @@ def run_preflight(
     output_dir: str | Path | None = None,
     probe_samples: int = 4,
     max_eval_batches: int = 2,
+    real_data: bool = False,
+    optimizer_steps: int = 1,
 ) -> Dict[str, Any]:
+    if int(optimizer_steps) != 1:
+        raise ValueError("R2 bounded preflight requires exactly 1 optimizer step")
+    reproduction = config.get("reproduction", {})
+    mock_only = bool(reproduction.get("mock_only", False))
+    claim_level = str(reproduction.get("claim_level", "")).lower()
+    if real_data and mock_only:
+        raise RuntimeError("A mock-only config cannot be labeled as real data")
+    if claim_level == "archival_exact" and not mock_only and not real_data:
+        raise RuntimeError("An archival-exact preflight requires the explicit --real-data flag")
     validate_repro_config(
         config,
         allow_blocked=False,
         preflight=True,
         output_dir=output_dir,
+        require_canonical_readiness=real_data,
     )
     set_seed(
         int(config.get("seed", 42)),
@@ -199,9 +338,18 @@ def run_preflight(
         use_amp=use_amp,
         grad_clip=float(train_cfg.get("grad_clip", 1.0)),
         scheduler_interval=scheduler_interval,
+        real_data=real_data,
     )
-    val_metrics = evaluate(student, val_loader, device, max_batches=max_eval_batches)
-    test_metrics = evaluate(student, test_loader, device, max_batches=max_eval_batches) if test_loader is not None else None
+    if real_data:
+        val_metrics = None
+        test_metrics = None
+    else:
+        val_metrics = evaluate(student, val_loader, device, max_batches=max_eval_batches)
+        test_metrics = (
+            evaluate(student, test_loader, device, max_batches=max_eval_batches)
+            if test_loader is not None
+            else None
+        )
 
     if output_dir is None:
         output_path = Path(mkdtemp(prefix="ov_orthkd_preflight_"))
@@ -223,7 +371,7 @@ def run_preflight(
     checkpoint = checkpoint_payload(
         epoch=0,
         global_step=1,
-        best_metric=float(val_metrics.get("ap", 0.0)),
+        best_metric=float(val_metrics.get("ap", 0.0)) if val_metrics is not None else 0.0,
         student=student,
         loss_module=loss_module,
         optimizer=optimizer,
@@ -248,7 +396,7 @@ def run_preflight(
         steps_per_epoch=max(len(train_loader), 1),
     )
     resume_scaler = make_grad_scaler(device.type, use_amp)
-    resume_epoch, resume_best, resume_global_step = maybe_resume(
+    resume_epoch, resume_best, resume_global_step, resume_early_stop_counter = maybe_resume(
         student=resume_student,
         loss_module=resume_loss,
         optimizer=resume_optimizer,
@@ -258,20 +406,41 @@ def run_preflight(
         expected_fingerprint=reproduction_fingerprint,
         loader_generators=loader_generators,
     )
+    resume_forward = _forward_after_resume(resume_student, val_loader, device)
+
+    expected_temporal_length = _expected_temporal_length(config) if real_data else None
+    if real_data and expected_temporal_length is None:
+        raise RuntimeError("Canonical data lock must define one exact temporal length for real preflight")
+    if real_data and train_probe["padded_segments"] != expected_temporal_length:
+        raise RuntimeError(
+            "Real-data temporal length does not match the data lock: "
+            f"batch={train_probe['padded_segments']} lock={expected_temporal_length}"
+        )
 
     summary = {
+        "schema_version": 1,
+        "status": "passed",
         "preflight_only": True,
         "paper_result": False,
-        "optimizer_steps": 1,
+        "real_data": bool(real_data),
+        "formal_metrics_emitted": False,
+        "invocation_count_this_stage": 1 if real_data else 0,
+        "optimizer_steps": int(optimizer_steps),
+        "batch_count": 1,
+        "forward_completed": True,
+        "backward_completed": True,
+        "checkpoint_resume_completed": True,
+        "losses_finite": train_probe["losses_finite"],
         "device": str(device),
         "use_amp": use_amp,
-        "mock_only": bool(config.get("reproduction", {}).get("mock_only", False)),
+        "mock_only": mock_only,
         "implementation_mode": config.get("reproduction", {}).get(
             "implementation_mode", "legacy_collaboration"
         ),
         "manifest_summary": summaries,
         "dataset_probe": dataset_probe,
         "train_probe": train_probe,
+        "expected_temporal_length_from_data_lock": expected_temporal_length,
         "val_metrics": val_metrics,
         "test_metrics": test_metrics,
         "resume_probe": {
@@ -279,11 +448,16 @@ def run_preflight(
             "resume_epoch": int(resume_epoch),
             "resume_best_metric": float(resume_best),
             "resume_global_step": int(resume_global_step),
+            "resume_early_stop_counter": int(resume_early_stop_counter),
             "reproduction_fingerprint_sha256": reproduction_fingerprint["sha256"],
+            "forward_after_resume": resume_forward,
         },
     }
     if device.type == "cuda":
         summary["cuda_max_memory_mb"] = float(torch.cuda.max_memory_allocated(device) / (1024**2))
+        summary["peak_cuda_memory_bytes"] = int(torch.cuda.max_memory_allocated(device))
+    else:
+        summary["peak_cuda_memory_bytes"] = None
 
     return summary
 
@@ -297,7 +471,18 @@ def main() -> None:
         output_dir=args.output_dir,
         probe_samples=args.probe_samples,
         max_eval_batches=args.max_eval_batches,
+        real_data=args.real_data,
+        optimizer_steps=args.optimizer_steps,
     )
+    if args.real_data:
+        report_path = PROJECT_ROOT / "reports" / "runtime" / "r2_real_preflight.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        partial_path = report_path.with_suffix(report_path.suffix + ".partial")
+        partial_path.write_text(
+            json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        partial_path.replace(report_path)
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 

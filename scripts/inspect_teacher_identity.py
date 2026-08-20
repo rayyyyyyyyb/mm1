@@ -34,6 +34,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-manifest", default=None, help="Source manifest used for one-record smoke inference")
     parser.add_argument("--record-index", type=int, default=0)
     parser.add_argument("--device", default=None)
+    parser.add_argument("--repeat", type=int, default=2)
+    parser.add_argument("--fail-on-unresolved", action="store_true")
     parser.add_argument("--skip-smoke", action="store_true", help="Only inventory identities; not sufficient for export approval")
     parser.add_argument("--output", default="reports/teacher_identity.json")
     return parser.parse_args()
@@ -77,10 +79,7 @@ def _git_sha(repo: Path, errors: list[dict[str, str]], label: str) -> str | None
 
 
 def _torch_load(path: Path) -> Any:
-    try:
-        return torch.load(path, map_location="cpu", weights_only=False)
-    except TypeError:  # PyTorch < 2.6
-        return torch.load(path, map_location="cpu")
+    return torch.load(path, map_location="cpu", weights_only=True)
 
 
 def _checkpoint_identity(
@@ -141,12 +140,65 @@ def _array_stats(value: Any) -> dict[str, Any]:
     }
 
 
+def compare_repeated_outputs(
+    repeated_outputs: list[dict[str, Any]], *, tolerance: float
+) -> dict[str, Any]:
+    if len(repeated_outputs) < 2:
+        raise ValueError("Repeatability inspection requires at least two exports")
+    if tolerance < 0:
+        raise ValueError("determinism tolerance must be non-negative")
+    output_names = sorted(set().union(*(outputs.keys() for outputs in repeated_outputs)))
+    output_reports: dict[str, Any] = {}
+    all_passed = True
+    for name in output_names:
+        present = all(name in outputs for outputs in repeated_outputs)
+        arrays = [np.asarray(outputs[name]) for outputs in repeated_outputs if name in outputs]
+        baseline = arrays[0] if arrays else np.asarray([])
+        shape_identical = present and all(array.shape == baseline.shape for array in arrays[1:])
+        finite = present and all(bool(np.isfinite(array).all()) for array in arrays)
+        bitwise_identical = shape_identical and all(
+            np.array_equal(array, baseline, equal_nan=False) for array in arrays[1:]
+        )
+        max_abs_diff: float | None = None
+        if shape_identical and arrays:
+            max_abs_diff = max(
+                (float(np.max(np.abs(array.astype(np.float64) - baseline.astype(np.float64))))
+                 if array.size else 0.0)
+                for array in arrays[1:]
+            )
+        passed = bool(
+            present
+            and shape_identical
+            and finite
+            and max_abs_diff is not None
+            and max_abs_diff <= tolerance
+        )
+        all_passed = all_passed and passed
+        output_reports[name] = {
+            "shape": list(baseline.shape),
+            "present_each_repeat": present,
+            "shape_identical": shape_identical,
+            "finite": finite,
+            "bitwise_identical": bitwise_identical,
+            "max_abs_diff": max_abs_diff,
+            "tolerance": float(tolerance),
+            "passed": passed,
+        }
+    return {
+        "status": "pass" if all_passed else "failed",
+        "repeat_count": len(repeated_outputs),
+        "tolerance": float(tolerance),
+        "outputs": output_reports,
+    }
+
+
 def _run_smoke(
     config: dict[str, Any],
     source_manifest: str | Path,
     record_index: int,
     device: str,
     path_root: Path,
+    repeat: int,
 ) -> dict[str, Any]:
     from src.teachers.beats_audio import BEATsAudioTeacher
     from src.teachers.clap_text import ClapTextTeacher
@@ -168,6 +220,9 @@ def _run_smoke(
         vision_ckpt_path=_path(iv_cfg["vision_ckpt_path"], path_root),
         text_ckpt_path=_path(iv_cfg["text_ckpt_path"], path_root),
         extra_ckpt_path=_path(iv_cfg["extra_ckpt_path"], path_root),
+        vision_ckpt_sha256=str(iv_cfg["vision_ckpt_sha256"]),
+        text_ckpt_sha256=str(iv_cfg["text_ckpt_sha256"]),
+        extra_ckpt_sha256=str(iv_cfg["extra_ckpt_sha256"]),
         device=device,
         num_frames=int(iv_cfg.get("num_frames", 8)),
         align_dim=int(iv_cfg.get("align_dim", config["data"].get("strong_teacher_dim", 512))),
@@ -175,33 +230,47 @@ def _run_smoke(
     weak = BEATsAudioTeacher(
         repo_root=_path(beats_cfg["repo_root"], path_root),
         checkpoint_path=_path(beats_cfg["checkpoint_path"], path_root),
+        checkpoint_sha256=str(beats_cfg["checkpoint_sha256"]),
         device=device,
     )
     text = ClapTextTeacher(
         repo_root=_path(clap_cfg["repo_root"], path_root),
         checkpoint_path=_path(clap_cfg["checkpoint_path"], path_root),
+        checkpoint_sha256=str(clap_cfg["checkpoint_sha256"]),
         version=str(clap_cfg.get("version", "2023")),
         device=device,
         normalize=bool(clap_cfg.get("normalize", False)),
     )
 
-    visual_features, visual_logits = strong.export_segments(
-        resolve_frame_groups(record, expected_segments)[:1], query=query
-    )
-    audio_features = weak.export_segments(resolve_audio_segments(record, expected_segments)[:1])
-    text_features = text.encode_queries([query])
+    if repeat < 2:
+        raise ValueError("--repeat must be at least 2 for real teacher smoke")
+    frame_groups = resolve_frame_groups(record, expected_segments)[:1]
+    audio_segments = resolve_audio_segments(record, expected_segments)[:1]
+    repeated_outputs: list[dict[str, Any]] = []
+    for _ in range(repeat):
+        visual_features, visual_logits = strong.export_segments(frame_groups, query=query)
+        audio_features = weak.export_segments(audio_segments)
+        text_features = text.encode_queries([query])
+        repeated_outputs.append(
+            {
+                "internvideo2_features": np.asarray(visual_features),
+                "internvideo2_logits": np.asarray(visual_logits),
+                "beats_features": np.asarray(audio_features),
+                "clap_text_features": np.asarray(text_features),
+            }
+        )
+    tolerance = float(export_cfg.get("determinism_tolerance", 0.0))
+    repeatability = compare_repeated_outputs(repeated_outputs, tolerance=tolerance)
     return {
-        "status": "pass",
+        "status": "pass" if repeatability["status"] == "pass" else "failed",
         "source_manifest": str(_path(source_manifest, path_root)),
         "record_index": record_index,
         "record_id": record_id(record, record_index),
         "query": query,
         "outputs": {
-            "internvideo2_features": _array_stats(visual_features),
-            "internvideo2_logits": _array_stats(visual_logits),
-            "beats_features": _array_stats(audio_features),
-            "clap_text_features": _array_stats(text_features),
+            name: _array_stats(value) for name, value in repeated_outputs[0].items()
         },
+        "repeatability": repeatability,
     }
 
 
@@ -212,6 +281,7 @@ def inspect_teacher_identity(
     record_index: int = 0,
     device: str | None = None,
     run_smoke: bool = True,
+    repeat: int = 2,
 ) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     warnings: list[dict[str, str]] = []
@@ -319,10 +389,15 @@ def inspect_teacher_identity(
                     record_index=record_index,
                     device=str(device or export_cfg.get("device", "cuda" if torch.cuda.is_available() else "cpu")),
                     path_root=path_root,
+                    repeat=repeat,
                 )
                 for name, stats in smoke["outputs"].items():
                     if not stats["finite"]:
                         errors.append(_issue("teacher_smoke_nonfinite", f"{name} contains NaN or Inf"))
+                if smoke["repeatability"]["status"] != "pass":
+                    errors.append(
+                        _issue("teacher_smoke_not_repeatable", "Repeated teacher outputs exceeded tolerance")
+                    )
             except Exception as exc:
                 errors.append(_issue("teacher_smoke_failed", str(exc)))
                 smoke = {"status": "failed", "error": str(exc)}
@@ -350,6 +425,7 @@ def main() -> None:
         record_index=args.record_index,
         device=args.device,
         run_smoke=not args.skip_smoke,
+        repeat=args.repeat,
     )
     report["config"] = str(config_path)
     output_path = Path(args.output).resolve()

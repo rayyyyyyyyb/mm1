@@ -135,7 +135,7 @@ def test_epoch_boundary_resume_matches_uninterrupted_ids_losses_and_parameters(t
     resumed_model, resumed_loss, resumed_optimizer, resumed_scheduler, resumed_generator, resumed_loader = _training_objects(
         initial_state, 456
     )
-    start_epoch, best_metric, global_step = maybe_resume(
+    start_epoch, best_metric, global_step, early_stop_counter = maybe_resume(
         student=resumed_model,
         loss_module=resumed_loss,
         optimizer=resumed_optimizer,
@@ -149,7 +149,7 @@ def test_epoch_boundary_resume_matches_uninterrupted_ids_losses_and_parameters(t
         resumed_model, resumed_optimizer, resumed_scheduler, resumed_loader
     )
 
-    assert (start_epoch, best_metric, global_step) == (1, 0.5, 4)
+    assert (start_epoch, best_metric, global_step, early_stop_counter) == (1, 0.5, 4, 0)
     assert actual_ids == expected_ids
     assert actual_losses == expected_losses
     for name, value in expected_parameters.items():

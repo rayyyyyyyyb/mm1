@@ -729,3 +729,392 @@
 - 暂存快照自检：47 个文件；未暂存 diff 为空；`git diff --cached --check` 退出 0；禁止路径和 READY marker 匹配数为 0。
 - 该快照在加入本条日志前的 diff stat 为 `47 files changed, 5230 insertions(+), 144 deletions(-)`；加入本条后的精确最终 stat 将由 commit 后的 base→HEAD 命令返回。
 - 下一步只执行：重新暂存本日志快照、再次 diff check、创建唯一 commit、push 并校验远程 SHA。commit SHA 无法自包含在产生它的同一 tree 中，将写入外层持续日志并在最终交付中精确返回。
+
+## 347. 创建唯一 R1 commit 并推送 GitHub（2026-08-20）
+
+- 重新同步第 346 条后，提交前 `git diff --cached --check` 退出 0，未暂存变更为空。
+- 创建本阶段唯一 commit：`6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`，message 为 `feat: complete R1 data and teacher readiness audit`，提交退出码 0。
+- commit stat：`47 files changed, 5237 insertions(+), 144 deletions(-)`。
+- `git push -u origin repro/r1-data-teacher-readiness` 退出码 0，远程新建同名分支并设置 upstream。
+- `git ls-remote origin refs/heads/repro/r1-data-teacher-readiness` 返回 SHA `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`，与本地 HEAD 完全一致。
+- 推送后工作树无 `git status --short` 输出；worktree 与分支按 push 流程保留，未合并、未删除。
+
+## 348. GitHub 网页端可见性验证（2026-08-20）
+
+- 使用公开网页读取验证分支 URL `https://github.com/rayyyyyyyyb/mm1/tree/repro/r1-data-teacher-readiness` 可访问，页面显示正确分支名、R1 任务书、`all.md`、locks、reports、scripts/src/tests。
+- 验证报告 URL `https://github.com/rayyyyyyyyb/mm1/blob/repro/r1-data-teacher-readiness/reports/R1_DATA_TEACHER_READINESS_REPORT.md` 可访问。
+- 验证 commit URL `https://github.com/rayyyyyyyyb/mm1/commit/6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986` 可访问，标题为 `feat: complete R1 data and teacher readiness audit`。
+
+## 349. 最终只读交付复核（2026-08-20）
+
+- 将执行计划的全部步骤标记完成：R1-4 以 `BLOCKED_AUTHENTICATION_REQUIRED` 的 fail-closed 结果完成，R1-5→R1-14 以任务书规定的 `NOT_EXECUTED_GATE_BLOCKED` 完成收口，而非误标通过。
+- 最终只读命令退出 0：HEAD 和远程均为 `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`；直接父 commit 为唯一起点 `d8e681b2d3597f0f089ee8f0b42ef12466ffb599`；base→HEAD 恰好 1 个 commit；worktree clean。
+- 最终锁 hash：data `e182a44512ed6961d5f630e08acb5f384f17b73fd9e4e378af98b647c549eae4`；archival `0e80cbccc59eeb46dbe943638cb4c34cc5e5472f663a84a2f8ff7f43eb46c2f2`；teacher `49d1e772738fa51b31ee67663727890cc1b0c7836471dbfd21e3f023ec68e69d`；environment `7142186e0fc89f4a51e1e4d1dfbf3ddfbf2f7077e0037a028a621dc993d196f2`。
+- commit tree 中无 `reports/READY_FOR_R2_REVIEW.md`；R1 报告首尾均是 `BLOCKED_BEFORE_R2`；已提交 pytest 证据为 `100 passed in 16.69s`。
+- 最终 base→HEAD diff stat：`47 files changed, 5237 insertions(+), 144 deletions(-)`。
+
+## 350. 发现 R2 检查/指导件并进入新阶段（2026-08-20）
+
+- 扫描外层 `扩刊` 目录，定位唯一新增 Markdown：`MM26_OVORTHKD_R2_CONFERENCE_REPRODUCTION_GATE_AND_BASELINE_TASK.md`，47,382 bytes，时间 2026-08-20 10:58:42。
+- 确认现有 worktree：主树 `main@dca9f052...`；R0 `repro/r0-paper-faithfulness@d8e681b2...`；R1 `repro/r1-data-teacher-readiness@6e4ea32c...`。
+- 完整读取 `all.md` 末尾，确认上一阶段最后编号为 349，新阶段从 350 续写。
+- 完整阅读 `superpowers:using-superpowers`、`superpowers:brainstorming`、`superpowers:writing-plans`。本任务包含仓库检查、新阶段设计、代码/实验/产物与 GitHub 交付，分类为 architectural 多步任务。
+- 用户明确要求“直接开始、不再询问”；因此将以新任务书作为已批准的权威需求，完整读取后在仓库内写 design/plan 并 inline 执行，不另行暂停请求批准。
+
+## 351. 完整阅读 R2 任务书（2026-08-20）
+
+- 首次尝试单次 raw 读取时，工具 JavaScript 解析层因 Windows 路径转义报 `SyntaxError: Invalid or unexpected token`，命令未进入 PowerShell，没有修改文件。
+- 改用 forward-slash literal path 后分 5 段完整读取到 EOF；文件共 1,872 行，SHA256 `6043948ad9a897c9925ef0faa2da91c8ddec45b26f06351c9ef93bbd7653c0e0`。其中又有一次带 backslash 的第二段命令在工具解析层同样失败，改用 forward slash 后成功；所有 0→28 节均已读取。
+- 唯一 R2 起点是 `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`，目标分支 `repro/r2-conference-reproduction-readiness`，最终状态只能为 `READY_TO_IMPLEMENT_CONFERENCE_EXPERIMENTS` 或 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`。
+- 代码阶段要依次修复：seen/unseen 合同、不可布尔绕过的 readiness gate、四类 F1 命名/官方 parity、官方 layout 优先的 preprocessing contract、split-safe/O(N) teacher receipts、exact resume/persistent workers/CUBLAS/BN probe、teacher wrapper/checkpoint/audit/static evidence 安全。
+- 真实链路明确以“用户手动提供官方 SharePoint 压缩包”为外部输入；未提供时不再暴力探测、不用镜像、不猜历史事实/教师 checkpoint，真实 data/teacher/export/preflight 必须保持 blocked。
+- 本阶段禁止完整会议训练和任何 VP-AdaOrthKD/期刊扩展；`full_run_blocked` 必须仍为 true。
+
+## 352. R2 隔离 worktree 安全检查（2026-08-20）
+
+- 完整阅读 `superpowers:using-git-worktrees`，选择用户指定的外层 `扩刊` 目录建立 R2 隔离 worktree。
+- 主树检测为 normal repo（Git dir=common dir=`.git`），当前 `main`；不是 submodule。
+- 起点 commit 对象复核为 `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`，其直接父为 `d8e681b2...b599`；本地与远程尚无 `repro/r2-conference-reproduction-readiness` 同名分支。
+- 安全检查发现主树尚未 ignore `扩刊/`，`git status` 显示整个外层目录为 untracked。为不把任务书、日志和已有 R0/R1 worktree 误加到主分支，在本地 `.git/info/exclude` 增加 `/扩刊/`；这是不入库的本地 worktree 安全规则，不改动 main/R1 commit。
+
+## 353. 创建 R2 精确起点 worktree（2026-08-20）
+
+- `git check-ignore -v 扩刊/OV-OrthKD-R2` 确认新本地 exclude 生效，主树 `git status --short` 随后为空。
+- 执行 `git worktree add 扩刊/OV-OrthKD-R2 -b repro/r2-conference-reproduction-readiness 6e4ea32c...`，退出码 0。
+- 新 worktree 路径：`C:\Users\lwz20\Desktop\OV-OrthKD-Collaboration-Base1\扩刊\OV-OrthKD-R2`；分支 `repro/r2-conference-reproduction-readiness`；HEAD 精确为 `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`；工作树 clean。
+- R0、R1 worktree 均保留原状；没有合并或删除任何旧分支。
+
+## 354. 在 5090 建立 R2 精确基线并验证（2026-08-20）
+
+- 以本地 R2 分支创建 complete-history Git bundle，`git bundle verify` 退出 0，内含 `6e4ea32c...` 的 R2 ref 与完整历史。
+- 5090 事前检查：`E:\OV-OrthKD-R2` 不存在；R0 已验证 Python 3.11.9 可用；GPU 仍为 RTX 5090、driver 610.88、32607 MiB。
+- 初次从 bundle clone 成功但因 bundle 没有默认 HEAD 而未自动 checkout，后续 `rev-parse HEAD` 退出 1；对象和 remote ref 完整存在，不是仓库损坏。
+- 只读 `show-ref` 确认 `refs/remotes/origin/repro/r2-conference-reproduction-readiness=6e4ea32c...`；随后显式建立同名 tracking branch，退出 0，HEAD 精确、status clean、origin 恢复为 GitHub URL。
+- 5090 未修改 R2 基线矩阵：`pip check` 0；`compileall` 0；`pytest -q` 0，`100 passed in 30.24s`；CUDA 2048/2/5 验证 0 且 finite；smoke test 0。
+- 基线 worktree 就绪；后续代码实现只在 R2 分支和 `E:\OV-OrthKD-R2\repo` 进行。
+### 355. 锁定 R2 官方评测器历史证据（2026-08-20）
+
+- 在已锁定的官方 OV-AVEL 仓库副本 `扩刊/OV-OrthKD-R1/external/OV-AVEL` 中定位到评测器：`proposed_method/ImageBind-main/utils/eval_metrics.py`。
+- 官方仓库提交：`b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6`；工作树干净。
+- 评测器文件 SHA256：`013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19`。
+- 已完整阅读文件：`segment_level` 按活动类别计算并宏平均类别 F1；`event_level` 将长度为 10 的序列恢复为连续事件，并用 IoU >= 0.5 做非排他匹配。R2 将以该源码和哈希建立 evaluator lock 与本地 parity fixture，不改写其语义。
+### 356. 检查官方 OV-AVEBench 人工下载归档（2026-08-20）
+
+- 只读检查了 R2 预定目录 `data/downloads/official`、本地 `扩刊` 和用户 `Downloads` 中名称含 OV/AVE/AVEBench 的常见归档文件。
+- R2 预定目录尚不存在；`扩刊` 中未发现官方数据归档；`Downloads` 唯一正则命中是与项目无关的 `FonePaw Android Data Recovery 6.2.0.zip`（名称中的字母组合导致误命中）。
+- 结论：本阶段当前没有用户通过获授权 Microsoft 会话人工下载的官方 OV-AVEBench 归档。按任务书不得继续试探 SharePoint、不得使用镜像、不得伪造 data lock；真实数据全量审计、教师导出和一步预检将保持可审计阻塞，最终状态至多为 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`，除非后续同一执行过程中出现有效官方归档。
+### 357. 固化 R2 设计与执行计划（2026-08-20）
+
+- 新增设计文档 `OV-OrthKD-R2/docs/superpowers/specs/2026-08-20-r2-conference-reproduction-readiness-design.md`，明确边界、共享 split 契约、不可绕过 readiness gate、官方指标 parity、canonical 预处理、O(N) 教师导出、确定性恢复、安全加载和阻塞语义。
+- 新增执行计划 `OV-OrthKD-R2/docs/superpowers/plans/2026-08-20-r2-conference-reproduction-readiness.md`，按任务书顺序拆成七组 TDD 任务，最后统一验证、提交并推送。
+- 因用户明确要求直接执行且 R2 任务书给出了完整验收标准，本任务书作为已批准设计输入，不再暂停请求设计确认。
+### 358. 启用执行计划与 TDD 约束（2026-08-20）
+
+- 完整阅读 `superpowers:executing-plans`、`superpowers:test-driven-development` 及其必读 `writing-good-tests.md`。
+- 已复核：R2 在隔离 worktree/独立分支上，计划无需要猜测的实现缺口；真实数据缺失是任务书允许并要求显式记录的终局阻塞，不妨碍先完成代码和合成契约验证。
+- 后续所有行为变更遵循 RED（预期失败）→ GREEN（最小实现）→ focused regression；测试断言使用独立手算值/真实行为，不以源码文本或 mock 自身作为结论。
+### 359. R2 split contract 首轮 RED 与测试修正（2026-08-20）
+
+- 新增 `tests/test_r2_split_type_contract.py`，覆盖 close/open 映射、`meta.cls_type`、字段冲突和官方 24,800 条记录对应的精确 seen/unseen 分区计数。
+- 第一次远端收集退出码 1，但原因是测试自身导入未安装的 `soundfile`，尚未触及目标行为；按 TDD 规则移除了该无关依赖，将 manifest 集成行为留到 canonical preprocessing 命令级测试。
+- 修正后在 5090 重新运行，退出码 1，得到预期 RED：7 个断言均因 `src.data.split_types` 尚不存在而失败，失败原因正是 R2 共享 helper 缺失。
+### 360. 完成共享 split helper 与三类消费端迁移（2026-08-20）
+
+- 新增 `src/data/split_types.py`：只接受官方 `close/open` 与 canonical `seen/unseen`，统一归一化；同时读取 top-level、`meta.split_type`、`meta.cls_type` 等历史字段，并在冲突时抛错。
+- 数据集、全量审计和训练/评测 batch 解析均迁移到共享 helper；audit 同步改为基于解析结果计算 seen/unseen 类别集合。
+- 扩充 RED 至 dataset/audit/evaluation 三个真实消费端：修复前 10 项全部按预期失败（dataset/evaluation 返回 unknown、audit 计数为空）。
+- GREEN 后在 5090 运行新测试与 R1 dataset/audit/evaluation 回归，退出码 0：`36 passed in 6.55s`。
+
+### 361. 修复非 split domain 的兼容性回归（2026-08-20）
+
+- 为 `domain=ov_avebench` 且无 split 元数据的历史 batch 新增回归测试；RED 退出码 1，准确复现共享 normalizer 抛 `ValueError`，而历史契约应返回 `unknown`。
+- 最小修复仅在 evaluation 的 domain fallback 边界捕获非法 domain，严格的实际 split 字段仍会报错。
+- 5090 focused regression 退出码 0：`37 passed in 6.75s`。
+- Manifest builder 的双层 split 字段将在预处理重构中以无 `soundfile/librosa` 依赖的命令级集成测试补齐。
+### 362. Canonical readiness gate RED（2026-08-20）
+
+- 新增 `tests/test_r2_canonical_readiness_gate.py`，使用真实临时 YAML/JSON/文件字节而非 mock，覆盖：`full_run_blocked=false` 不得绕过、五锁+exported audit 完整通过、checkpoint 字节篡改被发现、指纹绑定 lock/audit/git/mode/variant。
+- 5090 RED 退出码 1：4 项按预期失败，分别表现为旧布尔短路未抛错、validator 缺失（2 项）、fingerprint 不接受 evidence 参数。
+
+### 363. 实现不可绕过的 canonical readiness 内容校验（2026-08-20）
+
+- 新增 `src/utils/canonical_readiness.py`，逐内容校验 data/archival/teacher/preprocessing/evaluator 五锁与 exported audit；验证官方 13182/5798/5820 计数、九项历史事实、三教师精确身份和非空 checkpoint、24800 条导出、零 error/warning、cache root、evaluator parity 以及锁内所有 path+SHA256 文件证据。
+- `claim_level=archival_exact` 时，训练入口无论 `full_run_blocked` 布尔值为何都执行 gate；只有显式 bounded preflight 保留原有许可。
+- reproduction fingerprint 升级到 schema 2，加入 evidence、git state、run mode、variant，并保留旧调用兼容。
+- 5090 focused regression 退出码 0：`27 passed in 7.03s`。
+
+### 364. 锁定 canonical 配置与训练指纹接线（2026-08-20）
+
+- 先扩充配置测试；RED 退出码 1，确认旧配置缺少 `claim_level`。
+- 更新 `configs/ov_orthkd_mm26_repro.yaml`：R1 起点改为 `6e4ea32...`，加入 `archival_exact`、`conference_baseline`、五锁/audit/readiness receipt 路径、三项新增历史事实和 `persistent_workers: false`；`full_run_blocked: true` 未解除。
+- 训练入口构建指纹时传入五锁、audit/receipt、当前 git commit/dirty 状态、train/evaluation 模式与 variant。
+- 5090 gate/config/training/resume focused regression 退出码 0：`30 passed in 7.39s`。
+### 365. 从锁定官方 evaluator 生成离线 parity cases（2026-08-20）
+
+- 将锁定源码临时复制到 5090 的 `E:\OV-OrthKD-R2\official_eval_metrics.py` 以尝试计算 fixture；两次 SSH `python -c` 因 Windows/SSH 引号被截断为 `SyntaxError: invalid syntax`，均未生成或修改仓库文件。
+- 改在本机锁定官方 checkout 的 evaluator 目录直接通过 stdin 执行只读 Python probe，退出码 0；得到四组官方 segment/event 结果：perfect=1/1、all-TN=1/1、partial=0.8666666666666667/1、merged=0.8/0。
+- 新增离线 fixture `tests/fixtures/official_ovavel_metric_cases.json`；SHA256 `69c5d0f2e9eeded3ed2944329340d1ed6d9c46d50f8b19564dddc1311bb022fb`。
+
+### 366. OV-AVEL 指标 TDD 与官方 parity（2026-08-20）
+
+- 新增 `tests/test_r2_ovavel_metrics_parity.py`，覆盖官方四 case、按 `sample_offsets` 恢复样本、四个不可混淆字段、AP/AUROC 和非法 offsets。
+- 5090 RED 退出码 1：3 项均因 `src.evaluation.ovavel_metrics` 缺失而按预期失败。
+- 新增 `src/evaluation/ovavel_metrics.py`：binary micro、per-query foreground macro、官方兼容 query/background segment F1、官方非排他事件匹配 event F1，并按样本平均。
+- 5090 GREEN 退出码 0：`3 passed in 5.85s`。
+
+### 367. 消除单类别指标 warning 的根因（2026-08-20）
+
+- 接入 grouped metrics 后测试虽 `7 passed`，但出现 9 条 sklearn 单类别 AP/AUROC warning；完整阅读并应用 `superpowers:systematic-debugging`。
+- 根因确认：新聚合函数依赖捕获 `ValueError`，而当前 sklearn 对单类别 AUROC 返回 warning；无正类 AP 也发 warning。
+- 新增 warning-as-error 回归；RED 退出码 1，精确停在 `roc_auc_score` 的 `UndefinedMetricWarning`。
+- 最小修复为调用前显式检查类别数/正类存在；5090 复验退出码 0：`8 passed in 6.05s`，零 warning。
+
+### 368. 锁定 evaluator 证据并消除输出字段歧义（2026-08-20）
+
+- 新增 parity receipt `reports/evaluation/mm26_official_evaluator_parity_receipt.json`，SHA256 `13943f1c5f67c112f3474420777298de6fc13fc4d6b227ae67df664b3a32e777`。
+- 新增 `configs/locks/mm26_evaluator_lock.yaml`：官方 repo/commit/source SHA 与四组 parity 已锁定通过；论文表格 F1 映射和 val-calibrated 映射因无历史证据保持 unresolved，因此 lock 顶层为 blocked。
+- 先扩充 grouped/calibration 输出测试；两轮 RED 分别确认缺少 `binary_micro_f1_at_0_5` 与仍存在 `best_f1`。
+- 训练评测和 `evaluate_pr_f1.py` 现输出完整 binary/query/segment/event 字段，并将阈值校准字段明确命名为 `best_binary_f1`、`binary_micro_f1_at_threshold` 等；不再输出歧义裸 `f1`。
+- 5090 metrics/evaluation/training focused regression 退出码 0：`25 passed in 6.46s`。
+### 369. Canonical preprocessing 契约 RED（2026-08-20）
+
+- 新增 `tests/test_r2_preprocessing_contract.py`，真实创建 PNG/WAV/ZIP fixture，覆盖自然排序、不重复帧、帧数不足 fail-fast、absolute/relative path mode、JSONL 原子发布、安全解压 traversal 拒绝和全量 layout PNG/WAV 统计。
+- 5090 RED 退出码 1：5 项全部因旧 builder 的未安装 `soundfile` 顶层依赖或新 safe extractor/layout discovery 缺失而失败，目标原因明确。
+
+### 370. 重构 official-layout builder 并新增安全数据工具（2026-08-20）
+
+- 重写 `scripts/build_ov_avebench_source_manifests.py`：canonical 默认只引用官方 PNG/WAV，要求 PNG 数与标签 T 精确相等、自然排序、不重复/不重采样、不生成 spectrogram；top/meta 同时写 canonical split_type；支持 `relative_to_path_root|absolute`；JSONL 使用 `.partial`、flush/fsync、`os.replace`。
+- 旧 JPEG mel 管线保留为显式 `noncanonical_legacy_generated_jpeg_mel`，其 librosa/soundfile/Pillow 改为 lazy import，canonical 路径不再要求这些环境依赖。
+- 新增 `scripts/safe_extract_official_archive.py`：staging 解压，拒绝 traversal、符号/硬链接、device、重复目标、zip bomb 阈值，校验大小并生成 archive/tree SHA 后原子发布；当前审计实现支持 ZIP/TAR，7z/RAR 明确 fail-closed 等待受审外部 extractor。
+- 新增 `scripts/discover_ovave_layout.py`：递归统计顶层、split、扩展名、每目录文件数、PNG 尺寸/通道/命名模式/片段直方图、WAV 采样率/通道/时长，并原子写 JSON/Markdown。
+- 5090 focused GREEN 退出码 0：`16 passed in 6.15s`。
+
+### 371. 修复 preprocessing CLI 直接执行路径并建立 lock（2026-08-20）
+
+- 对三个 preprocessing entrypoint 运行真实 `--help` smoke；首个 builder 退出码 1，`ModuleNotFoundError: src`，后两个因命令链提前停止未运行。
+- 按系统化调试确认根因是直接执行脚本时 `sys.path[0]` 为 `scripts/`；先加 subprocess 回归，RED 退出码 1，再在导入项目模块前加入精确 PROJECT_ROOT。
+- 5090 preprocessing/split 回归退出码 0：`17 passed in 12.24s`，三个 entrypoint 均可直接运行。
+- 新增 `configs/locks/mm26_preprocessing_lock.yaml`：canonical 已实现的 no-repeat/path/atomic 契约锁定；官方 archive/layout 和学生音频预处理无证据，visual/audio 具体参数保持 null，顶层状态为 blocked；未将旧 JPEG-mel 参数冒充 canonical。
+### 372. 教师导出 scaling/split/resume RED（2026-08-20）
+
+- 新增 `tests/test_r2_teacher_export_scaling.py`，以真实原子文件写入并用保留副作用的 writer spy 验证 aggregate receipt 写次数；覆盖 split-safe path、unsupported split、40 records 单次 aggregate、共享 query embedding、独立 record receipt，以及删除 aggregate 后仍能从 record receipts 恢复。
+- 5090 RED 退出码 1：3 项按预期失败——split helper 缺失、无 per-record receipts/text_by_query、删除 aggregate 后旧实现因已有 record-level text artifact 报错。
+
+### 373. 实现 split-safe O(N) 教师缓存与内容寻址文本共享（2026-08-20）
+
+- `src/teachers/common.py` 新增严格 `canonical_split_name` 与 `record_artifact_dir`；strong/weak artifact 固定为 `<cache>/<train|val|test>/<safe_id>/...`，非法 split 立即拒绝。
+- `src/teachers/pipeline.py` 改为每条成功后原子写 `<cache>/receipts/<split>/<safe_id>.json`，全部成功后才单次合并 aggregate JSONL；resume 只扫描 per-record receipts 并重新校验 source manifest hash、teacher lock hash、artifact shape/bytes/SHA。
+- error 同时拥有 `<cache>/errors/<split>/<safe_id>.json` 独立原子 receipt；传入兼容 error JSONL 时仅在首个终止错误写一次。
+- 文本 embedding 改为 `text_by_query/<query_sha256>.npy`，带 query/lock/artifact sidecar；同一 query 只编码一次，跨 record/split 在 teacher lock 一致时安全复用；record receipt 记录 query 与 query SHA。
+- 5090 R2 GREEN 退出码 0：`3 passed in 5.38s`。
+
+### 374. 教师导出回归与 mock cache 双 split 修复（2026-08-20）
+
+- 首轮 R1/export/preflight/config 回归退出码 1：`10 passed, 4 failed`；四项均为旧测试/fixture 调用未传 split，严格新 API 正确拒绝 `unknown`。
+- 将三处 train 测试调用和 smoke fixture 显式传入 split；复验退出码 0：`17 passed in 9.20s`。
+- 新增 smoke cache 层级回归，RED 退出码 1，发现旧 fixture 自己先拼 `<root>/<split>`、pipeline 又拼 split，形成 `train/train`。
+- 最小修复为 fixture 始终传 cache root，由 pipeline 统一负责 split 命名；最终同组回归退出码 0：`17 passed in 8.96s`。
+### 375. 模型构造状态与精确 epoch resume TDD（2026-08-20）
+- 新增 `tests/test_r2_model_construction_state.py` 与 `tests/test_r2_exact_epoch_resume.py`，覆盖 timm 特征维度探测不污染 train/eval 状态、`head_hidden_size` 优先级、显式 `persistent_workers=false`、CUDA 确定性环境、checkpoint 内 early-stopping 状态，以及 `num_workers=2`、随机增强下的精确 epoch 恢复。
+- 初次 RED 得到 5 项目标失败；一次大块补丁因上下文与 preflight 当前代码不一致而被 `apply_patch` 完整拒绝，未产生部分写入，随后按文件拆分补丁。
+- 实现中将 `CUBLAS_WORKSPACE_CONFIG=:4096:8` 放在 NumPy/PyTorch import 前；DataLoader 只读取显式配置；checkpoint 保存/恢复 `epochs_without_improvement`；main 与 preflight 迁移到四元 resume 返回值。
+- 首轮 GREEN 组合为 `13 passed, 1 failed`；真实 timm 探针证明 `mobilenetv3_small_100` 的 `num_features=576`、`head_hidden_size=1024`、实际 forward 输出 1024，`tf_efficientnetv2_b2` 的 `num_features=1408` 与实际输出 1408。新增独立优先级 RED 后，修复为优先使用 `head_hidden_size`、其次 `num_features`、最后在 inference/eval 中探测并恢复原始 mode。
+- 最终模型状态、精确 resume、R1 checkpoint 和 teacher preflight 回归退出码 0：`15 passed in 50.71s`；其中多 worker+增强的 exact-resume 集成测试真实执行并通过。
+
+### 376. 教师 wrapper checkpoint/输入安全加固（2026-08-20）
+- 新增 `tests/test_r2_teacher_wrapper_safety.py`；RED 退出码 1、`3 failed`，分别证明 BEATs NumPy 输入仍可触发 pickle 路径、checkpoint 缺少调用前 SHA256 强校验、InternVideo 短帧组会被静默重复。
+- 在 `src/teachers/common.py` 新增流式 checkpoint SHA256 校验；三类真实教师构造器现要求精确 64 位小写 hash 并在任何反序列化/上游构造前验证。BEATs `.npy/.npz` 使用 `allow_pickle=False` 且 `.npz` 只接受唯一 `waveform` key；所有 PyTorch checkpoint 改用 `weights_only=True`；InternVideo 帧数不等于锁定值时 fail-fast，不再重复/下采样。
+- canonical 配置新增 InternVideo2 三个 checkpoint hash 与 BEATs/CLAP checkpoint hash 字段，当前均为 `null`，因此没有历史证据时真实构造会按要求阻断；导出和 identity CLI 已接线这些必需字段。
+- 首次复验误用了不存在的 `E:\\OV-OrthKD-R2\\venv`，远端在启动 pytest 前返回“系统找不到指定的路径”；只读核对确认 repo 存在，随后从历史日志恢复正确隔离解释器 `E:\\OV-OrthKD-R0\\env\\.venv`。一次递归 Python 搜索超过 60 秒无输出后，仅终止本轮搜索句柄；没有终止环境或实验进程。
+- 使用正确解释器复验新增安全用例退出码 0：`3 passed in 4.94s`。下一组调用在启动前遇到一次 SSH connection timeout；重试后得到 `3 failed, 3 passed`，三个失败均为 fixture 找不到 Git。按既有环境契约显式加入 `E:\\OV-OrthKD-R0\\env\\Git\\cmd` 后最终退出码 0：`6 passed in 9.30s`。
+
+### 377. 审计配置化、安全读取与逐记录证据（2026-08-20）
+- 新增 `tests/test_r2_audit_config_contract.py`。首次与另两组一起运行时，历史 inspector 缺失导致 collection 退出 1；排除该已知缺失后 audit/static RED 为 `3 failed`：audit 不接受 config，static evidence 缺七类文件。
+- `audit_mm26_reproduction.py` 新增 `--config`、`--preprocessing-lock`、`--teacher-lock`；max segments 与三类工件维度从 config/teacher lock 读取；`.npy/.npz` 全部 `allow_pickle=False`，NPZ 只接受唯一 `arr_0` key。
+- 审计现按 split 输出 seen/unseen 计数，汇总每条 `preprocessing_evidence` 的重采样真假/缺失，分别输出 source/exported manifest SHA256；canonical full scan 缵缺证据会产生 warning，配合 `--fail-on-warning` 非零退出。
+- 官方 canonical builder 写入 temporal/audio resampling 均为 false 的逐记录证据；显式 noncanonical legacy 路径记录真实 frame/audio 重采样行为。`atomic_artifacts.artifact_metadata` 同步拒绝任意/多 key NPZ。
+
+### 378. 静态运行十件套与安全历史 checkpoint inventory（2026-08-20）
+- `write_static_run_evidence()` 现输出任务书要求的 `config_resolved.yaml`、claim、Git、manifest、五 lock、teacher cache tree、官方 evaluator、experiment variant、pip freeze、CUDA environment 十类证据。
+- Git dirty 时保留声明 claim，同时把 effective claim 自动降级为 `noncanonical_diagnostic`；clean 时才保留声明级别。lock、cache 和 evaluator 都计算实际 SHA/存在性/匹配状态。
+- 新增 `scripts/inspect_historical_checkpoint.py`：仅用 `weights_only=True` 读取用户指定的可信本地 checkpoint，输出 top-level keys/types、脱敏 config、参数名/dtype/shape、optimizer/scheduler 结构类型、epoch/global step、bytes/SHA；不输出 tensor value 或绝对私人路径。
+- `evaluate_pr_f1.py` 与训练末尾 best checkpoint 加载也改为 `weights_only=True`。
+- 三组新增测试加旧 audit/atomic 回归在 5090 退出码 0：`15 passed in 7.01s`。
+
+### 379. 教师真实 smoke 重复一致性契约（2026-08-20）
+- 新增 `tests/test_r2_teacher_repeatability.py`；RED 在 collection 阶段退出 1，明确 `compare_repeated_outputs` 尚不存在。
+- identity CLI 新增任务书指定的 `--repeat`（默认 2）和 `--fail-on-unresolved` 参数；真实 smoke 对同一强视觉/音频/文本输入连续导出，比较 output key、shape、finite、bitwise identity 与 FP64 max-abs-diff。
+- tolerance 必须非负，默认 0（bitwise）；若未来上游只能数值确定，必须由锁定配置显式给值。repeat 少于 2、shape 改变、非 finite 或差值超阈均 fail-closed。
+- repeatability 与原 identity 回归在 5090 退出码 0：`5 passed in 8.40s`。
+
+### 380. 九项历史事实的系统化只读搜索（2026-08-20）
+- 检查全部 Git refs/tags/reflogs；历史仅有 initial `dca9f052...`、R0 `d8e681b2...`、R1 `6e4ea32c...` 三个提交，无 pre-R0 branch/tag/reflog。
+- 对 `step400`、`InternVideo2_CLIP`、`lambda_orth`、`early_stop`、`n_mels`、`hop_length`、`projection_dim`、`F1@0.5`、`TransformerLayer` 做 Git pickaxe 和当前/旧目录关键字搜索；命中均来自 initial 当前实现或 R0/R1 任务书，记录的是冲突/临时选择，不能证明会议历史值。
+- 本地 checkpoint 只有 R0 当天生成的 `preflight_resume.pt`、`best.pt`、`last.pt`；5090 R0 只有三份 bounded preflight，R1 只有 `r1_mock_preflight/preflight_resume.pt`，R2 无 checkpoint。它们全部晚于归档问题，排除为本任务生成的 mock/preflight 产物。
+- 5090 E: 顶层还存在其他无关项目目录，未擅自扩大到用户未置于本任务范围的工程；任务明确目录 R0/R1/R2 已完整盘点。
+- 结论：会议历史 checkpoint=0，九项事实全部 unresolved；未把当前代码、论文文字或最接近的公共 checkpoint 猜成历史事实。
+
+### 381. Conference readiness builder TDD（2026-08-20）
+- 新增 `tests/test_r2_conference_readiness_receipt.py`；首轮 RED 在 collection 阶段退出 1，明确 builder 模块缺失。
+- 新增 `scripts/build_conference_readiness_receipt.py`，读取 locks/audits/identity/repeatability/preflight/verification，逐 gate 计算 requirement，只有全部为真才输出 `READY_TO_IMPLEMENT_CONFERENCE_EXPERIMENTS`，否则唯一输出 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`。
+- 合成全通过证据与 archive 缺失双向测试 GREEN：`2 passed in 4.95s`。
+- 新增 direct `--help` subprocess 测试；RED 退出 1，复现脚本直接执行时 `ModuleNotFoundError: src`；在项目 import 前加入精确 PROJECT_ROOT 后修复。
+- 后续增加“五个 checkpoint 精确数量/bytes/SHA”“source 三 manifest SHA”“cache root 交叉一致”“data/preprocessing 两锁作为显式输入”测试；对应 RED 均真实失败，最终 builder 测试 `5 passed in 10.26s`。
+
+### 382. 生成 R2 五锁与 blocked 交付收据（2026-08-20）
+- 将 R1 六项未执行占位升级为九项系统搜索锁；data、archival、teacher、preprocessing、evaluator 五锁均诚实保持 blocked，未伪造 archive/checkpoint/cache hash。
+- 创建任务书要求的 archive extraction、layout discovery、source audit、exported audit、teacher identity、smoke repeatability、real preflight 和 verification JSON。未执行 gate 的 errors/warnings/统计使用 null 或明确 not-executed，不冒充 0-error 通过。
+- real preflight receipt 锁定 `invocation_count_this_stage=0`、`optimizer_steps=0`、`formal_metrics_emitted=false`；本阶段没有执行真实数据优化步，因为前置 gate 未通过。
+- teacher lock 明确列出 InternVideo vision/text/extra、BEATs、CLAP 五个槽位，全部 filename/bytes/SHA=null；InternVideo 声明 Base/B14 与实际 import small 的冲突保留。
+- evaluator 官方源 commit/SHA 和四 case parity 为已验证子事实，但论文 F1 字段映射仍 unresolved，故顶层不升级。
+
+### 383. 完整复制 R2 权威任务书（2026-08-20）
+- 首次从外层任务书经工具输出动态创建仓库副本后，副本到结尾语义完整但空行被工具层吞掉：1567 行 vs 原件 1872 行，SHA 不同；未接受为完整副本。
+- 改为按原文件 bytes 每 4096 字节分块只读、base64 传递，再只用 `apply_patch` 重建仓库根文件。
+- 最终原件/副本均 1872 行；LF 归一化 SHA256 均为 `6043948ad9a897c9925ef0faa2da91c8ddec45b26f06351c9ef93bbd7653c0e0`，精确匹配。
+
+### 384. 定向矩阵超时拆分与 schema 兼容修复（2026-08-20）
+- 首次把 15 组定向测试放入同一 SSH 命令，外层在 244 秒上限到期且没有 pytest 结论；只读进程证据显示 exact-resume 主进程和两个 worker 曾真实占用 CPU/内存，SSH 断开后无遗留进程。该轮不计为通过。
+- 按调试证据拆分 exact-resume 与其余矩阵：exact-resume 退出 0，`3 passed in 49.31s`；其余首轮 `49 passed, 1 failed`，唯一失败为 teacher lock schema 标成 2 而现有离线 validator 要求 1。
+- 扩展字段无需破坏 schema，恢复 teacher lock `schema_version: 1`；其余定向矩阵退出 0：`50 passed in 18.67s`。
+
+### 385. Canonical blocked receipt 的 null fail-closed 修复（2026-08-20）
+- 第一次运行 canonical 正式入口时输出目录前后均不存在、进程退出 1，但 blocked exported audit 的 `teacher_checkpoint_sha256: null` 在 validator 内触发 `TypeError`，不是期望的聚合 readiness 错误。
+- 新增“提交的 blocked receipts 必须 RuntimeError fail-closed、不得内部 TypeError”测试；RED 精确复现。
+- validator 现先校验该字段必须为 list，null 被转为一条明确错误并继续聚合；完整 gate 测试 `5 passed in 6.37s`。
+- 重跑 canonical 入口退出 1，输出目录前后均 absent；错误完整列出 data/archival/teacher/preprocessing/evaluator/export/source/cache 等未满足 gate。
+
+### 386. 最终 5090 验证与 readiness 收据（2026-08-20）
+- 最终候选树 `python -m pip check` 退出 0，`No broken requirements found.`；`compileall -q src scripts tests` 退出 0。
+- 最终完整 `pytest -q` 退出 0：`149 passed in 72.00s`；这是加入全部 fail-closed/五锁测试后的最新结果。
+- CUDA 验证退出 0：Python 3.11.9、torch 2.10.0+cu128、CUDA 12.8、cuDNN 91002、RTX 5090 capability 12.0、2048 FP16 五次平均 0.0963968 ms、finite=true；smoke test 退出 0。
+- canonical guard 实测退出 1（预期），正式 output 在前后均不存在；完整训练未启动。
+- readiness builder 实测退出 1（预期 blocked），生成 JSON/Markdown；机器收据状态 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`、ready=false，11 个 blocker，P0/P1 tests、exact resume、full-run guard 三类 gate 为 PASS。
+- 当前五锁 SHA256：data `a655c9a1afcc53704f273f0d2efff41ca65300c55fcba4fc544a58c01867e303`；archival `fae52017dd6a26c6492c99c2f7238b092aacb62bb79709771dc86d61decb535b`；teacher `ff7ac9eaae1caa602e5d34de80f2ba986c6c2760671a0e5be4c07d21636faa0c`；preprocessing `b93d3417220d03a68616019758c67996edf362f244964e96657e38d42609431a`；evaluator `c8abd91ae7c7112adddba9cdc13c0baf4faf272040c68dda520ebc8514198358`。
+
+### 387. 提交前审计发现真实 preflight CLI 缺口并建立 RED（2026-08-20）
+- 按任务书第 18 节逐项复核时发现 `scripts/preflight_ov_orthkd.py` 尚未实现明确要求的 `--real-data --optimizer-steps 1`，且旧路径无条件使用 preflight 绕过 canonical readiness、会输出 val/test AP/F1；此前 `149 passed` 不覆盖此接口缺口。
+- 新增 `tests/test_r2_real_preflight_gate.py`，覆盖 archival-exact 必须显式 real-data、mock 不得冒充真实数据、优化器步数必须精确为 1、真实路径必须先过 canonical readiness 四项门禁。
+- 将新测试同步到 5090 后执行，退出码 1：`4 failed in 6.31s`；四项均精确失败于 `run_preflight()` 不接受 `real_data` 参数，确认 RED 有效。未加载真实数据、未执行任何优化器步骤，正式真实 preflight 调用计数仍为 0。
+
+### 388. 真实 preflight 门禁与结构化诊断实现（2026-08-20）
+- `preflight_ov_orthkd.py` 新增 `--real-data` 与 `--optimizer-steps`，真实模式拒绝 mock、精确限制一步、先执行 canonical readiness，且不再计算/输出 val/test AP/F1。
+- 一步探针现记录输入/教师工件 shape、seen/unseen 规范化、T 与 data lock、全部 loss finite、梯度存在且 finite、disabled logit loss 精确为 0、forward/backward/optimizer、checkpoint 保存恢复后再次 finite forward、显存和正式指标禁用标志；成功真实运行才原子发布 `r2_real_preflight.json`。
+- 旧 mock preflight 保持诊断指标兼容；同步 5090 后新门禁与旧 pipeline 定向回归退出 0：`7 passed in 8.13s`。
+
+### 389. 独立提交前代码审查结果（2026-08-20）
+- 按 `superpowers:requesting-code-review` 要求启动只读审查；审查确认当前 blocked 结论和五锁 null 诚实、split/O(N)/resume/checkpoint 安全等实现有效，但判定候选树尚不可提交。
+- Critical 包括：canonical readiness 成功后的提前 return 会绕过 `full_run_blocked`；validator 没有按生产 teacher-lock schema 校验实际 checkpoint；extract/layout/audit/preflight 生产者与 readiness 消费字段不兼容；旧 real preflight 绕门并输出正式指标。
+- Important 包括：train/eval fingerprint 的 run_mode 自相矛盾且独立 evaluator 绕验证；非 mock export 未始终绑定 teacher lock；seen/unseen 官方矩阵未硬校验；layout 缺元数据一一对应/零字节/重复/自然排序审计；诊断 override 标记不足；最终证据相对新测试已过期。另记录 BEATs 非有限输入和历史 checkpoint secret-key 脱敏两个小项。
+
+### 390. 修复正式运行门与全证据链契约（2026-08-20）
+- 重构 `validate_repro_config`：archival-exact 与 paper-specified-reconstruction 都先走 canonical evidence；真实 preflight 可要求完整前置证据但不触发正式训练，正式训练随后独立受 `full_run_blocked=true` 阻断；未知正式 claim fail-closed。
+- canonical validator 改为版本化校验 data/archival/teacher/preprocessing/evaluator、archive/layout/source/identity/repeatability/export/preflight 十二类输入；按 config 路径实际 hash 五个 checkpoint 和三份 manifest，校验官方 split 与 seen/unseen 矩阵、full artifact scan、真实 smoke/preflight、evaluator fixture/receipt、未决标记和 clean Git。
+- producer/consumer 对齐：safe extractor 输出 `extraction_status`；layout 可接官方 CSV 并输出 split/bijection/missing/extra/duplicate/zero-byte/natural-sort；audit 输出 status、manifest bytes、seen/unseen 硬错误、checkpoint hashes 与实际 cache tree hash；readiness builder 对同一 schema fail-closed。
+- formal train/eval 共用 invocation-invariant `conference_experiment` fingerprint；独立 `evaluate_pr_f1.py` 在创建输出前执行 readiness 和 checkpoint fingerprint 校验。非 mock teacher export 在 import/反序列化前必须核验 ready teacher lock、Git repo URL/commit/clean、wrapper class 和实际 checkpoint filename/bytes/SHA；无 aggregate receipt 时也绑定 lock hash。
+- diagnostic override 只允许 diagnostic/noncanonical 输出命名空间并写入有效 claim；BEATs 立即拒绝空/NaN/Inf waveform；历史 checkpoint config 按 secret-like key 脱敏。新增/扩充相应回归。两次本地 `compileall` 均退出 0。
+
+### 391. 审查修复的 5090 定向验证与调试（2026-08-20）
+- 将 20 个修复文件同步至 5090，首轮 56 项定向矩阵退出 1：`51 passed, 5 failed`。根因有二：Windows 子进程找不到 Git 时 validator 泄漏 `FileNotFoundError`；测试 fixture 用逻辑 LF 长度而实际 `Path.write_text` 是 CRLF，并仍篡改旧 checkpoint 文件名。
+- validator 现捕获 Git 启动失败并作为 canonical 聚合错误 fail-closed；fixture 改用实际 `stat().st_size`，tamper 目标改为生产式 `internvideo2_vision.pt`。
+- 因一次 SSH/cmd 引号使 `cd` 未生效，出现 `no tests ran`（未视为验证）；随后改用 PowerShell UTF-16 `EncodedCommand`，精确设置远端 PATH/cwd。
+- canonical/preflight 复验退出 0：`12 passed in 6.89s`；完整审查修复定向矩阵退出 0：`56 passed in 20.50s`。
+
+### 392. 冻结前第二轮独立代码复核（2026-08-20）
+- 独立只读复核给出“当前不建议合并”的结论；本轮继续整改，不提交、不推送，也未启动任何训练或真实数据优化步骤。
+- 四个 Critical：九项归档事实及 preprocessing/evaluator 锁尚未与运行配置逐项交叉绑定；Git clean 错把外置 `data.path_root` 当仓库根且查询失败会放行；五个教师 checkpoint 未要求精确唯一 role 集；readiness builder 维护了较弱的第二套判定、可能信任伪造 receipt。
+- 三个 Important：formal evaluation/训练评估可用有限批次却输出正式风格指标；layout discovery 缺 filesystem duplicate-basename 全量统计；最终 runtime evidence 仍是旧的 149-pass/旧 gate 输出，必须在代码冻结后整体重建。
+- 已核对当前分支仍为 `repro/r2-conference-reproduction-readiness`、HEAD 仍为唯一 R2 起点 `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`，工作树只有本阶段未提交改动；将按复核项补测试、修复并在 5090 重跑全部证据。
+
+### 393. 第二轮复核项的 TDD 回归设计（2026-08-20）
+- 完整阅读并应用 `superpowers:receiving-code-review`：逐项核对复核意见与当前代码，确认四个 Critical 和 formal partial-evaluation、filesystem duplicate-basename 两项行为缺口成立。
+- 扩充 canonical fixture 为结构化九事实绑定：为 temporal、teacher identity、scheduler/early-stop、初始化/增强、L2 reduction、fusion、frame sampling、student audio、evaluator mapping 指定精确 config paths，并准备独立 clean Git fixture。
+- 新增篡改 scheduler、fusion、frame sampling、audio preprocessing、evaluator mapping、preprocessing frame policy 的拒绝用例；新增 project root 无 Git 时 fail-closed、InternVideo checkpoint role 重复的 canonical 回归。
+- 新增 readiness builder 必须复用 canonical validator、CLI 输入必须与 config readiness 路径一致、伪造但字段看似完整的 receipts 必须 BLOCKED 的回归。
+- 新增 teacher export 重复 checkpoint role 拒绝、formal checkpoint `--max-batches` 拒绝、formal train `--max-eval-batches` 拒绝、filesystem duplicate-basename 全量报告的回归；尚未修改生产实现，下一步在 5090 验证这些用例对旧实现为 RED。
+
+### 394. 第二轮复核回归的 5090 RED 结果（2026-08-20）
+- 将五个测试文件同步到 5090；首次尝试用本地 JavaScript 生成 UTF-16 base64 时因运行时无 `btoa` 未启动远端测试，第二次 EncodedCommand 因 Windows 命令行长度限制也未启动，均不计为测试结果；改用远端 cmd 的精确 PATH/cwd 后成功运行。
+- focused RED 退出码 1：`15 failed, 27 passed in 25.23s`。失败逐一落在目标缺口：formal partial 参数尚未拒绝、六组锁/配置篡改未拒绝、project root 未使用、canonical/export 重复 role 未拒绝、builder 未导入 canonical validator 且伪造 receipt 可 READY、layout 无 duplicate_basenames 字段。
+- checkpoint-role canonical 用例还观察到旧实现只因测试篡改造成 Git dirty 而失败，错误中没有 role 缺口；这进一步证明需要先独立校验精确 role 集。RED 有效，未运行训练、未运行真实数据 optimizer step。
+
+### 395. 实现统一 canonical 证据链与剩余复核修复（2026-08-20）
+- `canonical_readiness.py` 新增九项事实各自的固定 config path 集与通用逐值 binding 校验；preprocessing 要求精确绑定 `data.preprocessing_mode/frame_policy`，evaluator 两个映射要求精确 `config_path` 且运行值相等。
+- canonical Git 检查改为只使用必填 `reproduction.project_root`，相对路径固定按代码根解析；`.git` 不存在、Git 启动/查询失败均 fail-closed，不再以外置 data root 判断仓库状态。
+- 三教师 checkpoint role 改为精确且唯一集合：InternVideo2 `{vision,text,extra_clip}`、BEATs `{encoder}`、CLAP `{text_encoder}`；canonical gate 与真实 teacher export 共用同一常量，重复/缺失在加载上游代码或 checkpoint 前拒绝。
+- readiness builder 现要求所有 canonical CLI inputs 都是文件路径且与 config `reproduction.readiness` 逐项解析为同一路径，然后调用同一个 `validate_canonical_readiness`；新增 `canonical_evidence_chain` gate 和可审计错误字段，避免较弱第二判定把伪造 receipt 升为 READY。
+- formal checkpoint evaluator 传 `--max-batches`、formal train/eval 传 `--max-eval-batches` 时均在产出正式 artifacts 前拒绝；layout discovery 现按大小写归一的 filesystem basename 全量统计 path/count，重复项产生明确 warning 并使 canonical layout 失败。
+- canonical 配置补上 project root、当前明确的 preprocessing/fusion/L2/frame-policy 字段和 unresolved evaluator/audio 字段；三份 blocked locks 补上未来解除阻塞时必须填充的 config paths/bindings，没有猜测任何未恢复值。
+
+### 396. 第二轮修复的首轮 GREEN（2026-08-20）
+- 本地 `python -m compileall -q src scripts tests` 退出码 0。
+- 首次把 15 个修复文件并发 SCP 到 5090 时 SSH `kex_exchange_identification: Connection reset`，未假定同步完整；随后使用顺序 SCP 全部重传，退出码 0。
+- 在 5090 正确环境与 Git PATH 下运行 canonical/builder/preprocessing/evaluation/export-lock 五文件矩阵，退出码 0：`42 passed in 24.94s`。此前 15 个 RED 全部转绿。
+- 该验证只执行单元/集成回归，没有启动正式学生训练，没有运行真实官方数据，也没有执行 optimizer step；真实 preflight invocation count 仍为 0。
+
+### 397. 修复后首轮全套候选测试（2026-08-20）
+- 5090 全量 `python -m pytest -q` 退出码 0：`176 passed in 80.02s`。
+- 该计数已覆盖新增 config-binding、project-root Git、精确 role、builder canonical-chain、partial formal evaluation 和 duplicate-basename 回归；相比旧 149-pass 证据新增的测试均已纳入。
+- 运行期间约 60 秒无最终输出时主动报告仍在执行；其中 exact-resume 仅使用测试 fixture 和多 worker，不是正式学生训练。正式官方数据、真实教师导出与 optimizer step 均未启动。
+
+### 398. 最终独立复核的新发现与技术判定（2026-08-20）
+- 同一只读审查者复核最新共享树，确认 teacher 精确 role、builder 共用 canonical validator、CLI readiness 路径一致性、standalone/formal partial-eval 限制已闭合，但判定仍不可提交。
+- 经源码核验确认四个 Critical：formal `--eval-only` 无 checkpoint 会评估随机 student；formal `--allow-incompatible-resume` 可在静态 claim 写入后才留 marker；config 只绑定九项有限字段，seed/backbone/LR/loss/epochs/batch 等仍可变；`reproduction.project_root` 可指向无关 clean Git。
+- 另确认 duplicate basename 的全局 warning 策略过严：不同、metadata-bijective clip 复用 `frame1.png` 是合法分目录布局，不应阻断；应保留全局统计，仅在同一逻辑 split/clip 内冲突时失败。
+
+### 399. 最后一组绕过的 TDD RED 与设计（2026-08-20）
+- 新增规范化完整实验 config hash、结构化可复算 archival evidence、selected_value 与 binding map 同一性、无关 clean Git root、formal eval-only 无 checkpoint、formal incompatible resume、三种 truncated training 和 CLI early-stop 写回 fingerprinted config 的回归。
+- 新增 duplicate basename 双向用例：不同逻辑 clip 的同名帧应通过且保留全局统计；同一逻辑 split/clip 在不同目录发生同 basename 冲突必须失败。
+- 同步三个新测试文件后，5090 RED 在 collection 阶段退出码 1：缺少 `canonical_experiment_config_sha256` 与 `apply_cli_config_overrides` 两个目标 API；`2 errors in 6.36s`，证明测试先于实现生效。
+- 另以独立外置 data root 回归验证 readiness 证据不应按数据盘重定基；旧实现退出码 1，精确失败为 `Missing readiness input ... external-data-volume/locks/data.yaml`。随后把 readiness/evaluator/file evidence 改按派生代码根解析，该用例与 builder 共 8 项复验退出码 0：`8 passed in 12.56s`。
+- 已实现规范化全配置 SHA256（排除纯路径、readiness 与 logging 输出字段）、精确结构化 file/Git evidence schema、actual CODE_ROOT 等值约束、formal 主入口早拒绝、所有 CLI 训练参数在 readiness/fingerprint 前写回 config，以及逻辑 clip duplicate 策略；尚待 5090 GREEN。
+
+### 400. 最后一组绕过修复的 5090 GREEN（2026-08-20）
+- 本地 `compileall` 与 `git diff --check` 均退出码 0；diff check 仅报告 Windows line-ending 提示，无 whitespace error。
+- 首轮 5090 六文件 focused 复验退出码 1：`2 failed, 69 passed`。根因一是测试切换 `full_run_blocked` 被完整 config hash 捕获，说明该字段属于审查 guard 状态而非实验超参数；根因二是 autouse 派生代码根 fixture 影响了“提交态 blocked receipts”真实仓库用例。
+- 规范化 hash 现明确排除 `full_run_blocked` 和纯说明性的 `blocked_archival_facts`，仍覆盖 seed、模型、数据批量、全部 loss/training/teacher/evaluator 数值；真实仓库用例显式恢复由源码派生的 CODE_ROOT。重新计算当前 canonical config SHA256 为 `51b7e7d64f85df029c8cce4f0319264149ca5aef69c3ecdd9eb50078c45cfda4` 并写入 archival lock。
+- 复验退出码 0：`71 passed in 30.44s`。覆盖 canonical gate、CLI config、preprocessing/layout、readiness builder、resume 与训练可复现入口；未运行正式训练或真实 optimizer step。
+
+### 401. Archival evidence claim 边界的最终封闭（2026-08-20）
+- 冻结复核确认 full normalized config hash、formal main early rejects、actual CODE_ROOT 和 logical duplicate policy 已闭合，但发现最后一个 Critical：resolved archival-exact 仍可引用 user-approval，格式正确但伪造的 Git locator 也未复算。
+- evidence validator 现同时接收 claim level、fact status 和派生代码根：`user_approval` 只允许 `paper_specified_reconstruction + approved_reconstruction_assumption + approved_by=user`；resolved archival-exact 仅能使用实际文件或可复算 Git 证据。
+- Git evidence 新增必填 `checkout_root`，实际执行并核验 `git remote get-url origin` 与 `git show <commit>:<path>`，对输出 bytes 复算 SHA256；checkout、remote、commit、path 或内容任一不符即阻断。
+- 新增三项双向回归：archival-exact 拒绝有效哈希的 user approval 文件、拒绝伪造 40/64 hex Git locator、paper-specified 明确批准文件允许通过。5090 canonical focused 退出码 0：`30 passed in 20.07s`。
+- 此前冻结候选全套在最后 evidence 修复前退出码 0：`188 passed in 84.76s`；因代码随后有变，该结果只作为候选，不作为最终提交证据，必须重跑。
+
+### 402. 冻结代码的最终 5090 验证与 readiness 重建（2026-08-20）
+- 最后只读复核明确返回 `Ready to merge: Yes`，确认 claim/status evidence gating、Git origin + `commit:path` bytes 复算及三项回归已闭合，无剩余代码 blocker。
+- 最终 `python -m pip check` 退出码 0：`No broken requirements found.`；`python -m compileall -q src scripts tests` 退出码 0。
+- 最终全量 `python -m pytest -q` 退出码 0：`191 passed in 87.46s`；最终 exact-resume focused 退出码 0：`3 passed in 48.82s`。
+- CUDA 运行验证退出码 0：Python 3.11.9、torch 2.10.0+cu128、CUDA 12.8、cuDNN 91002、NVIDIA GeForce RTX 5090 capability 12.0、2048 FP16 五次平均 0.0965503991 ms、finite=true。
+- `python scripts/smoke_test.py` 退出码 0：`OV-OrthKD smoke test passed.`。
+- canonical 正式训练入口实测退出码 1（预期），`outputs/r2_canonical_guard` 前后均不存在；错误为聚合 canonical readiness 拒绝，未构造正式输出、未启动训练。
+- readiness builder 实测退出码 1（预期），最终 JSON 状态 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`、`ready=false`、12 个 blocker，新增 `canonical_evidence_chain` 明确为 false；verification 输入 SHA 与实际文件一致为 `a2305899c53bfd8ed932068086580cc456e426a0d893b4db06aa44d64e7bf4f2`。
+- 最终五锁 SHA256：data `a655c9a1afcc53704f273f0d2efff41ca65300c55fcba4fc544a58c01867e303`；archival `4f6b947b78438793bf7cb0791d01f8f728b848c75768ae16e2b2fc7a3e1569dd`；teacher `ff7ac9eaae1caa602e5d34de80f2ba986c6c2760671a0e5be4c07d21636faa0c`；preprocessing `a389446990064a0b1a412b7de6ec668a18a8111fc32d6a262bbfb5b3f0aa93cc`；evaluator `54de7d974e676973d172d9bad523c173115804f0a4cfe8fc89c31c0e30775a62`。
+- 官方 archive SHA、三份 source manifest SHA、五个 teacher checkpoint SHA、teacher cache root SHA 仍诚实为 `null`；真实 preflight invocation/optimizer step 均为 0，正式学生训练从未启动。
+
+### 403. 最终报告与 all.md 完整同步（2026-08-20）
+- 更新 `reports/runtime/r2_verification.json`：最终 191-pass、exact-resume、CUDA、smoke、canonical guard、readiness builder 与独立审查结果均写入；同步后两次运行 builder，第二次确保 receipt 中 verification SHA 与最终文件完全一致。
+- 最终 readiness receipt 为 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`、`ready=false`、12 blockers；三份已修改锁在 receipt 中的 SHA 与当前文件一致。
+- 更新完整人工报告：新增 canonical evidence chain gate、完整 config hash、主入口 fail-closed 与 final code review 说明；测试计数由旧 149 更新为最终 191，五锁哈希全部更新。
+- 首次动态复制外层 `all.md` 时受到工具输出截断，只复制到 24,392 字符；规范化 SHA 与外层不一致，未接受。随后按原文件 191,566 bytes 分块 base64 读取、UTF-8 解码并仅通过 `apply_patch` 重建仓库根副本。
+- 最终外层和仓库根 `all.md` 均为规范化 118,238 字符，SHA256 均为 `f56e078870f2621f9494e10c30723d7f5b186a9ea3984edeab10900efd1bd7df`，内容完全一致。
+
+### 404. R2 提交前新鲜全量验证与边界审计（2026-08-20）
+- 完整读取并应用 `superpowers:using-superpowers`、`verification-before-completion` 和 `finishing-a-development-branch`；用户已明确要求推送当前 R2 分支，所以执行既定 push 路径，不合并或删除 worktree。技能引用的 `references/codex-tools.md` 在该安装目录不存在，读取命令退出 1；这不改变验证流程。
+- 首轮 PowerShell 兼容性审计中，旧版运行时不支持 `[Convert]::ToHexString`，该两项哈希返回 null；随后改用兼容哈希实现并再用 Python UTF-8 复核。外层和仓库根 `all.md` 在加入本条前均为 118,971 个规范化字符，SHA256 均为 `361b279341d3da770c16a27c400d48362ccf2a409e2afe02e5d77726532a87df`，内容完全一致。
+- 提交边界初审确认：分支 `repro/r2-conference-reproduction-readiness`，HEAD 与 merge-base 均为唯一 R2 起点 `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`，origin 为 `https://github.com/rayyyyyyyyb/mm1.git`；`git diff --check` 退出 0，所有必需交付文件存在，无超过 1 MiB 文件。
+- JSON/YAML 审计：25 个 JSON 全部解析、0 错误；14 个 YAML 全部解析、0 错误。敏感信息文件匹配数 0，受禁二进制/归档/权重的已跟踪文件数 0，报告与 README 中意外 READY 声明数 0。
+- 本地测试生成了 9 个被 Git 忽略的 `__pycache__` 目录。递归清理命令先被运行策略拦截，未删除任何文件；它们不在 Git 候选集合中。随后将本地 `src/scripts/tests/configs` 完整同步到 5090，SCP 退出 0。
+- 第一次尝试在本地 JavaScript 生成远端 PowerShell EncodedCommand 时因运行时无 `btoa` 而在 SSH 前失败；改用本机 PowerShell 的 UTF-16LE Base64 后成功执行。5090 对当前候选树新鲜运行 `python -m pytest -q`：退出 0，`191 passed in 88.62s`；未使用官方真实数据，未启动正式训练，未执行 optimizer step。
+- 用 `apply_patch` 将最新 pytest 时长写入 `reports/runtime/r2_pytest_full.txt`、`r2_verification.json` 和人工 R2 报告；同步 verification 后在 5090 重建 readiness receipt。builder 按预期退出 1，结果为 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`、`ready=false`、12 blockers；重建产物成功回传，本轮 verification SHA256 为 `239e6025965aa23c1d7eda13879f6128f48e7932afdf4ff279fa9be9f1d7741b`，与 receipt 完全一致。
+- 最终锁哈希复核：data `a655c9a1afcc53704f273f0d2efff41ca65300c55fcba4fc544a58c01867e303`；archival `4f6b947b78438793bf7cb0791d01f8f728b848c75768ae16e2b2fc7a3e1569dd`；teacher `ff7ac9eaae1caa602e5d34de80f2ba986c6c2760671a0e5be4c07d21636faa0c`；preprocessing `a389446990064a0b1a412b7de6ec668a18a8111fc32d6a262bbfb5b3f0aa93cc`；evaluator `54de7d974e676973d172d9bad523c173115804f0a4cfe8fc89c31c0e30775a62`。任务书规范化 SHA256 为 `6043948ad9a897c9925ef0faa2da91c8ddec45b26f06351c9ef93bbd7653c0e0`。
+- 最终执行边界复核：`full_run_blocked=true`，真实 preflight invocation=0，真实 optimizer steps=0，`full_training_started=false`。官方 archive、三份 source manifest、五个教师 checkpoint 和 cache root 仍无可验证 bytes，保持 null；最终状态只能为 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`。
+
+### 405. 暂存空白修复与精确候选树最终复验（2026-08-20）
+- 首次 `git add -A` 成功，候选集合 79 个文件且无未暂存文件；但 `git diff --cached --check` 退出 2，精确指出任务书/报告的 Markdown 尾随双空格，以及 9 个新增 Markdown/Python 文件末尾的额外空行。该次暂存未提交。
+- 仅用 `apply_patch` 规范化上述尾随空格和 EOF 空行；任务书内容语义与 1,872 行结构不变，规范化后新 SHA256 为 `bd7f8e76721e089531374bcd8f95587b310e40c94e4a4daf37b182356d24c6f1`，人工报告同步更新该值。
+- 发现从 5090 回传的 `r2_readiness_builder.txt` 因 PowerShell `Tee-Object` 采用 UTF-16LE（BOM `FF FE`）而被 Git 识别为二进制；执行纯机械编码规范化为无 BOM UTF-8，内容不变，文件从 20,714 bytes 变为 10,356 bytes。
+- 将空白规范化后的 2 个源码文件与 5 个测试文件逐项同步到 5090，三组 SCP 退出码均为 0；随后对该精确代码候选树再次运行完整 `python -m pytest -q`，退出 0，`191 passed in 86.69s`。
+- 用 `apply_patch` 将最终 86.69 秒结果同步到 pytest 证据、verification receipt 和人工报告，再次重建 readiness receipt；builder 按预期退出 1，最终仍为 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`、`ready=false`、12 blockers。最终 verification SHA256 为 `3682127909ab6416d69cf9c9126ec2d3cf2a4d777ba2d74e889d2ff31e3ff67a`，receipt 中记录值与实际 bytes 一致。
+- 重新检查未暂存 diff：`git diff --check` 退出 0。至此后续只允许重新暂存、检查 staged snapshot、创建唯一 commit、push 和远端 SHA 核对；不再修改代码/配置/测试语义。

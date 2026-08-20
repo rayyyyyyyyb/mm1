@@ -7,13 +7,61 @@ import numpy as np
 import pytest
 import torch
 
-from scripts.evaluate_pr_f1 import best_threshold_from_pr, evaluate_prediction_sets
+import scripts.evaluate_pr_f1 as evaluation_module
+from scripts.evaluate_pr_f1 import (
+    best_threshold_from_pr,
+    evaluate_prediction_sets,
+    validate_formal_checkpoint,
+)
 from scripts.train_ov_orthkd import (
     collect_predictions,
     compute_grouped_metrics,
     save_evaluation_artifacts,
     save_predictions_npz,
 )
+
+
+def test_formal_checkpoint_requires_matching_invariant_fingerprint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = {"reproduction": {"claim_level": "archival_exact"}}
+    monkeypatch.setattr(evaluation_module, "validate_canonical_readiness", lambda value: None)
+    monkeypatch.setattr(
+        evaluation_module,
+        "build_runtime_reproduction_fingerprint",
+        lambda value: {"sha256": "a" * 64},
+    )
+
+    with pytest.raises(RuntimeError, match="fingerprint mismatch"):
+        validate_formal_checkpoint(
+            {"config": config, "reproduction_fingerprint": {"sha256": "b" * 64}},
+            "model.pt",
+        )
+
+    returned = validate_formal_checkpoint(
+        {"config": config, "reproduction_fingerprint": {"sha256": "a" * 64}},
+        "model.pt",
+    )
+    assert returned is config
+
+
+def test_formal_checkpoint_rejects_partial_batch_evaluation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = {"reproduction": {"claim_level": "archival_exact"}}
+    monkeypatch.setattr(evaluation_module, "validate_canonical_readiness", lambda value: None)
+    monkeypatch.setattr(
+        evaluation_module,
+        "build_runtime_reproduction_fingerprint",
+        lambda value: {"sha256": "a" * 64},
+    )
+
+    with pytest.raises(RuntimeError, match="partial formal evaluation"):
+        validate_formal_checkpoint(
+            {"config": config, "reproduction_fingerprint": {"sha256": "a" * 64}},
+            "model.pt",
+            max_batches=1,
+        )
 
 
 class EchoLogitStudent(torch.nn.Module):
@@ -117,6 +165,12 @@ def test_grouped_metrics_report_total_seen_unseen_and_one_class_auroc() -> None:
     assert metrics["seen"]["auroc_available"] is False
     assert metrics["unseen"]["auroc"] is None
     assert metrics["unseen"]["auroc_available"] is False
+    assert metrics["total"]["binary_micro_f1_at_0_5"] == pytest.approx(0.8)
+    assert metrics["total"]["query_fg_f1_macro_at_0_5"] == pytest.approx(0.5)
+    assert "ovavel_segment_f1_at_0_5" in metrics["total"]
+    assert "ovavel_event_f1_at_0_5" in metrics["total"]
+    assert "binary_micro_f1_at_threshold" in metrics["total"]
+    assert "f1" not in metrics["total"]
 
 
 def test_test_metrics_use_validation_threshold_without_recalibration() -> None:
@@ -143,6 +197,9 @@ def test_test_metrics_use_validation_threshold_without_recalibration() -> None:
     assert report["validation_calibration"]["precision"].ndim == 1
     assert report["validation_calibration"]["recall"].ndim == 1
     assert report["validation_calibration"]["thresholds"].ndim == 1
+    assert "best_binary_f1" in report["validation_calibration"]
+    assert "best_f1" not in report["validation_calibration"]
+    assert "binary_micro_f1_at_threshold" in report["test"]["metrics"]["total"]
 
 
 def test_eval_only_artifact_helper_saves_structured_predictions_and_frozen_metrics(tmp_path: Path) -> None:

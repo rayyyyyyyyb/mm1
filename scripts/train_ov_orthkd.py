@@ -14,7 +14,9 @@ import sys
 import time
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple
+
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 import numpy as np
 import torch
@@ -23,7 +25,6 @@ import yaml
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
-    f1_score,
     precision_score,
     recall_score,
     roc_auc_score,
@@ -57,8 +58,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data import create_ov_avel_data_loaders
+from src.data.split_types import normalize_split_type, split_type_from_record
+from src.evaluation.ovavel_metrics import binary_f1, compute_ovavel_metrics
 from src.losses import OVOrthKDLoss, OVOrthKDLegacyLoss
 from src.models import OVOrthKDStudent
+from src.utils.atomic_artifacts import canonical_tree_hash
+from src.utils.canonical_readiness import validate_canonical_readiness
 from src.utils.reproduction_fingerprint import (
     build_reproduction_fingerprint,
     capture_rng_state,
@@ -87,6 +92,30 @@ def parse_args() -> argparse.Namespace:
 def load_config(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as handle:
         return yaml.safe_load(handle)
+
+
+def apply_cli_config_overrides(config: Dict[str, Any], args: argparse.Namespace) -> None:
+    """Apply every config-affecting CLI value before readiness and fingerprinting."""
+
+    if args.output_dir:
+        config.setdefault("logging", {})["log_dir"] = args.output_dir
+    training = config.setdefault("training", {})
+    if args.epochs is not None:
+        training["epochs"] = int(args.epochs)
+    if args.max_batches_per_epoch is not None:
+        training["max_batches_per_epoch"] = int(args.max_batches_per_epoch)
+    if args.max_optimizer_steps is not None:
+        training["max_optimizer_steps"] = int(args.max_optimizer_steps)
+    if args.max_train_steps is not None:
+        if args.max_batches_per_epoch is not None and int(args.max_train_steps) != int(
+            args.max_batches_per_epoch
+        ):
+            raise ValueError("--max-train-steps conflicts with --max-batches-per-epoch")
+        training["max_batches_per_epoch"] = int(args.max_train_steps)
+    if args.early_stop_patience is not None:
+        training["early_stop_patience"] = int(args.early_stop_patience)
+    if args.early_stop_min_delta is not None:
+        training["early_stop_min_delta"] = float(args.early_stop_min_delta)
 
 
 def set_seed(seed: int, deterministic: bool = True) -> None:
@@ -118,9 +147,48 @@ def validate_repro_config(
     allow_blocked: bool,
     preflight: bool,
     output_dir: str | Path | None = None,
+    require_canonical_readiness: bool = False,
+    max_eval_batches: int | None = None,
+    eval_only: bool = False,
+    resume_path: str | Path | None = None,
+    allow_incompatible_resume: bool = False,
+    max_train_steps: int | None = None,
 ) -> None:
     reproduction = config.get("reproduction", {})
-    if not bool(reproduction.get("full_run_blocked", False)) or preflight:
+    claim_level = str(reproduction.get("claim_level", "")).strip().lower()
+    formal_claims = {"archival_exact", "paper_specified_reconstruction"}
+    if claim_level and claim_level not in formal_claims and not bool(reproduction.get("mock_only", False)):
+        raise RuntimeError(f"Unsupported formal reproduction claim_level: {claim_level}")
+    if max_eval_batches is not None and claim_level in formal_claims:
+        raise RuntimeError(
+            "Refusing partial formal evaluation: --max-eval-batches is diagnostic-only and "
+            "cannot produce formal validation/test artifacts"
+        )
+    if not preflight and claim_level in formal_claims:
+        if eval_only and not resume_path:
+            raise RuntimeError("Formal eval-only requires --resume with a compatible checkpoint")
+        if allow_incompatible_resume:
+            raise RuntimeError("Formal claims forbid incompatible resume overrides")
+        training = config.get("training", {})
+        configured_limits = (
+            training.get("max_batches_per_epoch") if isinstance(training, Mapping) else None,
+            training.get("max_optimizer_steps") if isinstance(training, Mapping) else None,
+            max_train_steps,
+        )
+        if any(value is not None for value in configured_limits):
+            raise RuntimeError(
+                "Refusing truncated formal training: all batch/optimizer-step limits must be null"
+            )
+    if preflight and not require_canonical_readiness:
+        return
+    if claim_level in formal_claims:
+        validate_canonical_readiness(
+            config,
+            require_real_preflight=not preflight,
+        )
+    if preflight:
+        return
+    if not bool(reproduction.get("full_run_blocked", False)):
         return
     if not allow_blocked:
         raise RuntimeError(
@@ -131,6 +199,11 @@ def validate_repro_config(
         raise ValueError("output_dir is required when overriding a blocked reproduction")
 
     output_path = Path(output_dir)
+    namespace = {part.lower() for part in output_path.parts}
+    if not namespace.intersection({"diagnostic", "noncanonical", "noncanonical_diagnostic"}):
+        raise ValueError(
+            "Blocked-run overrides require a diagnostic/noncanonical output namespace"
+        )
     output_path.mkdir(parents=True, exist_ok=True)
     facts = reproduction.get("blocked_archival_facts", [])
     lines = [
@@ -395,7 +468,7 @@ def compute_metrics(
     if logits.size == 0 or labels.size == 0:
         return {
             "accuracy": 0.0,
-            "f1": 0.0,
+            "binary_micro_f1_at_0_5": 0.0,
             "ap": 0.0,
             "auroc": 0.0,
             "mean_logit": 0.0,
@@ -408,7 +481,7 @@ def compute_metrics(
 
     metrics = {
         "accuracy": float(accuracy_score(labels, preds)),
-        "f1": float(f1_score(labels, preds, zero_division=0)),
+        "binary_micro_f1_at_0_5": binary_f1(preds, labels),
         "ap": float(average_precision_score(labels, probs)),
         "mean_logit": float(np.mean(logits)),
         "mean_prob": float(np.mean(probs)),
@@ -423,18 +496,22 @@ def compute_metrics(
 
 
 def _batch_split_type(batch: Dict[str, Any], sample_index: int) -> str:
-    if "split_type" in batch:
-        value = batch["split_type"][sample_index]
-        if value not in (None, ""):
-            return str(value).lower()
+    record: Dict[str, Any] = {}
+    for key in ("split_type", "seen_unseen", "novelty", "cls_type"):
+        values = batch.get(key)
+        if values is not None:
+            record[key] = values[sample_index]
     meta = batch.get("meta", [])[sample_index] if batch.get("meta") else {}
     if isinstance(meta, dict):
-        for key in ("split_type", "seen_unseen", "novelty"):
-            value = meta.get(key)
-            if value not in (None, ""):
-                return str(value).lower()
+        record["meta"] = meta
+    split_type = split_type_from_record(record)
+    if split_type != "unknown":
+        return split_type
     domain = batch.get("domain", [])[sample_index] if batch.get("domain") else "unknown"
-    return str(domain).lower() if str(domain).lower() in {"seen", "unseen"} else "unknown"
+    try:
+        return normalize_split_type(domain, allow_unknown=True)
+    except ValueError:
+        return "unknown"
 
 
 @torch.no_grad()
@@ -522,6 +599,28 @@ def _sample_segment_mask(predictions: Dict[str, np.ndarray], sample_mask: np.nda
     return segment_mask
 
 
+def _subset_samples(
+    predictions: Dict[str, np.ndarray], sample_mask: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    labels: list[np.ndarray] = []
+    probabilities: list[np.ndarray] = []
+    offsets = [0]
+    source_offsets = predictions["sample_offsets"]
+    for sample_index in np.flatnonzero(sample_mask):
+        start = int(source_offsets[sample_index])
+        end = int(source_offsets[sample_index + 1])
+        labels.append(predictions["labels"][start:end])
+        probabilities.append(predictions["probabilities"][start:end])
+        offsets.append(offsets[-1] + end - start)
+    if not labels:
+        return (
+            np.asarray([], dtype=np.float64),
+            np.asarray([], dtype=np.float64),
+            np.asarray([0], dtype=np.int64),
+        )
+    return np.concatenate(labels), np.concatenate(probabilities), np.asarray(offsets, dtype=np.int64)
+
+
 def compute_grouped_metrics(
     predictions: Dict[str, np.ndarray],
     threshold: float,
@@ -534,17 +633,19 @@ def compute_grouped_metrics(
     }
     results: Dict[str, Dict[str, Any]] = {}
     for group_name, sample_mask in groups.items():
-        segment_mask = _sample_segment_mask(predictions, sample_mask)
-        labels = predictions["labels"][segment_mask]
-        probabilities = predictions["probabilities"][segment_mask]
+        labels, probabilities, group_offsets = _subset_samples(predictions, sample_mask)
         predicted = (probabilities >= threshold).astype(np.int64)
         if labels.size == 0:
             results[group_name] = {
                 "threshold": float(threshold),
                 "accuracy": 0.0,
-                "f1": 0.0,
-                "precision": 0.0,
-                "recall": 0.0,
+                "binary_micro_f1_at_0_5": 0.0,
+                "query_fg_f1_macro_at_0_5": 0.0,
+                "ovavel_segment_f1_at_0_5": 0.0,
+                "ovavel_event_f1_at_0_5": 0.0,
+                "binary_micro_f1_at_threshold": 0.0,
+                "binary_precision_at_threshold": 0.0,
+                "binary_recall_at_threshold": 0.0,
                 "ap": 0.0,
                 "auroc": None,
                 "auroc_available": False,
@@ -561,12 +662,16 @@ def compute_grouped_metrics(
             ap = float(average_precision_score(labels, probabilities))
         else:
             ap = 0.0
+        fixed_metrics = compute_ovavel_metrics(labels, probabilities, group_offsets, threshold=0.5)
         results[group_name] = {
+            **fixed_metrics,
             "threshold": float(threshold),
             "accuracy": float(accuracy_score(labels, predicted)),
-            "f1": float(f1_score(labels, predicted, zero_division=0)),
-            "precision": float(precision_score(labels, predicted, zero_division=0)),
-            "recall": float(recall_score(labels, predicted, zero_division=0)),
+            "binary_micro_f1_at_threshold": binary_f1(predicted, labels),
+            "binary_precision_at_threshold": float(
+                precision_score(labels, predicted, zero_division=0)
+            ),
+            "binary_recall_at_threshold": float(recall_score(labels, predicted, zero_division=0)),
             "ap": ap,
             "auroc": float(roc_auc_score(labels, probabilities)) if auroc_available else None,
             "auroc_available": bool(auroc_available),
@@ -674,9 +779,9 @@ def maybe_resume(
     loader_generators: Dict[str, torch.Generator] | None = None,
     allow_incompatible: bool = False,
     incompatible_marker_path: str | Path | None = None,
-) -> Tuple[int, float, int]:
+) -> Tuple[int, float, int, int]:
     if not resume_path:
-        return 0, 0.0, 0
+        return 0, 0.0, 0, 0
     checkpoint = torch.load(resume_path, map_location="cpu", weights_only=True)
     checkpoint_fingerprint = checkpoint.get("reproduction_fingerprint")
     checkpoint_sha = (
@@ -720,6 +825,7 @@ def maybe_resume(
         int(checkpoint.get("epoch", 0)) + 1,
         float(checkpoint.get("best_metric", 0.0)),
         int(checkpoint.get("global_step", 0)),
+        int(checkpoint.get("epochs_without_improvement", 0)),
     )
 
 
@@ -802,7 +908,42 @@ def _run_evidence_command(command: list[str]) -> Dict[str, Any]:
         }
 
 
+def build_runtime_reproduction_fingerprint(config: Mapping[str, Any]) -> Dict[str, Any]:
+    """Build the invocation-invariant fingerprint shared by training and evaluation."""
+
+    reproduction_cfg = config.get("reproduction", {})
+    readiness_cfg = reproduction_cfg.get("readiness", {}) if isinstance(reproduction_cfg, Mapping) else {}
+    if not isinstance(readiness_cfg, Mapping):
+        readiness_cfg = {}
+    fingerprint_lock_paths = {
+        name: value
+        for name, value in readiness_cfg.items()
+        if name in {"data_lock", "archival_lock", "teacher_lock", "preprocessing_lock", "evaluator_lock"}
+    }
+    fingerprint_evidence_paths = {
+        name: value
+        for name, value in readiness_cfg.items()
+        if name in {"exported_audit", "readiness_receipt"}
+    }
+    git_head = _run_evidence_command(["git", "rev-parse", "HEAD"])
+    git_status = _run_evidence_command(["git", "status", "--short"])
+    return build_reproduction_fingerprint(
+        config,
+        lock_paths=fingerprint_lock_paths,
+        evidence_paths=fingerprint_evidence_paths,
+        git_state={
+            "commit": git_head.get("stdout", ""),
+            "dirty": bool(git_status.get("stdout", "")),
+        },
+        run_mode="conference_experiment",
+        variant=str(reproduction_cfg.get("variant", "unspecified"))
+        if isinstance(reproduction_cfg, Mapping)
+        else "unspecified",
+    )
+
+
 def write_static_run_evidence(output_dir: Path, config: Dict[str, Any]) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
     git_state = {
         "head": _run_evidence_command(["git", "rev-parse", "HEAD"]),
         "branch": _run_evidence_command(["git", "branch", "--show-current"]),
@@ -811,6 +952,30 @@ def write_static_run_evidence(output_dir: Path, config: Dict[str, Any]) -> None:
     }
     (output_dir / "git_state.json").write_text(
         json.dumps(git_state, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    reproduction_cfg = config.get("reproduction", {})
+    declared_claim_level = str(reproduction_cfg.get("claim_level", "unspecified"))
+    git_dirty = bool(git_state["status"].get("stdout", ""))
+    diagnostic_override = (output_dir / "NON_CANONICAL_UNRESOLVED_RUN.txt").is_file()
+    effective_claim_level = (
+        "noncanonical_diagnostic" if git_dirty or diagnostic_override else declared_claim_level
+    )
+    (output_dir / "config_resolved.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False),
+        encoding="utf-8",
+    )
+    (output_dir / "claim_level.txt").write_text(effective_claim_level + "\n", encoding="utf-8")
+    experiment_variant = {
+        "variant": str(reproduction_cfg.get("variant", "unspecified")),
+        "declared_claim_level": declared_claim_level,
+        "effective_claim_level": effective_claim_level,
+        "git_dirty": git_dirty,
+        "diagnostic_override": diagnostic_override,
+    }
+    (output_dir / "experiment_variant.json").write_text(
+        json.dumps(experiment_variant, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 
@@ -844,12 +1009,114 @@ def write_static_run_evidence(output_dir: Path, config: Dict[str, Any]) -> None:
         encoding="utf-8",
     )
 
+    readiness_cfg = reproduction_cfg.get("readiness", {})
+    lock_hashes: Dict[str, Any] = {}
+    for name, raw_path in sorted(readiness_cfg.items()):
+        if not str(name).endswith("_lock") or not raw_path:
+            continue
+        path = Path(raw_path).expanduser()
+        if not path.is_absolute():
+            path = path_root / path
+        path = path.resolve()
+        lock_hashes[str(name)] = {
+            "path": str(path),
+            "exists": path.is_file(),
+            "sha256": sha256_file(path) if path.is_file() else None,
+        }
+    (output_dir / "lock_hashes.json").write_text(
+        json.dumps(lock_hashes, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    cache_value = config.get("teacher_export", {}).get("artifact_dir")
+    cache_path = Path(cache_value).expanduser() if cache_value else None
+    if cache_path is not None and not cache_path.is_absolute():
+        cache_path = path_root / cache_path
+    if cache_path is not None:
+        cache_path = cache_path.resolve()
+    if cache_path is not None and cache_path.is_dir():
+        teacher_cache_hash = {
+            "path": str(cache_path),
+            "exists": True,
+            **canonical_tree_hash(cache_path),
+        }
+    else:
+        teacher_cache_hash = {
+            "path": str(cache_path) if cache_path is not None else None,
+            "exists": False,
+            "schema_version": 1,
+            "files": 0,
+            "bytes": 0,
+            "sha256": None,
+        }
+    (output_dir / "teacher_cache_hash.json").write_text(
+        json.dumps(teacher_cache_hash, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    evaluator_summary: Dict[str, Any] = {
+        "lock_path": None,
+        "source_path": None,
+        "expected_sha256": None,
+        "actual_sha256": None,
+        "source_exists": False,
+        "matches_lock": False,
+    }
+    evaluator_lock_info = lock_hashes.get("evaluator_lock")
+    if evaluator_lock_info and evaluator_lock_info["exists"]:
+        evaluator_lock_path = Path(evaluator_lock_info["path"])
+        evaluator_lock = yaml.safe_load(evaluator_lock_path.read_text(encoding="utf-8")) or {}
+        source_value = evaluator_lock.get("source_file")
+        source_path = Path(source_value).expanduser() if source_value else None
+        if source_path is not None and not source_path.is_absolute():
+            source_path = path_root / source_path
+        if source_path is not None:
+            source_path = source_path.resolve()
+        expected_sha = evaluator_lock.get("source_sha256")
+        actual_sha = sha256_file(source_path) if source_path is not None and source_path.is_file() else None
+        evaluator_summary = {
+            "lock_path": str(evaluator_lock_path),
+            "source_path": str(source_path) if source_path is not None else None,
+            "expected_sha256": expected_sha,
+            "actual_sha256": actual_sha,
+            "source_exists": bool(source_path is not None and source_path.is_file()),
+            "matches_lock": bool(expected_sha and actual_sha and expected_sha == actual_sha),
+        }
+    (output_dir / "official_evaluator_hash.json").write_text(
+        json.dumps(evaluator_summary, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    cuda_environment = {
+        "python": sys.version,
+        "platform": platform.platform(),
+        "torch": torch.__version__,
+        "cuda_compiled": torch.version.cuda,
+        "cuda_available": torch.cuda.is_available(),
+        "cudnn": torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None,
+        "device_count": torch.cuda.device_count(),
+        "devices": [
+            {
+                "index": index,
+                "name": torch.cuda.get_device_name(index),
+                "capability": list(torch.cuda.get_device_capability(index)),
+            }
+            for index in range(torch.cuda.device_count())
+        ],
+        "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+    }
+    (output_dir / "cuda_environment.json").write_text(
+        json.dumps(cuda_environment, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
 
 def checkpoint_payload(
     *,
     epoch: int,
     global_step: int,
     best_metric: float,
+    epochs_without_improvement: int = 0,
     student: OVOrthKDStudent,
     loss_module: nn.Module,
     optimizer: AdamW,
@@ -863,6 +1130,7 @@ def checkpoint_payload(
         "epoch": epoch,
         "global_step": global_step,
         "best_metric": best_metric,
+        "epochs_without_improvement": int(epochs_without_improvement),
         "implementation_mode": config.get("reproduction", {}).get(
             "implementation_mode", "legacy_collaboration"
         ),
@@ -880,18 +1148,7 @@ def checkpoint_payload(
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
-    if args.output_dir:
-        config.setdefault("logging", {})["log_dir"] = args.output_dir
-    if args.epochs is not None:
-        config.setdefault("training", {})["epochs"] = int(args.epochs)
-    if args.max_batches_per_epoch is not None:
-        config.setdefault("training", {})["max_batches_per_epoch"] = int(
-            args.max_batches_per_epoch
-        )
-    if args.max_optimizer_steps is not None:
-        config.setdefault("training", {})["max_optimizer_steps"] = int(
-            args.max_optimizer_steps
-        )
+    apply_cli_config_overrides(config, args)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     output_dir = Path(config["logging"]["log_dir"])
@@ -900,6 +1157,11 @@ def main() -> None:
         allow_blocked=args.allow_blocked_reproduction,
         preflight=False,
         output_dir=output_dir,
+        max_eval_batches=args.max_eval_batches,
+        eval_only=bool(args.eval_only),
+        resume_path=args.resume,
+        allow_incompatible_resume=bool(args.allow_incompatible_resume),
+        max_train_steps=args.max_train_steps,
     )
     set_seed(
         int(config.get("seed", 42)),
@@ -922,7 +1184,8 @@ def main() -> None:
         }.items()
         if loader is not None and loader.generator is not None
     }
-    reproduction_fingerprint = build_reproduction_fingerprint(config)
+    reproduction_cfg = config.get("reproduction", {})
+    reproduction_fingerprint = build_runtime_reproduction_fingerprint(config)
 
     if args.eval_only:
         if args.resume:
@@ -974,7 +1237,7 @@ def main() -> None:
     use_amp = bool(train_cfg.get("mixed_precision", True)) and device.type == "cuda"
     scaler = make_grad_scaler(device.type, use_amp)
 
-    start_epoch, best_metric, global_step = maybe_resume(
+    start_epoch, best_metric, global_step, epochs_without_improvement = maybe_resume(
         student=student,
         loss_module=loss_module,
         optimizer=optimizer,
@@ -1003,7 +1266,6 @@ def main() -> None:
         logger.warning(
             "--max-train-steps is deprecated; interpreting it as max batches per epoch."
         )
-    epochs_without_improvement = 0
     stop_training = False
 
     for epoch in range(start_epoch, epochs):
@@ -1087,6 +1349,7 @@ def main() -> None:
                 epoch=epoch,
                 global_step=global_step,
                 best_metric=best_metric,
+                epochs_without_improvement=epochs_without_improvement,
                 student=student,
                 loss_module=loss_module,
                 optimizer=optimizer,
@@ -1124,6 +1387,7 @@ def main() -> None:
             epoch=epoch,
             global_step=global_step,
             best_metric=best_metric,
+            epochs_without_improvement=epochs_without_improvement,
             student=student,
             loss_module=loss_module,
             optimizer=optimizer,
@@ -1158,7 +1422,7 @@ def main() -> None:
 
     final_metrics: Dict[str, Any] = {}
     if (output_dir / "best.pt").exists():
-        best_checkpoint = torch.load(output_dir / "best.pt", map_location=device)
+        best_checkpoint = torch.load(output_dir / "best.pt", map_location=device, weights_only=True)
         student.load_state_dict(best_checkpoint["student_state_dict"])
         validation_predictions = collect_predictions(
             student,

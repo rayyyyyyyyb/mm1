@@ -1,6 +1,6 @@
 # OV-OrthKD Collaboration Base
 
-This package contains the core implementation of OV-OrthKD for research collaboration and method extension. The R0 hardening work keeps the historical collaboration path available while adding a separately labelled camera-ready path and a strict reproduction evidence chain.
+This package contains the core implementation of OV-OrthKD for research collaboration and method extension. The R2 branch adds a fail-closed conference-reproduction evidence chain while keeping the historical collaboration path separately labelled.
 
 Paper: *If You Hear It, Help Find It: Orthogonal Knowledge Distillation for Open-Vocabulary Audio-Visual Event Localization* (ACM Multimedia 2026).
 
@@ -64,15 +64,33 @@ python scripts/build_ov_avebench_source_manifests.py --help
 python scripts/check_manifest.py --manifest data/ov_ave/train.jsonl --fail-on-missing
 ```
 
-Before real training, run the source/export audit with the appropriate stage and scan level:
+After manually obtaining the authorized official archive, the canonical path requires 7-Zip validation, safe extraction, metadata-to-file layout discovery, then source/export audits:
+
+```bash
+python scripts/safe_extract_archive.py \
+  --archive /path/to/official-archive \
+  --output-dir data/raw/ov_avebench_preprocessed \
+  --receipt reports/data/official_archive_extraction_receipt.json
+python scripts/discover_ovave_layout.py \
+  --dataset-root data/raw/ov_avebench_preprocessed \
+  --meta-csv data/raw/ov_avebench/ovave_dataset_meta.csv \
+  --output-json reports/data/preprocessed_layout_discovery.json \
+  --output-md reports/data/preprocessed_layout_discovery.md
+```
+
+Before any real run, audit source/exported manifests with the locked config and warning failures enabled:
 
 ```bash
 python scripts/audit_mm26_reproduction.py \
+  --config configs/ov_orthkd_mm26_repro.local.yaml \
+  --preprocessing-lock configs/locks/mm26_preprocessing_lock.yaml \
+  --teacher-lock configs/locks/mm26_teacher_lock.yaml \
   --train-manifest data/ov_ave/train.jsonl \
   --val-manifest data/ov_ave/val.jsonl \
   --test-manifest data/ov_ave/test.jsonl \
   --path-root . --stage exported --artifact-scan full \
-  --expected-segments auto --output-json reports/mm26_exported_artifact_audit.json
+  --expected-segments auto --fail-on-warning \
+  --output-json reports/mm26_exported_artifact_audit.json
 ```
 
 ## Teacher artifact export
@@ -83,7 +101,8 @@ Configure exact, archived InternVideo2, BEATs, and CLAP repositories and checkpo
 python scripts/inspect_teacher_identity.py \
   --config configs/ov_orthkd_mm26_repro.local.yaml \
   --source-manifest data/ov_ave_smoke/source/train_source.jsonl \
-  --output reports/teacher_identity.json
+  --output reports/teachers/teacher_identity.json \
+  --repeat 2 --fail-on-unresolved
 python scripts/export_teacher_artifacts.py --help
 ```
 
@@ -104,9 +123,19 @@ Checkpoints and reports record the selected implementation mode. Cross-combining
 python scripts/train_ov_orthkd.py --config configs/ov_orthkd_mm26_repro.yaml
 ```
 
-The canonical command above intentionally stops before loading data because `reproduction.full_run_blocked: true`. Six archival facts remain unresolved: temporal length, exact InternVideo2 identities, schedule/early stopping, student initialization/augmentation, visual L2 reduction, and the paper-versus-current fusion block. `--allow-blocked-reproduction` exists only for explicitly labelled diagnostics and writes `NON_CANONICAL_UNRESOLVED_RUN.txt`; it must not be reported as a canonical result.
+The canonical command above intentionally stops before loading data. Formal claims first validate the versioned archive/layout/source/teacher/evaluator/export/preflight evidence chain, and `reproduction.full_run_blocked: true` then independently prohibits full training during R2. Nine archival facts remain unresolved. `--allow-blocked-reproduction` cannot bypass a formal canonical claim; it is limited to explicitly named diagnostic/noncanonical output namespaces and writes `NON_CANONICAL_UNRESOLVED_RUN.txt`.
 
-Training records resolved config, Git state, environment, manifest hashes, history, structured predictions, best/last checkpoints, and global optimizer step. Evaluation calibrates a threshold on validation once and freezes it for total/seen/unseen test metrics. See `reports/R0_REPRO_HARDENING_REPORT.md` for the R0 evidence and remaining blockers.
+The single permitted real-data preflight is also gated and must never emit formal AP/F1 results:
+
+```bash
+python scripts/preflight_ov_orthkd.py \
+  --config configs/ov_orthkd_mm26_repro.local.yaml \
+  --output-dir outputs/r2_real_preflight \
+  --probe-samples 8 --max-eval-batches 1 \
+  --real-data --optimizer-steps 1
+```
+
+Training records resolved config, Git state, environment, manifest hashes, history, structured predictions, best/last checkpoints, and global optimizer step. Evaluation calibrates a threshold on validation once and freezes it for total/seen/unseen test metrics. See `reports/R2_CONFERENCE_REPRODUCTION_READINESS_REPORT.md` for the current evidence and blockers.
 
 ## Collaboration note
 

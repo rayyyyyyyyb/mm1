@@ -6,9 +6,26 @@ project:
 
 reproduction:
   paper: "ACM MM 2026 OV-OrthKD"
-  base_commit: "dca9f052fbe4a1e9d7982f24bdcec3edf1363fd4"
+  base_commit: "6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986"
+  claim_level: "archival_exact"
+  variant: "conference_baseline"
   full_run_blocked: true
   implementation_mode: "camera_ready_explicit_paths"
+  project_root: "."
+  readiness:
+    data_lock: "configs/locks/mm26_data_lock.yaml"
+    archival_lock: "configs/locks/mm26_archival_facts.yaml"
+    teacher_lock: "configs/locks/mm26_teacher_lock.yaml"
+    preprocessing_lock: "configs/locks/mm26_preprocessing_lock.yaml"
+    evaluator_lock: "configs/locks/mm26_evaluator_lock.yaml"
+    archive_receipt: "reports/data/official_archive_extraction_receipt.json"
+    layout_discovery: "reports/data/preprocessed_layout_discovery.json"
+    source_audit: "reports/mm26_source_manifest_audit.json"
+    teacher_identity: "reports/teachers/teacher_identity.json"
+    smoke_repeatability: "reports/teachers/smoke_repeatability.json"
+    exported_audit: "reports/mm26_exported_artifact_audit.json"
+    real_preflight: "reports/runtime/r2_real_preflight.json"
+    readiness_receipt: "reports/mm26_conference_readiness.json"
   blocked_archival_facts:
     - "T=10 official labels versus 16 temporal segments stated in camera-ready implementation table"
     - "exact InternVideo2 model class and three checkpoint identities"
@@ -16,6 +33,9 @@ reproduction:
     - "student pretrained initialization and exact train augmentation"
     - "visual feature L2 reduction: sum versus mean"
     - "paper additive fusion + TransformerLayer versus current concat-MLP token fusion"
+    - "exact frame sampling and short-clip handling"
+    - "exact student audio preprocessing"
+    - "exact paper metric-to-official-evaluator mapping"
 
 task:
   name: "open_vocabulary_audio_visual_event_localization"
@@ -37,12 +57,17 @@ teachers:
 
 data:
   path_root: "."
+  preprocessing_mode: "canonical_official_png_wav"
+  frame_policy: "natural_sorted_no_repeat"
+  audio_preprocessing:
+    status: "UNRESOLVED"
   train_manifest: "data/ov_ave/train.jsonl"
   val_manifest: "data/ov_ave/val.jsonl"
   test_manifest: "data/ov_ave/test.jsonl"
   image_size: 224
   batch_size: 12
   num_workers: 8
+  persistent_workers: false
   pin_memory: true
   max_segments: 16
   temporal_overflow_policy: "error"
@@ -69,6 +94,7 @@ student:
   temporal_heads: 8
   temporal_dropout: 0.1
   pretrained: false
+  fusion_mode: "concat_mlp_query_conditioned"
 
 loss:
   projection_dim: 256
@@ -83,6 +109,7 @@ loss:
   text_alignment_mode: "paper_probability"
   confidence_weighting: false
   confidence_scale: 2.0
+  visual_l2_reduction: "mean_feature_then_masked_mean_segments"
 
 training:
   deterministic: true
@@ -104,20 +131,28 @@ teacher_export:
   strong_visual_backend: "internvideo2_clip_b14"
   weak_audio_backend: "beats"
   text_backend: "clap"
+  determinism_tolerance: 0.0
   internvideo2:
     declared_model_class: "InternVideo2-Base / CLIP-B14"
     repo_root: "UNRESOLVED/internvideo2_repo"
     vision_ckpt_path: "UNRESOLVED/internvideo2_vision_checkpoint"
+    vision_ckpt_sha256: null
     text_ckpt_path: "UNRESOLVED/internvideo2_text_checkpoint"
+    text_ckpt_sha256: null
     extra_ckpt_path: "UNRESOLVED/internvideo2_extra_clip_checkpoint"
+    extra_ckpt_sha256: null
     num_frames: 8
+    frame_sampling: "exact_count_no_repeat_no_subsample"
+    short_clip_policy: "error"
     align_dim: 512
   beats:
     repo_root: "UNRESOLVED/beats_repo"
     checkpoint_path: "UNRESOLVED/beats_pretrained_checkpoint"
+    checkpoint_sha256: null
   clap:
     repo_root: "UNRESOLVED/clap_repo"
     checkpoint_path: "UNRESOLVED/clap_2023_checkpoint"
+    checkpoint_sha256: null
     version: "2023"
     normalize: false
 
@@ -126,3 +161,7 @@ logging:
   save_last: true
   save_predictions: true
   save_environment: true
+
+evaluation:
+  paper_f1_at_0_5_mapping: null
+  validation_calibrated_f1_mapping: null

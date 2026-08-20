@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "status": "blocked_official_archive_not_provided",
+  "archive_filename": null,
+  "archive_bytes": null,
+  "archive_sha256": null,
+  "archive_test": "not_executed",
+  "archive_listing": "not_executed",
+  "extraction_status": "not_executed_gate_blocked",
+  "extracted_tree_sha256": null,
+  "files_extracted": 0,
+  "errors": null,
+  "reason": "No official archive manually downloaded through an authorized Microsoft session was present in the scoped local or 5090 R2 download locations.",
+  "security_boundary": "No authentication token/cookie was requested or recorded; no third-party mirror was used."
+}

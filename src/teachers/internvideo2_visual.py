@@ -13,7 +13,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
-from .common import to_attr_dict
+from .common import to_attr_dict, verify_checkpoint_sha256
 
 
 @contextmanager
@@ -92,6 +92,9 @@ class InternVideo2ClipB14Teacher:
         vision_ckpt_path: str | Path,
         text_ckpt_path: str | Path,
         extra_ckpt_path: str | Path,
+        vision_ckpt_sha256: str,
+        text_ckpt_sha256: str,
+        extra_ckpt_sha256: str,
         device: str = "cpu",
         num_frames: int = 8,
         align_dim: int = 512,
@@ -110,6 +113,9 @@ class InternVideo2ClipB14Teacher:
         ):
             if not path.exists():
                 raise FileNotFoundError(f"{label} not found: {path}")
+        verify_checkpoint_sha256(vision_ckpt, vision_ckpt_sha256, label="InternVideo2 vision")
+        verify_checkpoint_sha256(text_ckpt, text_ckpt_sha256, label="InternVideo2 text")
+        verify_checkpoint_sha256(extra_ckpt, extra_ckpt_sha256, label="InternVideo2 extra CLIP")
 
         # Import InternVideo2 through the `multi_modality` package root so its
         # internal relative imports like `..utils.*` resolve correctly.
@@ -202,13 +208,10 @@ class InternVideo2ClipB14Teacher:
             raise ValueError("Frame group cannot be empty.")
         if len(items) == self.num_frames:
             return items
-        if len(items) > self.num_frames:
-            indices = np.linspace(0, len(items) - 1, num=self.num_frames, dtype=int)
-            return [items[index] for index in indices.tolist()]
-        repeated: List[str] = []
-        for idx in range(self.num_frames):
-            repeated.append(items[min(idx, len(items) - 1)])
-        return repeated
+        raise ValueError(
+            f"InternVideo2 requires exactly {self.num_frames} frames per segment; found {len(items)}. "
+            "Historical frame sampling is unresolved, so repeat/subsample is forbidden."
+        )
 
     def _load_segment_tensor(self, frame_group: Sequence[str]) -> torch.Tensor:
         frames = []
@@ -216,8 +219,9 @@ class InternVideo2ClipB14Teacher:
             path = Path(path_str)
             if not path.exists():
                 raise FileNotFoundError(f"Missing frame for InternVideo2 export: {path}")
-            image = Image.open(path).convert("RGB")
-            array = np.asarray(image, dtype=np.uint8)
+            with Image.open(path) as image:
+                rgb = image.convert("RGB").copy()
+            array = np.asarray(rgb, dtype=np.uint8)
             tensor = torch.from_numpy(array).permute(2, 0, 1)
             tensor = self.model.transform(tensor)
             frames.append(tensor)

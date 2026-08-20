@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "p0_p1_tests": "passed",
+  "exact_resume": "passed",
+  "exact_resume_focused_exit_code": 0,
+  "exact_resume_focused_summary": "3 passed in 48.82s",
+  "r2_review_regression_exit_code": 0,
+  "r2_review_regression_summary": "71 passed in 30.44s; final archival evidence gate 30 passed in 20.07s",
+  "full_pytest_exit_code": 0,
+  "pytest_summary": "191 passed in 86.69s",
+  "pip_check_exit_code": 0,
+  "pip_check_summary": "No broken requirements found.",
+  "compileall_exit_code": 0,
+  "cuda_runtime_exit_code": 0,
+  "cuda_runtime": {
+    "torch": "2.10.0+cu128",
+    "cuda": "12.8",
+    "cudnn": 91002,
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "capability": [12, 0],
+    "matrix_size": 2048,
+    "iterations": 5,
+    "finite": true,
+    "average_matmul_ms": 0.0965503990650177
+  },
+  "smoke_test_exit_code": 0,
+  "smoke_test_summary": "OV-OrthKD smoke test passed.",
+  "canonical_guard": {
+    "expected_exit_code": 1,
+    "actual_exit_code": 1,
+    "output_directory_before": false,
+    "output_directory_after": false,
+    "structured_readiness_error": true
+  },
+  "readiness_builder": {
+    "expected_exit_code": 1,
+    "actual_exit_code": 1,
+    "status": "BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS",
+    "ready": false,
+    "blocker_count": 12,
+    "canonical_evidence_chain_present": true
+  },
+  "independent_code_review": {
+    "status": "passed",
+    "ready_to_merge": true,
+    "remaining_code_blockers": 0
+  },
+  "real_data_preflight_invocations": 0,
+  "real_data_optimizer_steps": 0,
+  "full_training_started": false
+}

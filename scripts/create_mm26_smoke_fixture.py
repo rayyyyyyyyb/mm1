@@ -119,7 +119,7 @@ def create_mm26_smoke_fixture(
         write_records(source_manifest, records)
         split_summaries[split] = export_manifest_file(
             source_manifest=source_manifest,
-            artifact_dir=artifact_root / split,
+            artifact_dir=artifact_root,
             output_manifest=output_manifest,
             teachers=TeacherExportBundle(
                 strong_visual=MockStrongVisualTeacher(feature_dim=512),
@@ -127,6 +127,7 @@ def create_mm26_smoke_fixture(
                 text_teacher=MockTextTeacher(feature_dim=1024),
             ),
             overwrite=True,
+            split=split,
         )
 
     return {

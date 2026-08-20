@@ -149,14 +149,15 @@ def test_blocked_full_run_fails_before_data_loading() -> None:
 
 
 def test_explicit_block_override_writes_noncanonical_marker(tmp_path: Path) -> None:
+    output_dir = tmp_path / "diagnostic"
     validate_repro_config(
         blocked_config(),
         allow_blocked=True,
         preflight=False,
-        output_dir=tmp_path,
+        output_dir=output_dir,
     )
 
-    marker = tmp_path / "NON_CANONICAL_UNRESOLVED_RUN.txt"
+    marker = output_dir / "NON_CANONICAL_UNRESOLVED_RUN.txt"
     contents = marker.read_text(encoding="utf-8")
     assert "NON-CANONICAL" in contents
     assert "scheduler unknown" in contents
@@ -297,7 +298,7 @@ def test_validation_does_not_mutate_the_input_config(tmp_path: Path) -> None:
         config,
         allow_blocked=True,
         preflight=False,
-        output_dir=tmp_path,
+        output_dir=tmp_path / "diagnostic",
     )
 
     assert config == original

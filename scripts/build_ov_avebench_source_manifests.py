@@ -6,58 +6,49 @@ import argparse
 import ast
 import csv
 import json
+import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence
+import re
+import sys
+from typing import Any, Iterable, Sequence
 
-import librosa
 import numpy as np
-import soundfile as sf
-from PIL import Image
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.data.split_types import normalize_split_type
+
+
+CANONICAL_MODE = "canonical_official_png_wav"
+LEGACY_MODE = "noncanonical_legacy_generated_jpeg_mel"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build OV-OrthKD source manifests from the official OV-AVEBench preprocessed release."
+        description="Build source manifests by referencing an already-discovered official OV-AVEBench layout."
     )
+    parser.add_argument("--dataset-root", required=True)
+    parser.add_argument("--annotation-json", required=True)
+    parser.add_argument("--meta-csv", required=True)
+    parser.add_argument("--output-dir", default="data/ov_ave/source")
+    parser.add_argument("--path-root", default=".")
     parser.add_argument(
-        "--dataset-root",
-        type=str,
-        default="data/raw/ov_avebench_preprocessed/ovave_dataset_preprocessed",
-        help="Root folder containing train/val/test audio and video directories.",
+        "--path-mode",
+        choices=("relative_to_path_root", "absolute"),
+        default="relative_to_path_root",
     )
-    parser.add_argument(
-        "--annotation-json",
-        type=str,
-        default="data/raw/ov_avebench_preprocessed/released_ovavel_dataset_anno.json",
-        help="Official OV-AVEBench annotation JSON.",
-    )
-    parser.add_argument(
-        "--meta-csv",
-        type=str,
-        default="data/raw/ov_avebench_preprocessed/ovave_dataset_meta.csv",
-        help="Official OV-AVEBench split metadata CSV.",
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default="data/ov_ave",
-        help="Directory where train_source.jsonl / val_source.jsonl / test_source.jsonl will be written.",
-    )
-    parser.add_argument(
-        "--spectrogram-dir",
-        type=str,
-        default="data/raw/ov_avebench_preprocessed/generated_specs",
-        help="Directory for generated per-segment spectrogram images.",
-    )
+    parser.add_argument("--mode", choices=(CANONICAL_MODE, LEGACY_MODE), default=CANONICAL_MODE)
+    parser.add_argument("--spectrogram-dir", default="data/noncanonical_legacy_generated_jpeg_mel")
     parser.add_argument("--image-size", type=int, default=224)
-    parser.add_argument("--sample-rate", type=int, default=None, help="Optional resample rate for spectrogram generation.")
+    parser.add_argument("--sample-rate", type=int, default=None)
     parser.add_argument("--n-mels", type=int, default=128)
     parser.add_argument("--overwrite-specs", action="store_true")
     parser.add_argument("--limit-per-split", type=int, default=None)
     return parser.parse_args()
 
 
-def _load_annotations(path: Path) -> Dict[str, Dict[str, Any]]:
+def _load_annotations(path: Path) -> dict[str, dict[str, Any]]:
     with path.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
     if not isinstance(data, dict):
@@ -65,234 +56,318 @@ def _load_annotations(path: Path) -> Dict[str, Dict[str, Any]]:
     return data
 
 
-def _load_meta_rows(path: Path) -> List[Dict[str, str]]:
+def _load_meta_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
-        reader = csv.DictReader(handle)
-        rows = list(reader)
+        rows = list(csv.DictReader(handle))
     if not rows:
         raise ValueError("Meta CSV is empty.")
     required = {"split", "cls_name", "cls_type", "vid_name"}
-    missing = required - set(rows[0].keys())
+    missing = required - set(rows[0])
     if missing:
         raise ValueError(f"Meta CSV missing required columns: {sorted(missing)}")
     return rows
 
 
-def _parse_label_list(value: Any) -> List[int]:
-    if isinstance(value, list):
-        labels = value
-    else:
-        labels = ast.literal_eval(str(value))
+def _parse_label_list(value: Any) -> list[int]:
+    labels = value if isinstance(value, list) else ast.literal_eval(str(value))
     if not isinstance(labels, list) or not labels:
         raise ValueError(f"Invalid segment label list: {value!r}")
-    return [int(item) for item in labels]
+    normalized = [int(item) for item in labels]
+    if any(item not in {0, 1} for item in normalized):
+        raise ValueError(f"Segment labels must be binary: {value!r}")
+    return normalized
 
 
-def _relpath(path: Path, repo_root: Path) -> str:
-    return path.resolve().relative_to(repo_root.resolve()).as_posix()
-
-
-def _image_from_spectrogram(spec_db: np.ndarray, image_size: int) -> Image.Image:
-    spec_db = np.nan_to_num(spec_db, nan=-80.0, neginf=-80.0, posinf=0.0)
-    spec_db = np.clip(spec_db, -80.0, 0.0)
-    normalized = ((spec_db + 80.0) / 80.0 * 255.0).astype(np.uint8)
-    image = Image.fromarray(normalized, mode="L").convert("RGB")
-    return image.resize((image_size, image_size), Image.BILINEAR)
-
-
-def _generate_segment_spectrogram(
-    waveform: np.ndarray,
-    sample_rate: int,
-    start_time: float,
-    end_time: float,
-    image_size: int,
-    n_mels: int,
-) -> Image.Image:
-    start = max(0, int(round(start_time * sample_rate)))
-    end = min(int(round(end_time * sample_rate)), waveform.shape[0])
-    segment = waveform[start:end]
-    if segment.size == 0:
-        segment = np.zeros(max(1, sample_rate // 10), dtype=np.float32)
-
-    spec = librosa.feature.melspectrogram(
-        y=segment.astype(np.float32),
-        sr=sample_rate,
-        n_mels=n_mels,
-        n_fft=1024,
-        hop_length=256,
+def natural_path_key(path: Path) -> tuple[object, ...]:
+    return tuple(
+        int(token) if token.isdigit() else token.lower()
+        for token in re.split(r"(\d+)", path.name)
     )
-    spec_db = librosa.power_to_db(spec, ref=np.max)
-    return _image_from_spectrogram(spec_db, image_size=image_size)
 
 
-def _partition_frames(frame_paths: Sequence[Path], segment_count: int) -> List[List[Path]]:
-    if segment_count <= 0:
-        raise ValueError("segment_count must be positive.")
-    ordered = sorted(frame_paths)
-    if not ordered:
-        raise ValueError("Frame directory is empty.")
-
-    if len(ordered) >= segment_count:
-        groups = [list(chunk) for chunk in np.array_split(np.asarray(ordered, dtype=object), segment_count)]
-        return [[Path(item) for item in group] for group in groups]
-
-    # If there are fewer frames than segments, repeat nearest frames so every segment is non-empty.
-    groups: List[List[Path]] = []
-    for seg_idx in range(segment_count):
-        source_idx = int(round(seg_idx * (len(ordered) - 1) / max(segment_count - 1, 1)))
-        groups.append([ordered[source_idx]])
-    return groups
+def _serialize_path(path: Path, path_root: Path, path_mode: str) -> str:
+    resolved = path.expanduser().resolve()
+    if path_mode == "absolute":
+        return str(resolved)
+    if path_mode != "relative_to_path_root":
+        raise ValueError(f"Unsupported path mode: {path_mode}")
+    try:
+        return resolved.relative_to(path_root.expanduser().resolve()).as_posix()
+    except ValueError as exc:
+        raise ValueError(f"Path {resolved} is outside declared path_root {path_root}") from exc
 
 
-def _iter_frame_files(video_dir: Path) -> Iterable[Path]:
-    return sorted(path for path in video_dir.iterdir() if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png"})
-
-
-def _build_record(
-    repo_root: Path,
-    dataset_root: Path,
-    spectrogram_root: Path,
-    row: Dict[str, str],
-    annotations: Dict[str, Dict[str, Any]],
-    image_size: int,
-    requested_sample_rate: int | None,
-    n_mels: int,
-    overwrite_specs: bool,
-) -> Dict[str, Any]:
+def _official_clip_paths(dataset_root: Path, row: dict[str, str]) -> tuple[Path, Path]:
     split = row["split"].strip()
     category = row["cls_name"].strip()
     clip_id = row["vid_name"].strip()
+    return (
+        dataset_root / split / "audio" / category / f"{clip_id}.wav",
+        dataset_root / split / "video" / category / clip_id,
+    )
 
-    anno = annotations.get(clip_id)
-    if anno is None:
+
+def build_official_record(
+    *,
+    dataset_root: Path,
+    row: dict[str, str],
+    annotations: dict[str, dict[str, Any]],
+    path_root: Path,
+    path_mode: str,
+) -> dict[str, Any]:
+    split = row["split"].strip()
+    category = row["cls_name"].strip()
+    cls_type = row["cls_type"].strip()
+    clip_id = row["vid_name"].strip()
+    annotation = annotations.get(clip_id)
+    if annotation is None:
         raise KeyError(f"Missing annotation entry for clip {clip_id}")
-
-    labels = _parse_label_list(anno.get("label"))
-    num_segments = len(labels)
-
-    audio_path = dataset_root / split / "audio" / category / f"{clip_id}.wav"
-    video_dir = dataset_root / split / "video" / category / clip_id
-    if not audio_path.exists():
-        raise FileNotFoundError(f"Missing audio file: {audio_path}")
-    if not video_dir.exists():
-        raise FileNotFoundError(f"Missing video directory: {video_dir}")
-
-    frame_groups = _partition_frames(list(_iter_frame_files(video_dir)), num_segments)
-
-    waveform, sample_rate = sf.read(audio_path)
-    if waveform.ndim > 1:
-        waveform = waveform.mean(axis=1)
-    waveform = waveform.astype(np.float32)
-
-    if requested_sample_rate and requested_sample_rate > 0 and requested_sample_rate != sample_rate:
-        waveform = librosa.resample(waveform, orig_sr=sample_rate, target_sr=requested_sample_rate)
-        sample_rate = int(requested_sample_rate)
-
-    duration = float(waveform.shape[0] / sample_rate)
-    boundaries = np.linspace(0.0, duration, num_segments + 1, dtype=np.float64)
-    timestamps = [[float(boundaries[idx]), float(boundaries[idx + 1])] for idx in range(num_segments)]
-
-    spectrogram_dir = spectrogram_root / split / category / clip_id
-    spectrogram_dir.mkdir(parents=True, exist_ok=True)
-    spectrogram_paths: List[str] = []
-    for seg_idx, (start_time, end_time) in enumerate(timestamps):
-        output_path = spectrogram_dir / f"seg_{seg_idx:03d}.jpg"
-        if overwrite_specs or not output_path.exists():
-            image = _generate_segment_spectrogram(
-                waveform=waveform,
-                sample_rate=sample_rate,
-                start_time=start_time,
-                end_time=end_time,
-                image_size=image_size,
-                n_mels=n_mels,
-            )
-            image.save(output_path, quality=95)
-        spectrogram_paths.append(_relpath(output_path, repo_root))
-
+    labels = _parse_label_list(annotation.get("label"))
+    audio_path, video_dir = _official_clip_paths(dataset_root, row)
+    if not audio_path.is_file() or audio_path.suffix.lower() != ".wav":
+        raise FileNotFoundError(f"Missing official WAV: {audio_path}")
+    if not video_dir.is_dir():
+        raise FileNotFoundError(f"Missing official PNG directory: {video_dir}")
+    png_paths = sorted(
+        (path for path in video_dir.iterdir() if path.is_file() and path.suffix.lower() == ".png"),
+        key=natural_path_key,
+    )
+    if len(png_paths) != len(labels):
+        raise ValueError(
+            f"Canonical clip {clip_id} requires exactly {len(labels)} PNG files; found {len(png_paths)}. "
+            "Silent frame repetition or temporal resampling is forbidden."
+        )
+    split_type = normalize_split_type(cls_type)
     return {
         "id": clip_id,
         "query": category,
-        "frame_paths": [[_relpath(path, repo_root) for path in group] for group in frame_groups],
-        "spectrogram_paths": spectrogram_paths,
-        "audio_path": _relpath(audio_path, repo_root),
-        "segment_timestamps": timestamps,
+        "frame_paths": [[_serialize_path(path, path_root, path_mode)] for path in png_paths],
+        "spectrogram_paths": [],
+        "audio_path": _serialize_path(audio_path, path_root, path_mode),
         "segment_labels": labels,
+        "split_type": split_type,
         "domain": "ov_avebench",
         "meta": {
             "split": split,
             "category": category,
-            "cls_type": row["cls_type"].strip(),
+            "cls_type": cls_type,
+            "split_type": split_type,
             "source": "released_ovavel_dataset_anno.json",
+            "preprocessing_mode": CANONICAL_MODE,
+            "student_audio_preprocessing": "unresolved_not_generated",
+            "preprocessing_evidence": {
+                "temporal_resampling_performed": False,
+                "audio_resampling_performed": False,
+            },
         },
     }
 
 
-def _write_jsonl(path: Path, records: Sequence[Dict[str, Any]]) -> None:
+def _build_record(**kwargs: Any) -> dict[str, Any]:
+    """Canonical task-book entry point; kept named for archival traceability."""
+
+    return build_official_record(**kwargs)
+
+
+def _legacy_partition_frames(frame_paths: Sequence[Path], segment_count: int) -> list[list[Path]]:
+    ordered = sorted(frame_paths, key=natural_path_key)
+    if not ordered:
+        raise ValueError("Frame directory is empty.")
+    if len(ordered) >= segment_count:
+        return [
+            [Path(item) for item in group]
+            for group in np.array_split(np.asarray(ordered, dtype=object), segment_count)
+        ]
+    groups: list[list[Path]] = []
+    for segment_index in range(segment_count):
+        source_index = int(round(segment_index * (len(ordered) - 1) / max(segment_count - 1, 1)))
+        groups.append([ordered[source_index]])
+    return groups
+
+
+def build_noncanonical_legacy_generated_jpeg_mel(
+    *,
+    dataset_root: Path,
+    spectrogram_root: Path,
+    row: dict[str, str],
+    annotations: dict[str, dict[str, Any]],
+    path_root: Path,
+    path_mode: str,
+    image_size: int,
+    requested_sample_rate: int | None,
+    n_mels: int,
+    overwrite_specs: bool,
+) -> dict[str, Any]:
+    """Preserve the R1 invented JPEG-mel pipeline under an explicit noncanonical name."""
+
+    try:
+        import librosa
+        import soundfile as sf
+        from PIL import Image
+    except ImportError as exc:
+        raise RuntimeError(f"{LEGACY_MODE} requires librosa, soundfile, and Pillow") from exc
+
+    split = row["split"].strip()
+    category = row["cls_name"].strip()
+    cls_type = row["cls_type"].strip()
+    clip_id = row["vid_name"].strip()
+    annotation = annotations.get(clip_id)
+    if annotation is None:
+        raise KeyError(f"Missing annotation entry for clip {clip_id}")
+    labels = _parse_label_list(annotation.get("label"))
+    audio_path, video_dir = _official_clip_paths(dataset_root, row)
+    frame_files = [
+        path
+        for path in video_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+    ]
+    frame_groups = _legacy_partition_frames(frame_files, len(labels))
+    waveform, sample_rate = sf.read(audio_path)
+    original_sample_rate = int(sample_rate)
+    if waveform.ndim > 1:
+        waveform = waveform.mean(axis=1)
+    waveform = waveform.astype(np.float32)
+    if requested_sample_rate and requested_sample_rate != sample_rate:
+        waveform = librosa.resample(
+            waveform, orig_sr=sample_rate, target_sr=int(requested_sample_rate)
+        )
+        sample_rate = int(requested_sample_rate)
+    boundaries = np.linspace(0.0, waveform.shape[0] / sample_rate, len(labels) + 1)
+    output_dir = spectrogram_root / split / category / clip_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+    spectrogram_paths: list[str] = []
+    for index, (start_time, end_time) in enumerate(zip(boundaries[:-1], boundaries[1:])):
+        output_path = output_dir / f"seg_{index:03d}.jpg"
+        if overwrite_specs or not output_path.exists():
+            start = int(round(start_time * sample_rate))
+            end = int(round(end_time * sample_rate))
+            segment = waveform[start:end]
+            spec = librosa.feature.melspectrogram(
+                y=segment,
+                sr=sample_rate,
+                n_mels=n_mels,
+                n_fft=1024,
+                hop_length=256,
+            )
+            db = np.clip(librosa.power_to_db(spec, ref=np.max), -80.0, 0.0)
+            pixels = ((db + 80.0) / 80.0 * 255.0).astype(np.uint8)
+            Image.fromarray(pixels, mode="L").convert("RGB").resize(
+                (image_size, image_size), Image.BILINEAR
+            ).save(output_path, quality=95)
+        spectrogram_paths.append(_serialize_path(output_path, path_root, path_mode))
+    split_type = normalize_split_type(cls_type)
+    return {
+        "id": clip_id,
+        "query": category,
+        "frame_paths": [
+            [_serialize_path(path, path_root, path_mode) for path in group] for group in frame_groups
+        ],
+        "spectrogram_paths": spectrogram_paths,
+        "audio_path": _serialize_path(audio_path, path_root, path_mode),
+        "segment_timestamps": [
+            [float(start), float(end)] for start, end in zip(boundaries[:-1], boundaries[1:])
+        ],
+        "segment_labels": labels,
+        "split_type": split_type,
+        "domain": "ov_avebench",
+        "meta": {
+            "split": split,
+            "category": category,
+            "cls_type": cls_type,
+            "split_type": split_type,
+            "source": "released_ovavel_dataset_anno.json",
+            "preprocessing_mode": LEGACY_MODE,
+            "preprocessing_evidence": {
+                "temporal_resampling_performed": len(frame_files) != len(labels),
+                "audio_resampling_performed": int(sample_rate) != original_sample_rate,
+            },
+        },
+    }
+
+
+def atomic_write_jsonl(path: Path, records: Iterable[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        for record in records:
-            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    partial = path.with_suffix(path.suffix + ".partial")
+    try:
+        with partial.open("w", encoding="utf-8", newline="\n") as handle:
+            for record in records:
+                handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(partial, path)
+    finally:
+        if partial.exists():
+            partial.unlink()
 
 
 def main() -> None:
     args = parse_args()
-    repo_root = Path(__file__).resolve().parents[1]
-    dataset_root = (repo_root / args.dataset_root).resolve()
-    annotation_json = (repo_root / args.annotation_json).resolve()
-    meta_csv = (repo_root / args.meta_csv).resolve()
-    output_dir = (repo_root / args.output_dir).resolve()
-    spectrogram_root = (repo_root / args.spectrogram_dir).resolve()
 
-    if not dataset_root.exists():
-        raise FileNotFoundError(f"Dataset root not found: {dataset_root}")
-    if not annotation_json.exists():
-        raise FileNotFoundError(f"Annotation JSON not found: {annotation_json}")
-    if not meta_csv.exists():
-        raise FileNotFoundError(f"Meta CSV not found: {meta_csv}")
+    def resolved(value: str) -> Path:
+        path = Path(value).expanduser()
+        return (PROJECT_ROOT / path).resolve() if not path.is_absolute() else path.resolve()
 
+    dataset_root = resolved(args.dataset_root)
+    annotation_json = resolved(args.annotation_json)
+    meta_csv = resolved(args.meta_csv)
+    output_dir = resolved(args.output_dir)
+    path_root = resolved(args.path_root)
+    spectrogram_root = resolved(args.spectrogram_dir)
+    for required in (dataset_root, annotation_json, meta_csv):
+        if not required.exists():
+            raise FileNotFoundError(f"Required official input not found: {required}")
     annotations = _load_annotations(annotation_json)
-    meta_rows = _load_meta_rows(meta_csv)
-
-    records_by_split: Dict[str, List[Dict[str, Any]]] = {"train": [], "val": [], "test": []}
+    rows = _load_meta_rows(meta_csv)
+    records_by_split: dict[str, list[dict[str, Any]]] = {"train": [], "val": [], "test": []}
     limit = None if args.limit_per_split is None else max(1, int(args.limit_per_split))
-
-    for row in meta_rows:
+    for row in rows:
         split = row["split"].strip()
         if split not in records_by_split:
             continue
         if limit is not None and len(records_by_split[split]) >= limit:
             continue
-        records_by_split[split].append(
-            _build_record(
-                repo_root=repo_root,
+        if args.mode == CANONICAL_MODE:
+            record = _build_record(
+                dataset_root=dataset_root,
+                row=row,
+                annotations=annotations,
+                path_root=path_root,
+                path_mode=args.path_mode,
+            )
+        else:
+            record = build_noncanonical_legacy_generated_jpeg_mel(
                 dataset_root=dataset_root,
                 spectrogram_root=spectrogram_root,
                 row=row,
                 annotations=annotations,
+                path_root=path_root,
+                path_mode=args.path_mode,
                 image_size=int(args.image_size),
                 requested_sample_rate=args.sample_rate,
                 n_mels=int(args.n_mels),
                 overwrite_specs=bool(args.overwrite_specs),
             )
+        records_by_split[split].append(record)
+    outputs = {
+        split: output_dir / f"{split}_source.jsonl" for split in records_by_split
+    }
+    for split, output in outputs.items():
+        atomic_write_jsonl(output, records_by_split[split])
+    print(
+        json.dumps(
+            {
+                "mode": args.mode,
+                "path_mode": args.path_mode,
+                "path_root": str(path_root),
+                "outputs": {split: str(path) for split, path in outputs.items()},
+                "records_per_split": {
+                    split: len(records) for split, records in records_by_split.items()
+                },
+            },
+            indent=2,
+            ensure_ascii=False,
         )
-
-    output_paths = {
-        "train": output_dir / "train_source.jsonl",
-        "val": output_dir / "val_source.jsonl",
-        "test": output_dir / "test_source.jsonl",
-    }
-    for split, records in records_by_split.items():
-        _write_jsonl(output_paths[split], records)
-
-    summary = {
-        "dataset_root": str(dataset_root),
-        "annotation_json": str(annotation_json),
-        "meta_csv": str(meta_csv),
-        "spectrogram_dir": str(spectrogram_root),
-        "outputs": {split: str(path) for split, path in output_paths.items()},
-        "records_per_split": {split: len(records) for split, records in records_by_split.items()},
-    }
-    print(json.dumps(summary, indent=2, ensure_ascii=False))
+    )
 
 
 if __name__ == "__main__":

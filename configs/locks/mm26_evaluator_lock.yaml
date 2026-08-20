@@ -1,0 +1,41 @@
+schema_version: 1
+status: blocked
+blocked_by: "The historical mapping from paper-reported F1 fields to official evaluator outputs is unresolved"
+upstream_repo: "https://github.com/jasongief/OV-AVEL.git"
+upstream_commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
+repository: "https://github.com/jasongief/OV-AVEL.git"
+commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
+upstream_checkout_clean: true
+source_file: "proposed_method/ImageBind-main/utils/eval_metrics.py"
+source_sha256: "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19"
+source:
+  path: "proposed_method/ImageBind-main/utils/eval_metrics.py"
+  sha256: "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19"
+parity:
+  status: passed
+  fixture_path: "tests/fixtures/official_ovavel_metric_cases.json"
+  fixture_sha256: "69c5d0f2e9eeded3ed2944329340d1ed6d9c46d50f8b19564dddc1311bb022fb"
+  receipt_path: "reports/evaluation/mm26_official_evaluator_parity_receipt.json"
+  receipt_sha256: "13943f1c5f67c112f3474420777298de6fc13fc4d6b227ae67df664b3a32e777"
+  segment_cases: 4
+  event_cases: 4
+paper_f1_at_0_5_mapping:
+  status: unresolved
+  value: null
+  config_path: "evaluation.paper_f1_at_0_5_mapping"
+  evidence: []
+validation_calibrated_f1_mapping:
+  status: unresolved
+  value: null
+  config_path: "evaluation.validation_calibrated_f1_mapping"
+  evidence: []
+local_metric_fields:
+  - "binary_micro_f1_at_0_5"
+  - "query_fg_f1_macro_at_0_5"
+  - "ovavel_segment_f1_at_0_5"
+  - "ovavel_event_f1_at_0_5"
+  - "ap"
+  - "auroc"
+blockers:
+  - "Recover direct historical evidence for which metric populated each paper table field."
+  - "Do not choose the most favorable local metric and label it as the paper result."

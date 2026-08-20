@@ -53,6 +53,10 @@ def build_reproduction_fingerprint(
     config: Mapping[str, Any],
     *,
     lock_paths: Mapping[str, str | Path] | None = None,
+    evidence_paths: Mapping[str, str | Path] | None = None,
+    git_state: Mapping[str, Any] | None = None,
+    run_mode: str | None = None,
+    variant: str | None = None,
 ) -> dict[str, Any]:
     normalized_config = copy.deepcopy(dict(config))
     logging_cfg = normalized_config.get("logging")
@@ -71,13 +75,21 @@ def build_reproduction_fingerprint(
     for name, value in sorted((lock_paths or {}).items()):
         locks[str(name)] = _file_component(_resolved_file(value, path_root))
 
+    evidence: dict[str, Any] = {}
+    for name, value in sorted((evidence_paths or {}).items()):
+        evidence[str(name)] = _file_component(_resolved_file(value, path_root))
+
     components = {
         "config_sha256": _sha256_value(normalized_config),
         "manifests": manifests,
         "locks": locks,
+        "evidence": evidence,
+        "git_state": copy.deepcopy(dict(git_state or {})),
+        "run_mode": run_mode,
+        "variant": variant,
     }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "sha256": _sha256_value(components),
         "components": components,
     }

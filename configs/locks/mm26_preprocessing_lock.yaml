@@ -1,0 +1,60 @@
+schema_version: 1
+status: blocked
+blocked_by: "Official preprocessed archive/layout and historical student audio preprocessing are unavailable"
+mode: "canonical_official_png_wav"
+frame_policy: "natural_sorted_no_repeat"
+config_bindings:
+  - path: "data.preprocessing_mode"
+    value: "canonical_official_png_wav"
+  - path: "data.frame_policy"
+    value: "natural_sorted_no_repeat"
+canonical_manifest:
+  mode: "canonical_official_png_wav"
+  visual_source: "official_png"
+  audio_source: "official_wav"
+  path_modes:
+    - "relative_to_path_root"
+    - "absolute"
+  frame_order: "natural_path_key"
+  frame_policy: "natural_sorted_no_repeat"
+  generated_spectrograms: false
+  temporal_resampling: false
+  atomic_publication: "partial_fsync_os_replace"
+visual:
+  source: "official_png"
+  temporal_segments: null
+  frame_selection: null
+  resize: null
+  normalization: null
+audio:
+  source: "official_wav"
+  sample_rate: null
+  channels: null
+  student_representation: null
+  n_fft: null
+  hop_length: null
+  n_mels: null
+  normalization: null
+legacy:
+  mode: "noncanonical_legacy_generated_jpeg_mel"
+  canonical_allowed: false
+  n_fft: 1024
+  hop_length: 256
+  default_n_mels: 128
+  output: "RGB JPEG"
+layout_discovery:
+  status: not_executed_official_archive_missing
+  script: "scripts/discover_ovave_layout.py"
+  report_json: "reports/data/preprocessed_layout_discovery.json"
+safe_extraction:
+  status: not_executed_official_archive_missing
+  script: "scripts/safe_extract_official_archive.py"
+  archive_sha256: null
+  extracted_tree_sha256: null
+evidence:
+  archive_receipt: "reports/data/official_archive_extraction_receipt.json"
+  layout_report: "reports/data/preprocessed_layout_discovery.json"
+blockers:
+  - "User must manually provide the official archive obtained through an authorized Microsoft session."
+  - "Run safe extraction and full layout discovery before selecting canonical paths."
+  - "Recover or explicitly approve the student audio preprocessing; do not reuse the legacy JPEG-mel assumptions."

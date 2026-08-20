@@ -23,11 +23,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.data import create_ov_avel_data_loaders
 from src.models import OVOrthKDStudent
 from scripts.train_ov_orthkd import (
+    build_runtime_reproduction_fingerprint,
     build_model_and_loss,
     collect_predictions,
     compute_grouped_metrics,
     save_predictions_npz,
 )
+from src.utils.canonical_readiness import validate_canonical_readiness
 
 
 def parse_args() -> argparse.Namespace:
@@ -64,6 +66,36 @@ def parse_model_specs(specs: Iterable[str]) -> List[Tuple[str, Path]]:
 def build_student(config: Dict[str, Any], device: torch.device) -> OVOrthKDStudent:
     student, _ = build_model_and_loss(config, device)
     return student
+
+
+def validate_formal_checkpoint(
+    checkpoint: Dict[str, Any],
+    checkpoint_path: str | Path,
+    *,
+    max_batches: int | None = None,
+) -> Dict[str, Any]:
+    if "config" not in checkpoint:
+        raise KeyError(f"Checkpoint missing embedded config: {checkpoint_path}")
+    config = checkpoint["config"]
+    if not isinstance(config, dict):
+        raise TypeError(f"Checkpoint config must be a mapping: {checkpoint_path}")
+    claim_level = str(config.get("reproduction", {}).get("claim_level", "")).strip().lower()
+    if max_batches is not None and claim_level in {
+        "archival_exact",
+        "paper_specified_reconstruction",
+    }:
+        raise RuntimeError(
+            "Refusing partial formal evaluation: --max-batches is diagnostic-only and cannot "
+            "produce formal validation/test artifacts"
+        )
+    validate_canonical_readiness(config)
+    expected_fingerprint = build_runtime_reproduction_fingerprint(config)
+    checkpoint_fingerprint = checkpoint.get("reproduction_fingerprint")
+    if not isinstance(checkpoint_fingerprint, dict) or (
+        checkpoint_fingerprint.get("sha256") != expected_fingerprint.get("sha256")
+    ):
+        raise RuntimeError(f"Checkpoint reproduction fingerprint mismatch: {checkpoint_path}")
+    return config
 
 
 def flatten_valid_segments(
@@ -118,9 +150,9 @@ def best_threshold_from_pr(labels: np.ndarray, probs: np.ndarray) -> Dict[str, f
         preds = (probs >= threshold).astype(np.int64)
         return {
             "best_threshold": threshold,
-            "best_f1": float(f1_score(labels, preds, zero_division=0)),
-            "precision": float(precision_score(labels, preds, zero_division=0)),
-            "recall": float(recall_score(labels, preds, zero_division=0)),
+            "best_binary_f1": float(f1_score(labels, preds, zero_division=0)),
+            "binary_precision": float(precision_score(labels, preds, zero_division=0)),
+            "binary_recall": float(recall_score(labels, preds, zero_division=0)),
         }
 
     f1_scores = 2.0 * precision[:-1] * recall[:-1] / np.clip(precision[:-1] + recall[:-1], 1e-12, None)
@@ -129,9 +161,9 @@ def best_threshold_from_pr(labels: np.ndarray, probs: np.ndarray) -> Dict[str, f
     preds = (probs >= best_threshold).astype(np.int64)
     return {
         "best_threshold": best_threshold,
-        "best_f1": float(f1_scores[best_idx]),
-        "precision": float(precision_score(labels, preds, zero_division=0)),
-        "recall": float(recall_score(labels, preds, zero_division=0)),
+        "best_binary_f1": float(f1_scores[best_idx]),
+        "binary_precision": float(precision_score(labels, preds, zero_division=0)),
+        "binary_recall": float(recall_score(labels, preds, zero_division=0)),
     }
 
 
@@ -139,9 +171,9 @@ def metrics_at_threshold(labels: np.ndarray, probs: np.ndarray, threshold: float
     preds = (probs >= threshold).astype(np.int64)
     return {
         "threshold": float(threshold),
-        "f1": float(f1_score(labels, preds, zero_division=0)),
-        "precision": float(precision_score(labels, preds, zero_division=0)),
-        "recall": float(recall_score(labels, preds, zero_division=0)),
+        "binary_micro_f1_at_threshold": float(f1_score(labels, preds, zero_division=0)),
+        "binary_precision_at_threshold": float(precision_score(labels, preds, zero_division=0)),
+        "binary_recall_at_threshold": float(recall_score(labels, preds, zero_division=0)),
     }
 
 
@@ -157,9 +189,9 @@ def evaluate_prediction_sets(
     return {
         "validation_calibration": {
             "best_threshold": frozen_threshold,
-            "best_f1": float(best["best_f1"]),
-            "precision_at_best_f1": float(best["precision"]),
-            "recall_at_best_f1": float(best["recall"]),
+            "best_binary_f1": float(best["best_binary_f1"]),
+            "binary_precision_at_best_f1": float(best["binary_precision"]),
+            "binary_recall_at_best_f1": float(best["binary_recall"]),
             "precision": precision,
             "recall": recall,
             "thresholds": thresholds,
@@ -201,7 +233,6 @@ def main() -> None:
     args = parse_args()
     model_specs = parse_model_specs(args.model)
     output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     summary: List[Dict[str, Any]] = []
@@ -209,12 +240,16 @@ def main() -> None:
     test_curves: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
 
     for name, checkpoint_path in model_specs:
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
-        if "config" not in checkpoint:
-            raise KeyError(f"Checkpoint missing embedded config: {checkpoint_path}")
-        config = checkpoint["config"]
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        config = validate_formal_checkpoint(
+            checkpoint,
+            checkpoint_path,
+            max_batches=args.max_batches,
+        )
         student = build_student(config, device)
         student.load_state_dict(checkpoint["student_state_dict"])
+
+        output_dir.mkdir(parents=True, exist_ok=True)
 
         _, val_loader, test_loader = create_ov_avel_data_loaders(config)
         if test_loader is None:
@@ -253,12 +288,12 @@ def main() -> None:
                 "name": name,
                 "checkpoint": str(checkpoint_path),
                 "val_best_threshold": calibration["best_threshold"],
-                "val_best_f1": calibration["best_f1"],
-                "val_precision_at_best_f1": calibration["precision_at_best_f1"],
-                "val_recall_at_best_f1": calibration["recall_at_best_f1"],
-                "test_f1_at_val_best_threshold": test_total["f1"],
-                "test_precision_at_val_best_threshold": test_total["precision"],
-                "test_recall_at_val_best_threshold": test_total["recall"],
+                "val_best_binary_f1": calibration["best_binary_f1"],
+                "val_binary_precision_at_best_f1": calibration["binary_precision_at_best_f1"],
+                "val_binary_recall_at_best_f1": calibration["binary_recall_at_best_f1"],
+                "test_val_calibrated_binary_f1": test_total["binary_micro_f1_at_threshold"],
+                "test_val_calibrated_binary_precision": test_total["binary_precision_at_threshold"],
+                "test_val_calibrated_binary_recall": test_total["binary_recall_at_threshold"],
                 "validation_grouped_metrics": evaluation_report["validation"]["metrics"],
                 "test_grouped_metrics": evaluation_report["test"]["metrics"],
             }
@@ -271,9 +306,9 @@ def main() -> None:
         json.dump(summary, handle, indent=2)
 
     header = (
-        "name,checkpoint,val_best_threshold,val_best_f1,val_precision_at_best_f1,"
-        "val_recall_at_best_f1,test_f1_at_val_best_threshold,"
-        "test_precision_at_val_best_threshold,test_recall_at_val_best_threshold"
+        "name,checkpoint,val_best_threshold,val_best_binary_f1,val_binary_precision_at_best_f1,"
+        "val_binary_recall_at_best_f1,test_val_calibrated_binary_f1,"
+        "test_val_calibrated_binary_precision,test_val_calibrated_binary_recall"
     )
     lines = [header]
     for row in summary:
@@ -283,12 +318,12 @@ def main() -> None:
                     row["name"],
                     row["checkpoint"],
                     f"{row['val_best_threshold']:.8f}",
-                    f"{row['val_best_f1']:.8f}",
-                    f"{row['val_precision_at_best_f1']:.8f}",
-                    f"{row['val_recall_at_best_f1']:.8f}",
-                    f"{row['test_f1_at_val_best_threshold']:.8f}",
-                    f"{row['test_precision_at_val_best_threshold']:.8f}",
-                    f"{row['test_recall_at_val_best_threshold']:.8f}",
+                    f"{row['val_best_binary_f1']:.8f}",
+                    f"{row['val_binary_precision_at_best_f1']:.8f}",
+                    f"{row['val_binary_recall_at_best_f1']:.8f}",
+                    f"{row['test_val_calibrated_binary_f1']:.8f}",
+                    f"{row['test_val_calibrated_binary_precision']:.8f}",
+                    f"{row['test_val_calibrated_binary_recall']:.8f}",
                 ]
             )
         )

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "generated_at": "2026-08-20",
+  "upstream": {
+    "repository": "https://github.com/jasongief/OV-AVEL.git",
+    "commit": "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6",
+    "source_file": "proposed_method/ImageBind-main/utils/eval_metrics.py",
+    "source_sha256": "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19",
+    "checkout_clean": true
+  },
+  "fixture": {
+    "path": "tests/fixtures/official_ovavel_metric_cases.json",
+    "sha256": "69c5d0f2e9eeded3ed2944329340d1ed6d9c46d50f8b19564dddc1311bb022fb",
+    "case_count": 4
+  },
+  "comparison": {
+    "segment_cases_passed": 4,
+    "event_cases_passed": 4,
+    "absolute_tolerance": 1e-12
+  },
+  "network_used_during_test": false,
+  "errors": []
+}

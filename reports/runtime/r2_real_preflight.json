@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "status": "not_executed_gate_blocked",
+  "real_data": null,
+  "optimizer_steps": 0,
+  "batch_count": 0,
+  "forward_completed": false,
+  "backward_completed": false,
+  "checkpoint_resume_completed": false,
+  "peak_cuda_memory_bytes": null,
+  "losses_finite": null,
+  "formal_metrics_emitted": false,
+  "invocation_count_this_stage": 0,
+  "blocked_by": "official data, source manifests, teacher locks and exported artifacts unavailable"
+}

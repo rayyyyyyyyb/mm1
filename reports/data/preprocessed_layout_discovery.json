@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "status": "not_executed_gate_blocked",
+  "blocked_by": "official archive not provided",
+  "dataset_root": null,
+  "split_counts": null,
+  "top_level_entries": null,
+  "extension_counts": null,
+  "png_statistics": null,
+  "wav_statistics": null,
+  "frame_count_histogram": null,
+  "missing_files": null,
+  "extra_files": null,
+  "duplicate_basenames": null,
+  "duplicate_logical_basenames": null,
+  "zero_byte_files": null,
+  "errors": null,
+  "warnings": null
+}

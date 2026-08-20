@@ -1,6 +1,60 @@
 {
-  "schema_version": 1,
-  "status": "not_executed_gate_blocked",
-  "blocked_by": "R1-4 official preprocessed download authentication gate",
-  "evidence": []
+  "schema_version": 2,
+  "status": "search_completed_no_resolving_evidence",
+  "searched_on": "2026-08-20",
+  "scopes": [
+    "all Git refs, tags and reflogs in the collaboration repository",
+    "tracked Python/YAML/JSON/Markdown/text/log/CSV files in the collaboration workspace excluding environments and third-party checkouts",
+    "local R0/R1/R2 output and checkpoint names",
+    "5090 E:/OV-OrthKD-R0, E:/OV-OrthKD-R1 and E:/OV-OrthKD-R2 output/checkpoint names"
+  ],
+  "git_history": {
+    "commits": [
+      "dca9f052fbe4a1e9d7982f24bdcec3edf1363fd4",
+      "d8e681b2d3597f0f089ee8f0b42ef12466ffb599",
+      "6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986"
+    ],
+    "tags": [],
+    "pre_r0_history_found": false
+  },
+  "keywords": [
+    "step400",
+    "InternVideo2_CLIP",
+    "lambda_orth",
+    "early_stop",
+    "n_mels",
+    "hop_length",
+    "projection_dim",
+    "F1@0.5",
+    "TransformerLayer"
+  ],
+  "checkpoint_candidates": [
+    {
+      "scope": "local/5090 R0",
+      "names": ["preflight_resume.pt", "best.pt", "last.pt"],
+      "disposition": "excluded_generated_r0_mock_or_preflight"
+    },
+    {
+      "scope": "5090 R1",
+      "names": ["r1_mock_preflight/preflight_resume.pt"],
+      "disposition": "excluded_generated_r1_mock_preflight"
+    }
+  ],
+  "conference_historical_checkpoints_found": 0,
+  "resolved_fact_values": {},
+  "unresolved_facts": [
+    "temporal_protocol",
+    "internvideo_identity",
+    "scheduler_and_early_stop",
+    "student_initialization_and_augmentation",
+    "visual_l2_reduction",
+    "query_aware_fusion",
+    "frame_sampling",
+    "student_audio_preprocessing",
+    "evaluator_mapping"
+  ],
+  "notes": [
+    "Keyword hits in R0/R1 task books and current implementation document known conflicts or provisional choices; they are not direct historical evidence.",
+    "No value, class, schedule, preprocessing parameter or checkpoint was inferred from the current code."
+  ]
 }

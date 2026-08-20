@@ -1,6 +1,6 @@
-schema_version: 1
+schema_version: 2
 status: blocked
-blocked_by: "R1-4 official preprocessed SharePoint share requires Microsoft authentication"
+blocked_by: "Official OV-AVEBench preprocessed archive has not been manually provided from an authorized Microsoft session"
 upstream:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
@@ -8,9 +8,9 @@ upstream:
 metadata:
   status: resolved
   receipt: "reports/data/official_metadata_receipt.json"
-  receipt_sha256: "37e63d9154460604e4b1afbcbfac9527761365e0e04feca13bd3c47c306026e9"
+  receipt_sha256: "6c058a3490dfc0a756312d8c4ab999c95c2543fbfb20cef317d4fbb293957279"
   audit: "reports/data/official_metadata_audit.json"
-  audit_sha256: "61668a80977bd86dc224cd9803503bacffd4d0ef1267f5723966966928b57a67"
+  audit_sha256: "65667d659281ac46ac9cf77f7656e29d6d882a2f0d238d61d7ffa61423288f83"
   csv_sha256: "f916b2a7fbaed53c95c6124efe3f11189766a2516805406639578c9a5fd4fb9d"
   annotation_sha256: "4a1b170095c0427b1ca3e6f178ced2b0dd1efbf753959f03905fe33c6f01f009"
   counts:
@@ -27,29 +27,44 @@ metadata:
     open_unseen: 8303
   segment_length_histogram:
     "10": 24800
-preprocessed_download:
-  status: blocked_authentication_required
-  receipt: "reports/data/official_preprocessed_download_receipt.json"
-  receipt_sha256: "2fa0247acf1b8d6eba2b857debc9f46df4916fe9b50aa170ee1ad820bf65c193"
-  files: []
-  archive_listing_completed: false
-  extraction_completed: false
+official_archive:
+  status: blocked_official_archive_not_provided
+  filename: null
+  bytes: null
+  sha256: null
+  archive_test: not_executed
+  archive_listing: not_executed
+  source: "authorized manual download required; third-party mirrors forbidden"
+extraction:
+  status: not_executed_gate_blocked
+  receipt: "reports/data/official_archive_extraction_receipt.json"
+  extracted_tree_sha256: null
 layout:
   status: not_executed_gate_blocked
+  report: "reports/data/preprocessed_layout_discovery.json"
   dataset_root: null
   frame_count_histogram: null
   wav_sample_rate_histogram: null
-manifest:
+source_manifests:
   status: not_executed_gate_blocked
-  train_sha256: null
-  val_sha256: null
-  test_sha256: null
-  counts: null
-  segment_length_histogram: null
-preprocessing:
+  train:
+    path: null
+    count: null
+    sha256: null
+  val:
+    path: null
+    count: null
+    sha256: null
+  test:
+    path: null
+    count: null
+    sha256: null
+source_audit:
   status: not_executed_gate_blocked
-  spec_version: null
-  parameters: null
+  path: "reports/mm26_source_manifest_audit.json"
+  errors: null
+  warnings: null
 blockers:
-  - "Restore authorized access to the pinned official preprocessed share and download/hash/list archives."
-  - "Resume at R1-4; do not infer layout or manifests before official bytes are available."
+  - "Manually provide the official archive from the authorized SharePoint session."
+  - "Hash and test the original bytes, then run safe extraction and full layout discovery."
+  - "Do not infer source manifests or preprocessing parameters before those gates pass."

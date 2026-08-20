@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "status": "blocked",
+  "teachers": {
+    "internvideo2": {
+      "declared_class": "InternVideo2-Base / CLIP-B14",
+      "imported_class": "InternVideo2_CLIP_small",
+      "repository_commit": null,
+      "checkpoint_sha256": [null, null, null]
+    },
+    "beats": {
+      "imported_class": "BEATs",
+      "repository_commit": null,
+      "checkpoint_sha256": null
+    },
+    "clap": {
+      "imported_class": "msclap.CLAP",
+      "repository_commit": null,
+      "checkpoint_sha256": null
+    }
+  },
+  "smoke": {
+    "status": "not_executed_gate_blocked",
+    "repeat": 0
+  },
+  "errors": [
+    {"code": "internvideo2_model_identity_mismatch", "message": "Declared and imported classes conflict."},
+    {"code": "teacher_repositories_unresolved", "message": "Exact historical repositories and commits were not recovered."},
+    {"code": "teacher_checkpoints_unresolved", "message": "Five exact checkpoint identities and SHA256 values were not recovered."}
+  ],
+  "warnings": []
+}

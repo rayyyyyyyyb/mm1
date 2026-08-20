@@ -11,6 +11,8 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
+from src.data.split_types import split_type_from_record
+
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -440,12 +442,7 @@ class QueryConditionedOVAvelDataset(Dataset):
         meta = record.get("meta", {})
         if not isinstance(meta, dict):
             meta = {}
-        split_type = record.get(
-            "split_type",
-            meta.get("split_type", meta.get("seen_unseen", meta.get("novelty", "unknown"))),
-        )
-        split_type = str(split_type).lower()
-        split_type = {"close": "seen", "open": "unseen"}.get(split_type, split_type)
+        split_type = split_type_from_record(record)
 
         selected_labels = torch.from_numpy(labels_array[indices])
         sequence_mask = torch.ones(len(indices), dtype=torch.float32)
@@ -552,7 +549,7 @@ def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, Dat
     batch_size = int(data_cfg.get("batch_size", 4))
     num_workers = int(data_cfg.get("num_workers", 4))
     pin_memory = bool(data_cfg.get("pin_memory", True))
-    persistent_workers = num_workers > 0
+    persistent_workers = bool(data_cfg.get("persistent_workers", False)) and num_workers > 0
     seed = int(config.get("seed", 42))
     train_generator = torch.Generator().manual_seed(seed)
     val_generator = torch.Generator().manual_seed(seed + 1)

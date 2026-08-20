@@ -1,0 +1,23 @@
+{
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "torch": "2.10.0+cu128",
+  "cuda": "12.8",
+  "cuda_available": true,
+  "gpu_name": "NVIDIA GeForce RTX 5090",
+  "gpu_capability": [
+    12,
+    0
+  ],
+  "gpu_count": 1,
+  "cudnn": 91002,
+  "matrix_size": 2048,
+  "dtype": "float16",
+  "warmup": 2,
+  "iterations": 5,
+  "average_matmul_ms": 0.0965503990650177,
+  "finite": true,
+  "mean_absolute_value": 36.09375,
+  "allocated_gb": 0.0313720703125,
+  "reserved_gb": 0.060546875
+}

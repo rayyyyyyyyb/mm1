@@ -7,12 +7,15 @@ from typing import Sequence
 import numpy as np
 import torch
 
+from .common import verify_checkpoint_sha256
+
 
 class ClapTextTeacher:
     def __init__(
         self,
         repo_root: str | Path,
         checkpoint_path: str | Path,
+        checkpoint_sha256: str,
         version: str = "2023",
         device: str = "cpu",
         normalize: bool = False,
@@ -23,6 +26,7 @@ class ClapTextTeacher:
             raise FileNotFoundError(f"CLAP repo not found: {repo_dir}")
         if not checkpoint.exists():
             raise FileNotFoundError(f"CLAP checkpoint not found: {checkpoint}")
+        verify_checkpoint_sha256(checkpoint, checkpoint_sha256, label="CLAP")
 
         if str(repo_dir) not in sys.path:
             sys.path.insert(0, str(repo_dir))

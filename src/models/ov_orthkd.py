@@ -14,10 +14,20 @@ class SequenceImageEncoder(nn.Module):
         self.feature_dim = self._infer_feature_dim()
 
     def _infer_feature_dim(self) -> int:
-        with torch.no_grad():
-            probe = torch.zeros(1, 3, 224, 224)
-            features = self.backbone(probe)
-        return int(features.shape[-1])
+        declared = getattr(self.backbone, "head_hidden_size", None)
+        if declared is None:
+            declared = getattr(self.backbone, "num_features", None)
+        if declared is not None:
+            return int(declared)
+        was_training = self.backbone.training
+        try:
+            self.backbone.eval()
+            with torch.inference_mode():
+                probe = torch.zeros(1, 3, 224, 224)
+                features = self.backbone(probe)
+            return int(features.shape[-1])
+        finally:
+            self.backbone.train(was_training)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size, seq_len = x.shape[:2]

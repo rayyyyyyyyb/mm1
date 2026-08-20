@@ -68,6 +68,7 @@ def test_export_and_preflight_pipeline(tmp_path: Path) -> None:
             text_teacher=MockTextTeacher(feature_dim=16),
         ),
         overwrite=True,
+        split="train",
     )
 
     assert export_summary["records_exported"] == 2
@@ -166,6 +167,7 @@ def test_export_limit_writes_only_processed_records_by_default(tmp_path: Path) -
         teachers=teachers,
         overwrite=True,
         limit=1,
+        split="train",
     )
 
     assert summary["records_exported"] == 1
@@ -195,6 +197,7 @@ def test_export_limit_can_explicitly_copy_unprocessed_records(tmp_path: Path) ->
         teachers=TeacherExportBundle(),
         limit=1,
         copy_unprocessed_records=True,
+        split="train",
     )
 
     assert summary["records_exported"] == 1

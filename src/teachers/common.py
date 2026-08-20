@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -222,14 +223,58 @@ def resolve_audio_segments(record: Dict[str, Any], expected_len: int) -> List[Au
     )
 
 
-def strong_teacher_artifact_paths(artifact_dir: str | Path, record_name: str) -> tuple[Path, Path]:
-    base = Path(artifact_dir) / safe_record_id(record_name)
+def canonical_split_name(split: str) -> str:
+    canonical = str(split).strip().lower()
+    if canonical not in {"train", "val", "test"}:
+        raise ValueError(f"Unsupported split: {split!r}")
+    return canonical
+
+
+def record_artifact_dir(artifact_root: str | Path, split: str, record_name: str) -> Path:
+    return Path(artifact_root) / canonical_split_name(split) / safe_record_id(record_name)
+
+
+def strong_teacher_artifact_paths(
+    artifact_dir: str | Path,
+    record_name: str,
+    *,
+    split: str,
+) -> tuple[Path, Path]:
+    base = record_artifact_dir(artifact_dir, split, record_name)
     return base / "strong_teacher_features.npy", base / "strong_teacher_logits.npy"
 
 
-def weak_teacher_artifact_path(artifact_dir: str | Path, record_name: str) -> Path:
-    return Path(artifact_dir) / safe_record_id(record_name) / "weak_teacher_features.npy"
+def weak_teacher_artifact_path(artifact_dir: str | Path, record_name: str, *, split: str) -> Path:
+    return record_artifact_dir(artifact_dir, split, record_name) / "weak_teacher_features.npy"
 
 
-def text_artifact_path(artifact_dir: str | Path, record_name: str) -> Path:
-    return Path(artifact_dir) / safe_record_id(record_name) / "text_embedding.npy"
+def query_sha256(query: str) -> str:
+    return hashlib.sha256(str(query).encode("utf-8")).hexdigest()
+
+
+def text_artifact_path(artifact_dir: str | Path, query: str) -> Path:
+    return Path(artifact_dir) / "text_by_query" / f"{query_sha256(query)}.npy"
+
+
+def verify_checkpoint_sha256(
+    checkpoint_path: str | Path,
+    expected_sha256: str,
+    *,
+    label: str,
+) -> dict[str, Any]:
+    path = Path(checkpoint_path).expanduser().resolve()
+    expected = str(expected_sha256).strip()
+    if not re.fullmatch(r"[0-9a-f]{64}", expected):
+        raise ValueError(f"{label} checkpoint SHA256 must be 64 lowercase hex characters")
+    if not path.is_file():
+        raise FileNotFoundError(f"{label} checkpoint not found: {path}")
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    actual = digest.hexdigest()
+    if actual != expected:
+        raise RuntimeError(
+            f"{label} checkpoint SHA256 mismatch: expected {expected}, actual {actual}"
+        )
+    return {"bytes": path.stat().st_size, "sha256": actual}

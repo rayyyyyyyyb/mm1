@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "status": "not_executed_gate_blocked",
+  "stage": "source",
+  "blocked_by": "official archive extraction and layout discovery not completed",
+  "record_count": null,
+  "split_counts": null,
+  "source_manifest_sha256": null,
+  "errors": null,
+  "warnings": null
+}

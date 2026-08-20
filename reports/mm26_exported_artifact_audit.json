@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "status": "not_executed_gate_blocked",
+  "stage": "exported",
+  "artifact_scan": "full",
+  "blocked_by": "source manifests and exact teacher checkpoints unavailable",
+  "record_count": null,
+  "split_counts": null,
+  "exported_manifest_sha256": null,
+  "teacher_checkpoint_sha256": null,
+  "cache_root_sha256": null,
+  "errors": null,
+  "warnings": null
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "generated_from": {
+    "upstream_repo": "https://github.com/jasongief/OV-AVEL.git",
+    "upstream_commit": "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6",
+    "source_file": "proposed_method/ImageBind-main/utils/eval_metrics.py",
+    "source_sha256": "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19"
+  },
+  "cases": [
+    {
+      "name": "perfect",
+      "pred_fg": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+      "gt_fg": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+      "official_segment_f1": 1.0,
+      "official_event_f1": 1.0
+    },
+    {
+      "name": "all_true_negative",
+      "pred_fg": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "gt_fg": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "official_segment_f1": 1.0,
+      "official_event_f1": 1.0
+    },
+    {
+      "name": "partial_event_overlap",
+      "pred_fg": [0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+      "gt_fg": [0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+      "official_segment_f1": 0.8666666666666667,
+      "official_event_f1": 1.0
+    },
+    {
+      "name": "merged_events_below_iou",
+      "pred_fg": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+      "gt_fg": [1, 1, 0, 0, 1, 1, 0, 0, 0, 0],
+      "official_segment_f1": 0.8,
+      "official_event_f1": 0.0
+    }
+  ]
+}

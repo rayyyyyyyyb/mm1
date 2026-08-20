@@ -1,0 +1,69 @@
+Traceback (most recent call last):
+  File "E:\OV-OrthKD-R2\repo\scripts\train_ov_orthkd.py", line 1463, in <module>
+    main()
+  File "E:\OV-OrthKD-R2\repo\scripts\train_ov_orthkd.py", line 1155, in main
+    validate_repro_config(
+  File "E:\OV-OrthKD-R2\repo\scripts\train_ov_orthkd.py", line 185, in validate_repro_config
+    validate_canonical_readiness(
+  File "E:\OV-OrthKD-R2\repo\src\utils\canonical_readiness.py", line 791, in validate_canonical_readiness
+    raise RuntimeError("Canonical readiness gate failed:\n- " + "\n- ".join(errors))
+RuntimeError: Canonical readiness gate failed:
+- data_lock: status must be 'ready', got 'blocked'
+- archival_lock: status must be 'resolved', got 'blocked'
+- teacher_lock: status must be 'ready', got 'blocked'
+- preprocessing_lock: status must be 'resolved', got 'blocked'
+- evaluator_lock: status must be 'resolved', got 'blocked'
+- archive_receipt: status must be 'passed', got 'blocked_official_archive_not_provided'
+- layout_discovery: status must be 'passed', got 'not_executed_gate_blocked'
+- source_audit: status must be 'passed', got 'not_executed_gate_blocked'
+- teacher_identity: status must be 'pass', got 'blocked'
+- smoke_repeatability: status must be 'pass', got 'not_executed_gate_blocked'
+- exported_audit: status must be 'passed', got 'not_executed_gate_blocked'
+- real_preflight: status must be 'passed', got 'not_executed_gate_blocked'
+- data_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'extraction.status', 'layout.status', 'official_archive.archive_listing', 'official_archive.archive_test', 'source_audit.status', 'source_manifests.status', 'status']
+- archival_lock: unresolved/blocked markers remain at ['blockers', 'facts.evaluator_mapping.status', 'facts.frame_sampling.status', 'facts.internvideo_identity.status', 'facts.query_aware_fusion.status', 'facts.scheduler_and_early_stop.status', 'facts.student_audio_preprocessing.status', 'facts.student_initialization_and_augmentation.status', 'facts.temporal_protocol.status', 'facts.visual_l2_reduction.status', 'status']
+- teacher_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'full_export.status', 'real_smoke.status', 'status', 'teachers.beats.status', 'teachers.clap.status', 'teachers.internvideo2.status']
+- preprocessing_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'layout_discovery.status', 'safe_extraction.status', 'status']
+- evaluator_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'paper_f1_at_0_5_mapping.status', 'status', 'validation_calibrated_f1_mapping.status']
+- archive_receipt: unresolved/blocked markers remain at ['archive_listing', 'archive_test', 'extraction_status']
+- layout_discovery: unresolved/blocked markers remain at ['blocked_by', 'status']
+- source_audit: unresolved/blocked markers remain at ['blocked_by', 'status']
+- teacher_identity: unresolved/blocked markers remain at ['smoke.status', 'status']
+- smoke_repeatability: unresolved/blocked markers remain at ['blocked_by', 'status']
+- exported_audit: unresolved/blocked markers remain at ['blocked_by', 'status']
+- real_preflight: unresolved/blocked markers remain at ['blocked_by', 'status']
+- archive_receipt: 7-Zip test, content magic, extraction and archive SHA256 must pass
+- archive_receipt: archive path is required
+- layout_discovery: full metadata/file bijection and zero-error inventory are required
+- source_audit: exact official counts, seen/unseen matrix and zero issues are required
+- data_lock: source_manifests.train.count must be 13182
+- data_lock: source_manifests.val.count must be 5798
+- data_lock: source_manifests.test.count must be 5820
+- archival_lock: temporal_protocol is not resolved/approved
+- archival_lock: internvideo_identity is not resolved/approved
+- archival_lock: scheduler_and_early_stop is not resolved/approved
+- archival_lock: student_initialization_and_augmentation is not resolved/approved
+- archival_lock: visual_l2_reduction is not resolved/approved
+- archival_lock: query_aware_fusion is not resolved/approved
+- archival_lock: frame_sampling is not resolved/approved
+- archival_lock: student_audio_preprocessing is not resolved/approved
+- archival_lock: evaluator_mapping is not resolved/approved
+- teacher_lock: internvideo2 must be resolved
+- teacher_lock: beats must be resolved
+- teacher_lock: clap must be resolved
+- teacher_lock: real_smoke must be passed
+- teacher_lock: full_export must be passed
+- teacher_lock: full_export.cache_root_sha256 must be a SHA256
+- teacher_identity: real smoke must pass with zero errors
+- smoke_repeatability: repeat-2 finite comparison must pass
+- evaluator_lock: paper_f1_at_0_5_mapping must be resolved
+- evaluator_lock: validation_calibrated_f1_mapping must be resolved
+- exported_audit: full exact official audit with zero issues is required
+- exported_audit: cache root SHA256 does not match teacher lock
+- exported manifest is missing for train: E:\OV-OrthKD-R2\repo\data\ov_ave\train.jsonl
+- exported manifest is missing for val: E:\OV-OrthKD-R2\repo\data\ov_ave\val.jsonl
+- exported manifest is missing for test: E:\OV-OrthKD-R2\repo\data\ov_ave\test.jsonl
+- exported_audit: teacher_checkpoint_sha256 must be a list
+- real_preflight: exactly one structural real-data step must pass without formal metrics
+- evaluator_lock: evidence file is missing: E:\OV-OrthKD-R2\repo\proposed_method\ImageBind-main\utils\eval_metrics.py
+- canonical Git working tree must be clean

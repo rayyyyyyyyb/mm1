@@ -4,22 +4,45 @@ import sys
 from pathlib import Path
 from typing import List, Sequence
 
-import librosa
 import numpy as np
-import soundfile as sf
 import torch
 
-from .common import AudioSegmentSpec
+from .common import AudioSegmentSpec, verify_checkpoint_sha256
+
+
+def _load_waveform_array(path: Path) -> np.ndarray:
+    suffix = path.suffix.lower()
+    if suffix == ".npy":
+        array = np.load(path, allow_pickle=False)
+    elif suffix == ".npz":
+        with np.load(path, allow_pickle=False) as bundle:
+            keys = list(bundle.keys())
+            if keys != ["waveform"]:
+                raise ValueError(f"Expected exactly one npz key named 'waveform', got {keys}")
+            array = bundle["waveform"]
+    else:
+        raise ValueError(f"Unsupported NumPy waveform extension: {path}")
+    normalized = np.asarray(array, dtype=np.float32).reshape(-1)
+    if normalized.size == 0 or not np.isfinite(normalized).all():
+        raise ValueError(f"Waveform array must be non-empty and finite: {path}")
+    return normalized
 
 
 class BEATsAudioTeacher:
-    def __init__(self, repo_root: str | Path, checkpoint_path: str | Path, device: str = "cpu") -> None:
+    def __init__(
+        self,
+        repo_root: str | Path,
+        checkpoint_path: str | Path,
+        checkpoint_sha256: str,
+        device: str = "cpu",
+    ) -> None:
         repo_dir = Path(repo_root).resolve()
         checkpoint = Path(checkpoint_path).resolve()
         if not repo_dir.exists():
             raise FileNotFoundError(f"BEATs repo not found: {repo_dir}")
         if not checkpoint.exists():
             raise FileNotFoundError(f"BEATs checkpoint not found: {checkpoint}")
+        verify_checkpoint_sha256(checkpoint, checkpoint_sha256, label="BEATs")
 
         if str(repo_dir) not in sys.path:
             sys.path.insert(0, str(repo_dir))
@@ -33,7 +56,7 @@ class BEATsAudioTeacher:
 
         self.device = torch.device(device)
 
-        payload = torch.load(checkpoint, map_location="cpu")
+        payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
         cfg = BEATsConfig(payload["cfg"])
         if bool(getattr(cfg, "finetuned_model", False)):
             raise ValueError("BEATs export expects a pretrained checkpoint, not a finetuned classification checkpoint.")
@@ -50,10 +73,13 @@ class BEATsAudioTeacher:
             raise FileNotFoundError(f"Missing audio segment: {path}")
 
         if path.suffix in {".npy", ".npz"}:
-            array = np.load(path)
-            waveform = torch.as_tensor(np.asarray(array, dtype=np.float32).reshape(-1))
+            waveform = torch.as_tensor(_load_waveform_array(path))
             sample_rate = int(spec.sample_rate or 16000)
         else:
+            try:
+                import soundfile as sf
+            except ImportError as exc:
+                raise RuntimeError("Reading WAV/FLAC for BEATs requires soundfile") from exc
             waveform_np, sample_rate = sf.read(str(path), dtype="float32", always_2d=False)
             waveform_np = np.asarray(waveform_np, dtype=np.float32)
             if waveform_np.ndim == 2:
@@ -68,7 +94,14 @@ class BEATsAudioTeacher:
                     raise ValueError(f"Invalid audio crop for {path}: start={start_time}, end={end_time}")
                 waveform = waveform[start:end]
 
+        if waveform.numel() == 0 or not bool(torch.isfinite(waveform).all()):
+            raise ValueError(f"Audio waveform must be non-empty and finite: {path}")
+
         if sample_rate != 16000:
+            try:
+                import librosa
+            except ImportError as exc:
+                raise RuntimeError("BEATs resampling requires librosa") from exc
             waveform = torch.as_tensor(
                 librosa.resample(
                     waveform.detach().cpu().numpy(),

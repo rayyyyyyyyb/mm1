@@ -67,8 +67,10 @@ def artifact_metadata(path_str: str | Path, *, relative_to: str | Path | None = 
         display_path = path.relative_to(Path(relative_to).resolve())
     if path.suffix.lower() == ".npz":
         with np.load(path, allow_pickle=False) as archive:
-            key = "arr_0" if "arr_0" in archive else next(iter(archive.keys()))
-            normalized = np.asarray(archive[key])
+            keys = list(archive.keys())
+            if keys != ["arr_0"]:
+                raise ValueError(f"Expected exactly one npz key named 'arr_0', got {keys}")
+            normalized = np.asarray(archive["arr_0"])
             shape = list(normalized.shape)
             finite = bool(np.isfinite(normalized).all())
     else:

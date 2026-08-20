@@ -1,50 +1,93 @@
 schema_version: 1
 status: blocked
-execution_status: not_executed_gate_blocked
-blocked_by: "R1-4 official preprocessed download authentication gate"
-data_lock:
-  path: "configs/locks/mm26_data_lock.yaml"
-  sha256: "e182a44512ed6961d5f630e08acb5f384f17b73fd9e4e378af98b647c549eae4"
-archival_facts_lock:
-  path: "configs/locks/mm26_archival_facts.yaml"
-  sha256: "0e80cbccc59eeb46dbe943638cb4c34cc5e5472f663a84a2f8ff7f43eb46c2f2"
+blocked_by:
+  - "internvideo2 declared/imported class conflict unresolved"
+  - "no direct historical checkpoint identities or bytes"
+  - "official data/source manifests unavailable"
 teachers:
   internvideo2:
     status: unresolved
     repository: null
     commit: null
+    working_tree_clean: null
     module: null
-    imported_class: null
-    declared_variant: null
-    checkpoint_files: []
+    imported_class: "InternVideo2_CLIP_small"
+    declared_variant: "InternVideo2-Base / CLIP-B14"
     preprocessing: null
+    output_dim: 512
+    determinism_tolerance: null
+    checkpoint_files:
+      - role: vision
+        source_url_or_archive: null
+        filename: null
+        bytes: null
+        sha256: null
+        top_level_keys: null
+      - role: text
+        source_url_or_archive: null
+        filename: null
+        bytes: null
+        sha256: null
+        top_level_keys: null
+      - role: extra_clip
+        source_url_or_archive: null
+        filename: null
+        bytes: null
+        sha256: null
+        top_level_keys: null
   beats:
     status: unresolved
     repository: null
     commit: null
+    working_tree_clean: null
     module: null
-    imported_class: null
+    imported_class: "BEATs"
     variant: null
-    checkpoint_files: []
+    pretrained_or_finetuned: null
     preprocessing: null
+    output_dim: 768
+    determinism_tolerance: null
+    checkpoint_files:
+      - role: encoder
+        source_url_or_archive: null
+        filename: null
+        bytes: null
+        sha256: null
+        top_level_keys: null
   clap:
     status: unresolved
     repository: null
     commit: null
+    working_tree_clean: null
     module: null
-    imported_class: null
+    imported_class: "msclap.CLAP"
     version: null
     normalize: null
-    checkpoint_files: []
     preprocessing: null
+    output_dim: 1024
+    determinism_tolerance: null
+    checkpoint_files:
+      - role: text_encoder
+        source_url_or_archive: null
+        filename: null
+        bytes: null
+        sha256: null
+        top_level_keys: null
 real_smoke:
   status: not_executed_gate_blocked
   records: 0
+  repeat: 0
+  report: "reports/teachers/teacher_identity.json"
+  repeatability: "reports/teachers/smoke_repeatability.json"
 full_export:
   status: not_executed_gate_blocked
   records: 0
   errors: null
   cache_root_sha256: null
+  train_manifest_sha256: null
+  val_manifest_sha256: null
+  test_manifest_sha256: null
 blockers:
-  - "Resume R1-8 archival recovery only after the R1-4 data gate is cleared."
-  - "Do not download or select teacher repositories/checkpoints without direct historical evidence."
+  - "Recover exact repositories, commits, imported classes, preprocessing and all five checkpoint identities."
+  - "Do not choose the closest public checkpoint by name."
+  - "Run real repeat-2 smoke only after the data and identity gates pass."

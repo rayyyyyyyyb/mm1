@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "status": "not_executed_gate_blocked",
+  "repeat_count": 0,
+  "tolerance": null,
+  "outputs": null,
+  "finite": null,
+  "max_abs_diff": null,
+  "blocked_by": "official source sample and exact teacher repositories/checkpoints unavailable"
+}

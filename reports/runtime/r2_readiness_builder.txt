@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "status": "BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS",
+  "ready": false,
+  "claim_level": "archival_exact",
+  "variant": "conference_baseline",
+  "requirements": {
+    "canonical_evidence_chain": {
+      "passed": false,
+      "details": "The shared canonical validator must verify exact files, hashes, config bindings and Git state"
+    },
+    "p0_p1_tests": {
+      "passed": true,
+      "details": "Required R2 regression tests must pass"
+    },
+    "data_lock": {
+      "passed": false,
+      "details": "Official archive and manifests must be frozen in the data lock"
+    },
+    "preprocessing_lock": {
+      "passed": false,
+      "details": "Canonical official PNG/WAV preprocessing must be fully resolved"
+    },
+    "official_archive_and_extraction": {
+      "passed": false,
+      "details": "Official archive SHA and safe extraction must pass"
+    },
+    "layout_discovery": {
+      "passed": false,
+      "details": "Full official layout discovery must pass without warnings"
+    },
+    "source_manifest_audit": {
+      "passed": false,
+      "details": "24,800 source records must pass 0-error/0-warning audit"
+    },
+    "nine_archival_facts": {
+      "passed": false,
+      "details": "All nine facts require direct evidence or approved reconstruction"
+    },
+    "teacher_lock_and_checkpoints": {
+      "passed": false,
+      "details": "Three teachers and five checkpoints must be exact and hashed"
+    },
+    "teacher_smoke_repeatability": {
+      "passed": false,
+      "details": "Real teacher smoke and repeatability must pass"
+    },
+    "full_exported_artifact_audit": {
+      "passed": false,
+      "details": "24,800 exported records and cache hash must pass"
+    },
+    "official_evaluator_parity": {
+      "passed": false,
+      "details": "Official evaluator mapping and parity must be resolved"
+    },
+    "real_one_step_preflight": {
+      "passed": false,
+      "details": "Exactly one real-data optimizer step must pass"
+    },
+    "exact_epoch_resume": {
+      "passed": true,
+      "details": "Exact multi-worker augmented resume test must pass"
+    },
+    "canonical_full_run_guard": {
+      "passed": true,
+      "details": "full_run_blocked must remain true for R2 review"
+    }
+  },
+  "blockers": [
+    "canonical_evidence_chain",
+    "data_lock",
+    "preprocessing_lock",
+    "official_archive_and_extraction",
+    "layout_discovery",
+    "source_manifest_audit",
+    "nine_archival_facts",
+    "teacher_lock_and_checkpoints",
+    "teacher_smoke_repeatability",
+    "full_exported_artifact_audit",
+    "official_evaluator_parity",
+    "real_one_step_preflight"
+  ],
+  "input_evidence": {
+    "data_lock": {
+      "path": "configs/locks/mm26_data_lock.yaml",
+      "exists": true,
+      "sha256": "a655c9a1afcc53704f273f0d2efff41ca65300c55fcba4fc544a58c01867e303"
+    },
+    "preprocessing_lock": {
+      "path": "configs/locks/mm26_preprocessing_lock.yaml",
+      "exists": true,
+      "sha256": "a389446990064a0b1a412b7de6ec668a18a8111fc32d6a262bbfb5b3f0aa93cc"
+    },
+    "archive_receipt": {
+      "path": "reports/data/official_archive_extraction_receipt.json",
+      "exists": true,
+      "sha256": "cbb717a83451d4b902d800bb78fd9f5122743bf1e76345e14927aa3652f3aded"
+    },
+    "layout_discovery": {
+      "path": "reports/data/preprocessed_layout_discovery.json",
+      "exists": true,
+      "sha256": "d8ae7f25ed9981c56b2f6579701e6b149c9e3e82bf2c0b0864c9b593fa15b710"
+    },
+    "source_audit": {
+      "path": "reports/mm26_source_manifest_audit.json",
+      "exists": true,
+      "sha256": "e8718472a13cada87a6952f27f63bb321dd727401e917c7f05b4daf1eb3cbefa"
+    },
+    "archival_lock": {
+      "path": "configs/locks/mm26_archival_facts.yaml",
+      "exists": true,
+      "sha256": "4f6b947b78438793bf7cb0791d01f8f728b848c75768ae16e2b2fc7a3e1569dd"
+    },
+    "teacher_lock": {
+      "path": "configs/locks/mm26_teacher_lock.yaml",
+      "exists": true,
+      "sha256": "ff7ac9eaae1caa602e5d34de80f2ba986c6c2760671a0e5be4c07d21636faa0c"
+    },
+    "teacher_identity": {
+      "path": "reports/teachers/teacher_identity.json",
+      "exists": true,
+      "sha256": "6295de81c74086e4fda4ff7b567d2e2e2e6a25ee2646aa45e07d040582ba1eda"
+    },
+    "smoke_repeatability": {
+      "path": "reports/teachers/smoke_repeatability.json",
+      "exists": true,
+      "sha256": "4c3d2bea5d54619c633c403255fa5a1917df127d05554e1d7255eb95a07f674e"
+    },
+    "exported_audit": {
+      "path": "reports/mm26_exported_artifact_audit.json",
+      "exists": true,
+      "sha256": "6fb2169b5b88c1adaa4554b6182151b0aae6a2d3156e8f4288866416291fcfaa"
+    },
+    "evaluator_lock": {
+      "path": "configs/locks/mm26_evaluator_lock.yaml",
+      "exists": true,
+      "sha256": "54de7d974e676973d172d9bad523c173115804f0a4cfe8fc89c31c0e30775a62"
+    },
+    "real_preflight": {
+      "path": "reports/runtime/r2_real_preflight.json",
+      "exists": true,
+      "sha256": "aa65a45359e086901226893f7ffd72aacbef45d2db469cec7dc4d316acc228e1"
+    },
+    "verification": {
+      "path": "reports/runtime/r2_verification.json",
+      "exists": true,
+      "sha256": "3682127909ab6416d69cf9c9126ec2d3cf2a4d777ba2d74e889d2ff31e3ff67a"
+    }
+  },
+  "canonical_validation_error": "Canonical readiness gate failed:\n- data_lock: status must be 'ready', got 'blocked'\n- archival_lock: status must be 'resolved', got 'blocked'\n- teacher_lock: status must be 'ready', got 'blocked'\n- preprocessing_lock: status must be 'resolved', got 'blocked'\n- evaluator_lock: status must be 'resolved', got 'blocked'\n- archive_receipt: status must be 'passed', got 'blocked_official_archive_not_provided'\n- layout_discovery: status must be 'passed', got 'not_executed_gate_blocked'\n- source_audit: status must be 'passed', got 'not_executed_gate_blocked'\n- teacher_identity: status must be 'pass', got 'blocked'\n- smoke_repeatability: status must be 'pass', got 'not_executed_gate_blocked'\n- exported_audit: status must be 'passed', got 'not_executed_gate_blocked'\n- real_preflight: status must be 'passed', got 'not_executed_gate_blocked'\n- data_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'extraction.status', 'layout.status', 'official_archive.archive_listing', 'official_archive.archive_test', 'source_audit.status', 'source_manifests.status', 'status']\n- archival_lock: unresolved/blocked markers remain at ['blockers', 'facts.evaluator_mapping.status', 'facts.frame_sampling.status', 'facts.internvideo_identity.status', 'facts.query_aware_fusion.status', 'facts.scheduler_and_early_stop.status', 'facts.student_audio_preprocessing.status', 'facts.student_initialization_and_augmentation.status', 'facts.temporal_protocol.status', 'facts.visual_l2_reduction.status', 'status']\n- teacher_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'full_export.status', 'real_smoke.status', 'status', 'teachers.beats.status', 'teachers.clap.status', 'teachers.internvideo2.status']\n- preprocessing_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'layout_discovery.status', 'safe_extraction.status', 'status']\n- evaluator_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers', 'paper_f1_at_0_5_mapping.status', 'status', 'validation_calibrated_f1_mapping.status']\n- archive_receipt: unresolved/blocked markers remain at ['archive_listing', 'archive_test', 'extraction_status']\n- layout_discovery: unresolved/blocked markers remain at ['blocked_by', 'status']\n- source_audit: unresolved/blocked markers remain at ['blocked_by', 'status']\n- teacher_identity: unresolved/blocked markers remain at ['smoke.status', 'status']\n- smoke_repeatability: unresolved/blocked markers remain at ['blocked_by', 'status']\n- exported_audit: unresolved/blocked markers remain at ['blocked_by', 'status']\n- real_preflight: unresolved/blocked markers remain at ['blocked_by', 'status']\n- archive_receipt: 7-Zip test, content magic, extraction and archive SHA256 must pass\n- archive_receipt: archive path is required\n- layout_discovery: full metadata/file bijection and zero-error inventory are required\n- source_audit: exact official counts, seen/unseen matrix and zero issues are required\n- data_lock: source_manifests.train.count must be 13182\n- data_lock: source_manifests.val.count must be 5798\n- data_lock: source_manifests.test.count must be 5820\n- archival_lock: temporal_protocol is not resolved/approved\n- archival_lock: internvideo_identity is not resolved/approved\n- archival_lock: scheduler_and_early_stop is not resolved/approved\n- archival_lock: student_initialization_and_augmentation is not resolved/approved\n- archival_lock: visual_l2_reduction is not resolved/approved\n- archival_lock: query_aware_fusion is not resolved/approved\n- archival_lock: frame_sampling is not resolved/approved\n- archival_lock: student_audio_preprocessing is not resolved/approved\n- archival_lock: evaluator_mapping is not resolved/approved\n- teacher_lock: internvideo2 must be resolved\n- teacher_lock: beats must be resolved\n- teacher_lock: clap must be resolved\n- teacher_lock: real_smoke must be passed\n- teacher_lock: full_export must be passed\n- teacher_lock: full_export.cache_root_sha256 must be a SHA256\n- teacher_identity: real smoke must pass with zero errors\n- smoke_repeatability: repeat-2 finite comparison must pass\n- evaluator_lock: paper_f1_at_0_5_mapping must be resolved\n- evaluator_lock: validation_calibrated_f1_mapping must be resolved\n- exported_audit: full exact official audit with zero issues is required\n- exported_audit: cache root SHA256 does not match teacher lock\n- exported manifest is missing for train: E:\\OV-OrthKD-R2\\repo\\data\\ov_ave\\train.jsonl\n- exported manifest is missing for val: E:\\OV-OrthKD-R2\\repo\\data\\ov_ave\\val.jsonl\n- exported manifest is missing for test: E:\\OV-OrthKD-R2\\repo\\data\\ov_ave\\test.jsonl\n- exported_audit: teacher_checkpoint_sha256 must be a list\n- real_preflight: exactly one structural real-data step must pass without formal metrics\n- evaluator_lock: evidence file is missing: E:\\OV-OrthKD-R2\\repo\\proposed_method\\ImageBind-main\\utils\\eval_metrics.py\n- canonical Git working tree must be clean"
+}
