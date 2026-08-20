@@ -360,6 +360,49 @@ def audit_reproduction(
                             _issue("missing_path", split, record_id, f"Missing {field}: {resolved}")
                         )
 
+            if stage == "source":
+                source_assets = {
+                    "audio_path": _record_path_value(
+                        record,
+                        (
+                            "wav_path",
+                            "audio_path",
+                            "official_wav_path",
+                            "audio_segment_paths",
+                            "audio_paths",
+                            "audio_waveform_paths",
+                            "waveform_paths",
+                        ),
+                    ),
+                    "raw_video_path": _record_path_value(
+                        record,
+                        ("raw_video_path", "official_video_path", "video_path"),
+                    ),
+                }
+                for field, value in source_assets.items():
+                    paths = list(_iter_paths(value))
+                    if not paths:
+                        errors.append(
+                            _issue(
+                                "missing_source_asset",
+                                split,
+                                record_id,
+                                f"Missing required {field}",
+                            )
+                        )
+                        continue
+                    for raw_path in paths:
+                        resolved = _resolve(root, raw_path)
+                        if not resolved.is_file():
+                            errors.append(
+                                _issue(
+                                    "missing_path",
+                                    split,
+                                    record_id,
+                                    f"Missing {field}: {resolved}",
+                                )
+                            )
+
             if stage != "exported":
                 continue
             should_scan = artifact_scan == "full" or (

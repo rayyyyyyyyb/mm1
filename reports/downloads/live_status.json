@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-20T15:23:44.541187+00:00",
+  "process": {
+    "schema_version": 1,
+    "status": "running",
+    "pid": 38608,
+    "launcher": "popen",
+    "runner_exit": null,
+    "started_at": "2026-08-20T13:46:38.898330+00:00",
+    "connections_per_server": 8,
+    "input_file": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\state\\aria2.input",
+    "session_file": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\state\\aria2.session",
+    "log_file": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\logs\\weights.log",
+    "rpc_url": "http://127.0.0.1:6800/jsonrpc",
+    "assets": [
+      "mobileclip_blt"
+    ],
+    "plans": [
+      {
+        "asset": "mobileclip_blt",
+        "action": "download",
+        "final_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\internvideo2\\mobileclip_blt.pt",
+        "incoming_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\incoming\\weights\\mobileclip_blt\\mobileclip_blt.pt",
+        "quarantine_path": null,
+        "validation": null
+      }
+    ],
+    "running": false
+  },
+  "disk_guard": {
+    "free_bytes": 186970165248,
+    "threshold_bytes": 53687091200,
+    "action": "continue"
+  },
+  "assets": [
+    {
+      "name": "internvideo2_b14",
+      "target": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\internvideo2\\B14_dist_1B_stage2.pth",
+      "active_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\incoming\\weights\\internvideo2_b14\\B14_dist_1B_stage2.pth",
+      "status": "missing",
+      "current_bytes": 0,
+      "expected_bytes": null,
+      "completion_ratio": null,
+      "current_speed_bps": 0,
+      "average_speed_bps": 0,
+      "eta_seconds": null,
+      "aria2_process_running": false,
+      "last_progress_time": null,
+      "stale": false,
+      "retries": 0,
+      "disk_free_bytes": 186970165248,
+      "aria2_control_exists": false,
+      "sha256_verified": false
+    },
+    {
+      "name": "internvideo2_clip_b14",
+      "target": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\internvideo2\\InternVideo2_CLIP_B14.pth",
+      "active_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\incoming\\weights\\internvideo2_clip_b14\\InternVideo2_CLIP_B14.pth",
+      "status": "missing",
+      "current_bytes": 0,
+      "expected_bytes": null,
+      "completion_ratio": null,
+      "current_speed_bps": 0,
+      "average_speed_bps": 0,
+      "eta_seconds": null,
+      "aria2_process_running": false,
+      "last_progress_time": null,
+      "stale": false,
+      "retries": 0,
+      "disk_free_bytes": 186970165248,
+      "aria2_control_exists": false,
+      "sha256_verified": false
+    },
+    {
+      "name": "mobileclip_blt",
+      "target": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\internvideo2\\mobileclip_blt.pt",
+      "active_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\internvideo2\\mobileclip_blt.pt",
+      "status": "verified",
+      "current_bytes": 599214572,
+      "expected_bytes": 599214572,
+      "completion_ratio": 1.0,
+      "current_speed_bps": 0,
+      "average_speed_bps": 1094068,
+      "eta_seconds": null,
+      "aria2_process_running": false,
+      "last_progress_time": "2026-08-20T15:23:30.875723+00:00",
+      "stale": false,
+      "retries": 0,
+      "disk_free_bytes": 186970165248,
+      "aria2_control_exists": false,
+      "sha256_verified": true
+    },
+    {
+      "name": "beats_iter3_plus_as2m",
+      "target": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\beats\\BEATs_iter3_plus_AS2M.pt",
+      "active_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\incoming\\weights\\beats_iter3_plus_as2m\\BEATs_iter3_plus_AS2M.pt",
+      "status": "missing",
+      "current_bytes": 0,
+      "expected_bytes": null,
+      "completion_ratio": null,
+      "current_speed_bps": 0,
+      "average_speed_bps": 0,
+      "eta_seconds": null,
+      "aria2_process_running": false,
+      "last_progress_time": null,
+      "stale": false,
+      "retries": 0,
+      "disk_free_bytes": 186970165248,
+      "aria2_control_exists": false,
+      "sha256_verified": false
+    },
+    {
+      "name": "clap_2023",
+      "target": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\clap\\CLAP_weights_2023.pth",
+      "active_path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\weights\\clap\\CLAP_weights_2023.pth",
+      "status": "verified",
+      "current_bytes": 689950036,
+      "expected_bytes": 689950036,
+      "completion_ratio": 1.0,
+      "current_speed_bps": 0,
+      "average_speed_bps": 0,
+      "eta_seconds": null,
+      "aria2_process_running": false,
+      "last_progress_time": null,
+      "stale": false,
+      "retries": 0,
+      "disk_free_bytes": 186970165248,
+      "aria2_control_exists": false,
+      "sha256_verified": true
+    }
+  ]
+}

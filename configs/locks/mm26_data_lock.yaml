@@ -1,6 +1,6 @@
 schema_version: 2
 status: blocked
-blocked_by: "Official OV-AVEBench preprocessed archive has not been manually provided from an authorized Microsoft session"
+blocked_by: "AUTH_REQUIRED: both official OV-AVEBench SharePoint archives require one authorized Microsoft session"
 upstream:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
@@ -35,6 +35,14 @@ official_archive:
   archive_test: not_executed
   archive_listing: not_executed
   source: "authorized manual download required; third-party mirrors forbidden"
+raw_video_archive:
+  status: blocked_official_archive_not_provided
+  filename: null
+  bytes: null
+  sha256: null
+  archive_test: not_executed
+  archive_listing: not_executed
+  source: "authorized manual download required; third-party mirrors forbidden"
 extraction:
   status: not_executed_gate_blocked
   receipt: "reports/data/official_archive_extraction_receipt.json"
@@ -45,6 +53,15 @@ layout:
   dataset_root: null
   frame_count_histogram: null
   wav_sample_rate_histogram: null
+raw_video_layout:
+  status: not_executed_gate_blocked
+  report: "reports/data/raw_video_layout_discovery.json"
+  dataset_root: null
+  matched_ids: null
+  missing_ids: null
+  extra_ids: null
+  duplicate_ids: null
+  short_videos: null
 source_manifests:
   status: not_executed_gate_blocked
   train:
@@ -65,6 +82,6 @@ source_audit:
   errors: null
   warnings: null
 blockers:
-  - "Manually provide the official archive from the authorized SharePoint session."
-  - "Hash and test the original bytes, then run safe extraction and full layout discovery."
+  - "Manually provide both official archives from the authorized SharePoint session."
+  - "Hash and test both original byte streams, then run safe extraction and full preprocessed/raw-video layout discovery."
   - "Do not infer source manifests or preprocessing parameters before those gates pass."

@@ -5,8 +5,13 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
-from src.teachers.internvideo2_visual import InternVideo2ClipB14Teacher
+from src.teachers.clap_text import _strict_load_clap_checkpoint
+from src.teachers.internvideo2_visual import (
+    InternVideo2ClipB14Teacher,
+    _compose_internvideo_checkpoint,
+)
 
 try:
     from src.teachers.beats_audio import _load_waveform_array
@@ -54,9 +59,97 @@ def test_checkpoint_hash_is_verified_before_any_deserialization(tmp_path: Path) 
         verify_checkpoint_sha256(checkpoint, "UNRESOLVED", label="teacher")
 
 
-def test_internvideo_frame_selection_rejects_silent_short_clip_repetition() -> None:
+def test_internvideo_rejects_any_png_frame_group_fallback() -> None:
     teacher = InternVideo2ClipB14Teacher.__new__(InternVideo2ClipB14Teacher)
-    teacher.num_frames = 2
 
-    with pytest.raises(ValueError, match="requires exactly 2 frames"):
-        teacher._select_frame_paths(["single.png"])
+    with pytest.raises(RuntimeError, match="raw video"):
+        teacher.export_segments([["single.png"]], "event")
+
+
+def test_clap_checkpoint_is_weights_only_and_strict(tmp_path: Path, monkeypatch) -> None:
+    model = torch.nn.Linear(3, 2)
+    checkpoint = tmp_path / "clap.pth"
+    torch.save({"model": model.state_dict()}, checkpoint)
+    real_load = torch.load
+    observed: dict[str, object] = {}
+
+    def recording_load(*args, **kwargs):
+        observed.update(kwargs)
+        return real_load(*args, **kwargs)
+
+    monkeypatch.setattr(torch, "load", recording_load)
+    _strict_load_clap_checkpoint(model, checkpoint)
+
+    assert observed["weights_only"] is True
+    assert observed["map_location"] == "cpu"
+
+    torch.save({"model": {"weight": model.weight.detach().clone()}}, checkpoint)
+    with pytest.raises(RuntimeError, match="bias"):
+        _strict_load_clap_checkpoint(model, checkpoint)
+
+
+def test_clap_strict_load_accepts_only_value_verified_nonpersistent_gpt2_masks(
+    tmp_path: Path,
+) -> None:
+    class Attention(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.weight = torch.nn.Parameter(torch.ones(1))
+            self.register_buffer(
+                "bias", torch.tril(torch.ones(1, 1, 4, 4)).bool(), persistent=False
+            )
+            self.register_buffer("masked_bias", torch.tensor(-1e4), persistent=False)
+
+    class Caption(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.base = torch.nn.Module()
+            layer = torch.nn.Module()
+            layer.attn = Attention()
+            self.base.h = torch.nn.ModuleList([layer])
+
+    class Model(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.caption_encoder = Caption()
+
+    model = Model()
+    state = dict(model.state_dict())
+    state.update({name: value.clone() for name, value in model.named_buffers()})
+    state["caption_encoder.base.h.0.attn.bias"] = state[
+        "caption_encoder.base.h.0.attn.bias"
+    ].float()
+    checkpoint = tmp_path / "clap_compat.pth"
+    torch.save({"model": state}, checkpoint)
+
+    _strict_load_clap_checkpoint(model, checkpoint)
+
+    state["caption_encoder.base.h.0.attn.masked_bias"] = torch.tensor(-999.0)
+    torch.save({"model": state}, checkpoint)
+    with pytest.raises(RuntimeError, match="buffer value mismatch"):
+        _strict_load_clap_checkpoint(model, checkpoint)
+
+
+def test_internvideo_checkpoint_composition_matches_fixed_upstream_rules() -> None:
+    vision = {
+        "encoder.weight": torch.ones(1),
+        "clip_decoder.block": torch.ones(1),
+        "clip_pos_embed": torch.ones(1),
+    }
+    text = {
+        "text_encoder.token_embedding.weight": torch.ones(1),
+        "unrelated": torch.ones(1),
+    }
+    extra = {
+        "temp": torch.ones(()),
+        "vision_align.1.bias": torch.ones(1),
+    }
+
+    combined = _compose_internvideo_checkpoint(vision, text, extra)
+
+    assert set(combined) == {
+        "vision_encoder.encoder.weight",
+        "text_encoder.token_embedding.weight",
+        "temp",
+        "vision_align.1.bias",
+    }

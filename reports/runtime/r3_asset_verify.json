@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "assets": [
+    {
+      "asset": "internvideo2_b14",
+      "path": "E:\\OV-OrthKD-R3\\repo\\weights\\internvideo2\\B14_dist_1B_stage2.pth",
+      "status": "passed",
+      "bytes": 204538935,
+      "sha256": "1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7",
+      "content_type": null,
+      "errors": []
+    },
+    {
+      "asset": "internvideo2_clip_b14",
+      "path": "E:\\OV-OrthKD-R3\\repo\\weights\\internvideo2\\InternVideo2_CLIP_B14.pth",
+      "status": "passed",
+      "bytes": 5552811,
+      "sha256": "c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e",
+      "content_type": null,
+      "errors": []
+    },
+    {
+      "asset": "mobileclip_blt",
+      "path": "E:\\OV-OrthKD-R3\\repo\\weights\\internvideo2\\mobileclip_blt.pt",
+      "status": "passed",
+      "bytes": 599214572,
+      "sha256": "670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a",
+      "content_type": null,
+      "errors": []
+    },
+    {
+      "asset": "beats_iter3_plus_as2m",
+      "path": "E:\\OV-OrthKD-R3\\repo\\weights\\beats\\BEATs_iter3_plus_AS2M.pt",
+      "status": "passed",
+      "bytes": 361499833,
+      "sha256": "d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34",
+      "content_type": null,
+      "errors": []
+    },
+    {
+      "asset": "clap_2023",
+      "path": "E:\\OV-OrthKD-R3\\repo\\weights\\clap\\CLAP_weights_2023.pth",
+      "status": "passed",
+      "bytes": 689950036,
+      "sha256": "2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6",
+      "content_type": null,
+      "errors": []
+    }
+  ]
+}

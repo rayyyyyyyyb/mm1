@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import subprocess
 from pathlib import Path
 
 import torch
 
-from scripts.inspect_teacher_identity import inspect_teacher_identity
+from scripts.inspect_teacher_identity import _run_smoke, inspect_teacher_identity
 
 
 def _git_repo(path: Path) -> str:
@@ -81,6 +82,7 @@ def test_static_teacher_identity_records_exact_provenance(tmp_path: Path) -> Non
 
     report = inspect_teacher_identity(config, run_smoke=False)
 
+    assert report["schema_version"] == 1
     assert report["status"] == "pass"
     assert report["teachers"]["internvideo2"]["wrapper_class"] == "InternVideo2ClipB14Teacher"
     assert report["teachers"]["internvideo2"]["upstream_class"] == "InternVideo2_CLIP_small"
@@ -98,13 +100,28 @@ def test_static_teacher_identity_records_exact_provenance(tmp_path: Path) -> Non
     assert report["smoke"]["status"] == "not_requested"
 
 
-def test_declared_base_b14_is_blocked_when_wrapper_imports_small(tmp_path: Path) -> None:
+def test_declared_base_b14_is_bound_to_the_fixed_small_composition_class(tmp_path: Path) -> None:
     config, _ = _identity_fixture(tmp_path, declared_name="InternVideo2-Base (CLIP-B14 line)")
+    config["teacher_export"]["internvideo2"]["declared_model_class"] = (
+        "InternVideo2-Base / CLIP-B14"
+    )
 
     report = inspect_teacher_identity(config, run_smoke=False)
 
-    assert report["status"] == "blocked"
-    assert any(issue["code"] == "internvideo2_model_identity_mismatch" for issue in report["errors"])
+    assert report["status"] == "pass"
+    assert report["teachers"]["internvideo2"]["upstream_class"] == "InternVideo2_CLIP_small"
+
+
+def test_real_smoke_uses_raw_video_all_ten_audio_segments_and_exact_shapes() -> None:
+    source = inspect.getsource(_run_smoke)
+
+    assert "strong.export_video(raw_video_path" in source
+    assert "resolve_frame_groups" not in source
+    assert "resolve_audio_segments(record, expected_segments)[:1]" not in source
+    assert '"internvideo2_features": [10, 512]' in source
+    assert '"beats_features": [10, 768]' in source
+    assert '"clap_text_features": [1024]' in source
+    assert "torch.cuda.synchronize" in source
 
 
 def test_finetuned_beats_checkpoint_is_blocked(tmp_path: Path) -> None:

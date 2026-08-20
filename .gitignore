@@ -45,6 +45,15 @@ outputs/
 logs/
 runs/
 evaluation_results/
+# R3 transient download/authentication state (never commit secrets or partial bytes)
+*.aria2
+data/downloads/secrets/
+data/downloads/state/
+data/downloads/logs/
+data/downloads/tmp/
+data/downloads/quarantine/
+playwright/.auth/
+storage_state.json
 configs/*.local.yaml
 configs/*.local.yml
 configs/local_*.yaml

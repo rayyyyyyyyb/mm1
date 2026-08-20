@@ -1,10 +1,16 @@
 {
   "schema_version": 1,
-  "status": "not_executed_gate_blocked",
+  "status": "blocked_auth_required",
   "repeat_count": 0,
-  "tolerance": null,
+  "tolerance": 0.0,
   "outputs": null,
-  "finite": null,
+  "all_finite": null,
   "max_abs_diff": null,
-  "blocked_by": "official source sample and exact teacher repositories/checkpoints unavailable"
+  "mean_abs_diff": null,
+  "strict_teacher_loads": {
+    "internvideo2": "passed",
+    "beats": "passed",
+    "clap": "passed"
+  },
+  "blocked_by": "AUTH_REQUIRED: a real official train sample cannot be selected until both SharePoint archives are downloaded and fully audited"
 }

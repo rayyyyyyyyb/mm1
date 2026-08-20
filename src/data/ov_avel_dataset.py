@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Mapping, Sequence
 
 import numpy as np
 import torch
@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 from src.data.split_types import split_type_from_record
+from src.data.audio_preprocessing import AudioPreprocessingSpec, load_official_wav_for_student
 
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
@@ -91,6 +92,8 @@ class QueryConditionedOVAvelDataset(Dataset):
         required_artifacts: Sequence[str] | None = None,
         teacher_path_overrides: Dict[str, Any] | None = None,
         temporal_overflow_policy: str = "error",
+        preprocessing_mode: str = "legacy_manifest_spectrograms",
+        audio_preprocessing: Mapping[str, Any] | None = None,
     ) -> None:
         self.path_root = Path(path_root).expanduser().resolve()
         manifest = Path(manifest_path).expanduser()
@@ -117,6 +120,12 @@ class QueryConditionedOVAvelDataset(Dataset):
         self.text_dim = text_dim
         self.required_artifacts = set(required_artifacts or [])
         self.teacher_path_overrides = teacher_path_overrides or {}
+        self.preprocessing_mode = str(preprocessing_mode)
+        self.audio_spec = (
+            AudioPreprocessingSpec.from_mapping(audio_preprocessing or {})
+            if self.preprocessing_mode == "canonical_official_png_wav"
+            else None
+        )
 
     def __len__(self) -> int:
         return len(self.records)
@@ -228,6 +237,56 @@ class QueryConditionedOVAvelDataset(Dataset):
             images.append(transform(image))
             valids.append(torch.tensor(valid, dtype=torch.float32))
         return torch.stack(images, dim=0), torch.stack(valids, dim=0)
+
+    def _load_canonical_student_audio(
+        self,
+        record: Mapping[str, Any],
+        source_len: int,
+        indices: Sequence[int],
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if self.audio_spec is None:
+            raise RuntimeError("canonical audio preprocessing spec is missing")
+        if source_len != self.audio_spec.segments:
+            raise ValueError(
+                f"official labels must contain {self.audio_spec.segments} segments, got {source_len}"
+            )
+        value = (
+            record.get("wav_path")
+            or record.get("audio_path")
+            or record.get("official_wav_path")
+        )
+        if not isinstance(value, str) or not value:
+            if not self.allow_missing_modalities:
+                raise FileNotFoundError("canonical record is missing official WAV path")
+            empty = torch.zeros(
+                len(indices),
+                self.audio_spec.student_channels,
+                *self.audio_spec.student_size,
+                dtype=torch.float32,
+            )
+            return empty, torch.zeros(len(indices), dtype=torch.float32)
+        path = self._resolve_path(value)
+        if not path.is_file():
+            if not self.allow_missing_modalities:
+                raise FileNotFoundError(f"Missing official WAV: {path}")
+            empty = torch.zeros(
+                len(indices),
+                self.audio_spec.student_channels,
+                *self.audio_spec.student_size,
+                dtype=torch.float32,
+            )
+            return empty, torch.zeros(len(indices), dtype=torch.float32)
+        tensor = load_official_wav_for_student(path, self.audio_spec)
+        expected_shape = (
+            self.audio_spec.segments,
+            self.audio_spec.student_channels,
+            *self.audio_spec.student_size,
+        )
+        if tuple(tensor.shape) != expected_shape or not bool(torch.isfinite(tensor).all()):
+            raise ValueError(
+                f"canonical student audio must be finite with shape {expected_shape}, got {tuple(tensor.shape)}"
+            )
+        return tensor[list(indices)], torch.ones(len(indices), dtype=torch.float32)
 
     def _load_ndarray(self, value: Any) -> np.ndarray | None:
         if value is None:
@@ -402,13 +461,23 @@ class QueryConditionedOVAvelDataset(Dataset):
             or record.get("frames")
         )
         frame_paths = self._normalize_segment_frame_paths(frame_value, seq_len)
-        spec_paths = self._normalize_paths(
-            _ensure_list(record.get("spectrogram_paths") or record.get("spectrograms") or record.get("audio_image_paths")),
-            seq_len,
-        )
-
         frames, frame_valid = self._load_image_sequence(frame_paths, indices, self.frame_transform)
-        spectrograms, audio_valid = self._load_image_sequence(spec_paths, indices, self.spec_transform)
+        if self.preprocessing_mode == "canonical_official_png_wav":
+            spectrograms, audio_valid = self._load_canonical_student_audio(
+                record, seq_len, indices
+            )
+        else:
+            spec_paths = self._normalize_paths(
+                _ensure_list(
+                    record.get("spectrogram_paths")
+                    or record.get("spectrograms")
+                    or record.get("audio_image_paths")
+                ),
+                seq_len,
+            )
+            spectrograms, audio_valid = self._load_image_sequence(
+                spec_paths, indices, self.spec_transform
+            )
 
         strong_teacher_logits, strong_teacher_mask = self._load_teacher_tensor(
             record=record,
@@ -545,6 +614,8 @@ def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, Dat
         "required_artifacts": data_cfg.get("required_artifacts", []),
         "teacher_path_overrides": data_cfg.get("teacher_path_overrides", {}),
         "temporal_overflow_policy": str(data_cfg.get("temporal_overflow_policy", "error")),
+        "preprocessing_mode": str(data_cfg.get("preprocessing_mode", "legacy_manifest_spectrograms")),
+        "audio_preprocessing": data_cfg.get("audio_preprocessing"),
     }
     batch_size = int(data_cfg.get("batch_size", 4))
     num_workers = int(data_cfg.get("num_workers", 4))

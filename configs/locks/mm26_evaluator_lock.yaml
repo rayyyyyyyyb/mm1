@@ -1,6 +1,6 @@
 schema_version: 1
-status: blocked
-blocked_by: "The historical mapping from paper-reported F1 fields to official evaluator outputs is unresolved"
+status: resolved
+claim_level: paper_specified_reconstruction
 upstream_repo: "https://github.com/jasongief/OV-AVEL.git"
 upstream_commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
 repository: "https://github.com/jasongief/OV-AVEL.git"
@@ -9,7 +9,7 @@ upstream_checkout_clean: true
 source_file: "proposed_method/ImageBind-main/utils/eval_metrics.py"
 source_sha256: "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19"
 source:
-  path: "proposed_method/ImageBind-main/utils/eval_metrics.py"
+  path: "external/OV-AVEL/proposed_method/ImageBind-main/utils/eval_metrics.py"
   sha256: "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19"
 parity:
   status: passed
@@ -20,15 +20,14 @@ parity:
   segment_cases: 4
   event_cases: 4
 paper_f1_at_0_5_mapping:
-  status: unresolved
-  value: null
+  status: resolved
+  value: "ovavel_segment_f1_at_0_5"
   config_path: "evaluation.paper_f1_at_0_5_mapping"
-  evidence: []
 validation_calibrated_f1_mapping:
-  status: unresolved
-  value: null
+  status: resolved
+  value: "ovavel_segment_f1_at_validation_selected_threshold"
   config_path: "evaluation.validation_calibrated_f1_mapping"
-  evidence: []
+event_f1_policy: "supplemental_only_not_paper_f1"
 local_metric_fields:
   - "binary_micro_f1_at_0_5"
   - "query_fg_f1_macro_at_0_5"
@@ -36,6 +35,3 @@ local_metric_fields:
   - "ovavel_event_f1_at_0_5"
   - "ap"
   - "auroc"
-blockers:
-  - "Recover direct historical evidence for which metric populated each paper table field."
-  - "Do not choose the most favorable local metric and label it as the paper result."

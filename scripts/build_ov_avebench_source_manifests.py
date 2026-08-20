@@ -18,6 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data.split_types import normalize_split_type
+from scripts.discover_ovave_raw_video_layout import VIDEO_EXTENSIONS, index_raw_videos
 
 
 CANONICAL_MODE = "canonical_official_png_wav"
@@ -29,6 +30,7 @@ def parse_args() -> argparse.Namespace:
         description="Build source manifests by referencing an already-discovered official OV-AVEBench layout."
     )
     parser.add_argument("--dataset-root", required=True)
+    parser.add_argument("--raw-video-root", required=True)
     parser.add_argument("--annotation-json", required=True)
     parser.add_argument("--meta-csv", required=True)
     parser.add_argument("--output-dir", default="data/ov_ave/source")
@@ -112,6 +114,7 @@ def build_official_record(
     dataset_root: Path,
     row: dict[str, str],
     annotations: dict[str, dict[str, Any]],
+    raw_video_path: Path,
     path_root: Path,
     path_mode: str,
 ) -> dict[str, Any]:
@@ -128,6 +131,9 @@ def build_official_record(
         raise FileNotFoundError(f"Missing official WAV: {audio_path}")
     if not video_dir.is_dir():
         raise FileNotFoundError(f"Missing official PNG directory: {video_dir}")
+    raw_video_path = raw_video_path.expanduser().resolve()
+    if not raw_video_path.is_file() or raw_video_path.suffix.lower() not in VIDEO_EXTENSIONS:
+        raise FileNotFoundError(f"Missing official raw video: {raw_video_path}")
     png_paths = sorted(
         (path for path in video_dir.iterdir() if path.is_file() and path.suffix.lower() == ".png"),
         key=natural_path_key,
@@ -144,6 +150,7 @@ def build_official_record(
         "frame_paths": [[_serialize_path(path, path_root, path_mode)] for path in png_paths],
         "spectrogram_paths": [],
         "audio_path": _serialize_path(audio_path, path_root, path_mode),
+        "raw_video_path": _serialize_path(raw_video_path, path_root, path_mode),
         "segment_labels": labels,
         "split_type": split_type,
         "domain": "ov_avebench",
@@ -153,6 +160,7 @@ def build_official_record(
             "cls_type": cls_type,
             "split_type": split_type,
             "source": "released_ovavel_dataset_anno.json",
+            "raw_video_source": "official_sharepoint_raw_video",
             "preprocessing_mode": CANONICAL_MODE,
             "student_audio_preprocessing": "unresolved_not_generated",
             "preprocessing_evidence": {
@@ -300,6 +308,10 @@ def atomic_write_jsonl(path: Path, records: Iterable[dict[str, Any]]) -> None:
             partial.unlink()
 
 
+def source_manifest_outputs(output_dir: Path) -> dict[str, Path]:
+    return {split: output_dir / f"{split}.jsonl" for split in ("train", "val", "test")}
+
+
 def main() -> None:
     args = parse_args()
 
@@ -308,16 +320,18 @@ def main() -> None:
         return (PROJECT_ROOT / path).resolve() if not path.is_absolute() else path.resolve()
 
     dataset_root = resolved(args.dataset_root)
+    raw_video_root = resolved(args.raw_video_root)
     annotation_json = resolved(args.annotation_json)
     meta_csv = resolved(args.meta_csv)
     output_dir = resolved(args.output_dir)
     path_root = resolved(args.path_root)
     spectrogram_root = resolved(args.spectrogram_dir)
-    for required in (dataset_root, annotation_json, meta_csv):
+    for required in (dataset_root, raw_video_root, annotation_json, meta_csv):
         if not required.exists():
             raise FileNotFoundError(f"Required official input not found: {required}")
     annotations = _load_annotations(annotation_json)
     rows = _load_meta_rows(meta_csv)
+    raw_video_index = index_raw_videos(raw_video_root)
     records_by_split: dict[str, list[dict[str, Any]]] = {"train": [], "val": [], "test": []}
     limit = None if args.limit_per_split is None else max(1, int(args.limit_per_split))
     for row in rows:
@@ -331,6 +345,7 @@ def main() -> None:
                 dataset_root=dataset_root,
                 row=row,
                 annotations=annotations,
+                raw_video_path=raw_video_index.get(row["vid_name"].strip(), raw_video_root / "__missing__"),
                 path_root=path_root,
                 path_mode=args.path_mode,
             )
@@ -348,9 +363,16 @@ def main() -> None:
                 overwrite_specs=bool(args.overwrite_specs),
             )
         records_by_split[split].append(record)
-    outputs = {
-        split: output_dir / f"{split}_source.jsonl" for split in records_by_split
-    }
+    if limit is None:
+        metadata_ids = {
+            row["vid_name"].strip()
+            for row in rows
+            if row["split"].strip() in records_by_split
+        }
+        extra_raw_ids = sorted(set(raw_video_index) - metadata_ids)
+        if extra_raw_ids:
+            raise ValueError(f"Raw videos absent from official metadata: {extra_raw_ids[:20]}")
+    outputs = source_manifest_outputs(output_dir)
     for split, output in outputs.items():
         atomic_write_jsonl(output, records_by_split[split])
     print(

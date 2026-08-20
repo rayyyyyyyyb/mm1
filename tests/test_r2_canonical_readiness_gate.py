@@ -716,6 +716,31 @@ def test_paper_reconstruction_allows_explicit_user_approval_file(tmp_path: Path)
     assert receipt["claim_level"] == "paper_specified_reconstruction"
 
 
+def test_paper_reconstruction_recomputes_user_approval_file_hash(tmp_path: Path) -> None:
+    config, paths = _resolved_fixture(tmp_path)
+    config["reproduction"]["claim_level"] = "paper_specified_reconstruction"
+    approval = _file_evidence(tmp_path, "approval.txt", "approved by user\n")
+    archival = yaml.safe_load(paths["archival_lock"].read_text(encoding="utf-8"))
+    fact = archival["facts"]["temporal_protocol"]
+    fact["status"] = "approved_reconstruction_assumption"
+    fact["approved_by"] = "user"
+    fact["evidence"] = [
+        {"kind": "user_approval", "approved_by": "user", **approval}
+    ]
+    archival["canonical_experiment_config_sha256"] = canonical_experiment_config_sha256(config)
+    _write_yaml(paths["archival_lock"], archival)
+    (tmp_path / approval["path"]).write_text("tampered approval\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "commit", "-q", "-m", "tampered approval"],
+        check=True,
+        capture_output=True,
+    )
+
+    with pytest.raises(RuntimeError, match="archival_lock: SHA256 mismatch"):
+        validate_canonical_readiness(config)
+
+
 def test_external_data_root_does_not_rebase_repository_evidence(tmp_path: Path) -> None:
     config, paths = _resolved_fixture(tmp_path)
     external_data_root = tmp_path / "external-data-volume"

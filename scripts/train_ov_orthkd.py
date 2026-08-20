@@ -170,12 +170,21 @@ def validate_repro_config(
         if allow_incompatible_resume:
             raise RuntimeError("Formal claims forbid incompatible resume overrides")
         training = config.get("training", {})
-        configured_limits = (
-            training.get("max_batches_per_epoch") if isinstance(training, Mapping) else None,
-            training.get("max_optimizer_steps") if isinstance(training, Mapping) else None,
-            max_train_steps,
-        )
-        if any(value is not None for value in configured_limits):
+        max_batches = training.get("max_batches_per_epoch") if isinstance(training, Mapping) else None
+        max_optimizer = training.get("max_optimizer_steps") if isinstance(training, Mapping) else None
+        if (
+            claim_level == "paper_specified_reconstruction"
+            and reproduction.get("asset_download_lock_required") is True
+        ):
+            if max_batches != 400:
+                raise RuntimeError(
+                    "Paper-specified reconstruction requires exactly 400 batches per epoch"
+                )
+            if max_optimizer is not None or max_train_steps is not None:
+                raise RuntimeError(
+                    "Refusing truncated formal training: optimizer-step and CLI limits must be null"
+                )
+        elif any(value is not None for value in (max_batches, max_optimizer, max_train_steps)):
             raise RuntimeError(
                 "Refusing truncated formal training: all batch/optimizer-step limits must be null"
             )
@@ -230,8 +239,14 @@ def build_scheduler(
     del steps_per_epoch
     scheduler_cfg = train_cfg.get("scheduler", {})
     kind = str(scheduler_cfg.get("type", "cosine")).lower()
-    if kind == "cosine":
-        return CosineAnnealingLR(optimizer, T_max=epochs), "epoch"
+    if kind in {"cosine", "cosineannealinglr"}:
+        interval = str(scheduler_cfg.get("interval", "epoch"))
+        if interval != "epoch":
+            raise ValueError("CosineAnnealingLR must use epoch interval for conference reproduction")
+        return CosineAnnealingLR(
+            optimizer,
+            T_max=int(scheduler_cfg.get("T_max", epochs)),
+        ), "epoch"
     if kind == "step":
         interval = str(scheduler_cfg.get("interval", "epoch"))
         if interval not in {"epoch", "optimizer_step"}:
@@ -918,7 +933,14 @@ def build_runtime_reproduction_fingerprint(config: Mapping[str, Any]) -> Dict[st
     fingerprint_lock_paths = {
         name: value
         for name, value in readiness_cfg.items()
-        if name in {"data_lock", "archival_lock", "teacher_lock", "preprocessing_lock", "evaluator_lock"}
+        if name in {
+            "data_lock",
+            "archival_lock",
+            "teacher_lock",
+            "preprocessing_lock",
+            "evaluator_lock",
+            "download_lock",
+        }
     }
     fingerprint_evidence_paths = {
         name: value

@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "status": "ready",
+  "platform": "windows",
+  "generated_at": "2026-08-20T15:03:33.4922002Z",
+  "tools": {
+    "aria2": {
+      "status": "verified",
+      "version": "aria2 version 1.37.0",
+      "path": "E:\\OV-OrthKD-R3\\tools\\aria2-1.37.0\\aria2-1.37.0-win-64bit-build1\\aria2c.exe",
+      "bytes": 5649408,
+      "sha256": "be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2",
+      "source": "https://github.com/aria2/aria2/releases/tag/release-1.37.0",
+      "distribution_sha256": null
+    },
+    "curl": {
+      "status": "verified",
+      "version": "curl 8.21.0 (Windows) libcurl/8.21.0 Schannel zlib/1.3.2 WinIDN WinLDAP",
+      "path": "C:\\WINDOWS\\system32\\curl.exe",
+      "bytes": 818512,
+      "sha256": "73d24149ff289afc49ec41f08918ef9faa727d39ad993e929757dc2ddafab805",
+      "source": "windows-system://curl",
+      "distribution_sha256": null
+    },
+    "ffmpeg": {
+      "status": "verified",
+      "version": "ffmpeg version 9.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+      "path": "E:\\OV-OrthKD-R3\\tools\\ffmpeg-fec81ae03971\\ffmpeg-9.0.1-essentials_build\\bin\\ffmpeg.exe",
+      "bytes": 102856192,
+      "sha256": "72a489eccd008c2ec2c0a5856c5c75bc3d8bbfa90166c4566865c246445e6aa3",
+      "source": "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip",
+      "distribution_sha256": "fec81ae03971d9dd4be3ebe02e263bd2ec1d789483f931bdba5f5715e65da2e9"
+    },
+    "git_lfs": {
+      "status": "verified",
+      "version": "git-lfs/3.7.1 (GitHub; windows amd64; go 1.25.1; git b84b3384)",
+      "path": "E:\\OV-OrthKD-R0\\env\\Git\\cmd\\git-lfs.exe",
+      "bytes": 46464,
+      "sha256": "37c5725818d602e951ba2563b870d62763322956b73373da4c33a0b566a80bc9",
+      "source": "https://github.com/git-lfs/git-lfs/releases/tag/v3.7.1",
+      "distribution_sha256": null
+    },
+    "jq": {
+      "status": "verified",
+      "version": "jq-1.8.2",
+      "path": "E:\\OV-OrthKD-R3\\tools\\jq-1.8.2\\jq.exe",
+      "bytes": 1035264,
+      "sha256": "a6fc67fedaf9128a3309a1e2ebb8b986aeccf70122ee46d2cb4849e423f0c627",
+      "source": "https://github.com/jqlang/jq/releases/tag/jq-1.8.2",
+      "distribution_sha256": "a6fc67fedaf9128a3309a1e2ebb8b986aeccf70122ee46d2cb4849e423f0c627"
+    },
+    "python": {
+      "status": "verified",
+      "version": "Python 3.11.9",
+      "path": "E:\\OV-OrthKD-R0\\env\\.venv\\Scripts\\python.exe",
+      "bytes": 274712,
+      "sha256": "21bb438c0d4a6f1f164b9a646f6ee000340185e5871180aec06db8d3f07c0082",
+      "source": "local-verified-environment://OV-OrthKD-R0",
+      "distribution_sha256": null
+    },
+    "seven_zip": {
+      "status": "verified",
+      "version": "7-Zip (r) 26.02 (x86) : Igor Pavlov : Public domain : 2026-06-25",
+      "path": "E:\\OV-OrthKD-R3\\tools\\7zip-26.02\\7zr.exe",
+      "bytes": 602112,
+      "sha256": "56b8cc9f4971cef253644fafe54063ed7fdca551d4dee0f8c6baa81b855acd72",
+      "source": "https://github.com/ip7z/7zip/releases/tag/26.02",
+      "distribution_sha256": "56b8cc9f4971cef253644fafe54063ed7fdca551d4dee0f8c6baa81b855acd72"
+    }
+  },
+  "replacements": {
+    "tmux": {
+      "by": "windows_cim_background_process",
+      "status": "replaced"
+    },
+    "rsync": {
+      "by": "scp_and_hash_verified_copy",
+      "status": "replaced"
+    },
+    "wget": {
+      "by": "windows_curl",
+      "status": "replaced"
+    }
+  }
+}

@@ -1118,3 +1118,322 @@
 - 将空白规范化后的 2 个源码文件与 5 个测试文件逐项同步到 5090，三组 SCP 退出码均为 0；随后对该精确代码候选树再次运行完整 `python -m pytest -q`，退出 0，`191 passed in 86.69s`。
 - 用 `apply_patch` 将最终 86.69 秒结果同步到 pytest 证据、verification receipt 和人工报告，再次重建 readiness receipt；builder 按预期退出 1，最终仍为 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`、`ready=false`、12 blockers。最终 verification SHA256 为 `3682127909ab6416d69cf9c9126ec2d3cf2a4d777ba2d74e889d2ff31e3ff67a`，receipt 中记录值与实际 bytes 一致。
 - 重新检查未暂存 diff：`git diff --check` 退出 0。至此后续只允许重新暂存、检查 staged snapshot、创建唯一 commit、push 和远端 SHA 核对；不再修改代码/配置/测试语义。
+
+### 406. 唯一 R2 commit、GitHub push 与网页可见性（2026-08-20）
+- 最终重新 `git add -A` 退出 0；外层/仓库根 `all.md` 在提交快照中均为 122,267 个规范化字符、SHA256 `eb56a73f4e2bf30c2ce1087027e0d0a79b77bc7e7934a6bfde07668b3425f6d9`，内容完全一致。
+- 最终 staged snapshot：79 个文件、无未暂存文件、无二进制暂存项、无受禁扩展名；`git diff --cached --check` 退出 0。分支为 `repro/r2-conference-reproduction-readiness`，提交前 HEAD 与 merge-base 均为唯一 R2 起点 `6e4ea32c8e3cd84c07bc45d6e3ea3528d3fa9986`。
+- 创建唯一提交成功：commit `f6e85eb61cdc09e530038d46671f70ee2618ea5c`，message `feat: complete R2 conference reproduction readiness`；base→HEAD 恰好 1 个 commit，diff stat 为 79 files changed、10,145 insertions、462 deletions，commit diff check 退出 0，提交后 worktree clean。
+- `git push -u origin repro/r2-conference-reproduction-readiness` 退出 0，新远端分支已建立并设置 upstream。随后 `git ls-remote` 返回同一 SHA `f6e85eb61cdc09e530038d46671f70ee2618ea5c`，本地/远端匹配，ahead/behind=`0/0`，worktree entries=0。
+- 网页工具直接 open 三个 GitHub URL 未返回可呈现正文；随后用独立 HTTP GET 跟随重定向复核，分支页、commit 页与 R2 报告页均返回 HTTP 200。分支页为 `https://github.com/rayyyyyyyyb/mm1/tree/repro/r2-conference-reproduction-readiness`，commit 页为 `https://github.com/rayyyyyyyyb/mm1/commit/f6e85eb61cdc09e530038d46671f70ee2618ea5c`，报告页为 `https://github.com/rayyyyyyyyb/mm1/blob/repro/r2-conference-reproduction-readiness/reports/R2_CONFERENCE_REPRODUCTION_READINESS_REPORT.md`。
+- 为严格保持任务书要求的“唯一提交”，本条提交/推送后的结果仅追加到扩刊外层权威 `all.md`，不再修改已提交仓库快照或创建第二个 commit。
+
+### 407. R3 最终任务书读取、分支建立与 5090 基线（2026-08-20）
+- 收到附件 `pasted-text.txt`，完整分 6 段读取全部 1,357 行、26,621 bytes，SHA256=`49113849a33a728c3cefdad69b0067ef9ba54946e097c9384cf1a9614a101d9d`；覆盖公开资产下载、断点续传、SharePoint 合法认证、五个权重、五个官方仓库、paper-specified 重建、18 项缺陷、真实教师缓存和单步预检。
+- 完整读取并应用 `using-superpowers`、`brainstorming`、`writing-plans`、`using-git-worktrees`、`test-driven-development`、`writing-good-tests`、`systematic-debugging` 与 `verification-before-completion`。任务书被用户明确指定为最终设计和指令，因此直接转化为实施计划，不再询问可由证据决定的事项。
+- 按任务书运行 `git fetch --all --tags --prune`、切回 R2、`git pull --ff-only`：退出 0；确认最新 R2 HEAD=`f6e85eb61cdc09e530038d46671f70ee2618ea5c`、工作区干净、R3 分支本地/远端均不存在。当前目录确认为 linked worktree、非 submodule。
+- 从最新 R2 创建 `repro/r3-assets-download-and-readiness`，HEAD 保持 `f6e85eb…`，状态 0 项。建立九步执行看板：审计→计划→资产管理→并行下载→SharePoint→缺陷/配置→教师导出→一次 preflight→最终验证提交。
+- 首次并行远端盘点因本地 JavaScript 未正确提取纯 Base64，远端 PowerShell 在执行前以“EncodedCommand 编码不正确”退出；未改变 5090。改用本机 PowerShell UTF-16LE 编码后完成诊断。
+- 5090 为 Windows 10.0.26200；E 盘剩余 5,722.27 GiB、D 盘 722.54 GiB、C 盘 1,681.22 GiB。`curl.exe`、Git 2.53.0、R0 Python 3.11.9、torch 2.10.0+cu128 可用；`aria2/tmux/wget/jq/git-lfs/7z/ffmpeg/rsync` 不在 PATH。WSL 命令明确提示尚未安装 Linux/WSL 分发，因此后续采用 `Start-Process -WindowStyle Hidden` 作为 Windows 的 tmux/nohup 等价后台监督，aria2 session 与 `.aria2` 恢复语义不变。
+- 发现旧 `E:\OV-OrthKD-R2\repo` 仍是此前验证同步形成的脏运行副本，HEAD=`6e4ea32…` 且包含完整 R2 文件改动；为避免丢弃或混淆任何旧产物，未清理它。新建 `E:\OV-OrthKD-R3\repo`，从 GitHub R2 分支干净克隆并创建 R3 分支：HEAD=`f6e85eb…`、status entries=0。
+- 在新 R3 远端副本运行基线 `python -m pytest -q`：退出 0，`191 passed in 96.98s`。尚未开始正式训练、真实数据 preflight 或任何 optimizer step；当前也未遇到需要用户输入密码的认证环节。
+
+### 408. R3 设计/计划固化与 Task 1 资产身份 TDD（2026-08-20）
+- 新增 R3 设计文档和 10 项实施计划；设计明确 Windows 隐藏进程替代 tmux、aria2 session 恢复、合法 SharePoint 认证边界、三条并行链路、50 GiB 磁盘保护和仅一次 preflight。计划 placeholder 扫描 0 匹配，任务/接口/测试/最终单 commit 边界齐全。
+- 先用 `apply_patch` 新增 `test_r3_asset_catalog.py` 与 `test_r3_asset_validation.py`，未写生产模块；同步到 5090 后 RED 退出码 2，两个收集错误都精确为 `ModuleNotFoundError: scripts.assets`，证明测试因目标功能缺失而失败。
+- 最小实现 `scripts/assets/__init__.py`、`mm26_asset_catalog.py`、`asset_validation.py`：锁定五个权重的精确目标/来源/SHA、两份官方 SharePoint、五个官方仓库；验证器流式 SHA256 且拒绝空文件、过小文件、HTML、XML、Git LFS pointer 和错哈希，不修改候选 bytes。
+- 同步前的远端 PowerShell 建目录命令因末尾引号转义多出反斜杠，输出一次 `Out-Null\ is not recognized`；该命令未作为成功依据。后续 SCP 实际写入目录并运行同一矩阵，GREEN 退出码 0，`11 passed in 0.13s`。
+- 本轮只使用合成小文件；尚未启动真实资产下载、教师导出、训练或 optimizer step，也没有密码/登录请求。
+
+### 409. R3 Task 2—4 下载器、监控器与 SharePoint 边界 TDD（2026-08-20）
+- Task 2：先新增 `tests/test_r3_download_manager.py`，RED 因下载管理器接口不存在而失败；随后实现 `scripts/assets/download_mm26_assets.py`，包括 aria2 无限重试、断点续传、session 保存、非覆盖式 incoming/quarantine/promotion、五文件并行、状态与验证 CLI。初次 GREEN 与前序测试合计 `18 passed in 0.20s`。
+- `.gitignore` 压力测试覆盖 secrets、aria2 state、incoming、quarantine、weights、external、outputs 等 9 类运行产物，全部按预期忽略；`reports/downloads` 中的可提交状态报告保持可跟踪。
+- Task 3：先写下载进度、平均速度、ETA、重试、`.aria2`、PID/stale 和 50 GiB 保护的 RED；实现 `monitor_downloads.py` 及原子 JSON/Markdown 输出。RPC 测试首先暴露 aria2 参数缺少 `--enable-rpc=true`，补上仅监听 localhost 的 RPC 后，聚焦矩阵 GREEN：`23 passed in 0.31s`。
+- Task 4：先写 SharePoint URL 变体、匿名 Range、内容判别、认证阻塞、URL 脱敏和临时凭据清除测试；实现 `resolve_sharepoint_download.py`。交互路径只允许在 `AUTH_REQUIRED` 后启用且不记录 token/cookie；GREEN 合计 `30 passed in 0.32s`。
+- 增加多来源并发 1 MiB Range 探测与最快有效二进制来源排序。RED 为缺少 `SourceProbe`，实现后 GREEN 合计 `31 passed in 0.48s`；HTML/XML/LFS、异常状态和不合理长度均不能进入 aria2 输入。
+- `winget install aria2.aria2` 运行约 184 秒后工具调用超时；只读复查确认无残留 winget 进程、无已安装包和文件，故不把该轮当作成功。随后从 aria2 官方 GitHub release 下载 1.37.0 Windows 64-bit ZIP；首次 curl/解压调用约 124 秒超时，但独立复核确认 ZIP 完整，SHA256=`67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288`，可执行文件版本为 1.37.0，全程未需密码/UAC。
+- 五权重来源探测结果：Apple CDN 对 MobileCLIP 有效；`huggingface.co`、OneDrive/Zenodo 在该主机探测失败；`hf-mirror.com` 对五权重均返回有效 206 二进制与合理总长度。第一次 aria2 PID=13340 虽写为 running，但 SSH 返回后已退出，incoming 文件为 0；未把它误报为正在下载或成功。
+
+### 410. SSH 后台进程退出根因、CIM 持久启动修复与重启（2026-08-20）
+- 系统化读取 `weights.log`、aria2 input/session/process state 和进程表：aria2 已接受 5 项输入、监听 `127.0.0.1:6800`，无校验或 URL 解析报错，但 SSH 会话关闭后进程随 Windows OpenSSH 作业对象终止；旧状态文件缺少启动后健康检查，形成误报。
+- 用 Windows CIM `Win32_Process.Create` 启动 8 秒存活探针，SSH 返回 12 秒后文件 `E:\OV-OrthKD-R3\wmi-survival-test.txt` 确实出现 `survived`，证明由服务进程托管可脱离 SSH，ReturnValue=0、PID=8388，且不需要密码。
+- 按 TDD 先新增 Windows runner/CIM 结果解析测试，RED 在导入阶段失败；实现 `windows-cim`/`auto` launcher、原子 runner exit receipt、独立 console log、2 秒启动健康检查和 launch-failed 拒绝误报。首轮测试只因无空格测试路径不需要引号而失败，改用含空格路径验证 Windows quoting 后，本地 R3 聚焦矩阵 GREEN：`33 passed in 0.30s`；5090 下载管理器聚焦测试 GREEN：`10 passed in 0.18s`。
+- 通过 CIM 脱离式启动下载管理器 PID=27452，显式指定 `--launcher windows-cim`；其来源探测和随后 aria2 下载均由 Windows 服务进程托管，不依赖当前 SSH/工具调用存活。此条记录时管理器仍在探测，尚不宣称下载已运行或文件已完成。
+
+### 411. 来源探测缓存、低速容错与稳定的五权重并行下载（2026-08-20）
+- 第二次管理器运行在 CLAP 的镜像探测阶段遇到瞬时 `TimeoutError`，因当时要求每轮重新探测而退出；先写缓存复用 RED，再实现成功来源探测结果 6 小时缓存和 `probing_sources`/`source_probe_failed` 明确状态，相关管理器与仓库测试 `17 passed`。
+- 首轮实际 aria2 下载暴露默认 `--lowest-speed-limit=10K` 会杀死可继续的慢速镜像连接；按测试先锁定“低速不应终止”，再改为 `--lowest-speed-limit=0` 并使用 RPC 优雅停机后断点重启，没有删除 `.aria2` 或已下载字节。
+- 发现 aria2 session 与新生成 input 同时包含相同 `dir+out` 时会形成 5 个 active 加 5 个重复 waiting；新增语义去重 RED/实现，优先当前生成条目，确认重启后恰好五个活动资产且无重复等待。
+- 为避免稀疏文件逻辑大小误报进度，监控器改为从 aria2 RPC 读取真实 completed/total/speed；新增 RPC 聚合测试后 GREEN。监控器以 CIM 后台方式启动，按 60 秒周期原子写入 `reports/downloads/live_status.json/.md`，并保持 50 GiB 磁盘保护。
+- 当前稳定下载显式使用每源 2 连接；aria2 PID=18972、监控包装进程 PID=7804。五项均纳入同一可恢复 session，连接慢或本轮命令结束都不会主动中止。
+
+### 412. 五个官方代码仓库的断点克隆与不可变收据（2026-08-20）
+- 新增 `clone_mm26_repositories.py` 及 7 项行为测试：五仓库并行克隆到 `.partial`，干净部分克隆可恢复；收据校验 origin、完整 40 位 commit、分支、工作树 clean、license 状态及关键源码 bytes/SHA256。
+- 首次 CIM 克隆因服务进程 PATH 不含 Git 产生 `WinError 2`；保留各 `.partial`，重启时显式将 `E:\OV-OrthKD-R0\env\Git\cmd` 加入 PATH，从断点继续而非重下。
+- 初始关键源码猜测与实际树不一致；只读检查固定 commit 后改为真实路径。OV-AVEL 上游根目录确实未发布 LICENSE，收据明确记录 `not_published_by_upstream`，没有臆造许可证；通用仓库缺 LICENSE 仍会失败。
+- 最终五仓库收据 `status: passed`：InternVideo `3965eef16e2dadd0ea6c8d0cc29c8a3039df52e3`；Microsoft CLAP `e8a6467b87cd85716e20c6a008126150d9740be0`；MobileCLIP `aecfb5453d022e9deff12f81a150ea8f35194baa`；OV-AVEL `b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6`；unilm/BEATs `833df7e7832e5064a281131ee64a481afa8e5b95`。
+- 第一次 SCP 收据因本地 `reports/downloads` 尚不存在而失败；创建目录后重传成功，本地 `repository_receipts.json` SHA256=`d4747ea89317c7d470193785d9b87ff81c4484f5952bfe9a6b27370403c49ea2`。
+
+### 413. SharePoint 人工认证边界（2026-08-20）
+- 完整读取并遵循内置浏览器控制技能；初始化浏览器运行时后查询任务书网址，返回“没有可用浏览器”，按故障指引只重列一次，结果仍为空列表。
+- 匿名 Range 与先前 Graph 探测均证明两份官方数据要求组织账号登录。已告知用户：不要发送密码；在已授权 Chrome/Edge 或 5090 的 RDP 会话中打开任务书两条 SharePoint URL，合法登录后下载到 `E:\OV-OrthKD-R3\repo\data\downloads\manual_sources\`，或在设置中连接浏览器扩展再通知。未记录 cookie、token 或密码，未使用替代数据冒充官方资产。
+
+### 414. R3 会议复现配置、调度器与下载锁门禁 TDD（2026-08-20）
+- 新增 `test_r3_conference_reconstruction.py`，以任务书精确值固定 paper-specified reconstruction：10 秒/10 段、视觉与音频预处理、batch 4、每 epoch 最多 400 batch、30 epoch、AdamW、epoch 级 CosineAnnealingLR、三项损失与 evaluator 映射；5 项本地测试 GREEN。
+- 新增 `test_r3_remaining_defects.py`，远端 RED 为 4 项失败；实现 R3 模式下恰好 400 batch 上限、禁止 optimizer/CLI 截断、锁定 `CosineAnnealingLR(T_max=30)`，把 download lock 加入运行时 fingerprint，并让 canonical readiness 条件性要求该锁。远端 GREEN `4 passed`；R2 canonical 回归加 R3 矩阵在显式 Git PATH 下 `34 passed`。
+- 配置继续保持 `full_run_blocked: true`；未启动正式训练，未运行 optimizer step，也未解除 canonical full-run guard。
+
+### 415. 官方 WAV 音频预处理的测试驱动接入（2026-08-20）
+- 新增 `audio_preprocessing.py` 和 5 项测试：16 kHz、10 秒截断/补零、十个 1 秒段、每段重复到 2 秒、128 mel、25/10 ms、目标长度 204、mean/std 归一化，输出 `[10,1,128,204]`；学生侧再 repeat-3、双线性 resize 到 224，不做 JPEG 或 ImageNet 归一化。
+- `ov_avel_dataset.py` 的 canonical 模式只接受官方 WAV 路径键并调用新模块；旧 spectrogram 仅保留在 legacy 模式，缺 WAV 时 fail-closed。5090 上音频新测、strict data 与 R1 data 合计 `30 passed in 5.51s`。
+
+### 416. 本次续作前下载与工作树只读核对（2026-08-20）
+- 读取最新 RPC 快照（生成时间 `2026-08-20T11:23:14Z`）：B14 40,812,544/204,538,935 bytes（19.95%）；InternVideo2 CLIP B14 5,552,811/5,552,811 bytes（已传完，尚未 promotion/SHA 复验）；BEATs 38,420,480/361,499,833 bytes（10.63%）；CLAP 40,878,080/689,950,036 bytes（5.92%）；MobileCLIP 仍处于连接等待、0 bytes。空闲磁盘约 6.143 TB，保护阈值未触发。
+- 确认 R3 分支仍是仅本阶段源码/测试/报告改动，无权重、数据、凭据或临时下载产物进入 Git。读取计划显示 Task 1—4 已完成，Task 5 及后续仍待继续；本轮将先核对官方 ImageBind 音频语义和 InternVideo2 原始视频接口。
+
+### 417. 官方 ImageBind 音频语义复核与均值中心化修正（2026-08-20）
+- 对固定 OV-AVEL commit 内嵌的 ImageBind `waveform2melspec` 与 `load_and_transform_audio_data` 逐行核验：每段送入 Kaldi fbank 前必须减去该段 waveform mean，任务书的 1 秒片段则重复至 2 秒；此前实现漏了前者。
+- 先补均值中心化回归，再在 `audio_preprocessing.py` 实现逐段去均值。首轮 float32 极端偏置样例的残差上限为 `0.0078125`，测试改用符合数值精度的 `<1e-2`，不是放宽生产参数；与原音频测试合并在 5090 上 `20 passed`。
+
+### 418. InternVideo2 原始视频确定性解码与无 PNG 回退（2026-08-20）
+- 从固定 InternVideo commit 核对 `InternVideo2_CLIP_small`、Base/B14 配置以及 vision、MobileCLIP text、extra CLIP 三个 checkpoint role；按上游 middle sampling 在 16 fps 网格中固定每秒 `[0,.125,...,.875]` 八帧。
+- 先新增原始视频 RED；首次 collection 因 `DecodedVideo` 尚不存在而退出 1。随后实现 decord 单线程最近时间戳解码、10 秒/10 区间/每区间八帧、短视频和缺视频 fail-closed、`[10,8,3,H,W]` 输入、pipeline 原始视频路由，并明确禁止真实教师回退到官方 PNG。相关原始视频/教师安全回归 `11 passed`。
+- `export_teacher_artifacts.py` 现把 intervals、video duration、sampling fps 显式传入 wrapper；没有运行真实教师或学生 optimizer step。
+
+### 419. MobileCLIP 单项动态换源且不中断其他下载（2026-08-20）
+- Apple CDN 的 MobileCLIP 连接约 30 分钟仍为 0 bytes；通过 aria2 RPC 核对当时四项 active、一项已完成，只对 MobileCLIP gid `f2990a29127f6564` 调用 `changeUri`，移除 Apple URL、换为先前已探测有效的 `hf-mirror.com`。
+- 换源后立即开始传输（最初观测 212,992/599,214,572 bytes、69,168 B/s）；B14、BEATs、CLAP 及已完成的 extra CLIP 均未停止、未删除 `.aria2`、未重下已有字节。
+
+### 420. Windows 工具来源固定、收据 TDD 与首次后台启动（2026-08-20）
+- 只采用官方发布链：jq 1.8.2 及官方 checksums、FFmpeg 官网指向的 gyan Windows build/checksum、7-Zip 26.02、机器已有 Git LFS 3.7.1；新增 `tool_receipts.py` 对每个可执行文件实际重算 bytes/SHA256/version/source，并记录 tmux/rsync/wget 的原生 Windows 替代方式，测试先 RED 后 `2 passed`。
+- 新增 `bootstrap_windows_tools.ps1`，固定 jq 与 7zr 的下载 SHA，FFmpeg 使用官网目标及配套 checksum；第一次复合 SCP+启动命令超时，但同步文件已落盘。随后单独 CIM 启动返回 0、报告 PID=22564；本条只记录已启动，不把尚未生成的 tool receipt 声称为成功。
+
+### 421. 三教师精确身份与导出参数闭合（2026-08-20）
+- 配置写入固定仓库路径、精确 wrapper class、五个 checkpoint 相对路径及任务书给定 SHA256：InternVideo2 的 vision/text/extra、BEATs encoder、CLAP text encoder；教师顶层名称不再含 unresolved 占位符。
+- 第一次 5090 RED 的两项失败来自远端尚是旧 config 且导出 builder 未传新原始视频参数；同步并实现后教师配置/导出参数聚焦矩阵 `11 passed`。
+- 曾有一次用 `cmd /c` 的远端 pytest 因引号导致“file not found”，未计作测试结果；改用 PowerShell UTF-16 EncodedCommand 后才取得上述有效退出码。
+
+### 422. 用户批准重建证据的防篡改边界（2026-08-20）
+- 新建 `reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md`，仅把任务书明确授权的九项选择记录为 `paper_specified_reconstruction`，文件 SHA256=`8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18`，没有伪装成 archival-exact 历史证据。
+- 新增 approval SHA 篡改回归；本地因缺 timm 未能 collection，转到 5090 后验证既有递归 evidence validator 会拒绝篡改。只调整测试匹配到实际 fail-closed 错误，复验 `1 passed`。
+
+### 423. R3 archival/preprocessing/evaluator 三锁与精确 config 绑定（2026-08-20）
+- 九项 archival facts 全部为 user-approved reconstruction assumption，逐项 `selected_value == config_bindings`；preprocessing lock 固定官方 PNG/WAV、ImageBind 音频、原始视频 InternVideo2；evaluator lock 只把论文 F1@0.5 与 validation-calibrated F1 两项映射定为 resolved，event F1 保持 supplemental。
+- 当前 canonical config SHA256=`38a2ae5c83abb46d02a9172d6a2fe8eea60cfd147105216862328598dc90ff75`。三项新锁测试先 `3 failed`，实现后 `3 passed`。
+
+### 424. InternVideo2 extra CLIP 权重最终验证与安全结构检查（2026-08-20）
+- 已完成的 `InternVideo2_CLIP_B14.pth` 在 `.aria2` 控制文件消失后才 promotion；按锁定值复算为 5,552,811 bytes、SHA256=`c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e`，最终路径 `weights/internvideo2/InternVideo2_CLIP_B14.pth`。
+- 使用 `torch.load(weights_only=True)` 只读检查为 19-key `OrderedDict`，包含 temperature、projector/align 等 partial overlay 键，符合 extra checkpoint role；没有执行反序列化任意对象、模型推理或训练。
+
+### 425. 最新后台下载与工具任务只读复核（2026-08-20）
+- 最新监控快照生成于 `2026-08-20T11:52:19Z`：B14 与 BEATs 都已收到期望 bytes、等待最终 promotion/SHA/结构核验；MobileCLIP 263,798,784/599,214,572（44.02%）；CLAP 293,781,504/689,950,036（42.58%）；extra CLIP 已 verified。aria2 PID=18972、监控 PID=21008/5204 仍存活，E 盘空闲 6,138,098,655,232 bytes。
+- 工具 bootstrap 的 PID=22564 已退出，但预期 log 与 `tool_versions.json` 均未出现，因此状态仍是未验证，将诊断启动包装/参数而不重复下载已存在工具。复核流程按 `superpowers:receiving-code-review` 执行：所有反馈先对照当前源码和测试验证，再逐项修复。
+
+### 426. Windows 工具后台 runner 与 PowerShell 语法故障修复（2026-08-20）
+- 先为持久化 log/exit receipt 增加 runner 测试，RED 为缺少 `bootstrap_windows_tools.cmd`；实现相对 repo root 的 CMD 包装、追加日志和原子 `bootstrap_windows_tools_exit.json` 后，与 reconstruction lock 合计 `6 passed`。
+- 新 runner 捕获首次真实退出码 1；日志把根因精确定位为 PowerShell 双引号字符串中的 `$Url:` 被解释为非法变量名。再加语法回归，RED `1 failed, 3 passed`；修成 `${Url}:` 后 `4 passed`。
+- 同步后 CIM 重启 ReturnValue=0、PID=11516。runner/PowerShell/底层 curl 仍在运行并用 `--continue-at -` 下载 jq；日志已显示从 0 继续增长，未因 SSH 命令结束中断。旧 exit receipt 在当前运行完成前仍为上一轮 exit 1，不把它误报为本轮结果。
+
+### 427. B14 与 BEATs promotion、哈希和固定结构验证（2026-08-20）
+- 只在 `.aria2` 控制文件消失且 RPC 已完成后运行 status/promotion：B14 为 204,538,935 bytes、SHA256=`1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7`；BEATs 为 361,499,833 bytes、SHA256=`d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34`；两者均移动到最终 weights 路径，未触碰 MobileCLIP/CLAP 的断点。
+- 先为安全 checkpoint 结构校验增加 RED（缺少目标 API），再实现仅 `torch.load(..., map_location='cpu', weights_only=True)` 的 fixed-commit 容器校验。本地 `10 passed`；5090 对真实 B14（217-key OrderedDict）、extra CLIP（精确 19-key overlay）、BEATs（`cfg/model`，model 250 keys）结构审计退出码 0、三项全部 passed。
+- 最新 12:04:29Z 快照：MobileCLIP 269,467,648/599,214,572（44.97%），CLAP 298,893,312/689,950,036（43.32%），继续由 aria2 下载；前三权重显示 SHA verified，磁盘保护未触发。
+
+### 428. 官方原始视频布局、source manifest 与全资产路径审计（2026-08-20）
+- 先补原始视频一对一、重复 ID、缺失 ID、短视频和 manifest `raw_video_path` 的 RED；实现独立 `discover_ovave_raw_video_layout.py`：递归索引官方视频扩展、metadata bijection、24,800 split-count guard、零字节/重复/额外/缺失、ID 匹配率，并通过 ffprobe 审计每个视频 codec/fps/duration，短于 10 秒 fail-closed。
+- canonical source builder 现强制单独 `--raw-video-root`，每条记录必须含真实存在的 `raw_video_path`；全量模式拒绝 raw extra ID，输出名修正为任务书要求的 `train.jsonl/val.jsonl/test.jsonl`，不再生成与正式 config 不一致的 `*_source.jsonl`。
+- `check_manifest.py` 现把缺 WAV 与缺 raw video 都计入 fail-on-missing；`audit_mm26_reproduction.py` 的 source stage 要求逐条 WAV/raw 文件存在。5090 上 preprocessing/raw layout/check-manifest/split/audit 六组回归 `33 passed in 12.87s`；未用 fixture 结果冒充官方数据审计，真实 SharePoint 数据仍待合法登录。
+
+### 429. 十八项缺陷矩阵回归闭合（2026-08-20）
+- 为 CUDA 计时同步补充回归并建立 `reports/R3_DEFECT_REGRESSION_MATRIX.md`，逐项映射任务书列出的 18 项缺陷、实现位置与测试证据。首轮矩阵共 130 项，结果 `129 passed, 1 failed`；唯一失败是缺失 `r3_real_preflight.json` 时错误文字没有统一 canonical 前缀。
+- 按 fail-closed 语义统一缺失真实 preflight receipt 的错误前缀，focused 复验 `1 passed`，随后完整矩阵 `130 passed in 65.86s`。这些测试没有调用真实 optimizer step，也没有启动正式训练。
+
+### 430. 长时下载并发与工具 bootstrap 续传优化（2026-08-20）
+- Windows 工具 bootstrap 的 curl 实测速率仅约 162 B/s；先以测试固定多连接、无限重试、低速不终止和原位 `.part` 续传参数，首轮 `4 passed, 1 failed`，实现后 `5 passed`。
+- 只终止该工具任务的 curl 子进程 PID 27088，保留 jq 的 229,376-byte 部分文件；父 runner PID 11516/PowerShell PID 14556 随后正常退出。重新通过 CIM 启动 runner PID 14800，改由 aria2 四连接续传，jq 很快增长到 829,248 bytes。未影响权重 aria2 PID 18972。
+- 通过 aria2 RPC 把 MobileCLIP 与 CLAP 调整为每资产四连接；MobileCLIP 继续使用可用镜像，CLAP 在不移除原 URI、不清空断点的条件下加入官方 Hugging Face URI。最近观测分别为 302,694,400/599,214,572 与 308,625,408/689,950,036 bytes，均仍在后台续传。
+
+### 431. SharePoint 授权操作单与认证边界（2026-08-20）
+- 新建 `reports/downloads/SHAREPOINT_AUTH_REQUIRED.md`，记录两条官方 SharePoint 链接、目标目录和校验后续；当前接口要求组织账号交互式登录，自动化环境没有可合法复用的浏览器会话。
+- 明确不索取、不记录用户密码、cookie 或 token；人工仅需在已授权浏览器或 5090 RDP 会话完成组织登录并把两份原始官方文件保存到 `E:\OV-OrthKD-R3\repo\data\downloads\manual_sources\`。在字节未取得前不生成伪造 data receipt。
+
+### 432. 教师全量导出进度监控 TDD（2026-08-20）
+- 新增监控测试时因 `scripts.teachers.monitor_export` 不存在而 RED；随后实现一次性/循环监控、原子 JSON/Markdown、每 split 完成数/总数/百分比、速度、ETA、失败数、cache root、空闲磁盘、最近错误、更新时间，并让导出 pipeline 把小型 progress receipt 写在 cache root 外，避免改变最终 cache tree SHA256。
+- 第一次同步到 5090 因远端 `scripts/teachers` 目录尚不存在而失败；创建精确目标目录后逐文件重传成功。远端导出监控与 scaling 回归 `22 passed`。
+
+### 433. 5090 教师运行环境现状审计（2026-08-20）
+- 当前环境为 Python 3.11、PyTorch `2.10.0+cu128`、torchvision `0.25.0+cu128`、torchaudio `2.10.0+cu128`、CUDA 12.8、RTX 5090 capability 12.0；已有 timm `1.0.28`、open_clip `2.32.0`、transformers `4.57.6`、einops `0.8.2`。
+- 首轮导入审计确认仍缺 decord、soundfile、librosa、msclap、opencv-python 与 sentencepiece。下一步只依据五个固定上游仓库的实际 requirements/构造路径选择兼容依赖，避免降级现有 RTX 5090 PyTorch；安装将采用可恢复的后台 runner 并生成版本/哈希 receipt。
+
+### 434. 固定教师依赖与 GPT-2 隐含资产的后台环境引导（2026-08-20）
+- 逐项读取固定 InternVideo2 requirements、Microsoft CLAP `pyproject.toml`、MobileCLIP requirements 和三个实际 wrapper 导入链；真实导入确认 BEATs 已可用，InternVideo2 缺 `peft`，CLAP 缺 `torchlibrosa`。通过 Hugging Face 官方 API（5090 官方域名被拒绝后使用同协议镜像端点）解析 `openai-community/gpt2` 为精确 revision `607a30d783dfa663caf39e06633721c8d4cfcd7e`，模型 safetensors 为 548,105,171 bytes、SHA256=`248dfc3911869ec493c76e65bf2fcf7f615828b0254c12b473182f0f81d3a707`。
+- 新增环境审计、PowerShell bootstrap、持久 CMD runner 与 3 项 TDD；本地/5090 均 `3 passed`。固定 direct packages 为 decord 0.6.0、soundfile 0.12.1、librosa 0.10.1、torchlibrosa 0.1.0、peft 0.20.0，并保持 transformers 4.57.6、huggingface-hub 0.36.2、torch 2.10 CUDA 环境。
+- 第一次后台 PID 1204 因官方 PyPI 连接未能取得 `cffi` 而退出 1，退出回执和完整日志均保留；加入官方主源加清华镜像回退后 PID 27080 成功安装全部固定 direct packages。第一次 GPT-2 CLI 调用因重复 `--include` 在旧版 CLI 中仅最后一项生效，审计据真实字节返回 blocked；按 `hf download REPO file... --revision` 精确语法修复后 PID 26988 从已有 cache 继续，当前七文件已完成六项，548 MB safetensors 仍在后台下载。
+
+### 435. 教师 checkpoint 安全反序列化与 strict-load 路径（2026-08-20）
+- 为 CLAP `weights_only=True + strict=True` 和 InternVideo 三角色组合规则先写 RED；5090 collection 以缺目标 API 退出 1。随后 InternVideo wrapper 禁止上游构造器直接执行不安全 `torch.load`，在临时延迟其 load 后使用 `weights_only=True` 按固定 commit 的 vision/text/extra 组合规则构造完整 state，并以 `strict=True` 装载。
+- CLAP wrapper 不再调用上游会使用普通 `torch.load(..., strict=False)` 的快捷 wrapper；改为固定类 `msclap.models.clap.CLAP`、安全读取 2023 `model` state、strict load、只从本地精确 GPT-2 revision 以 `local_files_only=True` 构造 tokenizer/model，杜绝 smoke 时临时取得 latest。配置和 exporter 显式绑定 GPT-2 repository/revision/root。
+- 相关 wrapper、repeatability、identity 和 export scaling focused 矩阵在 5090 为 `15 passed`；没有实例化尚未齐备的真实三教师，也没有执行 optimizer step。
+
+### 436. 真实教师 smoke 的十段语义与报告字段修复（2026-08-20）
+- 发现旧 identity smoke 仍调用已禁止的 PNG `export_segments`，且把 BEATs 音频错误裁成单段 `[:1]`；先增加原始视频、完整十段音频、精确 shape、CUDA 同步和完整统计字段测试，再改为 `export_video(raw_video_path)`、十段 waveform、CLAP 单条 `[1024]`。
+- smoke 现强制 InternVideo2 `[10,512]`、logits `[10]`、BEATs `[10,768]`、CLAP `[1024]`，记录 dtype、min/max/mean/std、NaN/Inf 数、范数、最大/平均绝对误差、每教师耗时与 GPU 当前/峰值显存；CUDA 计时前后均同步。任务书给出的 Base/CLIP-B14 声明现绑定固定 `InternVideo2_CLIP_small` 组合类，不再沿用 R2 未恢复阶段的旧冲突阻塞。
+
+### 437. Download lock 全字节 canonical 审计（2026-08-20）
+- 新增七资产 download-lock 双向测试，RED 为缺少 canonical validator；实现后 5090 `2 passed`。validator 强制五权重加两官方数据的精确且唯一资产集、HTTPS 最终/备用 URL、带时区起止时间、非负续传次数、binary Content-Type、passed validation，并逐文件复算 bytes/SHA256；五权重还逐字匹配任务书公布哈希。
+- canonical readiness 在 R3 模式下同时要求并复算 download lock 与 teacher-environment receipt；后者逐项校验固定 direct package、RTX 5090/CUDA、GPT-2 revision、七个文件 bytes/SHA256 和确定性 root SHA256。对应合计 `6 passed`。canonical config 因新增 CLAP repository/revision 绑定重算为 `7d2087bfaf483012aba1f82fb06bde725514145332000bca889d4633e2a603da` 并更新 archival lock。
+
+### 438. CLAP 本机八连接并行备用下载（2026-08-20）
+- 5090 无法解析 Zenodo，Hugging Face CLAP 通道约 5 KiB/s；本机对 Zenodo 官方文件 Range 测试返回 HTTP 206、`application/octet-stream`，但单连接约 6.5 KiB/s。为避免等待单通道，给资产管理器增加 `--asset` 单资产选择及回归，和 catalog 中通过 Zenodo 记录解析出的精确文件 URL；合计 `17 passed`。
+- 从 5090 回传已验证 aria2 1.37.0 到本地 Git 忽略目录，启动只含 `clap_2023` 的八连接可恢复任务 PID 35656 与隐藏监控 PID 2284；初期达到约 1.33 MB/s，随后快照 94,289,920/689,950,036 bytes（13.67%）。5090 原 CLAP 断点未停止，两通道并行，待任一正确 SHA256 完成后再同步与有选择地停止另一通道。
+- 一次 SCP 把环境测试误传到远端 `scripts/assets`；核对精确路径后只删除该 7 KiB 左右的自有误传副本，正式 `tests/` 副本保留且通过。没有删除任何下载断点、权重、数据或用户文件。
+
+### 439. 真实一步预检单次调用契约闭合（2026-08-20）
+- 新增正式 claim 必须显式 `--real-data`、预检前 canonical 上游证据校验、原子 invocation marker 和重复调用拒绝；修正 data-lock 从 `reproduction.readiness.data_lock` 解析，并把生产报告固定为 `reports/runtime/r3_real_preflight.json`。
+- 为避免首次执行被尚不存在的自身报告循环阻塞，canonical validator 增加只供预检入口使用的 `require_real_preflight=False`，其余正式准入仍强制真实预检。5090 focused 矩阵 `12 passed`；生产 invocation marker 与真实预检报告均未创建，真实 optimizer-step 调用数仍为 0。
+
+### 440. 最终会议复现准入校验器 TDD（2026-08-20）
+- 先新增三个测试并确认目标脚本缺失而 RED，再实现 `scripts/validate_conference_readiness.py`：唯一复用 canonical validator，失败只写 `BLOCKED_BEFORE_CONFERENCE_REPRO` 且清除自有 stale ready config；完整链通过才原子生成 `configs/ov_orthkd_mm26_repro_ready.yaml` 并把 guard 设为 false，且明确记录未启动 full run。
+- 为使安装训练可选依赖前也能运行审计工具，将 `src` 顶层 API 改为兼容的延迟导入；复验 `3 passed`，没有运行真实教师、学生训练或 optimizer step。
+
+### 441. GPT-2 CDN 超时诊断与独立可恢复下载（2026-08-20）
+- 5090 `hf download` 的六个 tokenizer/config 文件已经完成；548 MB `model.safetensors` 在 `us.aws.cdn.hf.co` 发生 read timeout，旧审计因此诚实保持 blocked。把环境 bootstrap 改为小文件继续由精确 revision 的 `hf` 获取，主文件改用官方/镜像双 URI、八连接、无限重试、断点续传和任务书 SHA256 的 aria2；5090 runner PID 9420/23984/14648 正在保留断点运行。
+- 新增可单独重试并原子写 `gpt2_model_download.json` 的 `download_gpt2_model.ps1`，测试先因文件缺失 RED、实现后 `1 passed`；本机备用 runner PID 25700/aria2 PID 12672 并行下载，不会清空 5090 已有块。
+
+### 442. 根目录全量 pytest 收集边界与 R3 断言更新（2026-08-20）
+- 首次 5090 全量命令遗漏远端工作目录而从用户目录扫描，五分钟退出 124；核对命令行后只终止自有 pytest PID 9520/17564。第二次从正确 repo root 运行时误收集固定上游 InternVideo 的 `test_libmr.py` 并因缺 `libmr` 退出 1；新增 `pytest.ini` 把收集范围精确限定为本项目 `tests/`。
+- 正确全套首轮为 `257 passed, 33 failed`，其中 31 项来自非交互 SSH 的 PATH 缺 Git for Windows；显式加入已固定 Git 路径后 focused 为 `49 passed, 2 failed`。两项旧断言改为任务书的 `paper_specified_reconstruction`、精确 GPT-2 revision 和 resolved scheduler；随后全套 `290 passed, 1 failed`，唯一残留旧断言把任务书明确的 `max_batches_per_epoch: 400` 当成 `None`，修正后 focused `4 passed`，仍需最后再跑完整矩阵。
+
+### 443. CLAP 完成、可恢复回传与远端验证（2026-08-20）
+- 本机 CLAP 收齐 689,950,036 bytes 后由资产管理器 promotion 并复算 SHA256=`2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6`。首次 SCP 因远端目录不存在而写入前退出；创建精确目录后第二次传到 491,487,232 bytes 时连接重置，正式文件仍未生成。
+- 改用 SFTP `put -a` 从该断点续传，只补余下字节；5090 再次复算 bytes/SHA 完全匹配后才把 `.uploading` 原子移为 `weights/clap/CLAP_weights_2023.pth`。只暂停远端旧 CLAP GID `a43b3e12dee774ec` 以停止重复带宽，原 incoming 断点保留，MobileCLIP 及其他任务未停止。
+
+### 444. MobileCLIP 与 Windows 工具的本机并行备用通道（2026-08-20）
+- 5090 MobileCLIP 持续但速度波动，另用本机资产管理器启动八连接 PID 38608；监控快照为 323,682,304/599,214,572 bytes（54.02%）、约 0.87 MB/s，远端原断点继续保留。
+- 5090 Gyan FFmpeg 通道极慢，启动本机工具 bootstrap 备用通道。GitHub 7-Zip 通道为 0 bytes 时，只停止该自有本机 runner 并从 5090 回传已验证 7zr.exe（SHA256=`56b8cc9f...acd72`）复用；重启时短暂出现两个自有 aria 同写同一 partial，立即核对 PID 后终止旧 PID 21360/43148，仅保留新 PID 27540/38512，最终 checksum guard 不变。
+
+### 445. SharePoint 浏览器会话复核（2026-08-20）
+- 在确认没有 SharePoint/OneDrive 专用 connector 后尝试复用现有浏览器授权会话；运行时返回无可用浏览器，故不能合法代替用户完成 HFUT 组织登录。没有检查 cookie、local storage、密码或 token；两份官方数据仍是唯一人工授权阻塞，并再次告知只需把两个原始文件放到 5090 `data/downloads/manual_sources` 后回复“已放好”。
+
+### 446. BEATs 真实 strict-load 与 InternVideo 精确源文件锁（2026-08-20）
+- 在 5090 用真实 `BEATs_iter3_plus_AS2M.pt`、官方 `BEATsConfig` 和默认严格 `load_state_dict` 在 CPU 成功实例化，输出类 `BEATs`、feature_dim=768，证明该 checkpoint 不是 finetuned 分类模型；未做数据推理或 optimizer step。
+- 发现仓库收据虽锁定 InternVideo 主文件，却遗漏 wrapper 实际导入的 `internvideo2_clip_small.py`；新增先 RED 后 `1 passed` 的测试并把该精确源文件加入 repository receipt 候选，后续会在 5090 重新生成全字节仓库收据。
+
+### 447. MobileCLIP 本地完成、断点回传与远端验证（2026-08-20）
+
+- 本机八连接备用通道完成 `mobileclip_blt.pt` 的 599,214,572 bytes 下载；通过 SFTP `put -a` 从已存在的远端临时文件断点续传，避免重传已到达字节。
+- 5090 复算 SHA256=`670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a` 后才原子移动至 `weights/mobileclip/mobileclip_blt.pt`；仅暂停重复的远端 MobileCLIP GID `f2990a29127f6564`，保留 incoming 断点，不影响其他下载。
+
+### 448. 五项正式教师权重全量统一复验（2026-08-20）
+
+- 在 5090 对五项最终路径执行 `download_mm26_assets.py --verify --root .`，统一校验全部通过：InternVideo B14 204,538,935 bytes / `1037a478...be7`，extra CLIP 5,552,811 / `c76ebe61...05e`，MobileCLIP 599,214,572 / `670844f7...41a`，BEATs 361,499,833 / `d43cbfad...d34`，CLAP 689,950,036 / `2cef4016...1e6`。
+- 五项权重均在最终目录且与任务书公布 bytes/SHA256 一致；旧 partial/control 文件仅作为可恢复证据保留，不冒充最终资产。
+
+### 449. GPT-2 精确 revision 本地恢复、回传与环境收据（2026-08-20）
+
+- 本地独立可恢复下载完成 GPT-2 `model.safetensors` 548,105,171 bytes / SHA256=`248dfc3911869ec493c76e65bf2fcf7f615828b0254c12b473182f0f81d3a707`；通过独立 `.from_local.uploading` 路径断点回传，远端复验后替换最终文件，原远端 partial 与 `.aria2` 改名保留。
+- 精确 revision `607a30d783dfa663caf39e06633721c8d4cfcd7e` 的七个文件均通过审计，初始 teacher-environment receipt 为 ready，GPT-2 root SHA256=`b153066835c920d5713823134e00bde77a6ec5af4746c11984658debbaddbf0a`；随后因真实 InternVideo 导入发现 Transformers 兼容问题，进入固定版本重建，旧 ready 收据不作为最终结论。
+
+### 450. 五个上游仓库精确提交与源文件字节收据（2026-08-20）
+
+- 正常 clone/fetch 在 GitHub 连接重置后失败且未改变既有 checkout；按 TDD 新增 `--audit-only`，只审计本机既有固定 checkout，相关测试 `9 passed`。
+- 5090 生成 `reports/downloads/repository_receipts.json`：InternVideo2=`3965eef16e2dadd0ea6c8d0cc29c8a3039df52e3`、CLAP=`e8a6467b87cd85716e20c6a008126150d9740be0`、MobileCLIP=`aecfb5453d022e9deff12f81a150ea8f35194baa`、OV-AVEL=`b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6`、BEATs/unilm=`833df7e7832e5064a281131ee64a481afa8e5b95`；新增 InternVideo 精确源文件 10,952 bytes / SHA256=`4b58387591be5ed2ce8170af119f01957553a286d58741b1b2ade5d81b53d667`。
+
+### 451. CLAP 2023 checkpoint 严格兼容加载闭合（2026-08-20）
+
+- 首次真实 strict-load 准确暴露 checkpoint 中 24 个旧版 GPT-2 nonpersistent attention buffer；新增只允许逐层 `bias`/`masked_bias` 精确集合、形状与 0/1/-10000 语义一致的兼容剥离器，其他 unexpected key 仍 fail-closed。
+- 回归 `6 passed` 后，5090 上真实 `CLAP_weights_2023.pth` 以 `weights_only=True` 与最终 `strict=True` 成功构造 `msclap.models.clap.CLAP`，feature_dim=1024；未做数据推理或 optimizer step。
+
+### 452. Transformers 固定版本兼容修正与后台重建启动（2026-08-20）
+
+- 真实 InternVideo 构造发现 Transformers 4.57.6 已移除上游所需 `apply_chunking_to_forward`；对照固定 InternVideo `transformers>=4.45.1` 与 CLAP `^4.34.0` 后，将环境、canonical validator 与测试统一锁到 4.45.1，未改变 RTX 5090 的 PyTorch/CUDA。
+- 相关版本测试 `11 passed`；代码同步至 5090 后启动持久化环境 runner PID=12596（子进程 27020）执行卸载 4.57.6/旧 tokenizers 并安装 4.45.1。本条只记录启动与兼容依据，最终版本、pip check、收据和真实构造须在后续复验后记录。
+
+### 453. 本轮恢复后的进程与日志核对（2026-08-20）
+
+- 首次并行查询因一个不存在的本地 FFmpeg 路径令组合工具返回退出码 1；随后改用 repo 内正确目录重新核对，两份 `all.md` 最后一项均为 446。
+- 本地工具 bootstrap PID=38512、aria2 PID=27540 仍存活；正确 partial 为 88,923,223 bytes，下载时间戳持续更新。未停止、删除或重置该可续传下载。
+
+### 454. 最终教师环境版本与收据复验（2026-08-20）
+
+- 第一次刷新收据命令因嵌套 PowerShell here-string 终止符错误在本地解析阶段退出 1，未在 5090 执行任何修改；改为单行 Python 审计后成功。
+- 5090 最终版本为 Transformers 4.45.1、Tokenizers 0.20.3、PyTorch 2.10.0+cu128；`pip check` 返回 `No broken requirements found.`。重新逐字节审计 GPT-2 后 `teacher_environment.json` 状态 ready，Transformers expected/installed 均为 4.45.1、GPT-2 root SHA256=`b153066835c920d5713823134e00bde77a6ec5af4746c11984658debbaddbf0a`，canonical validator errors=[]，两个审计退出码均为 0。
+
+### 455. 三位真实教师最终 strict-load（2026-08-20）
+
+- 在 5090 固定环境中以真实权重、CPU 构造并执行最终严格 state-dict 装载：InternVideo2 `InternVideo2ClipB14Teacher` / `InternVideo2_CLIP_small` / 512 维，6.963 秒，退出 0；上游打印缺少可选 deepspeed 的提示及弃用 warning，但不影响模型构造或 strict load。
+- 同一最终环境复验 BEATs `BEATsAudioTeacher` / `BEATs` / 768 维，2.544 秒；CLAP `ClapTextTeacher` / `msclap.models.clap.CLAP` / 1024 维，6.291 秒；命令退出 0。没有读取官方样本、没有做教师 smoke、没有执行 optimizer step。
+
+### 456. 五 checkpoint 真实顶层结构与 R3 teacher lock（2026-08-20）
+
+- 5090 使用 `torch.load(..., weights_only=True, map_location='cpu')` 逐项复核：InternVideo vision 为 217-key OrderedDict，MobileCLIP text 为 313-key state dict，extra CLIP 为 19-key OrderedDict，BEATs 顶层 `cfg/model`（22/250 keys），CLAP 顶层 `epoch/model/optimizer/scheduler`（model 381 keys）；退出 0。
+- 将 `mm26_teacher_lock.yaml` 更新为三位教师身份、仓库 commit、预处理、输出维数、五 checkpoint bytes/SHA/角色和真实 strict-load 全部 resolved；顶层仍诚实保持 blocked，唯一上游原因是两个 SharePoint 官方归档 AUTH_REQUIRED，真实 smoke 与 24,800 条导出未执行。
+
+### 457. R3 download/data/teacher 阻塞收据与远端证据回收（2026-08-20）
+
+- 新建 `configs/locks/mm26_download_lock.yaml` 与 `reports/downloads/asset_receipts.json`：五权重逐项 passed 并记录稳定来源、备用 URL、UTC 起止、断点恢复次数、bytes/SHA/Content-Type；两项官方数据只标 `AUTH_REQUIRED`，未编造 bytes、哈希或下载时间，也未保存临时签名 URL。
+- 数据锁补充独立 raw-video archive/layout 阻塞项；smoke repeatability 与 full export audit 改为仅由官方数据门阻塞且记录五项已知教师哈希。teacher lock SCP 至 5090 退出 0。
+- 第一次远端 identity inventory 因非交互 PATH 缺 Git 抛出 WinError 2，未覆盖旧报告；显式加入固定 Git for Windows 路径后重跑，三仓 commit 均精确恢复，报告只因 `--source-manifest` 缺失而 blocked，符合 AUTH_REQUIRED。随后把最终 teacher-environment、14:05 repository receipt（含 `internvideo2_clip_small.py`）与 teacher identity 三文件回传本地，三个 SCP 退出码均为 0。
+
+### 458. 完整代码同步与首轮 294 项验证（2026-08-20）
+
+- 从本地生成只含代码/配置/报告、显式排除 `.git`、`data/downloads`、teacher cache、weights 与 external checkout 的 3,479,552-byte 传输 tar；第一次远端建目录命令被 SSH 引号误解析而失败且 SCP 因目录不存在未写入，改用 EncodedCommand 后上传、overlay 解包均退出 0。
+- 5090 `compileall` 退出 0；全量 pytest 为 `293 passed, 1 failed, 1 warning in 106.63s`，退出 1。唯一失败精确定位为 R1 旧测试仍要求提交中教师 unresolved，同时旧 validator 要求 preprocessing 为 mapping、checkpoint 同时有 path/source_url。
+- 先在旧 validator 契约下补齐 teacher lock 的结构化 preprocessing 及兼容 path/source_url，并把旧断言升级为“三教师 resolved、data-dependent smoke/export blocked”；本地和 5090 聚焦测试均 `4 passed`、退出 0。SharePoint resolver 的 Windows 子线程 UTF-8 decode warning 单独保留，不能冒充失败。
+
+### 459. FFmpeg 官方镜像接管、远端工具闭合（2026-08-20）
+
+- 查询 FFmpeg 官网认可的 GyanD 发布体系后，确认 GyanD GitHub Releases 是官网构建镜像；固定 `9.0.1/ffmpeg-9.0.1-essentials_build.zip` 的 Content-Length=111,253,802，与滚动官网包一致。独立八连接下载在外层 15 分钟命令超时返回 124 时已经完整结束、`.aria2` 消失；复算 SHA256=`fec81ae03971d9dd4be3ebe02e263bd2ec1d789483f931bdba5f5715e65da2e9`，与官网 checksum 逐字一致。
+- 第一次 SFTP 因中文路径在管道编码中变成 `??` 而未找到源文件；使用临时 `R:` subst 映射后 `put -a` 36 秒完成并撤销映射。5090 临时文件再次核对同 bytes/SHA 后，才停止专属旧 aria2 PID=8448、原子晋升最终 zip；随后停止本地冗余 Gyan aria2 PID=27540，保留本地 97,517,568-byte partial 与 `.aria2`。
+- 5090 新工具 bootstrap PID=23096 正常完成，exit receipt=0；`tool_versions.json` 状态 ready，FFmpeg 9.0.1、aria2 1.37.0、curl 8.21.0、Git LFS 3.7.1、jq 1.8.2、Python 3.11.9、7-Zip 26.02 全部实字节收据通过，tool receipt validator errors=[]、退出 0；收据 SCP 回本地退出 0。
+
+### 460. 修正后全量测试与 Windows ACL warning 闭合（2026-08-20）
+
+- teacher-lock 修正后的 5090 全量 pytest 为 `294 passed, 1 warning in 103.19s`、退出 0；唯一 warning 是设置 `PYTHONUTF8=1` 时，Python subprocess reader 用 UTF-8 解码本地化 `icacls.exe` OEM/ANSI 输出失败，虽未泄密也未影响 secret 文件删除，仍按缺陷处理。
+- 先增加 `_restrict_windows_acl` 缺失的 RED（collection ImportError），再实现 `encoding='mbcs', errors='replace'` 的专用 ACL 调用；本地与 5090 SharePoint resolver focused 均 `8 passed`、退出 0。secret handoff 的当前用户 ACL、覆盖后删除与不记录 cookie/token 语义不变。
+- CLAP download lock 的最终主来源按真实日志改为任务书首选官方 Hugging Face，Zenodo 官方记录与 hf-mirror 保留为备用；checkpoint bytes/SHA 不变。
+
+### 461. CUDA 与五权重最终运行时复验（2026-08-20）
+
+- 5090 `verify_cuda_runtime.py` 退出 0：PyTorch 2.10.0+cu128、CUDA 12.8、RTX 5090 capability 12.0、FP16 2048 方阵输出 finite，5 次平均 0.096563 ms；没有模型训练或 optimizer step。
+- 5090 `download_mm26_assets.py --verify --root .` 再次退出 0，五项最终权重均 status=passed、bytes/SHA 与 download lock 完全一致。
+- 明确复核 `reports/runtime/r3_real_preflight.json`、三种可能 invocation marker、ready config 与 `data/teacher_cache/mm26` 均不存在；`manual_sources` 目录仍为空。因此真实 preflight 调用次数=0，full export 记录数=0，未启动任何完整训练。
+
+### 462. 最终无 warning 验证、R3 总报告与敏感材料审计（2026-08-20）
+
+- 修正 Windows ACL 解码后，在 5090 最终重跑：`compileall` 退出 0；pytest `295 passed in 102.55s`、退出 0 且无 warning；`pip check` 输出 `No broken requirements found.`、退出 0。五份 R3 runtime 收据回传本地，SCP 退出码全部 0。
+- 生成 `reports/R3_ASSET_DOWNLOAD_AND_READINESS_REPORT.md`，完整记录五权重 URL/bytes/SHA/恢复次数、GPT-2 root、仓库 commits、六锁状态、三教师 strict-load、工具链、测试与唯一人工阻塞；最终状态严格写为 `BLOCKED_BEFORE_CONFERENCE_REPRO`。
+- `git diff --check` 退出 0；tracked 文件扫描未发现 `X-Xet-Cas-Uid`、CloudFront/GitHub 临时 `Policy/Signature/Key-Pair-Id` 等签名 CDN 材料，Git 状态也未列出 data、weights、checkpoint 或 output 工件。CRLF 提示仅是 Windows 工作树换行提示，不是 diff 错误。
+- 已完成的独立代码复核最终结论为 ready to merge：先前 archival evidence 的 claim/status 绕过与伪造 Git locator 均已由严格门禁和三项回归关闭，未发现残余代码阻塞。
+
+### 463. 暂存内容审计、UTF-8 收据规范化与 evaluator 实字节路径修正（2026-08-20）
+
+- 首次暂存共 91 文件、10,148 insertions/363 deletions；staged 路径中无 weights/data cache/output/checkpoint/archive/secret，且没有超过 5 MiB 的文件。创建临时提交 `c2e5ca0`，用于后续在干净 Git 树上运行 canonical readiness；该 SHA 不是最终交付 SHA，仍将纳入最终收据并 amend。
+- 发现 PowerShell 5.1 `Tee-Object` 把五份 runtime 收据写成 UTF-16，Git 因而显示 binary；因 `apply_patch` 不能读取 UTF-16，采用纯机械编码转换将同一真实输出改为无 BOM UTF-8，再用 `apply_patch` 重建 compileall 收据为唯一 `exit_code=0`。五文件现均为文本，JSON 可解析，pytest 收据保留 295 passed。
+- 准备 clean-tree audit 时发现 evaluator lock 的 `source.path` 仍是上游仓库内相对路径，canonical 会错误解析为主项目根；先新增精确 external checkout 路径断言并取得 `1 failed, 2 passed` RED，再改为 `external/OV-AVEL/proposed_method/ImageBind-main/utils/eval_metrics.py`，focused `3 passed`、退出 0。`source_file` 仍保留上游仓库内身份路径。
+
+### 464. 干净工作树复验与归档批准证据跨 Windows 换行根因修复（2026-08-20）
+
+- 从临时提交 `52eaad075b197087a346118e9c656720abca1807` 生成 564,861-byte Git bundle，并在 5090 创建 detached 干净工作树 `E:\OV-OrthKD-R3\readiness-clean-52eaad0`；其 `git status --short` 为空。仅用被 Git 忽略的目录 junction 接入已核验 `weights` 与五个 exact-commit `external` checkout，不修改干净代码树。
+- 本地 aria2 RPC 显示 `numActive=0`、`numWaiting=0`，因此优雅 `aria2.shutdown` 并停止每 60 秒刷新 tracked live status 的监控循环；保留全部 partial、session、日志和 `.aria2` 断点材料。最终静态快照确认进程已退出，已完成本地 MobileCLIP/CLAP 仍为 SHA256 verified；完整五权重真值以 5090 download lock/asset receipt 为准。
+- 5090 干净工作树最终全测首次返回 `294 passed, 1 failed in 104.41s`、退出 1。唯一失败是 `R3_USER_APPROVED_RECONSTRUCTION.md` 工作树 SHA 与锁不一致。逐边界复算确认：Git blob、锁和本地 LF 文件均为 `8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18`（2,116 bytes），5090 因全局 `core.autocrlf=true` 检出为 21 个 CRLF、2,137 bytes、SHA `7408700f2ceaa1e522646b157c34aca85d2ab0a2236dc311f52f9da87a45b851`。根因是 `.gitattributes` 只有 `text=auto`，没有锁定该实字节证据的 checkout EOL。
+- 采用最小根因修复：为 `reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md` 增加 `text eol=lf`，确保任何 Windows 干净 checkout 的工作树字节与被锁 Git blob 一致；现有跨机失败测试即为 RED 回归，修复后将重新创建/刷新干净工作树并复跑完整套件。
+
+### 465. 5090 复验、非 preflight canonical 审计与剩余证据契约 TDD（2026-08-20）
+
+- 将 `f80996263141327605b023f037aaa165494c3bb5` 的 564,267-byte bundle 上传 5090（bundle/SCP 均退出 0），创建新 detached 干净工作树 `E:\OV-OrthKD-R3\readiness-clean-f809962` 并接入 ignored weights/external junction。新 checkout 的批准文档为 2,116 bytes、0 CRLF、SHA 与锁一致；完整 pytest 随后为 `295 passed in 104.44s`、退出 0。
+- 首次 non-preflight canonical 内联命令把字面 `\n` 传给 Python `-c`，语法错误退出 1、未运行 validator、未写文件；改为单表达式后 validator 按预期退出 1并列出完整 blocker。没有出现 Git dirty、archival/preprocessing 未解析或教师 checkpoint 缺失，但额外发现 `teacher_identity` 缺 `schema_version: 1`，以及 evaluator parity fixture/receipt 实字节 SHA 不匹配。
+- 边界复算确认 parity 锁与 Git blob 的 SHA 分别为 `69c5d0f2e9eeded3ed2944329340d1ed6d9c46d50f8b19564dddc1311bb022fb`、`13943f1c5f67c112f3474420777298de6fc13fc4d6b227ae67df664b3a32e777`；5090 checkout 因 39/24 个 CRLF 分别变为 `00aa1a...`、`3cbc71...`，根因同为未锁 EOL。`inspect_teacher_identity()` 返回映射本身也缺 schema，而非只是一份旧收据。
+- TDD：新增生成器 schema 断言及三份哈希锁文本必须 `eol: lf` 的 Git 属性断言。本地组合测试先因 Anaconda numpy BLAS abort 未收集，远端首次又因 PATH 缺 Git 以 `WinError 2` 失败，二者均不计有效 RED；补入锁定 Git PATH 后取得期望 `KeyError: schema_version` 与 `eol: unspecified` 的 `2 failed`、退出 1。最小实现为生成器/当前阻塞收据补 `schema_version: 1`，并为两份 parity JSON 增加 `text eol=lf`；远端同两项 GREEN 为 `2 passed in 3.94s`、退出 0，本地属性测试 `1 passed`、退出 0。
+
+### 466. 最终 296 项测试、canonical 双层审计与阻塞收据（2026-08-20）
+
+- 将候选提交 `c67540306c7ed6c4478e90f721a2363114ab5f4b` 以 Git bundle/SCP 传到 5090 并创建第三个全新 detached 干净工作树 `E:\OV-OrthKD-R3\readiness-clean-c675403`；两份 parity checkout 均为 0 CRLF，实字节 SHA 与 evaluator lock 一致，初始 `git status --short` 为空。
+- 在该精确树完整运行 `python -m pytest -q`：`296 passed in 104.21s`、退出 0、无 warning；本地 `reports/runtime/r3_pytest_full.txt` 已用该新鲜结果替换旧 295 项收据。
+- `validate_canonical_readiness(..., require_real_preflight=False)` 按预期退出 1；修复前的 teacher schema/parity 错误已消失，也没有 Git dirty、archival、preprocessing、teacher checkpoint、环境或仓库错误。剩余列表全部是两份官方 SharePoint bytes 缺失和其下游 archive/layout/manifest/smoke/export 阻塞。
+- 正式 `validate_conference_readiness.py` 在写收据前检查了干净 Git 树，按预期退出 1并生成 `BLOCKED_BEFORE_CONFERENCE_REPRO`；`ready=false`、`canonical_evidence_chain=false`、`full_run_started=false`、`ready_config_created=false`，ready config 不存在。直接 blocker 是未伪造、未运行的 `reports/runtime/r3_real_preflight.json`；真实 preflight invocation count 仍为 0。收据 SCP 退出 0，SHA256=`d764e12218cdb328dca7ad84effaed0e1c4dc3f1b1bab6e767451328fcc2beb1`。
+
+### 467. 最终提交内容与收据编码审计（2026-08-20）
+
+- 第一次组合审计脚本因 PowerShell `$()` 内嵌 commit 命令的括号语法错误而在执行前退出 1、无写入；拆分后确认 branch=`repro/r3-assets-download-and-readiness`、唯一 base commit 可解析、tracked 大于 5 MiB 文件数 0、排除日志后的临时签名 URL/凭据模式匹配数 0，ready config、三种 real-preflight report/marker 和 `data/teacher_cache/mm26` 全部不存在，`git diff --check` 退出 0。
+- 同一审计的严格 JSON 解析发现 `reports/downloads/tool_versions.json` 仍有 PowerShell 5.1 UTF-8 BOM；其余四份关键 JSON 均为无 BOM UTF-8。用 `apply_patch` 将该收据重建为无 BOM、规范缩进 JSON，重建前后解析对象完全相等，实测 `bom=false`、3,418 bytes；全部关键 JSON 再解析通过。
+- 本地不依赖 torch 的工具收据/重建锁回归共 `9 passed in 0.22s`、退出 0，随后 `git diff --check` 再次退出 0。完整 torch 套件仍以 5090 精确候选树的 `296 passed in 104.21s` 为准。

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Any, Dict
@@ -230,17 +232,67 @@ def _run_train_probe(
 
 
 def _expected_temporal_length(config: Dict[str, Any]) -> int | None:
-    lock_path = config.get("reproduction", {}).get("data_lock")
+    reproduction = config.get("reproduction", {})
+    readiness = reproduction.get("readiness", {}) if isinstance(reproduction, dict) else {}
+    lock_path = readiness.get("data_lock") if isinstance(readiness, dict) else None
     if not lock_path:
         return None
     resolved = Path(lock_path)
     if not resolved.is_absolute():
-        resolved = PROJECT_ROOT / resolved
+        project_root = Path(reproduction.get("project_root", PROJECT_ROOT))
+        if not project_root.is_absolute():
+            project_root = PROJECT_ROOT / project_root
+        resolved = project_root.resolve() / resolved
     document = yaml.safe_load(resolved.read_text(encoding="utf-8")) or {}
     metadata = document.get("metadata", document.get("official_metadata", {}))
     histogram = metadata.get("segment_length_histogram", {}) if isinstance(metadata, dict) else {}
     nonzero = [int(length) for length, count in histogram.items() if int(count) > 0]
     return nonzero[0] if len(nonzero) == 1 else None
+
+
+def _real_preflight_report_path(config: Dict[str, Any]) -> Path:
+    reproduction = config.get("reproduction", {})
+    readiness = reproduction.get("readiness", {}) if isinstance(reproduction, dict) else {}
+    value = readiness.get("real_preflight") if isinstance(readiness, dict) else None
+    if not isinstance(value, str) or not value:
+        raise RuntimeError("Real preflight requires reproduction.readiness.real_preflight")
+    path = Path(value).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    project_root = Path(reproduction.get("project_root", PROJECT_ROOT)).expanduser()
+    if not project_root.is_absolute():
+        project_root = PROJECT_ROOT / project_root
+    return (project_root.resolve() / path).resolve()
+
+
+def _claim_real_preflight_invocation(
+    config: Dict[str, Any], *, optimizer_steps: int
+) -> Path:
+    if int(optimizer_steps) != 1:
+        raise ValueError("R3 real preflight requires exactly 1 optimizer step")
+    report_path = _real_preflight_report_path(config)
+    marker_path = report_path.with_name(report_path.stem + ".invocation.json")
+    if report_path.exists() or marker_path.exists():
+        raise RuntimeError(
+            "The single R3 real preflight invocation has already been claimed; "
+            f"report={report_path.exists()} marker={marker_path.exists()}"
+        )
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": 1,
+        "status": "started",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "invocation_count_this_stage": 1,
+        "optimizer_steps_planned": 1,
+        "report_path": str(report_path),
+    }
+    try:
+        with marker_path.open("x", encoding="utf-8", newline="\n") as handle:
+            json.dump(payload, handle, indent=2, ensure_ascii=False)
+            handle.write("\n")
+    except FileExistsError as exc:
+        raise RuntimeError("The single R3 real preflight invocation has already been claimed") from exc
+    return marker_path
 
 
 def _forward_after_resume(student, loader, device: torch.device) -> Dict[str, Any]:
@@ -282,14 +334,23 @@ def run_preflight(
     claim_level = str(reproduction.get("claim_level", "")).lower()
     if real_data and mock_only:
         raise RuntimeError("A mock-only config cannot be labeled as real data")
-    if claim_level == "archival_exact" and not mock_only and not real_data:
-        raise RuntimeError("An archival-exact preflight requires the explicit --real-data flag")
+    if (
+        claim_level in {"archival_exact", "paper_specified_reconstruction"}
+        and not mock_only
+        and not real_data
+    ):
+        raise RuntimeError("A formal reproduction preflight requires the explicit --real-data flag")
     validate_repro_config(
         config,
         allow_blocked=False,
         preflight=True,
         output_dir=output_dir,
         require_canonical_readiness=real_data,
+    )
+    invocation_marker = (
+        _claim_real_preflight_invocation(config, optimizer_steps=optimizer_steps)
+        if real_data
+        else None
     )
     set_seed(
         int(config.get("seed", 42)),
@@ -426,6 +487,7 @@ def run_preflight(
         "formal_metrics_emitted": False,
         "invocation_count_this_stage": 1 if real_data else 0,
         "optimizer_steps": int(optimizer_steps),
+        "invocation_marker": str(invocation_marker) if invocation_marker else None,
         "batch_count": 1,
         "forward_completed": True,
         "backward_completed": True,
@@ -475,7 +537,7 @@ def main() -> None:
         optimizer_steps=args.optimizer_steps,
     )
     if args.real_data:
-        report_path = PROJECT_ROOT / "reports" / "runtime" / "r2_real_preflight.json"
+        report_path = _real_preflight_report_path(config)
         report_path.parent.mkdir(parents=True, exist_ok=True)
         partial_path = report_path.with_suffix(report_path.suffix + ".partial")
         partial_path.write_text(
@@ -483,6 +545,22 @@ def main() -> None:
             encoding="utf-8",
         )
         partial_path.replace(report_path)
+        marker_path = Path(str(summary["invocation_marker"]))
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+        marker.update(
+            {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "optimizer_steps_completed": 1,
+                "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+            }
+        )
+        marker_partial = marker_path.with_suffix(marker_path.suffix + ".partial")
+        marker_partial.write_text(
+            json.dumps(marker, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        marker_partial.replace(marker_path)
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 

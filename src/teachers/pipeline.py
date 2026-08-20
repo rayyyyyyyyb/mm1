@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,7 @@ from .common import (
     resolve_audio_segments,
     resolve_frame_groups,
     resolve_query,
+    resolve_raw_video,
     safe_record_id,
     segment_count,
     strong_teacher_artifact_paths,
@@ -203,6 +205,7 @@ def export_manifest_records(
     teacher_lock_sha256: str = "UNSPECIFIED",
     split: str = "unknown",
     resume: bool = False,
+    progress_path: str | Path | None = None,
 ) -> Dict[str, Any]:
     canonical_split = canonical_split_name(split)
     updated_records: list[Dict[str, Any]] = []
@@ -212,6 +215,7 @@ def export_manifest_records(
     aggregate_receipt_path = Path(receipt_jsonl) if receipt_jsonl is not None else None
     aggregate_error_path = Path(error_jsonl) if error_jsonl is not None else None
     receipt_dir = artifact_root / "receipts" / canonical_split
+    progress_output = Path(progress_path).resolve() if progress_path is not None else None
 
     max_records = len(records) if limit is None else min(len(records), int(limit))
     _preflight_record_paths(records, max_records)
@@ -224,10 +228,34 @@ def export_manifest_records(
     records_resumed = 0
     receipts_by_id = _receipt_map(receipt_dir)
     published_receipts: list[Dict[str, Any]] = []
+    started_at = datetime.now(timezone.utc).isoformat()
+
+    def write_progress(
+        *, status: str, current_record_id: str | None, current_index: int | None
+    ) -> None:
+        if progress_output is None:
+            return
+        _atomic_write_json(
+            progress_output,
+            {
+                "schema_version": 1,
+                "status": status,
+                "split": canonical_split,
+                "started_at": started_at,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "current_record_id": current_record_id,
+                "current_index": current_index,
+                "completed": records_written + records_resumed,
+                "total": max_records,
+            },
+        )
+
+    write_progress(status="running", current_record_id=None, current_index=None)
 
     for index in range(max_records):
         record = deepcopy(records[index])
         record_name = record_id(record, index)
+        write_progress(status="running", current_record_id=record_name, current_index=index)
         try:
             existing_receipt = receipts_by_id.get(record_name)
             if resume and existing_receipt is not None:
@@ -244,6 +272,7 @@ def export_manifest_records(
                 updated_records.append(record)
                 published_receipts.append(existing_receipt)
                 records_resumed += 1
+                write_progress(status="running", current_record_id=record_name, current_index=index)
                 continue
             if existing_receipt is not None and not overwrite:
                 raise RuntimeError(f"artifact receipt exists but resume is disabled: {record_name}")
@@ -280,8 +309,18 @@ def export_manifest_records(
                 record["strong_teacher_logits_path"] = str(logit_path)
                 if not overwrite and (feature_path.exists() or logit_path.exists()):
                     raise RuntimeError("strong artifacts exist without a validated receipt")
-                frame_groups = resolve_frame_groups(record, expected_len)
-                features, logits = teachers.strong_visual.export_segments(frame_groups=frame_groups, query=query)
+                if callable(getattr(teachers.strong_visual, "export_video", None)):
+                    raw_video_path = resolve_raw_video(record)
+                    features, logits = teachers.strong_visual.export_video(
+                        video_path=raw_video_path, query=query
+                    )
+                else:
+                    # Legacy/mock-only path. The real InternVideo2 wrapper exposes
+                    # `export_video`, so canonical R3 execution cannot fall back to PNGs.
+                    frame_groups = resolve_frame_groups(record, expected_len)
+                    features, logits = teachers.strong_visual.export_segments(
+                        frame_groups=frame_groups, query=query
+                    )
                 feature_array = _as_feature_matrix(features, expected_len, "strong teacher features")
                 logit_array = _as_logit_vector(logits, expected_len)
                 feature_metadata = atomic_save_array(feature_path, feature_array, expected_shape=feature_array.shape)
@@ -322,6 +361,7 @@ def export_manifest_records(
             updated_records.append(record)
             published_receipts.append(receipt)
             records_written += 1
+            write_progress(status="running", current_record_id=record_name, current_index=index)
         except Exception as exc:
             error = {
                 "schema_version": 1,
@@ -335,6 +375,7 @@ def export_manifest_records(
                 atomic_write_jsonl(aggregate_error_path, [error])
             if partial_path.exists():
                 partial_path.unlink()
+            write_progress(status="failed", current_record_id=record_name, current_index=index)
             raise
 
     if copy_unprocessed_records:
@@ -347,6 +388,7 @@ def export_manifest_records(
     os.replace(partial_path, output_path)
     if aggregate_receipt_path is not None:
         atomic_write_jsonl(aggregate_receipt_path, published_receipts)
+    write_progress(status="completed", current_record_id=None, current_index=None)
     tree_hash = canonical_tree_hash(artifact_root)
     return {
         "records_total": len(records),
@@ -383,6 +425,7 @@ def export_manifest_file(
     teacher_lock_sha256: str = "UNSPECIFIED",
     split: str = "unknown",
     resume: bool = False,
+    progress_path: str | Path | None = None,
 ) -> Dict[str, Any]:
     source_path = Path(source_manifest)
     records = load_records(source_path)
@@ -400,4 +443,5 @@ def export_manifest_file(
         teacher_lock_sha256=teacher_lock_sha256,
         split=split,
         resume=resume,
+        progress_path=progress_path,
     )

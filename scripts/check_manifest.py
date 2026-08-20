@@ -86,9 +86,8 @@ def _has_teacher_artifacts(record: Dict[str, Any]) -> bool:
 
 
 def _has_audio_source(record: Dict[str, Any]) -> bool:
-    if record.get("audio_path") or record.get("waveform_path"):
-        timestamps = record.get("segment_timestamps") or record.get("timestamps")
-        return timestamps is not None
+    if record.get("audio_path") or record.get("wav_path") or record.get("waveform_path"):
+        return True
     for field in ("audio_segment_paths", "audio_paths", "audio_waveform_paths", "waveform_paths"):
         if record.get(field):
             return True
@@ -102,6 +101,7 @@ def summarize_ov_avel(records: List[Dict[str, Any]]) -> Dict[str, Any]:
     missing_frames = 0
     missing_specs = 0
     missing_audio_sources = 0
+    missing_raw_videos = 0
     missing_strong_feat = 0
     missing_strong_logit = 0
     missing_weak_feat = 0
@@ -128,8 +128,25 @@ def summarize_ov_avel(records: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         missing_frames += _missing_count(frame_value)
         missing_specs += _missing_count(spec_value)
+        audio_value = (
+            record.get("audio_path")
+            or record.get("wav_path")
+            or record.get("waveform_path")
+            or record.get("audio_segment_paths")
+            or record.get("audio_paths")
+            or record.get("audio_waveform_paths")
+            or record.get("waveform_paths")
+        )
         if not _has_audio_source(record):
             missing_audio_sources += 1
+        else:
+            missing_audio_sources += _missing_count(audio_value)
+        raw_video_value = (
+            record.get("raw_video_path")
+            or record.get("official_video_path")
+            or record.get("video_path")
+        )
+        missing_raw_videos += 1 if raw_video_value is None else _missing_count(raw_video_value)
 
         strong_feat_value = record.get("strong_teacher_features") or record.get("strong_teacher_features_path")
         strong_logit_value = record.get("strong_teacher_logits") or record.get("strong_teacher_logits_path")
@@ -155,6 +172,7 @@ def summarize_ov_avel(records: List[Dict[str, Any]]) -> Dict[str, Any]:
         "missing_frames": missing_frames,
         "missing_spectrograms": missing_specs,
         "missing_audio_sources": missing_audio_sources,
+        "missing_raw_videos": missing_raw_videos,
         "missing_strong_teacher_features": missing_strong_feat,
         "missing_strong_teacher_logits": missing_strong_logit,
         "missing_weak_teacher_features": missing_weak_feat,
@@ -189,6 +207,7 @@ def main() -> None:
             summary["missing_frames"]
             + summary["missing_spectrograms"]
             + summary["missing_audio_sources"]
+            + summary["missing_raw_videos"]
             + summary["missing_strong_teacher_features"]
             + summary["missing_strong_teacher_logits"]
             + summary["missing_weak_teacher_features"]

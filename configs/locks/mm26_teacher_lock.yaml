@@ -1,86 +1,138 @@
 schema_version: 1
 status: blocked
 blocked_by:
-  - "internvideo2 declared/imported class conflict unresolved"
-  - "no direct historical checkpoint identities or bytes"
-  - "official data/source manifests unavailable"
+  - "AUTH_REQUIRED: official OV-AVEBench preprocessed archive and raw videos require one authorized Microsoft login"
 teachers:
   internvideo2:
-    status: unresolved
-    repository: null
-    commit: null
-    working_tree_clean: null
-    module: null
+    status: resolved
+    repository: "https://github.com/OpenGVLab/InternVideo.git"
+    commit: "3965eef16e2dadd0ea6c8d0cc29c8a3039df52e3"
+    working_tree_clean: true
+    module: "multi_modality.models.internvideo2_clip_small"
     imported_class: "InternVideo2_CLIP_small"
+    wrapper_class: "src.teachers.internvideo2_visual.InternVideo2ClipB14Teacher"
     declared_variant: "InternVideo2-Base / CLIP-B14"
-    preprocessing: null
+    preprocessing:
+      source: official_raw_video
+      duration_seconds: 10
+      intervals: 10
+      timestamp_grid_fps: 16
+      frames_per_interval: 8
+      sampling: uniform_within_each_one_second_interval
     output_dim: 512
-    determinism_tolerance: null
+    determinism_tolerance: 0.0
+    strict_load:
+      status: passed
+      device: cpu
+      elapsed_seconds: 6.963
+      weights_only: true
+      state_dict_strict: true
+      transformers_version: "4.45.1"
     checkpoint_files:
       - role: vision
-        source_url_or_archive: null
-        filename: null
-        bytes: null
-        sha256: null
-        top_level_keys: null
+        source_url_or_archive: "https://hf-mirror.com/OpenGVLab/InternVideo2_distillation_models/resolve/main/stage1/B14/B14_dist_1B_stage2/pytorch_model.bin?download=true"
+        source_url: "https://hf-mirror.com/OpenGVLab/InternVideo2_distillation_models/resolve/main/stage1/B14/B14_dist_1B_stage2/pytorch_model.bin?download=true"
+        path: "weights/internvideo2/B14_dist_1B_stage2.pth"
+        filename: "B14_dist_1B_stage2.pth"
+        bytes: 204538935
+        sha256: "1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7"
+        top_level_keys: "OrderedDict with exactly 217 tensor keys; starts cls_token, pos_embed, clip_pos_embed, patch_embed.proj.weight"
+        pretrained_or_finetuned: "InternVideo2 stage-2 distilled vision checkpoint"
       - role: text
-        source_url_or_archive: null
-        filename: null
-        bytes: null
-        sha256: null
-        top_level_keys: null
+        source_url_or_archive: "https://docs-assets.developer.apple.com/ml-research/datasets/mobileclip/mobileclip_blt.pt"
+        source_url: "https://docs-assets.developer.apple.com/ml-research/datasets/mobileclip/mobileclip_blt.pt"
+        path: "weights/internvideo2/mobileclip_blt.pt"
+        filename: "mobileclip_blt.pt"
+        bytes: 599214572
+        sha256: "670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a"
+        top_level_keys: "state dict with exactly 313 tensor/buffer keys; starts logit_scale and image_encoder.model.*"
+        pretrained_or_finetuned: "MobileCLIP-B-LT pretrained checkpoint"
       - role: extra_clip
-        source_url_or_archive: null
-        filename: null
-        bytes: null
-        sha256: null
-        top_level_keys: null
+        source_url_or_archive: "https://hf-mirror.com/OpenGVLab/InternVideo2_distillation_models/resolve/main/clip/B14/pytorch_model.bin?download=true"
+        source_url: "https://hf-mirror.com/OpenGVLab/InternVideo2_distillation_models/resolve/main/clip/B14/pytorch_model.bin?download=true"
+        path: "weights/internvideo2/InternVideo2_CLIP_B14.pth"
+        filename: "InternVideo2_CLIP_B14.pth"
+        bytes: 5552811
+        sha256: "c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e"
+        top_level_keys: "OrderedDict with exactly 19 keys: temp, vision_encoder.clip_projector.*, vision_align.*"
+        pretrained_or_finetuned: "InternVideo2 CLIP-B14 alignment overlay"
   beats:
-    status: unresolved
-    repository: null
-    commit: null
-    working_tree_clean: null
-    module: null
+    status: resolved
+    repository: "https://github.com/microsoft/unilm.git"
+    commit: "833df7e7832e5064a281131ee64a481afa8e5b95"
+    working_tree_clean: true
+    module: "BEATs"
     imported_class: "BEATs"
-    variant: null
-    pretrained_or_finetuned: null
-    preprocessing: null
+    wrapper_class: "src.teachers.beats_audio.BEATsAudioTeacher"
+    variant: "BEATs Iter3+ AS2M"
+    pretrained_or_finetuned: "pretrained; cfg.finetuned_model=false"
+    preprocessing:
+      source: raw_waveform
+      sample_rate: 16000
+      channels: mono
+      segment_seconds: 1
     output_dim: 768
-    determinism_tolerance: null
+    determinism_tolerance: 0.0
+    strict_load:
+      status: passed
+      device: cpu
+      elapsed_seconds: 2.544
+      weights_only: true
+      state_dict_strict: true
     checkpoint_files:
       - role: encoder
-        source_url_or_archive: null
-        filename: null
-        bytes: null
-        sha256: null
-        top_level_keys: null
+        source_url_or_archive: "https://hf-mirror.com/lpepino/beats_ckpts/resolve/main/BEATs_iter3_plus_AS2M.pt?download=true"
+        source_url: "https://hf-mirror.com/lpepino/beats_ckpts/resolve/main/BEATs_iter3_plus_AS2M.pt?download=true"
+        path: "weights/beats/BEATs_iter3_plus_AS2M.pt"
+        filename: "BEATs_iter3_plus_AS2M.pt"
+        bytes: 361499833
+        sha256: "d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34"
+        top_level_keys: "cfg, model; cfg has 22 keys and model has 250 keys"
+        pretrained_or_finetuned: "pretrained"
   clap:
-    status: unresolved
-    repository: null
-    commit: null
-    working_tree_clean: null
-    module: null
-    imported_class: "msclap.CLAP"
-    version: null
-    normalize: null
-    preprocessing: null
+    status: resolved
+    repository: "https://github.com/microsoft/CLAP.git"
+    commit: "e8a6467b87cd85716e20c6a008126150d9740be0"
+    working_tree_clean: true
+    module: "msclap.models.clap"
+    imported_class: "msclap.models.clap.CLAP"
+    wrapper_class: "src.teachers.clap_text.ClapTextTeacher"
+    version: "2023"
+    normalize: false
+    preprocessing:
+      text_suffix: "<|endoftext|>"
+      tokenizer_repository: "openai-community/gpt2"
+      tokenizer_revision: "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+      padding: max_length
+      length_source: config_2023.yml
     output_dim: 1024
-    determinism_tolerance: null
+    determinism_tolerance: 0.0
+    strict_load:
+      status: passed
+      device: cpu
+      elapsed_seconds: 6.291
+      weights_only: true
+      state_dict_strict: true
+      legacy_nonpersistent_gpt2_buffers_value_verified: 24
+      transformers_version: "4.45.1"
     checkpoint_files:
       - role: text_encoder
-        source_url_or_archive: null
-        filename: null
-        bytes: null
-        sha256: null
-        top_level_keys: null
+        source_url_or_archive: "https://huggingface.co/microsoft/msclap/resolve/main/CLAP_weights_2023.pth?download=true; also verified against official Zenodo record 8378278"
+        source_url: "https://huggingface.co/microsoft/msclap/resolve/main/CLAP_weights_2023.pth?download=true"
+        path: "weights/clap/CLAP_weights_2023.pth"
+        filename: "CLAP_weights_2023.pth"
+        bytes: 689950036
+        sha256: "2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6"
+        top_level_keys: "epoch, model, optimizer, scheduler; model has 381 keys"
+        pretrained_or_finetuned: "Microsoft CLAP version 2023 pretrained checkpoint"
 real_smoke:
-  status: not_executed_gate_blocked
+  status: blocked_auth_required
   records: 0
   repeat: 0
   report: "reports/teachers/teacher_identity.json"
   repeatability: "reports/teachers/smoke_repeatability.json"
 full_export:
-  status: not_executed_gate_blocked
+  status: blocked_auth_required
   records: 0
   errors: null
   cache_root_sha256: null
@@ -88,6 +140,5 @@ full_export:
   val_manifest_sha256: null
   test_manifest_sha256: null
 blockers:
-  - "Recover exact repositories, commits, imported classes, preprocessing and all five checkpoint identities."
-  - "Do not choose the closest public checkpoint by name."
-  - "Run real repeat-2 smoke only after the data and identity gates pass."
+  - "Obtain and audit both official SharePoint data archives before running real teacher smoke."
+  - "Run the resumable 24,800-record full export only after source manifests pass the full audit."

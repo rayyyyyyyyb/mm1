@@ -68,7 +68,7 @@ def test_resolved_teacher_lock_fails_closed_on_class_and_variant_ambiguity() -> 
     assert any("clap.normalize" in error for error in result["errors"])
 
 
-def test_committed_blocked_lock_keeps_all_teachers_unresolved() -> None:
+def test_committed_r3_lock_resolves_teachers_but_keeps_data_dependent_work_blocked() -> None:
     lock_path = Path(__file__).resolve().parents[1] / "configs" / "locks" / "mm26_teacher_lock.yaml"
     lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
 
@@ -76,4 +76,6 @@ def test_committed_blocked_lock_keeps_all_teachers_unresolved() -> None:
 
     assert result["ready"] is False
     assert result["errors"] == []
-    assert result["unresolved"] == ["beats", "clap", "internvideo2"]
+    assert result["unresolved"] == []
+    assert lock["real_smoke"]["status"] == "blocked_auth_required"
+    assert lock["full_export"]["status"] == "blocked_auth_required"

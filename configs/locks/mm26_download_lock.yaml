@@ -1,0 +1,106 @@
+schema_version: 1
+status: blocked_auth_required
+generated_at: "2026-08-20T14:31:00+00:00"
+assets:
+  internvideo2_b14:
+    status: passed
+    kind: weight
+    path: "weights/internvideo2/B14_dist_1B_stage2.pth"
+    source_url: "https://hf-mirror.com/OpenGVLab/InternVideo2_distillation_models/resolve/main/stage1/B14/B14_dist_1B_stage2/pytorch_model.bin?download=true"
+    alternate_urls:
+      - "https://huggingface.co/OpenGVLab/InternVideo2_distillation_models/resolve/main/stage1/B14/B14_dist_1B_stage2/pytorch_model.bin?download=true"
+    download_started_at: "2026-08-20T11:03:58+00:00"
+    download_completed_at: "2026-08-20T11:41:22+00:00"
+    resume_count: 1
+    bytes: 204538935
+    sha256: "1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7"
+    content_type: "application/octet-stream"
+    validation_result: passed
+  internvideo2_clip_b14:
+    status: passed
+    kind: weight
+    path: "weights/internvideo2/InternVideo2_CLIP_B14.pth"
+    source_url: "https://hf-mirror.com/OpenGVLab/InternVideo2_distillation_models/resolve/main/clip/B14/pytorch_model.bin?download=true"
+    alternate_urls:
+      - "https://huggingface.co/OpenGVLab/InternVideo2_distillation_models/resolve/main/clip/B14/pytorch_model.bin?download=true"
+    download_started_at: "2026-08-20T11:03:58+00:00"
+    download_completed_at: "2026-08-20T11:14:34+00:00"
+    resume_count: 1
+    bytes: 5552811
+    sha256: "c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e"
+    content_type: "application/octet-stream"
+    validation_result: passed
+  mobileclip_blt:
+    status: passed
+    kind: weight
+    path: "weights/internvideo2/mobileclip_blt.pt"
+    source_url: "https://docs-assets.developer.apple.com/ml-research/datasets/mobileclip/mobileclip_blt.pt"
+    alternate_urls:
+      - "https://huggingface.co/apple/MobileCLIP-B-LT/resolve/main/mobileclip_blt.pt?download=true"
+      - "https://hf-mirror.com/apple/MobileCLIP-B-LT/resolve/main/mobileclip_blt.pt?download=true"
+    download_started_at: "2026-08-20T13:46:38+00:00"
+    download_completed_at: "2026-08-20T14:09:35+00:00"
+    resume_count: 1
+    bytes: 599214572
+    sha256: "670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a"
+    content_type: "application/octet-stream"
+    validation_result: passed
+  beats_iter3_plus_as2m:
+    status: passed
+    kind: weight
+    path: "weights/beats/BEATs_iter3_plus_AS2M.pt"
+    source_url: "https://hf-mirror.com/lpepino/beats_ckpts/resolve/main/BEATs_iter3_plus_AS2M.pt?download=true"
+    alternate_urls:
+      - "https://1drv.ms/u/s!AqeByhGUtINrgcpke6_lRSZEKD5j2Q?e=A3FpOf"
+      - "https://huggingface.co/lpepino/beats_ckpts/resolve/main/BEATs_iter3_plus_AS2M.pt?download=true"
+    download_started_at: "2026-08-20T11:03:58+00:00"
+    download_completed_at: "2026-08-20T11:40:22+00:00"
+    resume_count: 1
+    bytes: 361499833
+    sha256: "d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34"
+    content_type: "application/octet-stream"
+    validation_result: passed
+  clap_2023:
+    status: passed
+    kind: weight
+    path: "weights/clap/CLAP_weights_2023.pth"
+    source_url: "https://huggingface.co/microsoft/msclap/resolve/main/CLAP_weights_2023.pth?download=true"
+    alternate_urls:
+      - "https://hf-mirror.com/microsoft/msclap/resolve/main/CLAP_weights_2023.pth?download=true"
+      - "https://zenodo.org/records/8378278/files/CLAP_weights_2023.pth?download=1"
+    download_started_at: "2026-08-20T13:03:56+00:00"
+    download_completed_at: "2026-08-20T13:44:38+00:00"
+    resume_count: 2
+    bytes: 689950036
+    sha256: "2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6"
+    content_type: "application/octet-stream"
+    validation_result: passed
+  ovave_preprocessed:
+    status: AUTH_REQUIRED
+    kind: data
+    path: "data/downloads/manual_sources/ovave_preprocessed_archive"
+    source_url: "https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/Efm9NKaGQFBAsOC2ZOMZRvcB26TKXJ84H4VW6g8BR5SukQ?e=OPgMOt"
+    alternate_urls: []
+    download_started_at: null
+    download_completed_at: null
+    resume_count: 0
+    bytes: null
+    sha256: null
+    content_type: null
+    validation_result: AUTH_REQUIRED
+  ovave_raw_videos:
+    status: AUTH_REQUIRED
+    kind: data
+    path: "data/downloads/manual_sources/ovave_raw_video_archive"
+    source_url: "https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/EcVHOp2zOyVHvi1Au-i1zFQBf5wQNi-Yff9Aso_SJ4MV8Q?e=OeRlQh"
+    alternate_urls: []
+    download_started_at: null
+    download_completed_at: null
+    resume_count: 0
+    bytes: null
+    sha256: null
+    content_type: null
+    validation_result: AUTH_REQUIRED
+blockers:
+  - "A legal Microsoft organization login is required once for each official SharePoint asset."
+  - "Do not write credentials, cookies, tokens or captured signed URLs into this lock."

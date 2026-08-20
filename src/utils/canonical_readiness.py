@@ -4,6 +4,7 @@ import hashlib
 import json
 import subprocess
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +53,8 @@ REQUIRED_SCHEMA_VERSIONS = {
     "smoke_repeatability": 1,
     "exported_audit": 1,
     "real_preflight": 1,
+    "download_lock": 1,
+    "teacher_environment": 1,
 }
 OFFICIAL_SPLIT_SEEN_UNSEEN_COUNTS = {
     "train": {"seen": 13182, "unseen": 0},
@@ -62,6 +65,41 @@ EXPECTED_CHECKPOINT_ROLES = {
     "internvideo2": {"vision", "text", "extra_clip"},
     "beats": {"encoder"},
     "clap": {"text_encoder"},
+}
+REQUIRED_DOWNLOAD_ASSETS = {
+    "internvideo2_b14",
+    "internvideo2_clip_b14",
+    "mobileclip_blt",
+    "beats_iter3_plus_as2m",
+    "clap_2023",
+    "ovave_preprocessed",
+    "ovave_raw_videos",
+}
+PUBLISHED_WEIGHT_SHA256 = {
+    "internvideo2_b14": "1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7",
+    "internvideo2_clip_b14": "c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e",
+    "mobileclip_blt": "670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a",
+    "beats_iter3_plus_as2m": "d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34",
+    "clap_2023": "2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6",
+}
+REQUIRED_TEACHER_PACKAGES = {
+    "decord": "0.6.0",
+    "soundfile": "0.12.1",
+    "librosa": "0.10.1",
+    "torchlibrosa": "0.1.0",
+    "peft": "0.20.0",
+    "transformers": "4.45.1",
+    "huggingface-hub": "0.36.2",
+}
+GPT2_REVISION = "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+GPT2_REQUIRED_FILES = {
+    "config.json",
+    "generation_config.json",
+    "merges.txt",
+    "model.safetensors",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "vocab.json",
 }
 REQUIRED_ARCHIVAL_CONFIG_PATHS = {
     "temporal_protocol": {"data.max_segments", "task.label_mode"},
@@ -111,7 +149,7 @@ def _resolve(root: Path, value: str | Path) -> Path:
 
 def _load_mapping(path: Path) -> dict[str, Any]:
     if not path.is_file():
-        raise RuntimeError(f"Missing readiness input: {path}")
+        raise RuntimeError(f"Canonical readiness gate failed: Missing readiness input: {path}")
     try:
         if path.suffix.lower() == ".json":
             value = json.loads(path.read_text(encoding="utf-8"))
@@ -122,6 +160,137 @@ def _load_mapping(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise RuntimeError(f"Readiness input must be a mapping: {path}")
     return value
+
+
+def validate_download_lock(
+    document: Mapping[str, Any],
+    root: Path,
+    *,
+    enforce_published_hashes: bool = True,
+) -> list[str]:
+    """Recompute every public data/weight asset named by the R3 download lock."""
+
+    errors: list[str] = []
+    assets = document.get("assets")
+    if not isinstance(assets, Mapping):
+        return ["download_lock: assets must be a mapping"]
+    observed_names = set(str(name) for name in assets)
+    if observed_names != REQUIRED_DOWNLOAD_ASSETS:
+        errors.append(
+            "download_lock: asset names must be exactly "
+            f"{sorted(REQUIRED_DOWNLOAD_ASSETS)}, got {sorted(observed_names)}"
+        )
+    for name in sorted(REQUIRED_DOWNLOAD_ASSETS & observed_names):
+        item = assets.get(name)
+        if not isinstance(item, Mapping):
+            errors.append(f"download_lock: {name} receipt must be a mapping")
+            continue
+        expected_kind = "weight" if name in PUBLISHED_WEIGHT_SHA256 else "data"
+        if item.get("kind") != expected_kind:
+            errors.append(f"download_lock: {name} kind must be {expected_kind}")
+        path_value = item.get("path")
+        path = _resolve(root, str(path_value)) if isinstance(path_value, str) and path_value else None
+        expected_bytes = item.get("bytes")
+        expected_sha = item.get("sha256")
+        if path is None or not path.is_file():
+            errors.append(f"download_lock: {name} asset file is missing: {path}")
+        elif (
+            not isinstance(expected_bytes, int)
+            or expected_bytes <= 0
+            or path.stat().st_size != expected_bytes
+            or not _is_sha256(expected_sha)
+            or sha256_file(path) != expected_sha
+        ):
+            errors.append(f"download_lock: {name} byte count or SHA256 mismatch")
+        if enforce_published_hashes and name in PUBLISHED_WEIGHT_SHA256:
+            if expected_sha != PUBLISHED_WEIGHT_SHA256[name]:
+                errors.append(f"download_lock: {name} published SHA256 mismatch")
+        source_url = item.get("source_url")
+        if not isinstance(source_url, str) or not source_url.startswith("https://"):
+            errors.append(f"download_lock: {name} final source URL must be HTTPS")
+        alternates = item.get("alternate_urls")
+        if not isinstance(alternates, list) or any(
+            not isinstance(url, str) or not url.startswith("https://") for url in alternates
+        ):
+            errors.append(f"download_lock: {name} alternate URLs must be an HTTPS list")
+        for field in ("download_started_at", "download_completed_at"):
+            try:
+                value = datetime.fromisoformat(str(item.get(field)).replace("Z", "+00:00"))
+                if value.tzinfo is None:
+                    raise ValueError
+            except ValueError:
+                errors.append(f"download_lock: {name} {field} must be timezone-aware ISO-8601")
+        resume_count = item.get("resume_count")
+        if not isinstance(resume_count, int) or isinstance(resume_count, bool) or resume_count < 0:
+            errors.append(f"download_lock: {name} resume_count must be a non-negative integer")
+        content_type = str(item.get("content_type", "")).strip().casefold()
+        if not content_type or "html" in content_type or "xml" in content_type:
+            errors.append(f"download_lock: {name} Content-Type is missing or non-binary")
+        if item.get("validation_result") != "passed":
+            errors.append(f"download_lock: {name} validation_result must be passed")
+    return errors
+
+
+def validate_teacher_environment_receipt(document: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    packages = document.get("packages")
+    if not isinstance(packages, Mapping):
+        errors.append("teacher_environment: packages must be a mapping")
+    else:
+        if set(packages) != set(REQUIRED_TEACHER_PACKAGES):
+            errors.append("teacher_environment: direct package set mismatch")
+        for name, expected in REQUIRED_TEACHER_PACKAGES.items():
+            item = packages.get(name)
+            if (
+                not isinstance(item, Mapping)
+                or item.get("expected_version") != expected
+                or item.get("installed_version") != expected
+                or item.get("verified") is not True
+            ):
+                errors.append(f"teacher_environment: {name} version is not exactly {expected}")
+
+    torch_info = document.get("torch")
+    if (
+        not isinstance(torch_info, Mapping)
+        or not str(torch_info.get("version", "")).startswith("2.10.0+")
+        or torch_info.get("cuda_available") is not True
+        or torch_info.get("cuda_version") != "12.8"
+        or torch_info.get("device_name") != "NVIDIA GeForce RTX 5090"
+    ):
+        errors.append("teacher_environment: validated RTX 5090 CUDA runtime mismatch")
+
+    gpt2 = document.get("gpt2")
+    if not isinstance(gpt2, Mapping):
+        return errors + ["teacher_environment: gpt2 receipt must be a mapping"]
+    if gpt2.get("repository") != "openai-community/gpt2" or gpt2.get("revision") != GPT2_REVISION:
+        errors.append("teacher_environment: GPT-2 repository/revision mismatch")
+    root_value = gpt2.get("root")
+    root = Path(str(root_value)).expanduser().resolve() if root_value else None
+    files = gpt2.get("files")
+    if not isinstance(files, Mapping) or set(files) != GPT2_REQUIRED_FILES:
+        errors.append("teacher_environment: GPT-2 required file set mismatch")
+        files = files if isinstance(files, Mapping) else {}
+    root_digest = hashlib.sha256()
+    for relative_path in sorted(GPT2_REQUIRED_FILES & set(files)):
+        item = files.get(relative_path)
+        path = root / relative_path if root is not None else None
+        if not isinstance(item, Mapping) or path is None or not path.is_file():
+            errors.append(f"teacher_environment: GPT-2 file missing: {relative_path}")
+            continue
+        actual_sha = sha256_file(path)
+        actual_bytes = path.stat().st_size
+        if item.get("sha256") != actual_sha or item.get("bytes") != actual_bytes:
+            errors.append(f"teacher_environment: GPT-2 SHA256/bytes mismatch: {relative_path}")
+        root_digest.update(relative_path.encode("utf-8"))
+        root_digest.update(b"\0")
+        root_digest.update(str(actual_bytes).encode("ascii"))
+        root_digest.update(b"\0")
+        root_digest.update(actual_sha.encode("ascii"))
+        root_digest.update(b"\n")
+    if len(GPT2_REQUIRED_FILES & set(files)) == len(GPT2_REQUIRED_FILES):
+        if gpt2.get("root_sha256") != root_digest.hexdigest():
+            errors.append("teacher_environment: GPT-2 root SHA256 mismatch")
+    return errors
 
 
 def _walk_file_evidence(value: Any) -> Sequence[Mapping[str, Any]]:
@@ -405,7 +574,12 @@ def validate_canonical_readiness(
     readiness = reproduction.get("readiness", {})
     if not isinstance(readiness, Mapping):
         raise RuntimeError("Canonical readiness gate failed: reproduction.readiness must be a mapping")
-    missing_keys = sorted(set(REQUIRED_READINESS_PATHS) - set(readiness))
+    required_readiness_paths = list(REQUIRED_READINESS_PATHS)
+    if not require_real_preflight:
+        required_readiness_paths.remove("real_preflight")
+    if reproduction.get("asset_download_lock_required") is True:
+        required_readiness_paths.extend(("download_lock", "teacher_environment"))
+    missing_keys = sorted(set(required_readiness_paths) - set(readiness))
     if missing_keys:
         raise RuntimeError(
             "Canonical readiness gate failed: missing readiness paths: " + ", ".join(missing_keys)
@@ -428,17 +602,18 @@ def validate_canonical_readiness(
     project_root = derived_project_root
     paths = {
         name: _resolve(project_root, str(readiness[name]))
-        for name in REQUIRED_READINESS_PATHS
+        for name in required_readiness_paths
     }
     documents = {name: _load_mapping(path) for name, path in paths.items()}
     errors: list[str] = []
     if project_root_error:
         errors.append(project_root_error)
 
-    for name, expected_version in REQUIRED_SCHEMA_VERSIONS.items():
-        if documents[name].get("schema_version") != expected_version:
+    for name, document in documents.items():
+        expected_version = REQUIRED_SCHEMA_VERSIONS[name]
+        if document.get("schema_version") != expected_version:
             errors.append(
-                f"{name}: schema_version must be {expected_version}, got {documents[name].get('schema_version')!r}"
+                f"{name}: schema_version must be {expected_version}, got {document.get('schema_version')!r}"
             )
 
     expected_statuses = {
@@ -456,10 +631,19 @@ def validate_canonical_readiness(
     }
     if require_real_preflight:
         expected_statuses["real_preflight"] = "passed"
+    if "download_lock" in documents:
+        expected_statuses["download_lock"] = "ready"
+    if "teacher_environment" in documents:
+        expected_statuses["teacher_environment"] = "ready"
     for name, expected in expected_statuses.items():
         observed = _status(documents[name])
         if observed != expected:
             errors.append(f"{name}: status must be {expected!r}, got {observed!r}")
+
+    if "download_lock" in documents:
+        errors.extend(validate_download_lock(documents["download_lock"], project_root))
+    if "teacher_environment" in documents:
+        errors.extend(validate_teacher_environment_receipt(documents["teacher_environment"]))
 
     for name, document in documents.items():
         if name == "real_preflight" and not require_real_preflight:
@@ -471,10 +655,15 @@ def validate_canonical_readiness(
     training = config.get("training", {})
     if not isinstance(training, Mapping):
         errors.append("training config must be a mapping")
-    elif any(
-        training.get(key) is not None
-        for key in ("max_batches_per_epoch", "max_optimizer_steps")
+    elif (
+        claim_level == "paper_specified_reconstruction"
+        and reproduction.get("asset_download_lock_required") is True
     ):
+        if training.get("max_batches_per_epoch") != 400:
+            errors.append("paper-specified reconstruction requires exactly 400 batches per epoch")
+        if training.get("max_optimizer_steps") is not None:
+            errors.append("formal canonical training cannot contain an optimizer-step limit")
+    elif any(training.get(key) is not None for key in ("max_batches_per_epoch", "max_optimizer_steps")):
         errors.append("formal canonical training cannot contain batch or optimizer-step limits")
 
     archive = documents["archive_receipt"]

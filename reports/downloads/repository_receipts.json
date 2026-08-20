@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-20T14:05:36.632683+00:00",
+  "status": "passed",
+  "repositories": [
+    {
+      "schema_version": 1,
+      "name": "internvideo",
+      "target": "external/teachers/InternVideo",
+      "origin": "https://github.com/OpenGVLab/InternVideo.git",
+      "commit": "3965eef16e2dadd0ea6c8d0cc29c8a3039df52e3",
+      "branch": "main",
+      "clean": true,
+      "license_status": "published",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "bytes": 11639,
+          "sha256": "7ef6610e3f947b278c8625b5268984014b417282c48555387adef93531e75e84"
+        }
+      ],
+      "key_sources": [
+        {
+          "path": "InternVideo2/multi_modality/models/internvideo2_clip.py",
+          "bytes": 10985,
+          "sha256": "fbfda7910ee9f0d3d382d4a91b4187ea25734a6f612eaa57a58b48af60fdd888"
+        },
+        {
+          "path": "InternVideo2/multi_modality/models/internvideo2_clip_small.py",
+          "bytes": 10952,
+          "sha256": "4b58387591be5ed2ce8170af119f01957553a286d58741b1b2ade5d81b53d667"
+        },
+        {
+          "path": "InternVideo2/multi_modality/models/utils.py",
+          "bytes": 12192,
+          "sha256": "e2e944e286a6b2401a2d0a3e9222dd7bcb9f7113dbc6f67f225a1b66bdc6c195"
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "name": "microsoft_clap",
+      "target": "external/teachers/microsoft-clap",
+      "origin": "https://github.com/microsoft/CLAP.git",
+      "commit": "e8a6467b87cd85716e20c6a008126150d9740be0",
+      "branch": "main",
+      "clean": true,
+      "license_status": "published",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "bytes": 1162,
+          "sha256": "9906940f61b1f0b533fa7d99baf55178b2808fbe113ea51dfbfad8572ccd5f2b"
+        }
+      ],
+      "key_sources": [
+        {
+          "path": "msclap/CLAPWrapper.py",
+          "bytes": 20623,
+          "sha256": "f44f172f375eadb61fde6f06bbb927f56373bbce1e9687e9b1188defc9d35430"
+        },
+        {
+          "path": "msclap/models/clap.py",
+          "bytes": 4073,
+          "sha256": "3c365217cd5fe6d16bc43d228cbb3f980d63daa7b2d03324dedaa8e4a56ca6ed"
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "name": "mobileclip",
+      "target": "external/teachers/ml-mobileclip",
+      "origin": "https://github.com/apple/ml-mobileclip.git",
+      "commit": "aecfb5453d022e9deff12f81a150ea8f35194baa",
+      "branch": "main",
+      "clean": true,
+      "license_status": "published",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "bytes": 1571,
+          "sha256": "e5a06c5060dc91cbf8cf33e0f8d96b7da6a08661ff89702c730a176ae8756c6b"
+        },
+        {
+          "path": "LICENSE_DATA",
+          "bytes": 19528,
+          "sha256": "cc28874dc381e09a05d5175a7ab11dac848dedc78b5eea35ed4a26d96b6751d0"
+        },
+        {
+          "path": "LICENSE_MODELS",
+          "bytes": 5904,
+          "sha256": "cea52d637cf085b17b5bd39ff6c8b20f44072212306a58bc655ed1ca9bbf4dea"
+        }
+      ],
+      "key_sources": [
+        {
+          "path": "mobileclip/models/mci.py",
+          "bytes": 31195,
+          "sha256": "68e7316c356f48f453ffb2def0ba8b57fc958e056556c230b8dc310e5bade2c2"
+        },
+        {
+          "path": "mobileclip/models/vit.py",
+          "bytes": 17103,
+          "sha256": "9dd0cc983deb49cb7151dd9a64ceab11efe6c51bf1645e4bf62555b46431d0d1"
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "name": "ov_avel",
+      "target": "external/OV-AVEL",
+      "origin": "https://github.com/jasongief/OV-AVEL.git",
+      "commit": "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6",
+      "branch": "main",
+      "clean": true,
+      "license_status": "not_published_by_upstream",
+      "licenses": [],
+      "key_sources": [
+        {
+          "path": "proposed_method/ImageBind-main/imagebind/data.py",
+          "bytes": 14703,
+          "sha256": "2a044e75c704bae90dcb1445e0b9647132fb934929902508dbe9efc367c211ed"
+        },
+        {
+          "path": "proposed_method/ImageBind-main/dataloader.py",
+          "bytes": 6514,
+          "sha256": "e75e38428dd2aabd29b2091643613f6a09a65481a642478cd302b9dae55124d1"
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "name": "unilm_beats",
+      "target": "external/teachers/unilm",
+      "origin": "https://github.com/microsoft/unilm.git",
+      "commit": "833df7e7832e5064a281131ee64a481afa8e5b95",
+      "branch": "master",
+      "clean": true,
+      "license_status": "published",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "bytes": 1104,
+          "sha256": "904dc4d8749877f1dba1cda48200d2462dccbeb7c134d5e4ef6fa75e0198c8fe"
+        },
+        {
+          "path": "NOTICE.md",
+          "bytes": 12368,
+          "sha256": "5e45d4f7273f5561a9dc42cf5cd52e6aec01e18b0328b470c072907cb53822f9"
+        }
+      ],
+      "key_sources": [
+        {
+          "path": "beats/BEATs.py",
+          "bytes": 6977,
+          "sha256": "aac21ccc6114cec38c5095658fdea4d69525da46f91b34fb3bd7edccad70c050"
+        },
+        {
+          "path": "beats/Tokenizers.py",
+          "bytes": 6603,
+          "sha256": "a5c2097121d2863cdf111f12deef88b8b576a9d16e3119b1e914621b1d65960d"
+        }
+      ]
+    }
+  ]
+}

@@ -147,6 +147,17 @@ def resolve_frame_groups(record: Dict[str, Any], expected_len: int) -> List[List
     )
 
 
+def resolve_raw_video(record: Dict[str, Any]) -> Path:
+    for field_name in ("raw_video_path", "official_video_path", "video_path"):
+        value = record.get(field_name)
+        if value:
+            return Path(str(value)).expanduser().resolve()
+    raise ValueError(
+        "Each record must contain a raw video path in `raw_video_path`, "
+        "`official_video_path`, or `video_path`; PNG fallback is forbidden."
+    )
+
+
 def resolve_audio_segments(record: Dict[str, Any], expected_len: int) -> List[AudioSegmentSpec]:
     direct_fields = (
         "audio_segment_paths",

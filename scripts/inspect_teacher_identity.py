@@ -7,6 +7,7 @@ import hashlib
 import json
 import subprocess
 import sys
+import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,6 @@ from src.teachers.common import (
     load_records,
     record_id,
     resolve_audio_segments,
-    resolve_frame_groups,
     resolve_query,
     segment_count,
 )
@@ -132,6 +132,12 @@ def _array_stats(value: Any) -> dict[str, Any]:
         "shape": list(array.shape),
         "dtype": str(array.dtype),
         "finite": finite,
+        "min": float(np.nanmin(array)),
+        "max": float(np.nanmax(array)),
+        "mean": float(np.nanmean(array)),
+        "std": float(np.nanstd(array.astype(np.float64))),
+        "nan_count": int(np.isnan(array).sum()),
+        "inf_count": int(np.isinf(array).sum()),
         "norm": {
             "min": float(norms.min()),
             "max": float(norms.max()),
@@ -160,11 +166,19 @@ def compare_repeated_outputs(
             np.array_equal(array, baseline, equal_nan=False) for array in arrays[1:]
         )
         max_abs_diff: float | None = None
+        mean_abs_diff: float | None = None
         if shape_identical and arrays:
-            max_abs_diff = max(
-                (float(np.max(np.abs(array.astype(np.float64) - baseline.astype(np.float64))))
-                 if array.size else 0.0)
+            absolute_differences = [
+                np.abs(array.astype(np.float64) - baseline.astype(np.float64))
                 for array in arrays[1:]
+            ]
+            max_abs_diff = max(
+                (float(np.max(difference)) if difference.size else 0.0)
+                for difference in absolute_differences
+            )
+            mean_abs_diff = max(
+                (float(np.mean(difference)) if difference.size else 0.0)
+                for difference in absolute_differences
             )
         passed = bool(
             present
@@ -181,6 +195,7 @@ def compare_repeated_outputs(
             "finite": finite,
             "bitwise_identical": bitwise_identical,
             "max_abs_diff": max_abs_diff,
+            "mean_abs_diff": mean_abs_diff,
             "tolerance": float(tolerance),
             "passed": passed,
         }
@@ -237,6 +252,7 @@ def _run_smoke(
         repo_root=_path(clap_cfg["repo_root"], path_root),
         checkpoint_path=_path(clap_cfg["checkpoint_path"], path_root),
         checkpoint_sha256=str(clap_cfg["checkpoint_sha256"]),
+        text_model_root=_path(clap_cfg["text_model_root"], path_root),
         version=str(clap_cfg.get("version", "2023")),
         device=device,
         normalize=bool(clap_cfg.get("normalize", False)),
@@ -244,13 +260,37 @@ def _run_smoke(
 
     if repeat < 2:
         raise ValueError("--repeat must be at least 2 for real teacher smoke")
-    frame_groups = resolve_frame_groups(record, expected_segments)[:1]
-    audio_segments = resolve_audio_segments(record, expected_segments)[:1]
+    raw_video_path = _path(record.get("raw_video_path"), path_root)
+    audio_segments = resolve_audio_segments(record, expected_segments)
     repeated_outputs: list[dict[str, Any]] = []
+    timings_ms: list[dict[str, float]] = []
+    cuda_device = torch.device(device)
+    if cuda_device.type == "cuda":
+        torch.cuda.synchronize(cuda_device)
+        torch.cuda.reset_peak_memory_stats(cuda_device)
     for _ in range(repeat):
-        visual_features, visual_logits = strong.export_segments(frame_groups, query=query)
+        if cuda_device.type == "cuda":
+            torch.cuda.synchronize(cuda_device)
+        started = time.perf_counter()
+        visual_features, visual_logits = strong.export_video(raw_video_path, query=query)
+        if cuda_device.type == "cuda":
+            torch.cuda.synchronize(cuda_device)
+        visual_ms = (time.perf_counter() - started) * 1000.0
+
+        started = time.perf_counter()
         audio_features = weak.export_segments(audio_segments)
-        text_features = text.encode_queries([query])
+        if cuda_device.type == "cuda":
+            torch.cuda.synchronize(cuda_device)
+        beats_ms = (time.perf_counter() - started) * 1000.0
+
+        started = time.perf_counter()
+        text_features = text.encode_queries([query]).squeeze(0)
+        if cuda_device.type == "cuda":
+            torch.cuda.synchronize(cuda_device)
+        clap_ms = (time.perf_counter() - started) * 1000.0
+        timings_ms.append(
+            {"internvideo2": visual_ms, "beats": beats_ms, "clap": clap_ms}
+        )
         repeated_outputs.append(
             {
                 "internvideo2_features": np.asarray(visual_features),
@@ -259,6 +299,19 @@ def _run_smoke(
                 "clap_text_features": np.asarray(text_features),
             }
         )
+    expected_shapes = {
+        "internvideo2_features": [10, 512],
+        "internvideo2_logits": [10],
+        "beats_features": [10, 768],
+        "clap_text_features": [1024],
+    }
+    for name, expected_shape in expected_shapes.items():
+        actual_shape = list(np.asarray(repeated_outputs[0][name]).shape)
+        if actual_shape != expected_shape:
+            raise ValueError(
+                f"Real teacher smoke shape mismatch for {name}: "
+                f"expected {expected_shape}, found {actual_shape}"
+            )
     tolerance = float(export_cfg.get("determinism_tolerance", 0.0))
     repeatability = compare_repeated_outputs(repeated_outputs, tolerance=tolerance)
     return {
@@ -269,6 +322,15 @@ def _run_smoke(
         "query": query,
         "outputs": {
             name: _array_stats(value) for name, value in repeated_outputs[0].items()
+        },
+        "timings_ms": timings_ms,
+        "gpu_memory": {
+            "allocated_bytes": int(torch.cuda.memory_allocated(cuda_device))
+            if cuda_device.type == "cuda"
+            else 0,
+            "peak_allocated_bytes": int(torch.cuda.max_memory_allocated(cuda_device))
+            if cuda_device.type == "cuda"
+            else 0,
         },
         "repeatability": repeatability,
     }
@@ -335,11 +397,16 @@ def inspect_teacher_identity(
 
     declared_name = str(config.get("teachers", {}).get("strong_visual", {}).get("name", ""))
     declared_model_class = str(iv_cfg.get("declared_model_class", declared_name))
-    if any(token in declared_model_class.lower() for token in ("base", "b14")):
+    allowed_declared_classes = {
+        "internvideo2 small",
+        "internvideo2-base / clip-b14",
+    }
+    if declared_model_class.lower() not in allowed_declared_classes:
         errors.append(
             _issue(
                 "internvideo2_model_identity_mismatch",
-                f"Configured teacher identity {declared_model_class!r} conflicts with wrapper upstream class InternVideo2_CLIP_small",
+                f"Configured teacher identity {declared_model_class!r} is not bound to "
+                "the fixed InternVideo2_CLIP_small Base/B14 composition",
             )
         )
 
@@ -366,12 +433,15 @@ def inspect_teacher_identity(
         },
         "clap": {
             "wrapper_class": "ClapTextTeacher",
-            "upstream_class": "msclap.CLAP",
+            "upstream_class": "msclap.models.clap.CLAP",
             "repo_absolute_path": str(clap_repo),
             "repo_git_sha": _git_sha(clap_repo, errors, "CLAP"),
             "checkpoint": clap_checkpoint,
             "feature_dimension": int(data_cfg.get("text_dim", 1024)),
             "version": str(clap_cfg.get("version", "2023")),
+            "text_model_root": str(_path(clap_cfg.get("text_model_root"), path_root)),
+            "text_model_repository": clap_cfg.get("text_model_repository"),
+            "text_model_revision": clap_cfg.get("text_model_revision"),
         },
     }
 
@@ -406,6 +476,7 @@ def inspect_teacher_identity(
         warnings.append(_issue("teacher_smoke_not_run", "Static inventory alone does not approve teacher export"))
 
     return {
+        "schema_version": 1,
         "status": "pass" if not errors else "blocked",
         "teachers": teachers,
         "smoke": smoke,

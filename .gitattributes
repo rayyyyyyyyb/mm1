@@ -1,3 +1,6 @@
 * text=auto
 *.sh text eol=lf
+reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md text eol=lf
+tests/fixtures/official_ovavel_metric_cases.json text eol=lf
+reports/evaluation/mm26_official_evaluator_parity_receipt.json text eol=lf
 *.pth filter=lfs diff=lfs merge=lfs -text

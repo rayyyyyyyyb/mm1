@@ -1,75 +1,166 @@
 schema_version: 2
-status: blocked
-claim_level: archival_exact
-canonical_experiment_config_sha256: "51b7e7d64f85df029c8cce4f0319264149ca5aef69c3ecdd9eb50078c45cfda4"
-resolution_rule: "Only direct historical evidence or an explicitly user-approved reconstruction assumption may resolve a fact."
+status: resolved
+claim_level: paper_specified_reconstruction
+canonical_experiment_config_sha256: "7d2087bfaf483012aba1f82fb06bde725514145332000bca889d4633e2a603da"
+resolution_rule: "R3 facts are explicit user-approved reconstruction assumptions, not recovered archival history."
+approval_document: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
+approval_document_sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
 facts:
   temporal_protocol:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      data.max_segments: 16
+      task.label_mode: query_conditioned_binary
+    evidence: &user_approval
+      - kind: user_approval
+        approved_by: user
+        path: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
+        sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
     required_config_paths: ["data.max_segments", "task.label_mode"]
-    config_bindings: []
-    risk: "Official annotations are T=10 while the camera-ready implementation table states 16 segments."
+    config_bindings:
+      - path: "data.max_segments"
+        value: 16
+      - path: "task.label_mode"
+        value: query_conditioned_binary
   internvideo_identity:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      teacher_export.strong_visual_backend: internvideo2_clip_b14
+      teacher_export.internvideo2.declared_model_class: "InternVideo2-Base / CLIP-B14"
+    evidence: *user_approval
     required_config_paths: ["teacher_export.strong_visual_backend", "teacher_export.internvideo2.declared_model_class"]
-    config_bindings: []
-    risk: "The wrapper imports InternVideo2_CLIP_small while the configuration declares Base/CLIP-B14."
+    config_bindings:
+      - path: "teacher_export.strong_visual_backend"
+        value: internvideo2_clip_b14
+      - path: "teacher_export.internvideo2.declared_model_class"
+        value: "InternVideo2-Base / CLIP-B14"
   scheduler_and_early_stop:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      training.epochs: 30
+      training.scheduler:
+        type: CosineAnnealingLR
+        T_max: 30
+        interval: epoch
+      training.early_stop_patience: null
+      training.early_stop_min_delta: 0.0
+    evidence: *user_approval
     required_config_paths: ["training.epochs", "training.scheduler", "training.early_stop_patience", "training.early_stop_min_delta"]
-    config_bindings: []
-    risk: "step400, interval, gamma, patience and checkpoint selection cannot be reconstructed exactly."
+    config_bindings:
+      - path: "training.epochs"
+        value: 30
+      - path: "training.scheduler"
+        value:
+          type: CosineAnnealingLR
+          T_max: 30
+          interval: epoch
+      - path: "training.early_stop_patience"
+        value: null
+      - path: "training.early_stop_min_delta"
+        value: 0.0
   student_initialization_and_augmentation:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      student.pretrained: false
+      data.train_augment: true
+    evidence: *user_approval
     required_config_paths: ["student.pretrained", "data.train_augment"]
-    config_bindings: []
-    risk: "Current pretrained=false and augmentation are provisional implementation choices."
+    config_bindings:
+      - path: "student.pretrained"
+        value: false
+      - path: "data.train_augment"
+        value: true
   visual_l2_reduction:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      loss.visual_l2_reduction: mean_feature_then_masked_mean_segments
+    evidence: *user_approval
     required_config_paths: ["loss.visual_l2_reduction"]
-    config_bindings: []
-    risk: "Feature-dimension sum versus mean changes the effective loss scale."
+    config_bindings:
+      - path: "loss.visual_l2_reduction"
+        value: mean_feature_then_masked_mean_segments
   query_aware_fusion:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      student.fusion_mode: concat_mlp_query_conditioned
+    evidence: *user_approval
     required_config_paths: ["student.fusion_mode"]
-    config_bindings: []
-    risk: "Paper additive fusion plus TransformerLayer conflicts with current concat-MLP fusion."
+    config_bindings:
+      - path: "student.fusion_mode"
+        value: concat_mlp_query_conditioned
   frame_sampling:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      teacher_export.internvideo2.num_frames: 8
+      teacher_export.internvideo2.frame_sampling: uniform_within_each_one_second_interval
+      teacher_export.internvideo2.short_clip_policy: error
+    evidence: *user_approval
     required_config_paths: ["teacher_export.internvideo2.num_frames", "teacher_export.internvideo2.frame_sampling", "teacher_export.internvideo2.short_clip_policy"]
-    config_bindings: []
-    risk: "The relation among official PNGs, 16 fps and eight teacher frames is unknown."
+    config_bindings:
+      - path: "teacher_export.internvideo2.num_frames"
+        value: 8
+      - path: "teacher_export.internvideo2.frame_sampling"
+        value: uniform_within_each_one_second_interval
+      - path: "teacher_export.internvideo2.short_clip_policy"
+        value: error
   student_audio_preprocessing:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      data.audio_preprocessing: &audio_preprocessing
+        source: official_wav
+        reference: fixed_commit_ov_avel_imagebind_data_py
+        sample_rate: 16000
+        duration_seconds: 10
+        segments: 10
+        segment_seconds: 1
+        repeat_waveform_to_seconds: 2
+        representation: kaldi_fbank
+        num_mel_bins: 128
+        frame_length_ms: 25
+        frame_shift_ms: 10
+        target_length: 204
+        mean: -4.268
+        std: 9.138
+        student_channels: 3
+        student_resize: [224, 224]
+        save_as_jpeg: false
+        second_imagenet_normalization: false
+        beats_source: raw_16khz_waveform
+    evidence: *user_approval
     required_config_paths: ["data.audio_preprocessing"]
-    config_bindings: []
-    risk: "Sample rate, channel handling, representation and normalization are not historically locked."
+    config_bindings:
+      - path: "data.audio_preprocessing"
+        value: *audio_preprocessing
   evaluator_mapping:
-    status: unresolved
-    selected_value: null
-    evidence: []
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      evaluation.paper_f1_at_0_5_mapping: ovavel_segment_f1_at_0_5
+      evaluation.validation_calibrated_f1_mapping: ovavel_segment_f1_at_validation_selected_threshold
+    evidence: *user_approval
     required_config_paths: ["evaluation.paper_f1_at_0_5_mapping", "evaluation.validation_calibrated_f1_mapping"]
-    config_bindings: []
-    risk: "Paper F1@0.5/Table 5/calibrated fields are not mapped to one exact evaluator output."
+    config_bindings:
+      - path: "evaluation.paper_f1_at_0_5_mapping"
+        value: ovavel_segment_f1_at_0_5
+      - path: "evaluation.validation_calibrated_f1_mapping"
+        value: ovavel_segment_f1_at_validation_selected_threshold
 search_receipt: "reports/archival/mm26_archival_evidence.json"
 recovery_report: "reports/archival/MM26_ARCHIVAL_FACT_RECOVERY.md"
-approved_reconstruction_assumptions: []
-blockers:
-  - "No pre-R0 historical commit, run directory or conference checkpoint was found in the scoped local/5090 search."
-  - "The user has not explicitly approved any paper-specified reconstruction assumption."
+approved_reconstruction_assumptions:
+  - temporal_protocol
+  - internvideo_identity
+  - scheduler_and_early_stop
+  - student_initialization_and_augmentation
+  - visual_l2_reduction
+  - query_aware_fusion
+  - frame_sampling
+  - student_audio_preprocessing
+  - evaluator_mapping

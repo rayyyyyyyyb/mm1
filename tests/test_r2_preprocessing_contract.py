@@ -15,11 +15,13 @@ try:
         atomic_write_jsonl,
         build_official_record,
         natural_path_key,
+        source_manifest_outputs,
     )
 except ModuleNotFoundError:
     atomic_write_jsonl = None
     build_official_record = None
     natural_path_key = None
+    source_manifest_outputs = None
 
 try:
     from scripts.discover_ovave_layout import discover_layout
@@ -46,24 +48,31 @@ def _write_wav(path: Path, *, sample_rate: int = 16000, frames: int = 1600) -> N
         handle.writeframes(b"\x00\x00" * frames)
 
 
-def _official_clip(root: Path, *, png_names: tuple[str, ...] = ("frame10.png", "frame2.png")) -> None:
+def _official_clip(
+    root: Path, *, png_names: tuple[str, ...] = ("frame10.png", "frame2.png")
+) -> Path:
     video = root / "val" / "video" / "cat" / "clip"
     video.mkdir(parents=True)
     for name in png_names:
         Image.new("RGB", (12, 8), color=(1, 2, 3)).save(video / name)
     _write_wav(root / "val" / "audio" / "cat" / "clip.wav")
+    raw_video = root.parent / "raw-videos" / "clip.mp4"
+    raw_video.parent.mkdir(parents=True, exist_ok=True)
+    raw_video.write_bytes(b"official raw video fixture")
+    return raw_video
 
 
 def test_official_builder_naturally_sorts_png_and_never_repeats_frames(tmp_path: Path) -> None:
     assert build_official_record is not None, "canonical official-layout builder is missing"
     assert natural_path_key is not None, "natural path ordering is missing"
     dataset_root = tmp_path / "dataset"
-    _official_clip(dataset_root)
+    raw_video = _official_clip(dataset_root)
 
     record = build_official_record(
         dataset_root=dataset_root,
         row={"split": "val", "cls_name": "cat", "cls_type": "open", "vid_name": "clip"},
         annotations={"clip": {"label": [0, 1]}},
+        raw_video_path=raw_video,
         path_root=tmp_path,
         path_mode="relative_to_path_root",
     )
@@ -71,6 +80,7 @@ def test_official_builder_naturally_sorts_png_and_never_repeats_frames(tmp_path:
     assert [Path(group[0]).name for group in record["frame_paths"]] == ["frame2.png", "frame10.png"]
     assert len({group[0] for group in record["frame_paths"]}) == 2
     assert record["audio_path"].endswith("clip.wav")
+    assert record["raw_video_path"].endswith("clip.mp4")
     assert record["spectrogram_paths"] == []
     assert record["split_type"] == "unseen"
     assert record["meta"]["split_type"] == "unseen"
@@ -80,13 +90,14 @@ def test_official_builder_naturally_sorts_png_and_never_repeats_frames(tmp_path:
 def test_official_builder_rejects_fewer_png_than_segments_instead_of_repeating(tmp_path: Path) -> None:
     assert build_official_record is not None, "canonical official-layout builder is missing"
     dataset_root = tmp_path / "dataset"
-    _official_clip(dataset_root, png_names=("only.png",))
+    raw_video = _official_clip(dataset_root, png_names=("only.png",))
 
     with pytest.raises(ValueError, match="exactly 2 PNG"):
         build_official_record(
             dataset_root=dataset_root,
             row={"split": "val", "cls_name": "cat", "cls_type": "open", "vid_name": "clip"},
             annotations={"clip": {"label": [0, 1]}},
+            raw_video_path=raw_video,
             path_root=tmp_path,
             path_mode="relative_to_path_root",
         )
@@ -96,11 +107,12 @@ def test_absolute_path_mode_and_atomic_jsonl_publication(tmp_path: Path) -> None
     assert build_official_record is not None, "canonical official-layout builder is missing"
     assert atomic_write_jsonl is not None, "atomic manifest writer is missing"
     dataset_root = tmp_path / "dataset"
-    _official_clip(dataset_root)
+    raw_video = _official_clip(dataset_root)
     record = build_official_record(
         dataset_root=dataset_root,
         row={"split": "val", "cls_name": "cat", "cls_type": "close", "vid_name": "clip"},
         annotations={"clip": {"label": [1, 0]}},
+        raw_video_path=raw_video,
         path_root=tmp_path / "unrelated",
         path_mode="absolute",
     )
@@ -111,6 +123,31 @@ def test_absolute_path_mode_and_atomic_jsonl_publication(tmp_path: Path) -> None
     assert Path(record["audio_path"]).is_absolute()
     assert json.loads(output.read_text(encoding="utf-8"))["id"] == "clip"
     assert not output.with_suffix(output.suffix + ".partial").exists()
+
+
+def test_canonical_builder_blocks_missing_raw_video_and_uses_taskbook_output_names(
+    tmp_path: Path,
+) -> None:
+    assert source_manifest_outputs is not None
+    dataset_root = tmp_path / "dataset"
+    raw_video = _official_clip(dataset_root)
+    raw_video.unlink()
+
+    with pytest.raises(FileNotFoundError, match="Missing official raw video"):
+        build_official_record(
+            dataset_root=dataset_root,
+            row={"split": "val", "cls_name": "cat", "cls_type": "open", "vid_name": "clip"},
+            annotations={"clip": {"label": [0, 1]}},
+            raw_video_path=raw_video,
+            path_root=tmp_path,
+            path_mode="relative_to_path_root",
+        )
+
+    assert source_manifest_outputs(tmp_path / "source") == {
+        "train": tmp_path / "source/train.jsonl",
+        "val": tmp_path / "source/val.jsonl",
+        "test": tmp_path / "source/test.jsonl",
+    }
 
 
 def test_safe_extract_accepts_zip_and_rejects_path_traversal(tmp_path: Path) -> None:
@@ -274,6 +311,7 @@ def test_preprocessing_entrypoints_run_directly_from_repository_root() -> None:
         "safe_extract_official_archive.py",
         "safe_extract_archive.py",
         "discover_ovave_layout.py",
+        "discover_ovave_raw_video_layout.py",
     ):
         completed = subprocess.run(
             [sys.executable, str(project_root / "scripts" / script_name), "--help"],

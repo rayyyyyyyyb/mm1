@@ -1,0 +1,19 @@
+﻿{
+    "schema_version":  1,
+    "status":  "passed",
+    "repository":  "openai-community/gpt2",
+    "revision":  "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+    "filename":  "model.safetensors",
+    "path":  "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\data\\downloads\\incoming\\gpt2_607a30d7\\model.safetensors",
+    "bytes":  548105171,
+    "sha256":  "248dfc3911869ec493c76e65bf2fcf7f615828b0254c12b473182f0f81d3a707",
+    "official_url":  "https://huggingface.co/openai-community/gpt2/resolve/607a30d783dfa663caf39e06633721c8d4cfcd7e/model.safetensors?download=true",
+    "alternate_urls":  [
+                           "https://hf-mirror.com/openai-community/gpt2/resolve/607a30d783dfa663caf39e06633721c8d4cfcd7e/model.safetensors?download=true"
+                       ],
+    "started_at":  "2026-08-20T13:48:40.0182995Z",
+    "finished_at":  "2026-08-20T14:06:20.0096819Z",
+    "preexisting_bytes":  0,
+    "resume_used":  false,
+    "resumptions":  0
+}

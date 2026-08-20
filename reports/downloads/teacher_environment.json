@@ -1,0 +1,85 @@
+{
+  "errors": [],
+  "generated_at": "2026-08-20T14:27:17.806216+00:00",
+  "gpt2": {
+    "files": {
+      "config.json": {
+        "bytes": 665,
+        "sha256": "0daed7749b4f02b8f76240d5444551d7b08712dab4d0adb8239c56ba823bb7b4"
+      },
+      "generation_config.json": {
+        "bytes": 124,
+        "sha256": "ed0b32ac72c0f5f44a719abb2d7786ea5146c871f83717b7f2018065954de02b"
+      },
+      "merges.txt": {
+        "bytes": 456318,
+        "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+      },
+      "model.safetensors": {
+        "bytes": 548105171,
+        "sha256": "248dfc3911869ec493c76e65bf2fcf7f615828b0254c12b473182f0f81d3a707"
+      },
+      "tokenizer.json": {
+        "bytes": 1355256,
+        "sha256": "8414cab924d8b9b33013f0d221c5862f365ee9be39c5c2bfae8a5a9e970478a6"
+      },
+      "tokenizer_config.json": {
+        "bytes": 26,
+        "sha256": "5e04eb606e3a1583530a42e36c2a6b6615c86f34fe77e44d9ddeb43ff940931f"
+      },
+      "vocab.json": {
+        "bytes": 1042301,
+        "sha256": "196139668be63f3b5d6574427317ae82f612a97c5d1cdaf36ed2256dbf636783"
+      }
+    },
+    "repository": "openai-community/gpt2",
+    "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+    "root": "E:\\OV-OrthKD-R3\\repo\\data\\downloads\\hf_cache\\models--openai-community--gpt2\\snapshots\\607a30d783dfa663caf39e06633721c8d4cfcd7e",
+    "root_sha256": "b153066835c920d5713823134e00bde77a6ec5af4746c11984658debbaddbf0a"
+  },
+  "packages": {
+    "decord": {
+      "expected_version": "0.6.0",
+      "installed_version": "0.6.0",
+      "verified": true
+    },
+    "huggingface-hub": {
+      "expected_version": "0.36.2",
+      "installed_version": "0.36.2",
+      "verified": true
+    },
+    "librosa": {
+      "expected_version": "0.10.1",
+      "installed_version": "0.10.1",
+      "verified": true
+    },
+    "peft": {
+      "expected_version": "0.20.0",
+      "installed_version": "0.20.0",
+      "verified": true
+    },
+    "soundfile": {
+      "expected_version": "0.12.1",
+      "installed_version": "0.12.1",
+      "verified": true
+    },
+    "torchlibrosa": {
+      "expected_version": "0.1.0",
+      "installed_version": "0.1.0",
+      "verified": true
+    },
+    "transformers": {
+      "expected_version": "4.45.1",
+      "installed_version": "4.45.1",
+      "verified": true
+    }
+  },
+  "schema_version": 1,
+  "status": "ready",
+  "torch": {
+    "cuda_available": true,
+    "cuda_version": "12.8",
+    "device_name": "NVIDIA GeForce RTX 5090",
+    "version": "2.10.0+cu128"
+  }
+}

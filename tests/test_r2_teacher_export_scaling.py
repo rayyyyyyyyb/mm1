@@ -74,6 +74,7 @@ def test_export_writes_each_receipt_once_and_shares_query_embedding(
         source_manifest_sha256="source-a",
         teacher_lock_sha256="lock-a",
         split="train",
+        progress_path=tmp_path / "progress/train.json",
     )
 
     record_receipts = sorted((tmp_path / "cache" / "receipts" / "train").glob("*.json"))
@@ -89,6 +90,11 @@ def test_export_writes_each_receipt_once_and_shares_query_embedding(
     assert len({record["text_embedding_path"] for record in exported}) == 1
     assert first_receipt["query"] == "shared query"
     assert len(first_receipt["query_sha256"]) == 64
+    progress = json.loads((tmp_path / "progress/train.json").read_text(encoding="utf-8"))
+    assert progress["status"] == "completed"
+    assert progress["completed"] == 40
+    assert progress["total"] == 40
+    assert progress["current_record_id"] is None
     assert summary["unique_queries_encoded"] == 1
 
 
