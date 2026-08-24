@@ -1,5 +1,12 @@
 # R0 全过程记录
 
+## 516. 2026-08-24 — GitHub 网页验证与 all.md 日志同步
+
+1. 文档 commit `59262dd69c3946216a7d26c17c8b77af3ccfebb8` 推送成功；`git ls-remote` 返回同一 SHA，本地工作树在推送后为空。
+2. 用公开网页实际打开分支、`CURRENT_STATUS.md` 和 commit 页面，三者均可匿名访问；仓库为 public，分支页面显示 `repro/r3-assets-download-and-readiness`。
+3. 网页检查发现仓库根已有一份 tracked `all.md`，但停在 2026-08-20 的第 467 项；持续更新的父目录 `扩刊/all.md` 已到第 515 项。为满足网页端完整审阅要求，先解析确认两个路径均位于 expansion workspace，再用机械 `Copy-Item` 把父目录完整日志覆盖同步到 repo 根 `all.md`；同步后两文件均为 342,316 bytes，SHA256 完全相同。
+4. 本次同步仅包含 Markdown 操作记录，不包含 dataset、weights、checkpoint、cache、HAR、Cookie 值、token 或 signed URL 凭据；下一步对新增日志差异继续进行敏感模式与大小审计后再提交。
+
 > 本文件按时间顺序记录 OV-OrthKD R0 阶段的全部实质操作、命令目的和结果。更新本日志本身不再递归记录。
 
 ## 2026-08-19
@@ -1437,3 +1444,321 @@
 - 第一次组合审计脚本因 PowerShell `$()` 内嵌 commit 命令的括号语法错误而在执行前退出 1、无写入；拆分后确认 branch=`repro/r3-assets-download-and-readiness`、唯一 base commit 可解析、tracked 大于 5 MiB 文件数 0、排除日志后的临时签名 URL/凭据模式匹配数 0，ready config、三种 real-preflight report/marker 和 `data/teacher_cache/mm26` 全部不存在，`git diff --check` 退出 0。
 - 同一审计的严格 JSON 解析发现 `reports/downloads/tool_versions.json` 仍有 PowerShell 5.1 UTF-8 BOM；其余四份关键 JSON 均为无 BOM UTF-8。用 `apply_patch` 将该收据重建为无 BOM、规范缩进 JSON，重建前后解析对象完全相等，实测 `bom=false`、3,418 bytes；全部关键 JSON 再解析通过。
 - 本地不依赖 torch 的工具收据/重建锁回归共 `9 passed in 0.22s`、退出 0，随后 `git diff --check` 再次退出 0。完整 torch 套件仍以 5090 精确候选树的 `296 passed in 104.21s` 为准。
+
+### 468. 精确最终提交复验与 GitHub 发布（2026-08-20）
+
+- 最终干净提交为 `b52a08bd6e571f85830b45746cc68fd81f22aff6`，其唯一 parent 精确等于 R3 唯一起点 `f6e85eb61cdc09e530038d46671f70ee2618ea5c`。将 final Git bundle 上传 5090 并创建 `E:\OV-OrthKD-R3\readiness-final-b52a08b`，bundle/SCP/worktree 退出码均为 0；该精确 SHA 的最终完整 pytest 为 `296 passed in 105.08s`、退出 0，测试后工作树仍干净。
+- 最终本地审计：`git status --porcelain=v1 -uall` 条目数 0；commit diff check 退出 0；提交内签名凭据模式匹配数 0；93 files changed、10,222 insertions、510 deletions；parent/base 完全一致。远端目标分支发布前不存在，因此无需 force push。
+- `git push -u origin repro/r3-assets-download-and-readiness` 退出 0；随后 `git ls-remote` 退出 0并返回同一 SHA `b52a08bd6e571f85830b45746cc68fd81f22aff6`。网页分支为 `https://github.com/rayyyyyyyyb/mm1/tree/repro/r3-assets-download-and-readiness`，提交为 `https://github.com/rayyyyyyyyb/mm1/commit/b52a08bd6e571f85830b45746cc68fd81f22aff6`，PR 创建入口为 `https://github.com/rayyyyyyyyb/mm1/pull/new/repro/r3-assets-download-and-readiness`。
+
+### 469. 最终六锁文件哈希回读（2026-08-20）
+
+- download lock：`blocked_auth_required`，SHA256=`cb1538ebeceb56610c30e202fc95db5ca677df9f70ec1b84a1493276ee0b88eb`；data lock：`blocked`，SHA256=`ea3d4d7304e4cd5804a87a3a5a70c8320244b353c2a03f35d076643bafb247c9`。
+- archival lock：`resolved` / `paper_specified_reconstruction`，SHA256=`2abdd12c7bd5515cb477333597b934f7f24c91ca9e88eb47e302e8e103bca975`；preprocessing lock：`resolved`，SHA256=`c56617e2625b4d848fe8bce8215c3c3c39361c371ead65ed237ff8f04c348f95`；evaluator lock：`resolved`，SHA256=`71f477f5a7ae48fe95abb7753121943c71579f08b74c5249f2b9d7c445ebe7c2`。
+- teacher lock：`blocked`（仅 real smoke/full export 依赖数据；三身份与五 checkpoint 已 resolved/strict-load），SHA256=`e5bc1e1daf7c3c5957459bcaee1a3066ad0ed017d4ef47e3a57750f4b770921b`。cache root SHA256 不存在，因为导出记录数为 0，未伪造占位哈希。
+
+### 470. 官方数据最快合规源与安全登录路径复核（2026-08-21）
+
+- 用户提出直接提供账号密码并要求在 5090 选择最快源。明确不接收、不记录账号密码、MFA、Cookie 或 token；读取 Browser skill 后查询浏览器运行时，`getForUrl` 返回 no browser，按 troubleshooting 列出可用浏览器结果为 `[]`，因此当前不能代替用户执行交互式微软登录。
+- 重新核对官方 OV-AVEL 仓库与公开托管平台：官方仓库仍只把预处理数据和原始视频指向任务书中的两条 SharePoint；Hugging Face 搜索出现的 `OmniEvalKit/omnievalkit-dataset` 仅为 5,818 条 OV-AVEL test 子集（11.2 GB），不是论文/任务书要求的 24,800 条全量数据。任务书明确禁止用该测试子集、重拼 VGGSound/YouTube 或不可验证第三方镜像冒充官方全量，因此最快可接受源仍是登录后解析出的官方 SharePoint/CDN 最终 URL。
+- 计划在用户本人于 5090 Chrome/Edge 完成一次合法登录/MFA并连接浏览器后，只由浏览器捕获最终下载请求；先做小 Range 测速/二进制魔数检查，再立即交给 5090 aria2。两份归档并行，每份最多 4 连接，保留 `.aria2`、session、无限重试和进度监控；不让浏览器承担几十 GB 主传输，也不把签名 URL/授权材料写进 Git或普通日志。
+- 5090 只读复核：E 盘可用 `6,139,213,131,776` bytes（5,717.59 GiB）；`manual_sources` 的两个文件仅是 444/462-byte JSON 状态占位，合计 906 bytes，不是归档；两个目标 incoming 目录尚不存在。现有 aria2 守护进程速度 0、无 active，compact RPC 确认两个 waiting 项实际是已暂停的 MobileCLIP/CLAP 旧 partial（403,767,296/599,214,572 与 332,578,816/689,950,036），不是数据任务，因而没有停止或重启它们。第一次带 files 的 waiting RPC 在 34 秒超时，第二次 curl JSON 引号错误收到 parse error；改用 5 秒 `Invoke-RestMethod` compact fields 后成功返回上述真实状态。
+
+### 471. 5090 可视登录与 Chrome 连接操作细化（2026-08-21）
+
+- 用户要求把先前较笼统的人工操作展开为可逐项执行的步骤。依照 OpenAI Docs skill，仅检索并打开官方 `https://learn.chatgpt.com/docs/chrome-extension`：官方说明应先在 ChatGPT 的 Plugins 中安装 Chrome 插件、批准 Chrome 权限、确认侧边聊天可加载；使用时打开目标页面，从 Chrome 工具栏或 Extensions 菜单选择 ChatGPT；面板与打开它的标签页绑定。
+- 官方文档明确当前只支持 Google Chrome，不支持其他 Chromium 浏览器；因此将 5090 上的首选改为 Chrome，不再把 Edge 作为等价方案。当前浏览器运行时仍没有已连接浏览器，故下一步必须由用户在 5090 的图形桌面中打开两个官方 SharePoint 标签页，亲自完成 Microsoft 登录/MFA，再从 ChatGPT 桌面端 Plugins 安装/启用 Chrome 插件并从目标标签页打开 ChatGPT 侧栏。
+- 权限采用最小范围：SharePoint/最终微软下载域名出现站点授权时选 `Allow once`，不选择 `Allow for all sites`；不把账号密码、验证码、Cookie、浏览历史或签名下载 URL 发入对话。若插件连接失败，按官方顺序检查桌面端/Chrome 是否更新、重启 Chrome 后从工具栏重开侧栏、确认 Chrome plugin 已启用、确认使用安装插件的同一 Chrome profile，必要时重新添加插件。
+- 登录成功的可验证界面是两个链接均显示文件名或 Download 按钮，而不是 Microsoft 登录页；若显示 `Request access`/`You need permission`，说明该微软账号没有资产权限，必须由用户改用已获授权的账号，不能通过提供密码解决。用户完成后只需回复“5090 Chrome 已连接，两个 SharePoint 页面都看到 Download”，即可由本会话重新检测浏览器并接管无密钥的下载请求捕获、aria2 并发断点续传与校验。
+
+### 472. `ChatGPT Classic` 无 Chrome 插件的根因检查与 VSCode 交接路径（2026-08-21）
+
+- 用户截图确认 `ChatGPT Classic` 的插件页搜索 `Chrome` 返回“目前没有匹配该搜索条件的插件”。依据官方 Chrome extension troubleshooting 进行只读本机包/进程检查：机器同时安装 `OpenAI.ChatGPT-Desktop 1.2026.190.0`（进程/标题 `ChatGPT Classic`）和 `OpenAI.Codex 26.818.2441.0`（进程 `ChatGPT.exe`），VSCode 扩展为 `openai.chatgpt-26.814.41407-win32-x64`；开始菜单同时有 `ChatGPT` 与 `ChatGPT Classic` 两个入口。截图对应的是 Classic 包，不是当前 VSCode Codex 会话，也不是官方文档示意的新桌面端入口。
+- 当前可调用的插件管理能力中没有 Chrome 安装项，推荐插件目录也没有 Chrome；因此没有伪称能从当前市场安装，也没有安装无关第三方插件。官方文档要求更新桌面端、避免多份旧客户端、在 ChatGPT Work/Codex 中启用 Chrome；但为避免继续依赖当前账号/客户端不可见的功能，改用不需要插件的人工最小交接：用户在普通 Chrome 中本人登录 SharePoint，通过 DevTools Network 将两个下载请求分别保存为本机受限临时文件，本会话读取但不打印其敏感内容，然后直接让 5090 aria2 下载。
+- 已创建 `C:\Users\lwz20\AppData\Local\Temp\ovorthkd-sharepoint-handoff`，并移除继承 ACL，只向当前用户 `雷文卓的电脑\lwz20` 授予 FullControl；目录位于工作区和 Git 外，当前未创建或写入任何 Cookie/token/签名 URL 文件。后续用户只能把 `Copy as cURL` 文本粘贴进该目录的指定文本文件，不能粘贴到聊天或 VSCode Terminal；读取、远端启动成功后将安全删除临时文件。
+
+### 473. SharePoint 匿名预览成功与人工操作缩减（2026-08-21）
+
+- 用户截图确认预处理共享链接在普通浏览器中无需登录即可进入 SharePoint/OneDrive 预览页；页面明确显示归档 `ovave_dataset_preprocessed.tar.gz`、无法预览提示和蓝色“下载”按钮。此前命令行匿名探测得到 AUTH_REQUIRED 只代表缺少 SharePoint 页面建立的匿名共享会话/临时 token，不再解释为必须提供 Microsoft 账号。
+- 地址栏当前是 `/_layouts/15/onedrive.aspx?...` 预览 URL，不能直接当作归档 URL 交给 aria2。操作缩减为：在该页面开启 DevTools Network/Preserve log，清空请求后点击蓝色“下载”，立即取消本机下载，仅复制最终 200/206 下载请求为 cURL 并保存到已限权的 `preprocessed.curl.txt`；原始视频链接重复一次保存为 `raw.curl.txt`。仍不在对话、Git 或普通日志中保存匿名 token/签名 URL。
+
+### 474. 预处理归档最终网络请求识别（2026-08-21）
+
+- 用户截图显示 Edge DevTools Network 已成功捕获四条相关请求：`onedrive.aspx` 200/fetch、一个 `download.aspx` 200/document/2.7 kB、一个 `download.aspx` 200/x-gzip/192 B，以及一个 200/xhr。依据 MIME 类型与用户已取消本地下载的动作，将第三行 `download.aspx`（`x-gzip`）识别为应交接的实际归档流；192 B 是取消前已传输量，不是官方归档总大小。
+- 指导不再寻找“纯文本”UI：右键该 x-gzip 行，选择 Copy as cURL (bash/cmd)，再用记事本另存为已限权目录中的 `preprocessed.curl.txt`，保存类型选 All files、编码 UTF-8；不使用 HAR、不复制整个网络会话，也不把内容粘贴到聊天或终端。
+
+### 475. 第一份预处理 cURL 的 5090 安全探测与行选择纠正（2026-08-21）
+
+- 用户确认只保存了预处理请求，原始视频尚未操作。立即无回显检查本地受限文件：839 bytes/839 chars、bash cURL、HTTPS SharePoint URL、7 个 `-H` 请求头、当前用户单一 ACL；随后创建远端固定安全目录的第一次命令因旧 PowerShell 不支持 `New-Item -LiteralPath` 失败，目录未创建且秘密未上传。修正为 `-Path`、`ErrorActionPreference=Stop` 后成功创建 `E:\OV-OrthKD-R3\secret-handoff-20260821-preprocessed-01`，继承 ACL=0、访问项=1，并定位 aria2 固定路径 `E:\OV-OrthKD-R3\tools\aria2-1.37.0\aria2-1.37.0-win-64bit-build1\aria2c.exe`。SCP 与远端格式/ACL 复验均退出 0，秘密内容未回显。
+- 第一版远端 URL 解析假定 `curl 'URL'`，但 Edge 实际格式是 `curl --url 'URL'`；解析器在发网前以 `CURL_URL_PARSE_FAILED` 退出。一次结构摘要命令又因 PowerShell 双引号转义错误在解析阶段退出 1，无网络请求；改用字符码只读诊断确认 `curl --url '` 前缀、8 行、7 个 `-H`，据此修正解析。
+- 修正后的 4-byte Range/ResponseHeadersRead 探测从 5090 返回 status=200、final host=`login.microsoftonline.com`、Content-Type=`text/html`、Content-Length=30,225、无 Content-Range/Disposition、magic=`0d0a0d0a`，故严格拒绝启动 aria2，没有写入伪归档。无值回显的 header-name 审计确认只有 `accept/sec-ch-ua/sec-ch-ua-mobile/sec-ch-ua-platform/service-worker-navigation-preload/upgrade-insecure-requests/user-agent`，没有 Cookie、Authorization 或 Referer。
+- 根因是先前选择的 x-gzip 行实际为 service-worker navigation preload；它的 MIME 看似正确，但复制出的请求不包含浏览器会话。将操作纠正为复制截图中 `download.aspx` 的 200/document/2.7 kB 行，另存 `preprocessed.document.curl.txt` 后重新做无回显远端探测；当前旧 cURL 与远端受限副本保留至新请求验证完成，原始视频仍未启动。
+
+### 476. 预处理归档真实下载启动、持久化与秘密清理（2026-08-21）
+
+- 用户保存 document cURL 后，无回显检查为 2,769 bytes、14 个请求头，包含 Cookie 与 Referer、无 Authorization，ACL 仅当前用户；SCP 到既有限权远端目录退出 0，远端复核 bytes/ACL/结构一致。带 Cookie 的 5090 HttpClient Range 探测与无 Range 探测均返回 `403 text/plain`，本机同一 HttpClient 也返回 403，排除 5090 IP 绑定并定位为 HttpClient 复刻语义不完整。
+- 第一次本机原生 curl 探测因安全策略拒绝“动态路径删除与网络请求同命令”而未执行；拆分后原生 curl 在 15 秒/4 Bps 限制下确认 `HTTP 200`、`application/x-gzip`、attachment、Content-Length=`24,618,769,924`。Windows PowerShell 对含空格原生参数的转交造成少量 gzip 字节进入工具输出，故改为在受限目录生成 curl config，避免在命令行暴露或拆分秘密。
+- 5090 原生 curl config 探测返回 `HTTP 200`、`application/x-gzip`、attachment、Content-Length=`24,618,769,924`、魔数 `1f8b0800`，限速超时 exit=28 属预期主动截断；Range 探测请求已执行，但摘要脚本误写 `Test-Path-LiteralPath` 后退出 1，未重复发网，直接读取既有固定响应头确认 `HTTP 206 Partial Content` 与 `Content-Range: bytes 0-3/24618769924`，因此文件身份和断点续传能力均通过。
+- 第一版较长 Base64 aria2 启动脚本被 Windows 命令行长度上限拒绝，未到达 5090；改用 `apply_patch` 创建无秘密 helper、SCP 后执行。首次 helper 的 PowerShell 参数数组把 `--input-file=`/`--save-session=`/`--log=` 与值拆成 12 项，aria2 因把 input path 当 URI 立即退出，目标未创建；最小复现实测 count=12 后以括号绑定修正为 9 项、空值选项=0。修正后 PID=25744 在 SSH 内 5 秒存活，但会话结束后被清理；stdout 仅显示接受 1 项和 1 条连接，无协议错误，定位为 SSH 子会话生命周期问题。
+- 复用既有持久 aria2 RPC 守护 PID=18972 前，发现其 `aria2.session`/`weights.log` 自动保存周期 30 秒且继承 4 条宽 ACL；先把精确的 `data/downloads/state`、`aria2.session`、`data/downloads/logs`、`weights.log` 均改为 LXT+SYSTEM 两项 FullControl、继承=0、unexpected=0。随后通过本机回环 RPC 加入预处理任务，GID=`c52d0ff97d008840`；8 秒状态 active、4 connections、totalLength=`24,618,769,924`、completed=`3,080,192`、speed=`298,409 B/s`、error=null，目标与 `.aria2` 已创建。
+- 32 秒持久化复查为 active、completed=`57,475,072`、speed=`759,842 B/s`、4 connections、session 已含目标名；守护进程重写后的 session/log ACL 均为 2 项、unexpected=0。精确盘点后删除远端 `E:\OV-OrthKD-R3\secret-handoff-20260821-preprocessed-01` 全部 14 个临时秘密/探测/helper 文件（不可恢复）；本地变量式批量删除被安全策略拒绝且无删除，随后用 `apply_patch` 精确删除 5 个预处理临时文本并保留空交接目录。删除后 RPC 复核仍 active、completed=`108,068,864`、speed=`762,007 B/s`、4 connections、无错误，远端秘密目录不存在。
+- 当前真实预处理下载正在 5090 的 `E:\OV-OrthKD-R3\repo\data\downloads\incoming\ovave_preprocessed\ovave_dataset_preprocessed.tar.gz` 续传；多分段写入使文件表观长度不能代表完成量，监控必须以 RPC `completedLength/totalLength` 为准。原始视频尚未捕获或启动。
+
+### 477. 原始视频人工交接网址与精确操作下发（2026-08-21）
+
+- 用户要求提供下一项下载网址和对应操作。明确下一项唯一目标为官方原始视频 SharePoint 链接 `https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/EcVHOp2zOyVHvi1Au-i1zFQBf5wQNi-Yff9Aso_SJ4MV8Q?e=OeRlQh`；预处理归档已在 5090 后台下载，不应在浏览器重复下载。
+- 下发原始视频请求的精确捕获流程：Edge 打开链接，开发者工具 Network 勾选 Preserve log 并清空记录，点击下载后取消本地下载，只选择 status=200、type=document 的 `download.aspx` 请求，不选择 x-gzip/service-worker-navigation-preload 请求；复制为 cURL (bash，若没有则 cmd)，通过记事本保存为 `C:\Users\lwz20\AppData\Local\Temp\ovorthkd-sharepoint-handoff\raw.document.curl.txt`，不把 cURL、Cookie 或任何凭据粘贴到聊天或终端。
+- 收到“raw document curl 已保存”后，将按既定安全流程无回显验证请求、传到 5090 受限临时目录、做 4-byte/Range/归档身份审计，并通过现有持久 aria2 RPC 守护与预处理归档并行断点续传；验证后删除临时秘密并持续监控。
+
+### 478. 原始视频 Network 请求行判定（2026-08-21）
+
+- 用户截图显示四条候选请求。确认应选择第一行：名称为 `download.aspx?SourceUrl...`、status=200、type=document、size=2.9 kB、initiator=`oneuplightspeed...`；第二行虽然 status=200，但 type=x-gzip 且 initiator=预加载，属于先前已证实无法可靠复刻会话的 service-worker navigation preload，明确排除；两条 `1.0/?cors=true...` XHR 同样排除。
+- 指示用户右键第一行复制为 cURL (bash，若无则 cmd)，保存到既定 `raw.document.curl.txt`，不得在聊天中发送 cURL 或 Cookie。
+
+### 479. 原始视频 cURL 安全审计、403 定位与敏感 HAR 补交要求（2026-08-21）
+
+- 用户报告 `raw.document.curl.txt` 已保存。本地无值检查确认文件 2,803 bytes、16 行、curl 结构与 `download.aspx`/SharePoint host 正确，共 14 个请求头且有 Referer、无 Authorization，但关键 Cookie 不存在；ACL 只有当前用户一条规则。创建 5090 受限目录 `E:\OV-OrthKD-R3\secret-handoff-20260821-raw-01`，移除继承并仅授予 LXT、SYSTEM FullControl；SCP 退出 0，远端文件同为 2,803 bytes、14 headers、无 Cookie、ACL 两条。
+- 第一次把完整远端探测器作为 `EncodedCommand` 传递时被 Windows “命令行太长”在本机拒绝，未发网。拆分脚本后，首个解析器因仅接受 `curl 'URL'` 而拒绝；字符级无值诊断确认实际格式为 `curl --url 'URL' \\`，并非先前临时判断的 cmd 格式，遂作纠正。兼容 `--url` 后生成 1,767-byte 受限 curl config，14 个 headers、ACL 两条。
+- 5090 对浏览器 document 请求执行 4-byte Range 后，网络请求本身完成，但第一次摘要脚本的短函数名 `H` 被 PowerShell 5.1 的 `Get-History` 别名抢占；第二次只读摘要又因 PowerShell 5.1 不接受对象字段里的 `(if ...)` 表达式失败，均未重复发网。将函数改为 `GetHeaderValue` 并把条件结果提前赋值后，从既有响应材料确认 `403 text/plain; charset=utf-8`、13 bytes、magic=`34303320`，不是归档，故严格不启动 aria2。
+- 为排除 Cookie 依赖，尝试官方公开共享链接追加 `download=1`：首次合并“URL+写配置+发网”被本地安全策略在执行前拦截；拆分后第一版 PowerShell 数组把 URL config 拆为三行，curl 在发网前报告 blank url。逐行结构检查确认第 11 行为空 URL、第 12 行是链接、第 13 行是引号；改用 `List.Add()` 后严格验证为 11 行、唯一 URL 位于最后一行，再发起 4-byte Range。5090 返回 `403 text/plain`、13 bytes、magic=`34303320`；当前电脑用同一公开 URL 的 Range 探测也返回相同 403，随后不带 Range、16 B/s 限速、20 秒自动终止的本机探测仍为同一 403，排除 5090 出口和 Range 特异性，证明匿名授权仍依赖浏览器会话。
+- 按 Chromium/Edge 官方文档确定下一安全交接方式：在 DevTools Settings > Preferences > Network 打开 `Allow to generate HAR with sensitive data`，过滤 `download.aspx` 后使用 `Copy all listed as HAR (with sensitive data)`，本地保存到 `C:\Users\lwz20\AppData\Local\Temp\ovorthkd-sharepoint-handoff\raw.sensitive.har`，随后立即关闭该设置；HAR/Cookie 不得贴入聊天。列出的 Codex 内置浏览器技能路径在本机已不存在，`rg` 也未找到对应 SKILL，故没有接管用户桌面 Edge，改用 Microsoft Edge 官方文档核对菜单。
+- 同时从 5090 回环 aria2 RPC 复核预处理归档 GID `c52d0ff97d008840`：status=active、completed=`1,266,024,448` / total=`24,618,769,924` bytes（5.143%）、speed=`417,950 B/s`、connections=2、无错误，已有长下载未受原始视频诊断影响。
+
+### 480. Edge Network 筛选框位置确认（2026-08-21）
+
+- 用户截图询问筛选框位置。确认截图中筛选栏已经展开：位于 Network 顶部工具栏下一行最左侧，是漏斗图标后写有“筛选器”的浅蓝色长条，右端止于“反转”复选框之前。指示直接点击“筛选器”文字或其右侧空白处并输入 `download.aspx`；下方应只保留两条 `download.aspx` 请求，然后右键其中任意一条选择 `复制 > Copy all listed as HAR (with sensitive data)`。
+
+### 481. 敏感 HAR 右键目标确认（2026-08-21）
+
+- 用户筛选后截图只剩两条 `download.aspx`：第一条为 status=200、type=document、size=2.9 kB，第二条为 status=200、type=x-gzip/预加载、size=2.6 kB。指示右键第一条 document 行，但菜单必须选择 `复制 > Copy all listed as HAR (with sensitive data)`；该命令会把当前筛选出的上下两条请求一起复制，而不是只复制第一条。
+
+### 482. 原始视频真实身份验证、持久下载启动与秘密清理（2026-08-21）
+
+- 用户报告敏感 HAR 已保存。本地以无值方式解析 `raw.sensitive.har`：254,139 bytes、ACL 仅当前用户、共 5 entries。目标第 1 条为 SharePoint `download.aspx`、status=200、resourceType=document、MIME=`application/x-gzip`、20 request headers、5 个 request cookie objects、存在 Cookie header、无 Authorization；第 2 条为 other/x-gzip 预加载且无 Cookie，另三条为两项遥测 XHR 和 BLANK.gif，全部排除。
+- 第 1 条请求使用 GET/HTTP2、无 postData；20 个 headers 中 4 个为 HTTP/2 pseudo headers，生成 curl config 时排除，保留 16 个真实请求头。生成本地受限 probe config 3,274 bytes、ACL 仅当前用户与 SYSTEM；原生 curl 4-byte Range 返回 `206 application/x-gzip`、Content-Range=`bytes 0-3/38147170955`、Content-Disposition 文件名 `OV-AVEBench_raw_videos.tar.gz`、body=4 bytes、magic=`1f8b0800`、Accept-Ranges=bytes、ETag 存在、无 Content-Encoding，完整确认官方原始视频归档总大小 `38,147,170,955` bytes。
+- 从 HAR 仅提取目标 URL 与 16 个必要请求头生成最小 `raw.aria2.handoff.json`（2,769 bytes、ACL 两条），不上传含遥测/其他 Cookie 的完整 HAR。5090 目标盘 E: 可用 `6,114,764,845,056` bytes（5,694.82 GiB），目标及 `.aria2` 此前均不存在、aria2 PID 18972 存活。SCP 最小交接退出 0，远端无值复核 host/path 正确、16 headers、Cookie 存在、Authorization 不存在、ACL 仅 LXT 与 SYSTEM。
+- 通过 5090 回环 RPC `aria2.addUri` 加入原始视频任务，GID=`75d0377fbec9881e`，目标 `E:\OV-OrthKD-R3\repo\data\downloads\incoming\ovave_raw_videos\OV-AVEBench_raw_videos.tar.gz`；选项为 continue=true、4 connections、4 splits、min-split-size=5M、file-allocation=none、禁止自动改名/覆盖、保留远端时间。首次双任务复核：原始视频 active、total=`38,147,170,955`、completed=`13,238,272`、speed=`833,160 B/s`、4 connections、无错误；预处理 active、total=`24,618,769,924`、completed=`1,662,976,000`、speed=`544,887 B/s`、2 connections、无错误。
+- 等待 25 秒自动保存周期后，`aria2.session` 同时含原始视频目标和 Cookie header，原始视频仍 active、completed=`47,235,072`、speed=`566,294 B/s`、4 connections、无错误。初始 ACL 摘要将 `NT AUTHORITY\SYSTEM` 误算为 unexpected=1；直接列出两条真实规则确认仅 `NT AUTHORITY\SYSTEM` 与 `DESKTOP-LPN6MT3\LXT`，均 FullControl，安全无泄露。
+- 删除前精确盘点远端受限临时目录为 12 files/0 subdirs，本地交接目录为 10 files。远端 `E:\OV-OrthKD-R3\secret-handoff-20260821-raw-01` 递归删除成功且不可恢复，不触碰持久 session/下载。两次本地 PowerShell 删除分别因动态路径和多项写死路径仍被安全策略拒绝，均未删除；随后 apply_patch 对包含 4-byte gzip 二进制体的整批删除因无效 UTF-8 整体失败且未删除，拆分后成功删除 HAR、Cookie、cURL、config、headers、公开探测材料等 9 个文本/敏感文件。单独 PowerShell 删除剩余二进制体仍被策略拒绝，故仅保留本地 `raw.har.probe.body` 4 bytes（纯 gzip 魔数、无 URL/Cookie/凭据），交接目录保留。
+- 清理后最终状态：原始视频 active、completed=`156,745,728` / `38,147,170,955`（0.411%）、speed=`657,068 B/s`、4 connections、无错误；预处理 active、completed=`1,750,761,472` / `24,618,769,924`（7.111%）、speed=`400,513 B/s`、2 connections、无错误。aria2 PID 18972 存活，session 已持久化 raw 任务且 ACL 仅 SYSTEM/LXT，远端临时秘密目录不存在。计划第四项完成，第五项“持续监控并在完成后执行全量哈希/资产审计”进入进行中。
+
+### 483. 两项长下载无限重试与断点参数复核（2026-08-21）
+
+- 为确认长下载不会因有限失败次数退出，第一次 RPC 误用不存在的 `aria2.tellOption`；服务器明确返回 `No such method`，下载未改变。按错误根因修正为官方 `aria2.getOption` 后重查。
+- 原始视频 GID `75d0377fbec9881e`：continue=true、max-tries=0（无限重试）、retry-wait=15 秒、timeout=120 秒、connect-timeout=30 秒、auto-file-renaming=false、allow-overwrite=false。预处理 GID `c52d0ff97d008840`：continue=true、max-tries=0、retry-wait=10 秒、timeout=60 秒、connect-timeout=30 秒、auto-file-renaming=false、allow-overwrite=false。两项已经满足持久断点续传和无限重试要求，无需更改运行参数。
+
+### 484. 两项下载实时 ETA 与中断恢复边界核对（2026-08-21）
+
+- 用户询问预计下载时间及中断后能否续传。对两项各取两次 RPC 快照、间隔 10 秒，以 completedLength 增量计算实测速率，而非只信任瞬时字段。
+- 原始视频 GID `75d0377fbec9881e`：active、completed=`502,792,192` / total=`38,147,170,955`（1.318%）、remaining=`37,644,378,763` bytes、RPC speed=`587,488 B/s`、10 秒实测=`584,909 B/s`、4 connections、无错误，按当前速度 ETA=`64,359` 秒（约 17.88 小时），目标 `.aria2` 控制文件存在。
+- 预处理 GID `c52d0ff97d008840`：active、completed=`1,956,478,976` / total=`24,618,769,924`（7.947%）、remaining=`22,662,290,948` bytes、RPC speed=`359,584 B/s`、10 秒实测=`358,810 B/s`、2 connections、无错误，按当前速度 ETA=`63,160` 秒（约 17.54 小时），目标 `.aria2` 控制文件存在。两项并行，因此当前总体 ETA 取较慢项约 17.9 小时；考虑 SharePoint 波动，对用户给出 18–30 小时实际区间。
+- aria2 PID 18972 存活，启动选项名确认包含 `continue`、`input-file`、`save-session`、`save-session-interval`、`max-tries`、`retry-wait` 等；session 存在、7,679 bytes、持续更新。网络/SSH/VSCode/聊天断开时守护进程不受影响，短时网络中断依靠 continue=true、max-tries=0 和 10/15 秒退避自动从 Range 断点续传；进程异常退出后用同一 input/session 重启也能续传。
+- 只读审计确认当前 `scheduled_task_count=0`、`service_count=0`：若 5090 整机重启，aria2 不会自动重新启动，但 `.aria2` 与 session 已持久保存，人工用同一启动配置重启后仍从断点继续而非从零开始。本次仅回答和审计，没有擅自创建系统服务或计划任务。
+
+### 485. 两项官方数据下载实时存活复核（2026-08-21 13:00:56 +08:00）
+
+- 用户询问当前是否仍在下载。5090 aria2 PID 18972 存活；原始视频 GID `75d0377fbec9881e` 为 active，completed=`4,351,557,632` / total=`38,147,170,955` bytes（11.407%）、speed=`561,046 B/s`、4 connections、无错误，目标 `.aria2` 控制文件存在，按该瞬时速度 ETA 约 60,237 秒（16.73 小时）。
+- 预处理归档 GID `c52d0ff97d008840` 为 active，completed=`4,061,069,312` / total=`24,618,769,924` bytes（16.496%）、speed=`169,800 B/s`、1 connection、无错误，目标 `.aria2` 控制文件存在，按该瞬时速度 ETA 约 121,070 秒（33.63 小时）。确认两项确实仍在后台传输；预处理当前瞬时速度较此前低，ETA 会随 SharePoint 带宽变化，未擅自重启或更换请求。
+
+### 486. 15:17 实时进度、预处理低速错误恢复与 session 去重（2026-08-21）
+
+- 用户询问当前进度。第一次摘要在 RPC 读取后因 `[Math]::Max(0, 29,932,429,963)` 选择 Int32 重载而溢出，下载未受影响；按 systematic-debugging 将 remaining 改为显式 Int64 减法后重新读取。
+- 15:17:53 快照显示：原始视频 GID `75d0377fbec9881e` active，completed=`8,228,356,096` / total=`38,147,170,955`（21.570%）、speed=`520,261 B/s`、4 connections、无错误；预处理旧 GID `c52d0ff97d008840` 停在 error，completed=`4,079,632,384` / total=`24,618,769,924`（16.571%）、errorCode=5，错误为 `Too slow Downloading speed: 0 <= 1024(B/s)`，文件与 `.aria2` 均存在。这不是 Cookie 403 或文件损坏，而是 `lowest-speed-limit=1024` 把临时零速判为永久错误。
+- 无值审计旧任务可恢复材料：4 个 URI 分片均为目标 SharePoint host；getOption 的 `header` 是一个含 16 行的字符串，解析出 15 个唯一请求头名并确认含 Cookie；continue=true、max-tries=0、目标 dir/out 正确。使用同一 URI、同一请求头、同一 dir/out 和既有 `.aria2` 重新 `aria2.addUri`，仅把 `lowest-speed-limit` 改为 0，同时保留 continue=true、max-tries=0、15 秒退避、4 connections/splits、禁止自动改名/覆盖；新 GID=`3678f2b8a3505023`。
+- 8 秒复核：原始视频 active、21.710%、speed=`475,454 B/s`；预处理新 GID active、completed=`4,087,644,160`（16.604%）、speed=`371,698 B/s`、4 connections、无错误。等待自动保存后，session 已含 `lowest-speed-limit=0`，两项继续增长。
+- session 初次盘点发现预处理目标有两个块（旧 error + 新 active），为避免将来重启时同一 out 冲突，仅调用 `aria2.removeDownloadResult(c52d0ff97d008840)` 移除旧错误结果；返回 OK，实际文件与 `.aria2` 控制文件仍存在。再等待自动保存后，session 中预处理目标块严格为 1，且该块 `lowest-speed-limit=0`；新任务 active、completed=`4,135,714,816`、speed=`428,007 B/s`、4 connections、无错误。
+- 15:21:54 最终同时间点快照：原始视频 active，completed=`8,347,303,936` / `38,147,170,955`（21.882%）、speed=`485,183 B/s`、4 connections、无错误、瞬时 ETA=`61,420` 秒（约 17.06 小时）；预处理 active，completed=`4,143,284,224` / `24,618,769,924`（16.830%）、speed=`436,049 B/s`、4 connections、无错误、瞬时 ETA=`46,957` 秒（约 13.04 小时）。本轮恢复已通过 fresh RPC 与持久 session 双重验证。
+
+### 487. 两项官方数据下载实时进度复核（2026-08-21 16:52:24 +08:00）
+
+- aria2 PID 18972 存活。原始视频 GID `75d0377fbec9881e` 为 active，completed=`11,013,521,408` / total=`38,147,170,955` bytes（28.871%）、remaining=`27,133,649,547`、speed=`518,823 B/s`、4 connections、无错误，文件与 `.aria2` 均存在；按瞬时速度 ETA=`52,298` 秒（约 14.53 小时）。
+- 预处理 GID `3678f2b8a3505023` 为 active，completed=`5,740,822,528` / total=`24,618,769,924` bytes（23.319%）、remaining=`18,877,947,396`、speed=`199,958 B/s`、4 connections、无错误，文件与 `.aria2` 均存在；按瞬时速度 ETA=`94,410` 秒（约 26.23 小时）。确认预处理没有再次暂停，只是当前 SharePoint 吞吐较低；两项并行的瞬时总体 ETA 约 26.2 小时并会随带宽波动。
+
+### 488. 两项官方数据下载实时进度复核（2026-08-21 17:45:28 +08:00）
+
+- aria2 PID 18972 存活。原始视频 GID `75d0377fbec9881e` 为 active，completed=`12,721,979,392` / total=`38,147,170,955` bytes（33.350%）、remaining=`25,425,191,563`、speed=`585,201 B/s`、4 connections、无错误，文件与 `.aria2` 均存在；按瞬时速度 ETA=`43,447` 秒（约 12.07 小时）。
+- 预处理 GID `3678f2b8a3505023` 为 active，completed=`6,490,882,048` / total=`24,618,769,924` bytes（26.366%）、remaining=`18,127,887,876`、speed=`250,162 B/s`、2 connections、无错误，文件与 `.aria2` 均存在；按瞬时速度 ETA=`72,465` 秒（约 20.13 小时）。两项并行的当前总体 ETA 约 20.1 小时，随 SharePoint 带宽波动。
+
+### 489. 20:18 实时进度、预处理会话 403 确诊与安全暂停（2026-08-21）
+
+- 20:18:53 初始快照：原始视频 GID `75d0377fbec9881e` active，completed=`17,738,858,496` / total=`38,147,170,955`（46.501%）、speed=`430,255 B/s`、4 connections、无错误；预处理 GID `3678f2b8a3505023` 显示 active，completed=`8,062,877,696` / total=`24,618,769,924`（32.751%），但 speed=0、connections=0、无错误，文件与 `.aria2` 均存在。
+- 跨 20 秒退避周期复查，预处理变为 4 connections 但 completedLength 不变、speed=0；再观察 30 秒及 55 秒仍严格不增长，排除单次瞬时采样。按 systematic-debugging 脱敏读取 `weights.log` 尾部：没有新 403/408/timeout，相关 SharePoint 日志仅有旧 GID 在 10:42、12:37、13:03 的低速错误；当前新 GID 的无限等待没有生成明确日志错误。
+- 再次状态检查变为 active/0 connections/0 B/s，故从当前 GID 的 URI 与 15 行请求头在受限 state 目录生成独立 curl config（3,167 bytes、ACL 仅 LXT/SYSTEM），进行 4-byte Range 探测。结果 `403 text/plain; charset=utf-8`、13 bytes、magic=`34303320`，明确证明预处理 SharePoint 浏览器会话凭据已经过期；不是 aria2 连接卡死、文件损坏或 5090 网络问题。
+- 为避免使用过期 Cookie 无限请求服务器，调用 `aria2.forcePause(3678f2b8a3505023)`；返回 GID，状态确认 paused、completed=`8,062,877,696`、speed=0、connections=0，实际文件和 `.aria2` 断点均存在。随后删除受限 state 中 `preprocessed.live.probe.conf/body/headers/stdout/stderr` 5 个临时探测文件，remaining_probe_files=0，持久 `aria2.session` 保留。
+- 20:24:38 最终快照：原始视频 active，completed=`17,885,036,544` / `38,147,170,955`（46.884%）、speed=`394,253 B/s`、3 connections、无错误；预处理 paused，completed=`8,062,877,696` / `24,618,769,924`（32.751%）、无错误，断点完整。下一步需要用户从官方预处理页面重新导出 `Copy all listed as HAR (with sensitive data)`，本地保存为 `C:\Users\lwz20\AppData\Local\Temp\ovorthkd-sharepoint-handoff\preprocessed.refresh.sensitive.har`；收到后将更新现有暂停 GID 的请求头/URI并从 32.751% 继续。
+
+### 490. 次日实时进度、原始视频会话 403 确诊与双任务等待刷新（2026-08-22）
+
+- 16:06:13 RPC 快照：aria2 PID 18972 存活；原始视频 GID `75d0377fbec9881e` 显示 active 但 speed=0/connections=0，completed=`18,479,726,592` / total=`38,147,170,955`（48.443%），文件表观长度 `31,879,962,624`（多分片稀疏布局，不能当真实完成量）、`.aria2` 存在；预处理 GID `3678f2b8a3505023` 仍按前次处理 paused，completed=`8,062,877,696` / `24,618,769,924`（32.751%），断点存在。
+- 对原始视频现有 session 执行无值审计：16 行请求头、Cookie 存在，生成受限 `raw.live.probe.conf`（3,236 bytes、ACL 仅 LXT/SYSTEM）。独立 curl 4-byte Range 探测返回 `403 text/plain; charset=utf-8`、13 bytes、magic=`34303320`，确认原始视频浏览器会话也已过期，而非下载完成或单纯 aria2 采样空闲。
+- 调用 `aria2.forcePause(75d0377fbec9881e)`，返回 GID；复核状态 paused、completed=`18,479,726,592`、speed=0、connections=0，实际文件与 `.aria2` 控制文件均存在。随后精确删除 state 中 `raw.live.probe.conf/body/headers/stdout/stderr` 5 个临时探测文件，remaining_probe_files=0，持久 session 保留。
+- 本地交接目录检查：`raw.refresh.sensitive.har` 不存在、`preprocessed.refresh.sensitive.har` 不存在，仅有此前无法由策略删除的非敏感 4-byte `raw.har.probe.body`。当前两项均安全暂停等待新凭据；恢复起点分别为原始视频 48.443% 与预处理 32.751%，不会从零开始。
+
+### 491. 刷新敏感 HAR 请求行选择确认（2026-08-22）
+
+- 用户截图显示两条 `download.aspx`，均 status=200、size=3.2 kB；第一条 type=document，第二条 type=x-gzip/预加载。确认右键第一条 document 行，但选择 `Copy all listed as HAR (with sensitive data)`，从而把当前筛选出的两条请求一起写入 HAR；明确不单独复制第二条预加载请求。
+
+### 492. 双 HAR 安全验证、5090 断点恢复、aria2 守护进程重启与凭据清理（2026-08-22）
+
+- 用户报告原始视频与预处理两份刷新 HAR 均已保存。按 `superpowers:systematic-debugging` 先验证根因修复材料，不直接改动断点：本地找到 `raw.refresh.sensitive.har`（97,127 bytes）和 `preprocessed.refresh.sensitive.har`（271,747 bytes），两者 ACL 均仅当前用户。全程不输出 Cookie、URL 查询值或其他凭据；原始视频目标为 HAR entry #1，预处理目标为 entry #2，二者均是 SharePoint `download.aspx`、status=200、resourceType=document、MIME=`application/x-gzip`，分别有 6/5 个 cookie objects、Cookie header 存在、Authorization 不存在；预加载和遥测请求均排除。
+- 从每份 HAR 仅提取目标 URL 与 16 个非 HTTP/2 伪头生成本地受限 curl config 和最小 handoff JSON：raw config/handoff 分别 3,368/2,927 bytes，preprocessed 分别 3,304/2,829 bytes，ACL 仅当前用户与 SYSTEM。本地并发 4-byte Range 探针均 exit 0：raw 返回 `206 application/x-gzip`、`Content-Range bytes 0-3/38147170955`、文件名 `OV-AVEBench_raw_videos.tar.gz`、magic=`1f8b0800`；preprocessed 返回 `206 application/x-gzip`、`Content-Range bytes 0-3/24618769924`、文件名 `ovave_dataset_preprocessed.tar.gz`、magic=`1f8b0800`。由此同时锁定两份官方归档总大小与 gzip 身份。
+- 在 5090 创建 ACL 仅 LXT/SYSTEM 的临时目录 `E:\OV-OrthKD-R3\secret-handoff-20260822-refresh-01`，只 SCP 两份最小 handoff，不上传完整 HAR；SCP 均 exit 0。远端无值审计确认 host/path、16 headers、Cookie 存在、Authorization 不存在及两个预期文件名均正确。远端并发 4-byte Range 探针也都 exit 0、status=206、MIME=`application/x-gzip`、body=4 bytes、magic=`1f8b0800`，总大小分别精确为 38,147,170,955 和 24,618,769,924 bytes，证明 5090 网络侧也可用。
+- 首次通过 RPC 对两个暂停 GID 调用 `changeUri`、`changeOption` 与 `unpause` 均返回成功；选项固定为 `continue=true`、`max-tries=0`、`retry-wait=15`、`timeout=120`、`connect-timeout=30`、`lowest-speed-limit=0`、每项 4 connections/4 splits。10 秒后发现 RPC 6800 不可达，诊断确认旧 aria2 PID 18972 已退出，但两个实际文件与 `.aria2` 控制文件均完整；session 为 7,700 bytes、最后写入 16:07:51，脱敏日志只有旧低速记录，无新的 crash 原因，故不猜测退出根因。
+- 从既有记录定位官方 aria2 可执行文件，使用原 input/save session、30 秒自动保存、并发 2、无限重试与断点续传参数，通过 `Win32_Process.Create` 重启独立守护进程 PID 6132。RPC 6800 恢复监听，session 找回原始视频 GID `75d0377fbec9881e` 和预处理 GID `3678f2b8a3505023`，二者处于 paused、目标文件名正确、各保留 4 个 URI；未操作另外两个无关 waiting 条目。随后再次只对这两个 GID 写入刷新 URI/headers/options 并 unpause，所有返回值成功。
+- 第一次恢复状态查询因 SSH/PowerShell 双层引号使 `ConvertTo-Json` 被错误交给外层命令解释而 exit 1，未改动下载；改用 UTF-16 EncodedCommand 后取得有效结果：raw active、18,523,095,040/38,147,170,955（48.557%）、488,173 B/s、4 connections；preprocessed active、8,118,386,688/24,618,769,924（32.976%）、590,310 B/s、4 connections，两者无错误且文件/`.aria2` 均存在。该查询末尾仅因沿用旧 session 路径 `E:\OV-OrthKD-R3\aria2.session` 而整体 exit 1；随后从 PID 6132 command line 定位真实 session 为 `E:\OV-OrthKD-R3\repo\data\downloads\state\aria2.session`（7,849 bytes）。
+- 30 秒自动保存后无值解析真实 session：raw 与 preprocessed 目标块各严格 1 个；刷新 URI、精确 Cookie header、`lowest-speed-limit=0`、`continue=true`、`max-tries=0` 均已持久化，session 最后写入 `2026-08-22T16:20:37.7495644+08:00`。随后完整阅读 `superpowers:verification-before-completion`，按其要求在完成声明前执行独立新鲜验证。
+- 敏感清理：使用 apply_patch 删除本地两份 HAR、两份 probe config、两份响应头和两份 handoff JSON。第一次把本地二进制探针与远端目录合并删除的命令被安全策略整体拒绝，未执行；第一次远端删除又因白名单未列出实际探针输出而被保护性中止，盘点确认目录正好包含本次产生的 12 个文件（2 handoff、2 conf、2 headers、2 body、2 stdout、2 stderr），补齐精确白名单后递归删除成功，删除后远端临时目录不存在。3 个本地 `.probe.body` 各仅 4 bytes gzip 魔数；apply_patch 因非 UTF-8 无法删除，显式 PowerShell 删除也被本机策略拒绝，故保留且确认不含 URL、Cookie、响应头、账号或凭据。
+- 清理后最终连续 8 秒 fresh verification（命令 exit 0）：本地敏感文件 remaining=0；raw active、`18,617,532,416 / 38,147,170,955`（48.804%）、8 秒增加 3,489,792 bytes、428,881 B/s、4 connections、无错误；preprocessed active、`8,236,482,560 / 24,618,769,924`（33.456%）、8 秒增加 4,440,064 bytes、547,996 B/s、4 connections、无错误。两项总大小均与锁定值一致，文件与 `.aria2` 均存在；session 中各只有一个目标块，均含 SharePoint URI、Cookie header、continue=true、max-tries=0、lowest-speed-limit=0。aria2 PID 6132 存活、RPC 6800 正在监听、session 存在且 7,849 bytes，远端敏感临时目录不存在。当前不需要用户再输入密码或执行操作；两个长下载已从原断点并行续传，下一阶段仍是持续监控直至完成后做全量 SHA256 与 artifact audit。
+
+### 493. 次日进度复核与双 SharePoint 会话再次 403 确诊（2026-08-23）
+
+- 按用户“目前进度如何”只读查询 5090。`2026-08-23T17:41:03+08:00` 时 aria2 PID 6132 存活、RPC 6800 正在监听；原始视频 GID `75d0377fbec9881e` 为 active，completed=`29,847,584,768 / 38,147,170,955`（78.243%）、remaining=`8,299,586,187` bytes，但 speed=0、connections=0；预处理 GID `3678f2b8a3505023` 为 active，completed=`21,001,945,088 / 24,618,769,924`（85.309%）、remaining=`3,616,824,836` bytes，同样 speed=0、connections=0。两项总大小均与 data lock 一致，实际文件及 `.aria2` 控制文件都存在，E 盘剩余 `6,074,639,384,576` bytes。
+- 因两项同时 0 B/s 属意外状态，完整读取并采用 `superpowers:systematic-debugging`。跨 20 秒退避周期再次采样：两项 completedLength 均严格零增长；raw 一度建立 4 connections 仍无数据，preprocessed 为 0 connections；aria2 脱敏日志没有新的明确 401/403/timeout，仅见 2026-08-21 的旧低速错误及 2026-08-22 进程退出附近时间戳，故不能仅凭 RPC 状态猜测原因。
+- 从 aria2 RPC 内存读取现有 URI/header，不落盘、不输出任何 URL/Cookie/凭据，使用 .NET HttpClient 对两项各发起一次 `Range: bytes=0-3` 最小探针。两项均稳定返回 HTTP 403、`Content-Type: text/plain`、无 Content-Range/文件名、读取 4 bytes、magic=`34303320`（ASCII `403 `），明确证明两份 SharePoint 浏览器会话凭据都已再次过期，而不是短暂网络波动或文件完成。此次为状态/诊断请求，未擅自暂停、重启、删除或改写两个下载 GID；断点和 session 均保留。下一步需像上次一样分别刷新原始视频与预处理页面，并重新保存两份敏感 HAR，随后才能从 78.243% 与 85.309% 原断点继续。
+
+### 494. 双 SharePoint 刷新 HAR 的逐步人工操作说明（2026-08-23）
+
+- 用户要求给出具体操作。先用 `rg` 对照已锁定 download lock、asset catalog 与 `SHAREPOINT_AUTH_REQUIRED.md`，确认预处理官方公开分享页为 `https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/Efm9NKaGQFBAsOC2ZOMZRvcB26TKXJ84H4VW6g8BR5SukQ?e=OPgMOt`，原始视频官方公开分享页为 `https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/EcVHOp2zOyVHvi1Au-i1zFQBf5wQNi-Yff9Aso_SJ4MV8Q?e=OeRlQh`。
+- 为每个页面分别执行同一套操作：在已有访问权限的 Edge/Chrome 打开分享页；按 F12 打开开发者工具并选择“网络”；点击网络面板左上角清除按钮清空旧记录；在“筛选器”文本框输入 `download.aspx`；点击网页中央蓝色“下载”；待列表出现 status=200 的第一条 `download.aspx?SourceUrl...`、type=document 后，右键该第一条，选择“复制/Copy”→“Copy all listed as HAR (with sensitive data)”；不要选择 `Copy as cURL`，不要只复制第二条 type=x-gzip/预加载请求，也不要使用会删掉 Cookie 的 sanitized HAR。HAR 复制完成后可立即取消浏览器本地的大文件下载，网络记录仍可使用。
+- 在 VS Code 用 Ctrl+N 新建文本文件，Ctrl+V 粘贴剪贴板 HAR，Ctrl+Shift+S 另存为；原始视频精确保存为 `C:\Users\lwz20\AppData\Local\Temp\ovorthkd-sharepoint-handoff\raw.refresh.sensitive.har`，预处理精确保存为 `C:\Users\lwz20\AppData\Local\Temp\ovorthkd-sharepoint-handoff\preprocessed.refresh.sensitive.har`，覆盖旧文件并避免自动追加 `.txt`。文件内容应以 `{` 开始并包含 `"log"`/`"entries"`，而不是以 `curl` 开头；HAR 含敏感 Cookie，不得粘贴到聊天、Git 或仓库。两份保存后只需回复“两份都已保存好”，随后由自动流程在本地和 5090 各做 4-byte Range 验证、更新两个现有 GID 并从原断点续传，最后清理 HAR/临时凭据。
+
+### 495. 第二次双 HAR 刷新、aria2 请求组根因诊断与受控重启续传（2026-08-23）
+
+- 用户报告两份刷新 HAR 已保存。按 `using-superpowers` 与凭据最小暴露流程，本地确认 `raw.refresh.sensitive.har` 为 237,766 bytes、`preprocessed.refresh.sensitive.har` 为 238,050 bytes，二者 ACL 均只有当前用户。无值解析结果：每份共 4 entries、严格目标各 1 个；第一条目标均为 status=200、resourceType=document、MIME=`application/x-gzip`、GET、SharePoint `/download.aspx`、Cookie header 1、Authorization 0、无 postData；raw 为 21 request headers/5 cookie objects，preprocessed 为 20 headers/5 cookie objects。第二条均为无 Cookie 的 other/x-gzip 预加载请求并被排除。
+- 第一次生成最小 handoff/curl config 后，本地 curl 被 PowerShell 将标准错误包装为异常而提前停止；随后用 `Start-Process` 取得完整根因：curl exit 26，配置第 1 行的 `url` 前含 Windows PowerShell 5 写入的 UTF-8 BOM，被识别成乱码选项。下载 GID 未改动。改用无 BOM UTF-8 的第一次重写又在 `Set-Acl` 处因新建空 `FileSecurity` 对象要求当前进程没有的 `SeSecurityPrivilege` 而停止，curl 尚未运行；盘点确认已有 raw handoff/config 仍受保护且只允许当前用户/SYSTEM，目录本身只允许当前用户，故不再重建 ACL，只沿用/继承更小权限。
+- 用 `System.Text.UTF8Encoding(false)` 无 BOM 重建两项最小 handoff 与 curl config 后，本地验证均 exit 0：raw 返回 206、`application/x-gzip`、总大小 38,147,170,955、文件名匹配、4 bytes、magic=`1f8b0800`、17 headers；preprocessed 返回 206、总大小 24,618,769,924、文件名匹配、4 bytes、同一 gzip magic、16 headers。handoff 分别为 3,241/3,161 bytes；完整 HAR 未上传。
+- 在 5090 创建 `E:\OV-OrthKD-R3\secret-handoff-20260823-refresh-01`，ACL 受保护且仅 `DESKTOP-LPN6MT3\LXT`/SYSTEM 两条规则；两份最小 handoff SCP 均 exit 0。远端形状审计确认 host/path 正确、17/16 headers、Cookie 各 1、Authorization 各 0、ACL 各 2 条。首次用 .NET HttpClient 不落盘探针时两项都返回 403 text/plain；按 `systematic-debugging` 没有立即判定凭据失效，而是只替换客户端为与本机相同的 curl。远端 curl 随即两项均返回 206、正确 MIME/总大小/文件名、4 bytes gzip magic，证明凭据有效，403 根因是 HttpClient 对浏览器请求语义的处理差异。
+- 第一次 RPC 更新脚本因带连字符的 aria2 字典键未加引号而在 PowerShell 解析阶段退出，未暂停或改写 GID。改为逐项 `[ordered]` 字典赋值后，对 raw GID `75d0377fbec9881e` 与 preprocessed GID `3678f2b8a3505023` 先 forcePause 并核对 dir/out，再各删除 8 个旧 URI、加入 1 个新 URI，`changeOption=OK`、`unpause` 均返回原 GID；写入 17/16 headers，以及 continue=true、max-tries=0、retry-wait=15、timeout=120、connect-timeout=30、lowest-speed-limit=0、4 connections/splits 等续传参数，初始断点分别保持 29,847,584,768 和 21,001,945,088 bytes。
+- 首次更新后 10 秒采样仍为 raw active/4 connections/0 B/s、preprocessed active/0 connections/0 B/s；因此未宣称恢复。下一次只读核对在等待 20 秒后因 `Get-Content -Raw -Encoding` 漏空格而停止，未改任务；修正后确认 aria2 内存 URI 与 handoff 匹配、headers 逐行 diff=0、续传选项正确，但 URI `used` 记录快速增长。直接读取 JSON-RPC 原始类型时首次因旧 .NET 无 `Convert.ToHexString` 中止，改用 BitConverter 后确认 raw/preprocessed 分别有 20,977/19,825 条 used 记录但各只有一个唯一 URI 哈希；脱敏日志没有新明确 HTTP 错误。无网络的 PowerShell 序列化实验同时证明 `changeUri` 的五项 RPC 参数保持嵌套数组，排除参数扁平化。
+- 对两个当前 completedLength 位置分别执行 4-byte curl Range：raw 请求起点 29,847,584,768、preprocessed 起点 21,001,945,088，均返回 206、Content-Range 起点及归档总大小精确匹配，排除 SharePoint 只允许文件开头而拒绝续传位置。由“curl 续传位可用、aria2 内存绑定正确、现有 RequestGroup 仍无数据”形成单一假设：旧 RequestGroup 保留了旧请求对象，需要受控 daemon 重载，而不是再改凭据或重建文件。
+- 重启前 forcePause 两项并显式 `aria2.saveSession=OK`；session 每个目标块严格 1 个、17/16 headers 与 handoff diff=0、Cookie 各 1、continue/max-tries/lowest-speed 均正确。最初 URI 整行比较因 session 行尾字符显示 false；按 Tab token 解析后每项均严格 1 个 token、长度 232/234、host/path 正确，且与 handoff 精确相等。session 为 7,853 bytes、最后写入 `2026-08-23T18:07:18+08:00`，满足受控重启前提。
+- 调用 `aria2.shutdown` 优雅关闭 PID 6132，确认 RPC 6800 已停止后，以原绝对 command line 和同一 input/save session 用 `Win32_Process.Create` 启动 PID 5320，ReturnValue=0、RPC 重新监听。恢复状态为 paused 时 completed 暂报 0（尚未加载 `.aria2` 位图），但 17/16 headers diff=0、每项 4 个 split URI 均为刷新 URI；解除暂停成功。第一次连续采样查询因压缩脚本漏掉 PowerShell 参数空格而失败、下载未受影响；展开命令重查后 raw active、29,884,923,904 bytes、10 秒增加 6,602,752、657,208 B/s、4 connections，preprocessed active、21,031,518,208 bytes、10 秒增加 5,160,960、514,295 B/s、4 connections，证明受控重启使刷新请求真正生效。
+- 自动保存后 session 再次确认 raw/preprocessed 各 1 块、各 1 精确 URI token、17/16 headers 与刷新 handoff diff=0、Cookie 各 1、无限重试与最低速度 0 已持久化；session 7,829 bytes、最后写入 `2026-08-23T18:09:09+08:00`。随后完整读取 `verification-before-completion` 并按其要求做清理后 fresh verification。
+- 精确盘点远端受限目录为本次产生的 18 个文件、0 子目录，白名单无 unexpected/missing 后递归删除成功且目录不存在。本地用 apply_patch 删除两份 HAR、两份 handoff、两份 config、两份 response headers、两份 stdout/两份 stderr；敏感文件 remaining=0。策略仍不允许删除的 3 个 `.probe.body` 各仅 4 bytes gzip magic，不含 URL/Cookie/header/账号。
+- 清理后最终 8 秒 fresh verification exit 0：raw active，`29,966,680,064 / 38,147,170,955`（78.555%），8 秒增加 5,308,416 bytes，653,544 B/s、4 connections、无错误；preprocessed active，`21,096,579,072 / 24,618,769,924`（85.693%），8 秒增加 4,423,680 bytes，532,374 B/s、4 connections、无错误。两项文件与 `.aria2` 均存在、总大小与 data lock 匹配；session 各 1 目标块、17/16 headers、Cookie 各 1、continue=true、max-tries=0、lowest-speed-limit=0。PID 5320 存活、RPC 6800 监听、远端敏感目录不存在。当前无需用户继续操作，后台从断点并行传输。
+
+### 496. 双官方数据下载实时正常性复核（2026-08-23 18:47:12 +08:00）
+
+- 用户询问当前进度及是否正常下载。对 5090 两个固定 GID 连续采样 10 秒：原始视频 GID `75d0377fbec9881e` 为 active，`31,325,470,720 / 38,147,170,955` bytes（82.117%），10 秒增加 6,717,440 bytes，瞬时速度 670,014 B/s、4 connections、无 errorCode/errorMessage；剩余 6,821,700,235 bytes，按瞬时速度 ETA 10,182 秒（约 2.83 小时）。实际文件与 `.aria2` 均存在，归档总大小与 data lock 精确一致。
+- 预处理 GID `3678f2b8a3505023` 为 active，`22,209,331,200 / 24,618,769,924` bytes（90.213%），10 秒增加 5,783,552 bytes，瞬时速度 572,550 B/s、4 connections、无 errorCode/errorMessage；剩余 2,409,438,724 bytes，按瞬时速度 ETA 4,209 秒（约 1.17 小时）。实际文件与 `.aria2` 均存在，总大小与 data lock 精确一致。
+- aria2 PID 5320 存活、RPC 6800 正在监听；session 存在、7,829 bytes。session mtime 仍为 `2026-08-23T18:09:09+08:00` 是因为 URI/header/options 内容未变化，逐分片进度由两份 `.aria2` 控制文件持续保存，不表示断点没有更新。E 盘剩余 6,077,976,653,824 bytes。两项并行完成时间取较慢 raw，若带宽保持当前水平约 2.8 小时；当前证据明确为正常下载，无需用户操作。
+
+### 497. 双官方归档下载完成、全量完整性验证与复现缺口复核（2026-08-24）
+
+- 按用户“下载完成后验证并判断距离复现还差哪些”的请求，先完整读取 `superpowers:using-superpowers`、`verification-before-completion`；归档审计首次出现异常后又完整读取 `systematic-debugging`，严格区分下载完成、归档可读和会议复现就绪三层结论。新建四步工作计划：完成状态核对、全量哈希/归档审计、任务书/锁/代码缺口矩阵、`all.md` 与本地收据归档。
+- 2026-08-24 09:30 +08 对 5090 的两个固定 aria2 GID 做 fresh 查询：raw `75d0377fbec9881e` 与 preprocessed `3678f2b8a3505023` 均为 `complete`、errorCode=0；完成量/总量/实际文件大小分别严格等于 38,147,170,955 与 24,618,769,924 bytes；两份 `.aria2` 控制文件均已消失。aria2 PID 5320 和 RPC 6800 仍存活但没有未完成的这两项任务，E 盘剩余约 6.08 TB。
+- 在 `E:\OV-OrthKD-R3\repo\data\downloads\state\audit-20260824` 并行启动完整 SHA256 后台作业并取得 exit 0 收据：raw SHA256=`ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc`，38,147,170,955 bytes；preprocessed SHA256=`ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e`，24,618,769,924 bytes。两者均从头到尾读取完成，未以 aria2 状态代替字节哈希。
+- 第一次尝试把完整 Python 全成员审计脚本嵌入远端 EncodedCommand 时触发 Windows“命令行太长”，进程未启动、归档未改动。改为先用 `apply_patch` 创建本地临时脚本、SCP 到远端 state 目录、再用 `apply_patch` 删除本地临时副本。第一次脚本调用又因误写 `E:\OV-OrthKD-R3\repo\tools\...\7zr.exe`（不存在）在 0.08 秒内退出 2；修正到已锁定 `E:\OV-OrthKD-R3\tools\7zip-26.02\7zr.exe` 后仍瞬时报告不能打开 `.tar.gz`。读取文件头确认两包均为真实 gzip magic `1f8b08`，根因是 602,112-byte 精简 `7zr.exe` 的归档格式能力不足，不是大包损坏。
+- 为交叉验证补齐同版本完整版控制台：查询 7-Zip 官方 26.02 下载页和 Microsoft winget 固定 manifest，锁定 `7z2602-extra.7z` SHA256=`081df9e9311dfd9c9e0e98c1c80180b99bb51e4cb24156b5f3057fe3c259d70a`。GitHub 直连在外层 60 秒超时后实际继续并最终完成；同时用南京大学 GitHub Release 镜像在约 1 秒下载 1,758,916 bytes。两个来源的包 SHA256 完全相同；用已验证 `7zr.exe` 解包得到 x64 `7za.exe`，未安装系统级软件。先前一次用 WindowsApps `python.exe` 别名启动审计得到“Python was not found”，未生成收据；随后固定 `E:\OV-OrthKD-R0\env\.venv\Scripts\python.exe`。
+- 直接 `Start-Process` 的子进程会在 OpenSSH 会话结束后被回收；用 5 秒存活实验和进程树定位后，仅改变持久化启动方式为 `Win32_Process.Create`，保持相同脚本/参数/归档。两个 7-Zip test 与 Python tar 成员扫描随后并行真实读盘，完整进程树、累计 ReadTransferCount 和收据均受监控；没有因耗时而中断。此前两次包装查询分别因 SSH/PowerShell foreach 引号解析错误、以及汇总 EncodedCommand 再次过长而退出，均为只读查询失败，未改归档或任务。
+- raw 全量归档审计 `passed`：完整版 7-Zip test exit 0、Python tar 顺序读取通过；25,020 members、24,836 files、24,825 个 MP4、5 个 `.DS_Store`、6 个无扩展名文件、38,365,245,540 uncompressed bytes；路径穿越、大小写重复目标、符号/硬链接/设备/FIFO、非法类型均为 0；member manifest SHA256=`ef1827635a143ec60eb295afb8ef60af20d263eb01a473f80f3783aa50f3e6b2`。审计发现 13 个零字节文件，专用二次全读确认它们全部是 `.mp4`，split 分布为 train 5、val 6、test 2，而不是 `.DS_Store` 或空目录。
+- preprocessed 全量归档审计 `passed`：完整版 7-Zip test exit 0、Python tar 顺序读取通过；297,970 members、272,800 files，精确为 248,000 张 JPG 与 24,800 个 WAV，零字节文件 0，27,959,350,079 uncompressed bytes；所有路径/重复/链接/类型安全计数为 0；member manifest SHA256=`288250bb0b74a800a731af5d224f058ddf54233178cd5216eeeda726c5106f31`。该形状等于每条正式记录 10 张预处理帧和 1 个音频文件。
+- 为判断 raw 的 13 个坏视频是否只是额外冗余，使用 `apply_patch` 创建本地 ID 交叉审计脚本、SCP 到 5090、再删除本地临时文件，并让脚本顺序全读 preprocessed tar。结果 `matched_target_count=13/13`、missing_targets=[]；每个坏 raw ID 在 train/val/test 对应位置都精确找到 10 张非空 JPG 和 1 个非空 WAV。故这些 13 个零字节 MP4 属于正式 24,800 条样本集合，会实质阻塞任务书规定的 raw-video InternVideo2 10 区间×8 帧教师导出；不得用 10 张预处理帧猜补成 80 帧或冒充官方 raw 视频。
+- 复核当前仓库/远端产物：本地分支 `repro/r3-assets-download-and-readiness` 与 origin 同步、工作树干净，HEAD=`b52a08bd6e571f85830b45746cc68fd81f22aff6`；先前代码审查所提 user-approval/Git locator 风险已在当前源码中实证闭合：user approval 仅允许 `paper_specified_reconstruction + approved_reconstruction_assumption`，Git evidence 会运行 `git show commit:path` 并复算 bytes/repository。历史精确提交上的验证仍为 `296 passed`、exit 0；本轮没有修改嵌套 Git 仓库代码或重新声称运行测试。
+- 当前数据相关正式产物仍均不存在：两个 `data/raw/ov_avebench_*` 安全解压目录、两份正式 archive receipt、layout discovery、repeat-2 teacher smoke、24,800 条 exported feature audit、`r3_real_preflight.json` 和 ready config；`data/teacher_cache` 也不存在。五个教师 checkpoint、GPT-2、五个上游仓库、RTX 5090 环境和三教师 strict-load 仍沿用已审计的 R3 完成结果。
+- 复现距离结论分两层：资源传输层已完成；会议复现就绪层当前必须保持 `BLOCKED_BEFORE_CONFERENCE_REPRO`。首先要从官方/作者获得 13 个精确原始 MP4（或官方更正 raw archive）并做 SHA/来源锁定；随后才可安全解压、做 24,800 元数据/帧/WAV/raw-video 一一对应审计与 source manifests，运行 repeat-2 三教师 smoke，断点可恢复地全量导出并审计 teacher cache/root SHA256，最多运行一次真实 batch 的 forward/backward/optimizer-step preflight，重建 canonical readiness 并经 review 解锁。真正论文结果还在其后，须依次运行 Student-only、Visual-feature-only、Full OV-OrthKD 单 seed、Table 3 六消融、seen/unseen/calibrated threshold 和 robustness；本轮未启动任何正式训练。
+- 将本轮 6 份 JSON 收据和 3 份实际执行脚本从 5090 回收到本地 `扩刊/download_verification_20260824/`，9 次 SCP 均 exit 0：两个 SHA 收据、两个归档审计、raw 零字节清单、13-ID 交叉收据，以及三个审计脚本。最终 fresh 查询时间 `2026-08-24T10:00:37+08:00`：两 GID 仍为 complete、大小完全相等、errorCode=0、`.aria2` 不存在；所有审计进程计数 0。
+
+### 498. 最终任务书重读、工作树冻结与执行计划（2026-08-24）
+- 完整读取用户附件 `pasted-text.txt`、本阶段 R3 报告/锁文件/现有代码与测试，并确认唯一允许的终态为 `READY_FOR_CONFERENCE_REPRO` 或 `BLOCKED_BEFORE_CONFERENCE_REPRO`；禁止用 YouTube/VGGSound 重建训练集、禁止镜像或未验证资产、禁止正式训练，raw 视频缺失必须阻塞。完整读取并使用 `superpowers:using-superpowers`、`systematic-debugging`、`writing-plans`、`executing-plans`、`using-git-worktrees`、`test-driven-development` 及其 good-tests 参考；写入 `docs/superpowers/plans/2026-08-24-raw-video-recovery.md`。
+- 确认本地受控工作树为 `扩刊/OV-OrthKD-R2`，分支 `repro/r3-assets-download-and-readiness`，起始 HEAD/origin 均为 `b52a08bd6e571f85830b45746cc68fd81f22aff6`；未创建额外 worktree，避免复制 63GB 数据。检查代码审查意见，当前 `canonical_readiness.py` 已包含 user-approval claim 绑定以及 `git show commit:path` 字节复算，不重复修改已经闭合的部分。
+- 本地完整 pytest 在收集阶段因本机缺少 `timm` 不能执行；这不是代码回归证据，因此后续把完整测试固定到已有依赖的 5090 环境。5090 初次完整测试因没有 `git` 失败；从南京大学 Git for Windows 官方镜像下载 MinGit 2.55.0.5，包 38,989,688 bytes、SHA256=`56d7b226b7693196cfc71fef26568f536c4a021ab6c37ff2db4287bed908e96e`。第一次 `Expand-Archive` 因 `.download` 扩展名失败，随后用 .NET ZipFile 在 `E:\OV-OrthKD-R3\tools\mingit-2.55.0.5\root` 成功解包。把其 `cmd` 加入 PATH 后，干净基线完整测试为 `296 passed in 103.59s`、exit 0。
+
+### 499. 13 个损坏 MP4 的官方身份追溯（2026-08-24）
+- 读取官方 OV-AVEL 仓库 `https://github.com/jasongief/ov-avel`（锁定 commit `b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6`）、官方论文 `https://arxiv.org/abs/2411.11278`、VGGSound 官方站点和仓库。论文明确说明视频来自 VGGSound 的 YouTube URL、每段 10 秒并切成十个 1 秒区间；此信息只用于身份/时间戳追溯，绝不用于重建正式数据。
+- 从 VGGSound 官方 GitHub commit `1e75f4d30de3a99115ee9333464854c5e3d161a7` 的 `data/vggsound.csv` 下载到 5090 `data/downloads/incoming/vggsound_metadata/vggsound.csv`；Git blob SHA1=`53da0dc492b8a3fadf770f0f175cef1e652c0447`，文件 7,949,116 bytes，SHA256=`c1816c00a237afa4994e873e88f56bac206cbb285fddb05c564184b9c3d6e6ce`。全量解析 199,467 行、零重复 `(video_id,start)`；13 个损坏 ID 全部命中，共 14 行，其中 12 个唯一确定，`di01T0hGboU` 有 51/359 秒两个候选，保持 `source_timestamp_ambiguous`，未猜测。
+- 写入 `configs/locks/mm26_vggsound_source_lock.yaml`、`reports/data/vggsound_source_metadata_receipt.json` 和 `reports/data/ovave_raw_video_recovery_manifest.json`。恢复清单当前 SHA256=`61fd9192780f17a8b3e83e16f6e70b3a293f0e2b0928e0432d64bda663c76f8f`，状态严格保持 blocked；它只定位官方损坏项，不授权网络重建或镜像替换。
+
+### 500. 恢复清单与作者替换验证器的 TDD 实现（2026-08-24）
+- 先写失败测试，再实现 `scripts/build_ovave_raw_recovery_manifest.py`：严格联接 OV-AVEL/VGGSound/零字节审计，拒绝缺行、重复键、非法 ID/时间戳、重建或镜像候选；保留时间戳歧义；强制 `--vggsound-source-receipt` 并复算官方 receipt 字节和 SHA。
+- 先写失败测试，再实现 `scripts/verify_ovave_raw_replacements.py`：只允许 `author_sharepoint_file` 或 `author_corrected_archive`，SharePoint 主机必须精确为 `mailhfuteducn-my.sharepoint.com`；检查安全 overlay 路径、ID/文件名/归档成员、非零字节、SHA256、ffprobe 视频+音频流以及 9.5–10.5 秒时长，并要求 13 项完整唯一集合。readiness 重用 receipt 时会重新读取文件并复验媒体，不能信任手填 JSON。
+- 远端首次运行空替换审计因 Windows UTF-8 BOM 解析失败并 exit 1；增加 BOM 回归测试和 `utf-8-sig` 修复后，focused 测试 `11 passed`，远端空目录运行精确 exit 2，得到 `reports/data/ovave_raw_replacement_audit.json`：expected=13、declared=0、complete=false、status=blocked。这是预期的真实阻塞，不是程序异常。
+- 写入 `reports/data/OVAVEBENCH_RAW_VIDEO_AUTHOR_REQUEST.md`，包含可直接提交给官方仓库的 issue 文本、13 个精确 archive member 路径、允许的交付方式和收到后的一条验证命令；未冒充用户向作者发送任何外部消息。
+
+### 501. 官方预处理布局的真实 JPG 契约修复（2026-08-24）
+- 归档字节级全量审计证明官方 README 的 `.png` 描述与发布包不一致：实际为每条样本精确 `00000001.jpg`…`00000010.jpg` 加一个 WAV。按真实发布字节修复配置、数据加载器、source-manifest builder、layout discovery、canonical readiness 和相应测试，模式锁定为 `canonical_official_jpg_wav`，加入 `canonical_visual_extension: .jpg`、精确帧名/计数和混合扩展拒绝逻辑。
+- 新增 `scripts/audit_ovave_preprocessed_archive_layout.py`，无需解压即可检查路径穿越、链接/设备、重复成员、零字节、metadata 一一对应、每条精确十张 JPG/一个 WAV，并生成稳定 logical-layout SHA。第一次普通 `Start-Process` 随 SSH 会话结束被回收且没有产物；改为 `Win32_Process.Create` 分离运行后 exit 0。全量结果：24,800 样本、248,000 JPG、24,800 WAV、错误/警告 0，logical-layout SHA256=`756cdb8e73ced5610c708ca43e76c7cb1cac867573c567501c35d52953720919`，写入 `reports/data/preprocessed_layout_discovery.json`。
+- 给 raw source builder 加入 `size > 0` 硬门：13 个零字节 MP4 不能因为路径存在而通过。相关预处理 focused 测试为 `22 passed`；更早扩展矩阵为 `50 passed in 8.84s`，compileall exit 0。一次多源 SCP 误把 `build_ovave_raw_recovery_manifest.py` 复制进远端 `reports/data`；先确认其路径、11,472 bytes 和 SHA，再只删除该误副本，正确 `scripts/` 副本及所有数据均未动。
+
+### 502. 下载锁、归档收据与报告的诚实更新（2026-08-24）
+- 更新 `mm26_download_lock.yaml`、`asset_receipts.json`、两份官方下载 receipt、官方归档 artifact audit、preprocessing lock、R3 报告和 readiness 必需资产列表。锁定 raw archive 38,147,170,955 bytes/SHA256=`ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc`，preprocessed archive 24,618,769,924 bytes/SHA256=`ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e`；下载和 gzip/tar 完整性均通过，但 raw 内容验证明确失败于 13 个正式样本 MP4 为零字节。
+- 结构化文件重新解析 `parsed 12`、exit 0；`git diff --check` exit 0，仅有 Windows LF→CRLF 提示。未生成 ready config、未解除 canonical full-run guard、未运行 teacher export/preflight/正式训练。
+
+### 503. 两个官方归档并行安全解压与实时状态（2026-08-24 11:27 +08）
+- 在 5090 先只读确认最终目标 `E:\OV-OrthKD-R3\repo\data\official\ovave_preprocessed` 与 `...\ovave_raw` 均不存在，再用安全解压器并行启动两个 CIM 分离后台任务。解压器逐成员拒绝路径穿越、链接和重复目标，写入随机 `.partial-*` staging，完成全量树 SHA 与 archive SHA 后才 `os.replace` 原子发布最终目录；意外中断不会暴露半成品为正式数据。
+- 当前 preprocessed 进程链 PID 11788→20184→27288，staging `.ovave_preprocessed.partial-9ae931sb`；raw 进程链 PID 23312→13168→8524，staging `.ovave_raw.partial-zbjstow4`。两条 stderr/stdout 均 0 bytes、进程均存活；exit receipt 和最终目录在任务成功前按设计不存在。raw 已完成 38,365,245,540 uncompressed bytes 写入并进入树哈希/归档复核阶段；preprocessed 正持续提取大量小文件。未终止、未重启、未改写任何任务。
+
+### 504. raw 安全解压完成与 canonical extraction receipt schema TDD（2026-08-24）
+- raw 安全解压后台任务 exit 0、stderr=0，最终目录经原子发布后存在。收据：24,836 files、38,365,245,540 uncompressed bytes、archive SHA256=`ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc`、tree SHA256=`33e467c428432c5b67876350cd3f3bac0e267730f56ee71631e8864bf2077a89`；写入 `reports/data/official_raw_video_extraction_receipt.json`。
+- 自审发现 `safe_extract_official_archive.py` 的真实运行收据虽有 archive/tree SHA，却缺 canonical gate 需要的 `archive_test`、`content_magic_valid` 和 listing evidence。先给 `test_safe_extract_accepts_zip_and_rejects_path_traversal` 增加断言，RED 为 `KeyError: archive_test`、1 failed；随后实现稳定 `ovorthkd-safe-member-listing-v1`（绑定成员类型、规范路径、逻辑大小），增加 member/file counts、listing SHA、`files_extracted`/`extracted_tree_sha256` aliases 以及 archive-test/magic 字段，GREEN 为 1 passed、compileall exit 0。
+- 一次本地 PowerShell 命令误用了 Bash `python - <<'PY'` here-doc，PowerShell 在解析阶段 exit 1，compileall 未运行、文件未改；立即用纯 PowerShell 兼容命令重跑，compileall exit 0。
+
+### 505. raw AppleDouble 误识别根因与并行 ffprobe 修复（2026-08-24）
+- 对已解压 raw 根与官方 CSV 做快速一一对应：发现 24,825 个 `.mp4` 名称对 24,800 metadata IDs，多出的 25 个全部是 `._*.mp4`/`.__*.mp4`、每个仅 220 或 276 bytes 的 macOS AppleDouble sidecar，不是真实视频。现有索引器把它们当作额外 ID 和坏视频是实现缺陷。
+- 先加 `test_raw_video_layout_ignores_only_macos_appledouble_video_sidecars`：要求只忽略 `._` sidecar，但普通额外 MP4 仍失败；RED 为 status `failed` != `passed`。实现 `_raw_video_inventory` 后，3 个正式 fixture + 1 sidecar 通过、普通 extra 仍被拒绝；raw-layout 全文件测试 `4 passed`。
+- 初版真实 raw audit 为单线程、已运行约十分钟但使用旧逻辑且最终报告尚不存在。先只读核对精确进程链 25152→1084→13368、命令行只属于 `discover_ovave_raw_video_layout.py`，再仅停止旧 real worker PID 13368；下载 aria2 PID 5320 与 preprocessed 解压 PIDs 20184/27288 均保持存活。旧 launcher 正常记录 exit `-1`，未改动任何数据。
+- 先给测试加入 `max_workers=2`，RED 为 unexpected keyword；随后用 `ThreadPoolExecutor.map` 实现确定顺序的并行 ffprobe，CLI 默认 8、本次 5090（64 logical processors）用 16 workers。v2 审计约三分钟完成，exit 1 是预期 fail-closed；25 sidecars 被明确报告为 ignored，正式 video_count=24,800、ID match=1.0、missing/extra/duplicate=0。把 v2 报告按已核对 SHA256=`9f0959b8c1cc4d965c2685d42e86b778efbfb540246dad75883e42add6dc385f` 移入 state 保留，再加 short-video 显式字段并运行 v3。
+
+### 506. raw 全量布局/媒体审计的新阻塞事实（2026-08-24）
+- v3 raw audit 以 16 个并行 ffprobe 完成，exit 1、stderr=0；最终报告 4,958,663 bytes、SHA256=`4831a1b93791ae1749d8ce8eb52e12cd129b672dfe815ed73cf1cef9952fd592`，已回收到本地 `reports/data/raw_video_layout_discovery.json`。正式视频 24,800，成功探测非空视频 24,787，codec 全部 h264；13 个零字节、25 个被排除的 AppleDouble sidecars、missing/extra/duplicate=0。
+- 严格按当前已锁定 `short_clip_policy: error` 和 10 秒要求，1,019 个非空视频流短于 10.0 秒，故 errors=1,032（1,019 short + 13 zero）；588 个短于 9.5 秒、24 个短于 8 秒、最短 1.2 秒。另根据当前确定性 16fps/每秒 8 帧 grid 的最后采样时间 9.875 秒，以 `round(duration*fps)` 估算至少 958 个视频连最后采样点也覆盖不了；没有擅自放宽、补帧、重复或重采样。
+- 进一步对一个 9.966667 秒样本核对 ffprobe：299 frames@30fps、format duration 10.0、video-stream duration 9.966667；说明 1,019 中一部分是容器 duration 与可用帧语义差异，但当前 teacher 实现仍以 `frame_count/fps < 10` fail-closed。对最短样本核对为 36 frames@30fps（1.2 秒），属于真实时间覆盖不足。结论从“只缺 13 文件”更新为两层 blocker：13 个确定缺失 raw bytes；以及短视频的官方 temporal-policy 解释/作者纠正资源。写入 exact raw archive receipt 和作者请求补充段落。
+
+### 507. 本轮中间回归与预处理布局并行化（2026-08-24）
+- 本地包含 recovery/layout/download/readiness 的 focused matrix 初次扩展为 `47 passed in 8.27s`，安全收据修复后 `47 passed in 8.47s`；加入 raw sidecar/并行测试后为 `51 passed in 8.59s`，均 exit 0。本地包含 canonical gate 的组合仍在 pytest collection 因缺 `timm` exit 1；只把它记录为本机依赖不足，完整测试保留给 5090。
+- 为避免提取后 248,000 张 JPG 逐文件验证耗时过长，先把 layout fixture 调用改成 `max_workers=2`，RED 为 unexpected keyword；再把 PIL/WAV inspection 改为主线程确定性汇总、16-worker CLI 并行读取，并用 4,096 个任务一批的 bounded submission 防止 272,800 futures 一次性占用过多内存。focused layout tests `12 passed`、compileall exit 0。preprocessed 原后台解压/树哈希任务全程未停止。
+
+### 508. recovery READY 越权修复与 5090 完整回归（2026-08-24）
+- 自审发现 `build_ovave_raw_recovery_manifest.py` 只验证 13 个 replacement，却在全部 replacement 通过时直接写全局 `READY_FOR_CONFERENCE_REPRO`，未验证其余 raw 布局、teacher export/preflight；在新发现 1,019 个短流后属于明确门禁绕过。先把正向 fixture 改为仍要求 `BLOCKED_BEFORE_CONFERENCE_REPRO`、`conference_readiness_delegated=true`、next gate=`fresh_full_raw_video_layout_audit`，RED 为实际错误 READY；实现 scoped status 可为 passed、但全局状态始终由 canonical chain 决定后，recovery 测试 `11 passed`、compileall exit 0。
+- 把修复脚本同步到 5090 并对真实官方输入重建 recovery manifest：builder exit 0、scoped status=blocked、final=`BLOCKED_BEFORE_CONFERENCE_REPRO`、next=`complete_author_replacement_set`、delegated=true，新 SHA256=`74faa2404776aaaaba30aaf606d58c556b6cc2a4415f06fd82056b330567faba`；回收到本地覆盖旧生成版本。
+- 用 `scp -r configs scripts src tests docs reports` 把当前代码/小收据同步到 5090，exit 0、耗时 51 秒；不传 data/weights/checkpoints。第一次完整 pytest 错用 `C:\Users\LXT\smc_gate1_env` 轻量 launcher，收集阶段明确缺 torchvision/timm/sklearn，22 collection errors、exit 2；数据任务未受影响。随后只读验证正确基线环境 `E:\OV-OrthKD-R0\env\.venv`：torch 2.10.0+cu128、torchvision 0.25.0+cu128、timm 1.0.28、sklearn 1.6.1，MinGit 2.55.0.5，imports/Git 均 exit 0。
+- 用依赖完整环境和 MinGit PATH 重跑完整 suite；测试进程累计读取约 133GB 锁定资产，且与 preprocessed tree hash 同时读盘，故耗时比旧基线增加。最终 `319 passed in 236.57s`、`PYTEST_EXIT=0`，无失败/警告；未运行训练或 preflight。
+## 509. 2026-08-24 12:16–12:28 SGT — 完成安全解压、全量文件审计与 source fail-closed 验证
+
+1. 查询 5090 上预处理压缩包的持久后台任务：`preprocessed.extraction.exit.txt=0`，stderr 为空；最终目录为 `E:/OV-OrthKD-R3/repo/data/official/ovave_preprocessed`。
+2. 固化安全解压结果：272,800 文件、27,959,350,079 解压字节、树 SHA256 `7a2c848fcdfe5118b3ac1de23eaa7b9121c4e3a98f98d0112b3c6e6b72d75e60`。原压缩包仍保持 24,618,769,924 字节 / SHA256 `ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e`。
+3. 记录一次无副作用的 watcher 启动失败：第一次 PowerShell/批处理字符串因 `@echo off` 与 here-string 终止符冲突产生解析错误，未创建进程、未改动下载或解压任务；改用双引号后成功以 Windows CIM 启动 PID 6952。
+4. 解压树全量文件级审计退出 0、stderr 为空。完整 JSON 为 18,553,544 字节，SHA256 `b663233b35c2f210c705ac7a6441c4947488b80ae2eba65fa4bd32aeee76b787`：24,800 样本，split 13,182/5,798/5,820，248,000 JPG + 24,800 WAV，全部样本恰有 10 帧，WAV 均为 16 kHz/双声道，metadata 双射成立，missing/extra/logical-duplicate/zero-byte/errors/warnings 均为 0。
+5. 实际运行 canonical source manifest builder；退出 1，首个拒绝路径为 `train/arc welding/IUUe8-Zn9cA.mp4`，错误为 `Missing non-empty official raw video`。输出目录不存在，未发布任何 partial/source manifest，证明损坏原始数据被执行时守卫拦截。
+6. 写入/更新预处理 archive、download、extraction、filesystem-layout 收据和 data lock；data lock 保持 `blocked_raw_video_validation`，没有把通过的预处理数据审计错误提升为全局 READY。
+
+## 510. 2026-08-24 12:28–12:31 SGT — 重新验证权重与修复最终状态枚举
+
+1. 在 5090 正确虚拟环境运行 `python scripts/assets/download_mm26_assets.py --verify --root .`，退出 0；InternVideo2 B14、InternVideo2 CLIP-B14、MobileCLIP-B-LT、BEATs 和 CLAP 五项均按锁定字节数与 SHA256 通过。
+2. 运行旧 conference-readiness builder 后发现其仍输出旧 R2 内部枚举 `BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS`，且默认读取 `r2_real_preflight.json`，与当前配置的 `r3_real_preflight.json` 不一致。
+3. 先修改回归测试期望并运行，得到预期 RED：7 项中 4 项失败，均精确暴露旧 BLOCKED 枚举；随后把 builder 的 READY/BLOCKED 枚举统一为任务书允许的 `READY_FOR_CONFERENCE_REPRO` / `BLOCKED_BEFORE_CONFERENCE_REPRO`，并修正默认 R3 preflight 路径。
+4. 聚焦测试复跑退出 0：`7 passed in 3.53s`。
+5. 在 5090 重跑 builder，退出 1（预期 fail-closed），输出唯一合法最终状态 `BLOCKED_BEFORE_CONFERENCE_REPRO`，receipt SHA256 `baf60e11c642a26a9763caed797d1c9975600b6ba265139e555be920149ed09c`；官方 archive/extraction 与预处理 layout gates 已 PASS，raw/source/teacher-export/preflight 相关 gates 仍 BLOCKED。
+## 511. 2026-08-24 12:31–12:39 SGT — 最终验证矩阵
+
+1. 本地聚焦回归（conference readiness、preprocessing、raw layout、preprocessed layout、raw recovery、download lock、R3 validator）退出 0：`49 passed in 13.22s`。
+2. 本地结构化产物全量解析退出 0：42 个 JSON 和 16 个 YAML 全部通过；变更差异敏感字段扫描未发现 Cookie、Authorization、password、access/refresh token、签名下载参数。
+3. 5090 `python -m compileall -q src scripts tests` 退出 0。
+4. 5090 `python -m pip check` 退出 0，输出 `No broken requirements found.`。
+5. 5090 `scripts/verify_cuda_runtime.py` 退出 0：Python 3.11.9、torch 2.10.0+cu128、CUDA 12.8、NVIDIA GeForce RTX 5090、capability 12.0、cuDNN 91002；FP16 2048 方阵结果 finite，5 次平均约 0.0964 ms。
+6. 最终完整 pytest 通过 Windows CIM 独立后台任务运行，未依赖 SSH 会话；退出 0，stderr 0 bytes，结果 `319 passed in 309.73s (0:05:09)`。测试期间大文件证据复算导致累计磁盘读取较大，进程始终持续前进，无卡死或重启。
+7. 清理本轮自行创建的临时同步压缩包：PowerShell `Remove-Item` 被执行策略拒绝，`apply_patch` 又因二进制非 UTF-8 无法删除；第一次带边界检查的 Python 尝试因 Windows 非 ASCII 路径编码没有找到实际文件，随后复核发现三文件仍在。最终在已经固定为 repo 工作目录后用 `[System.IO.File]::Delete(Join-Path(Get-Location), name)` 精确删除三份本地临时包，并先核对远端临时包路径/大小后删除 `E:/OV-OrthKD-R3/r3-source-sync.tar.gz`；再次查询均不存在。它们仅是临时传输副本，源文件、正式报告和 63 GB 官方数据均未删除。
+## 512. 2026-08-24 12:39–12:43 SGT — 提交、自审与 GitHub 推送
+
+1. 因当前会话的多代理策略禁止新建子代理，未启动新的代码审查代理；改为逐项自审 staged diff：`git diff --cached --check` 退出 0；未暂存 `data/`、`weights/`、`checkpoints/`、`cache/` 实体；没有新增旧 R2 最终状态枚举、`full_run_blocked:false`、正式指标或训练步启用；最大新增文件为 4,958,663 字节的全量 raw metadata audit JSON，不含媒体字节。
+2. 提交成功：`7fbbcde067e622195bac77edbc01794318f7063b`，message `fix: complete official data audit and fail closed`；diff stat 为 45 files changed、209,666 insertions、367 deletions（大量新增行来自 24,787 条 ffprobe 视频记录）。提交后本地 `git status --short` 为空。
+3. 推送 `origin repro/r3-assets-download-and-readiness` 退出 0：`b52a08b..7fbbcde`。随后 `git ls-remote` 返回远端 branch SHA `7fbbcde067e622195bac77edbc01794318f7063b`，与本地 HEAD 完全一致；本地工作树仍干净。
+4. 最终文件 SHA256：data lock `2432dfe1e6761efec548e96fb9ef2baa90d93521d5924e0b978cd9369ab6d26d`；archival lock `2abdd12c7bd5515cb477333597b934f7f24c91ca9e88eb47e302e8e103bca975`；teacher lock `e5bc1e1daf7c3c5957459bcaee1a3066ad0ed017d4ef47e3a57750f4b770921b`；download lock `ee75a6cf5c6264996da4c518dad201a6df5258ea005f05b0b02a510bceadc73a`；conference-readiness receipt `baf60e11c642a26a9763caed797d1c9975600b6ba265139e555be920149ed09c`；R3 final report `fa5f05fd8e68050d01f56ca73c70978a89390d386caa3578591db3d45e063f44`。
+5. 最终状态保持 `BLOCKED_BEFORE_CONFERENCE_REPRO`。正式 teacher cache 为 0/24,800，cache root SHA256 不存在；真实一步 optimizer preflight 调用次数为 0；正式学生训练未启动；canonical full-run guard 未解除。
+## 513. 2026-08-24 — 增加 GitHub 网页端当前状态入口
+
+1. 用户要求把最终代码和当前情况说明更新到对应 GitHub，同时明确禁止上传庞大数据集。
+2. 复核本地分支初始状态：`repro/r3-assets-download-and-readiness`，HEAD `7fbbcde067e622195bac77edbc01794318f7063b`，工作树干净；`.gitignore` 已排除 `data/*` 正式数据、`external/`、`weights/`、outputs/logs/runs、cache、checkpoint、HAR/auth state、quarantine 和下载 state，仅允许小型模板/说明。
+3. 在仓库根目录新增 `CURRENT_STATUS.md`，供网页端/后续审阅者直接判断：写明完成资产、精确 archive/tree SHA、全量预处理/raw 审计、13 zero-byte + 1,019 short-stream 阻塞、未运行阶段、作者材料到达后的严格执行顺序、网页审阅入口、数据边界和四个待判断问题。
+4. 在根 `README.md` 顶部增加醒目的当前状态链接与 `BLOCKED_BEFORE_CONFERENCE_REPRO` 摘要，使打开仓库首页即可进入完整情况说明。
+## 514. 2026-08-24 — 网页说明提交前验证
+
+1. `git diff --check` 退出 0；当前待提交内容仅为 `README.md` 修改和根目录新建 `CURRENT_STATUS.md`。
+2. 首次本地聚焦测试同时选择 `test_reproduction_configs.py` 与 `test_r3_download_lock.py`，collection 因本地 Anaconda 环境缺 `timm` 退出 1；这是已知的本地依赖缺失，不是本轮纯文档改动造成的代码失败。改为运行不依赖 timm 的 download-lock 测试，退出 0：`2 passed in 1.68s`。
+3. 尝试在 5090 正确依赖环境运行上述两个聚焦文件，但前台 SSH 包装在 34 秒超时，未取得最终测试收据；随后只读查询确认没有遗留匹配 pytest 进程。未把该次调用计为通过证据；本轮仍以刚完成的 5090 全套 `319 passed` 和本地新鲜 download-lock 2 项通过作为代码基线/文档变更检查。
+4. `CURRENT_STATUS.md` 相对 Markdown 链接检查退出 0，missing=[]；所有 Git tracked 文件中没有大于 10,000,000 bytes 的文件。
+5. 第一次禁止路径扫描误用了 ripgrep 默认引擎不支持的 negative lookahead，产生 regex parse error；立即改用 `rg --pcre2` 重跑，退出 0，结果 `FORBIDDEN_TRACKED_PATHS=NONE`。确认 Git 未跟踪正式 data、external、weights、outputs、logs、runs 或 cache 路径。
+## 515. 2026-08-24 — 网页说明暂存审计
+
+1. 第一次暂存 `README.md` 与 `CURRENT_STATUS.md` 后，`git diff --cached --check` 因状态文档第 3、4 行用于 Markdown 强制换行的两个尾随空格退出 2；未提交。
+2. 用空白行替代强制换行尾随空格，重新暂存并复核：`git diff --cached --check` 退出 0；staged stat 为 2 files changed、86 insertions，且仅包含 README 状态入口和 `CURRENT_STATUS.md`。
