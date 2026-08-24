@@ -4,6 +4,8 @@ This package contains the core implementation of OV-OrthKD for research collabor
 
 Paper: *If You Hear It, Help Find It: Orthogonal Knowledge Distillation for Open-Vocabulary Audio-Visual Event Localization* (ACM Multimedia 2026).
 
+> **Current reproduction status (2026-08-24):** `BLOCKED_BEFORE_CONFERENCE_REPRO`. Both official archives and all public teacher weights are downloaded and audited on the RTX 5090, but the author-issued raw archive contains 13 zero-byte formal MP4s and 1,019 additional streams below the locked ten-second policy. Read [CURRENT_STATUS.md](CURRENT_STATUS.md) before reviewing or running the reproduction workflow.
+
 ## Included
 
 - Student architecture and query-conditioned audio-visual localization model.
