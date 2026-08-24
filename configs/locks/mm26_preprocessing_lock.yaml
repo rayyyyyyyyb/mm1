@@ -11,6 +11,8 @@ config_bindings:
     value: natural_sorted_no_repeat
   - path: data.canonical_visual_extension
     value: .jpg
+  - path: data.num_segments
+    value: 10
 reference:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
@@ -19,7 +21,7 @@ reference:
 canonical_manifest:
   visual_source: official_jpg
   audio_source: official_wav
-  raw_video_source: official_raw_video
+  raw_video_source: optional_official_raw_video_diagnostic
   frame_order: natural_path_key
   generated_spectrograms: false
   temporal_resampling: false
@@ -38,7 +40,7 @@ canonical_manifest:
 official_archive_observation:
   receipt:
     path: reports/data/official_preprocessed_download_receipt.json
-    sha256: bb5a40822745ad696d959ab69ba3f74b5b1252417b049129c48d99902799fab3
+    sha256: 307774d55d3886c5a9d0ad1ac838f12eafa5932e17e8a4138328d1a8f84992ec
   layout_audit:
     path: reports/data/preprocessed_layout_discovery.json
     sha256: 7d8eed820dce10a914f4254777749b4592ee4ad869187616ae25f11e2e42299c
@@ -93,15 +95,23 @@ internvideo2:
   text_ckpt_sha256: "670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a"
   extra_ckpt_path: "weights/internvideo2/InternVideo2_CLIP_B14.pth"
   extra_ckpt_sha256: "c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e"
-  source: official_raw_video
-  video_duration_seconds: 10
-  intervals: 10
-  decode: deterministic_timestamps
-  temporal_sampling_fps: 16
+  source: official_segment_keyframes
+  input_mode: official_segment_keyframes
+  task_segments: 10
   num_frames: 8
-  frame_sampling: uniform_within_each_one_second_interval
-  short_clip_policy: error
-  missing_video_policy: block
+  frame_sampling: repeat_segment_keyframe
+  frame_expansion: repeat_last_to_num_frames
+  missing_keyframe_policy: block
+  raw_video_diagnostic:
+    enabled: false
+    source: official_raw_video
+    video_duration_seconds: 10
+    intervals: 10
+    decode: deterministic_timestamps
+    temporal_sampling_fps: 16
+    frame_sampling: uniform_within_each_one_second_interval
+    short_clip_policy: error
+    missing_video_policy: block_when_enabled
   align_dim: 512
   checkpoint_identity_included: true
 legacy:

@@ -30,7 +30,8 @@ data:
   batch_size: 12
   num_workers: 8
   pin_memory: true
-  max_segments: 16
+  num_segments: 10
+  temporal_resampling: false
   allow_missing_modalities: true
   strict_alignment: true
   strong_teacher_dim: 512
@@ -40,6 +41,7 @@ data:
   train_augment: true
 
 student:
+  max_position_segments: 16
   visual_backbone: "convnextv2_tiny.fcmae_ft_in22k_in1k"
   audio_backbone: "tf_efficientnetv2_b2.in1k"
   fusion_dim: 384

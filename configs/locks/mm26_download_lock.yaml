@@ -1,5 +1,5 @@
 schema_version: 1
-status: blocked_raw_video_validation
+status: ready
 generated_at: "2026-08-24T02:59:31+00:00"
 assets:
   internvideo2_b14:
@@ -89,7 +89,7 @@ assets:
     content_type: "application/x-gzip"
     validation_result: passed
   ovave_raw_videos:
-    status: blocked_zero_and_short_video_protocol
+    status: passed_optional_diagnostic_degraded
     kind: data
     path: "E:/OV-OrthKD-R3/repo/data/downloads/incoming/ovave_raw_videos/OV-AVEBench_raw_videos.tar.gz"
     source_url: "https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/EcVHOp2zOyVHvi1Au-i1zFQBf5wQNi-Yff9Aso_SJ4MV8Q?e=OeRlQh"
@@ -100,7 +100,8 @@ assets:
     bytes: 38147170955
     sha256: "ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc"
     content_type: "application/x-gzip"
-    validation_result: failed_13_zero_byte_members_and_1019_shorter_than_locked_ten_seconds
+    validation_result: passed
+    diagnostic_result: 13_zero_byte_members_and_1019_streams_shorter_than_ten_seconds
   vggsound_metadata:
     status: passed
     kind: data
@@ -115,9 +116,10 @@ assets:
     sha256: "c1816c00a237afa4994e873e88f56bac206cbb285fddb05c564184b9c3d6e6ce"
     content_type: "text/csv"
     validation_result: passed
-blockers:
+diagnostics:
   - "The byte-complete official raw archive contains 13 zero-byte MP4 members."
-  - "The full ffprobe audit also finds 1,019 non-empty formal videos shorter than the currently locked 10-second raw-video policy; 958 are estimated not to cover the final 9.875-second deterministic sampling point."
-  - "Author clarification or corrected author-issued bytes are required before changing the short-clip policy; padding, repetition, resampling, or a silent boundary relaxation is forbidden."
-  - "Do not treat VGGSound metadata, YouTube recuts, mirrors, or preprocessed JPG/WAV files as official raw-video replacements."
+  - "The full ffprobe audit also finds 1,019 non-empty formal videos shorter than ten seconds; raw-video diagnostic code must remain fail-closed for these cases."
+  - "The canonical reproduction path uses the fully audited official JPG/WAV archive and does not reconstruct, pad, loop, or relabel raw videos."
+security_boundary:
+  - "Do not treat VGGSound metadata, YouTube recuts, or mirrors as official raw-video replacements."
   - "Do not write credentials, cookies, tokens, HAR files, or captured signed URLs into this lock."

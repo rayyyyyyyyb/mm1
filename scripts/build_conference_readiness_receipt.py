@@ -21,6 +21,7 @@ from src.utils.canonical_readiness import (
     REQUIRED_READINESS_PATHS,
     REQUIRED_SCHEMA_VERSIONS,
     EXPECTED_CHECKPOINT_ROLES,
+    _valid_t10_temporal_shape_receipt,
     validate_canonical_readiness,
 )
 
@@ -41,7 +42,7 @@ DEFAULT_INPUTS = {
     "smoke_repeatability": "reports/teachers/smoke_repeatability.json",
     "exported_audit": "reports/mm26_exported_artifact_audit.json",
     "evaluator_lock": "configs/locks/mm26_evaluator_lock.yaml",
-    "real_preflight": "reports/runtime/r3_real_preflight.json",
+    "real_preflight": "reports/runtime/r4_real_preflight.json",
     "verification": "reports/runtime/r2_verification.json",
 }
 
@@ -368,6 +369,9 @@ def build_conference_readiness(
         and preflight.get("backward_completed") is True
         and preflight.get("checkpoint_resume_completed") is True
         and preflight.get("losses_finite") is True
+        and _valid_t10_temporal_shape_receipt(
+            preflight.get("temporal_shape_receipt")
+        )
     )
     verification = documents["verification"]
     p0_p1_ready = _status(verification) == "passed" and verification.get("p0_p1_tests") == "passed"
@@ -379,7 +383,7 @@ def build_conference_readiness(
             canonical_chain_ready,
             "The shared canonical validator must verify exact files, hashes, config bindings and Git state",
         ),
-        "p0_p1_tests": _require(p0_p1_ready, "Required R2 regression tests must pass"),
+        "p0_p1_tests": _require(p0_p1_ready, "Required regression tests must pass"),
         "data_lock": _require(data_lock_ready, "Official archive and manifests must be frozen in the data lock"),
         "preprocessing_lock": _require(
             preprocessing_ready, "Canonical official JPG/WAV preprocessing must be fully resolved"
@@ -394,7 +398,10 @@ def build_conference_readiness(
         "official_evaluator_parity": _require(evaluator_ready, "Official evaluator mapping and parity must be resolved"),
         "real_one_step_preflight": _require(preflight_ready, "Exactly one real-data optimizer step must pass"),
         "exact_epoch_resume": _require(exact_resume_ready, "Exact multi-worker augmented resume test must pass"),
-        "canonical_full_run_guard": _require(full_run_guard, "full_run_blocked must remain true for R2 review"),
+        "canonical_full_run_guard": _require(
+            full_run_guard,
+            "full_run_blocked must remain true until conference-reproduction review",
+        ),
     }
     blockers = [name for name, requirement in requirements.items() if not requirement["passed"]]
     ready = not blockers
@@ -413,7 +420,7 @@ def build_conference_readiness(
 
 def render_markdown(report: Mapping[str, Any]) -> str:
     lines = [
-        "# R2 Conference Reproduction Readiness Report",
+        "# Conference Reproduction Readiness Report",
         "",
         f"Final status: `{report['status']}`",
         "",
@@ -447,7 +454,9 @@ def render_markdown(report: Mapping[str, Any]) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build the fail-closed R2 conference readiness receipt")
+    parser = argparse.ArgumentParser(
+        description="Build the fail-closed conference reproduction readiness receipt"
+    )
     parser.add_argument("--config", default="configs/ov_orthkd_mm26_repro.yaml")
     for name, default in DEFAULT_INPUTS.items():
         parser.add_argument("--" + name.replace("_", "-"), default=default)

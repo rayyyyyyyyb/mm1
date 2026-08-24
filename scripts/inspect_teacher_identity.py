@@ -26,6 +26,7 @@ from src.teachers.common import (
     resolve_query,
     segment_count,
 )
+from src.teachers.pipeline import export_strong_visual_teacher
 
 
 def parse_args() -> argparse.Namespace:
@@ -38,6 +39,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fail-on-unresolved", action="store_true")
     parser.add_argument("--skip-smoke", action="store_true", help="Only inventory identities; not sufficient for export approval")
     parser.add_argument("--output", default="reports/teacher_identity.json")
+    parser.add_argument(
+        "--repeatability-output",
+        default=None,
+        help="Repeat-2 receipt path; defaults to reproduction.readiness.smoke_repeatability",
+    )
     return parser.parse_args()
 
 
@@ -241,6 +247,19 @@ def _run_smoke(
         device=device,
         num_frames=int(iv_cfg.get("num_frames", 8)),
         align_dim=int(iv_cfg.get("align_dim", config["data"].get("strong_teacher_dim", 512))),
+        input_mode=str(iv_cfg.get("input_mode", "official_segment_keyframes")),
+        task_segments=int(iv_cfg.get("task_segments", config["data"].get("num_segments", 10))),
+        frame_expansion=str(iv_cfg.get("frame_expansion", "repeat_last_to_num_frames")),
+        raw_video_diagnostic={
+            "enabled": bool(iv_cfg.get("raw_video_diagnostic", {}).get("enabled", False)),
+            "video_duration_seconds": int(
+                iv_cfg.get("raw_video_diagnostic", {}).get("video_duration_seconds", 10)
+            ),
+            "intervals": int(iv_cfg.get("raw_video_diagnostic", {}).get("intervals", 10)),
+            "sampling_fps": int(
+                iv_cfg.get("raw_video_diagnostic", {}).get("temporal_sampling_fps", 16)
+            ),
+        },
     )
     weak = BEATsAudioTeacher(
         repo_root=_path(beats_cfg["repo_root"], path_root),
@@ -260,7 +279,6 @@ def _run_smoke(
 
     if repeat < 2:
         raise ValueError("--repeat must be at least 2 for real teacher smoke")
-    raw_video_path = _path(record.get("raw_video_path"), path_root)
     audio_segments = resolve_audio_segments(record, expected_segments)
     repeated_outputs: list[dict[str, Any]] = []
     timings_ms: list[dict[str, float]] = []
@@ -272,7 +290,12 @@ def _run_smoke(
         if cuda_device.type == "cuda":
             torch.cuda.synchronize(cuda_device)
         started = time.perf_counter()
-        visual_features, visual_logits = strong.export_video(raw_video_path, query=query)
+        visual_features, visual_logits = export_strong_visual_teacher(
+            strong,
+            record,
+            expected_segments=expected_segments,
+            query=query,
+        )
         if cuda_device.type == "cuda":
             torch.cuda.synchronize(cuda_device)
         visual_ms = (time.perf_counter() - started) * 1000.0
@@ -421,6 +444,9 @@ def inspect_teacher_identity(
             "checkpoints": iv_checkpoints,
             "feature_dimension": int(iv_cfg.get("align_dim", data_cfg.get("strong_teacher_dim", 512))),
             "num_frames": int(iv_cfg.get("num_frames", 8)),
+            "input_mode": str(iv_cfg.get("input_mode", "official_segment_keyframes")),
+            "task_segments": int(iv_cfg.get("task_segments", data_cfg.get("num_segments", 10))),
+            "frame_expansion": str(iv_cfg.get("frame_expansion", "repeat_last_to_num_frames")),
         },
         "beats": {
             "wrapper_class": "BEATsAudioTeacher",
@@ -485,6 +511,52 @@ def inspect_teacher_identity(
     }
 
 
+def build_repeatability_receipt(identity_report: Mapping[str, Any]) -> dict[str, Any]:
+    """Derive the standalone readiness receipt from measured smoke outputs."""
+
+    smoke = identity_report.get("smoke", {})
+    comparison = smoke.get("repeatability", {}) if isinstance(smoke, Mapping) else {}
+    outputs = comparison.get("outputs", {}) if isinstance(comparison, Mapping) else {}
+    if not isinstance(outputs, Mapping):
+        outputs = {}
+    output_values = [value for value in outputs.values() if isinstance(value, Mapping)]
+    all_finite = bool(output_values) and all(
+        bool(value.get("finite")) for value in output_values
+    )
+    all_passed = bool(output_values) and all(
+        bool(value.get("passed")) for value in output_values
+    )
+    max_abs_diff = max(
+        (float(value.get("max_abs_diff", float("inf"))) for value in output_values),
+        default=None,
+    )
+    mean_abs_diff = max(
+        (float(value.get("mean_abs_diff", float("inf"))) for value in output_values),
+        default=None,
+    )
+    passed = (
+        str(smoke.get("status", "")).lower() in {"pass", "passed"}
+        and str(comparison.get("status", "")).lower() in {"pass", "passed"}
+        and int(comparison.get("repeat_count", 0)) >= 2
+        and all_finite
+        and all_passed
+        and identity_report.get("errors") == []
+    )
+    return {
+        "schema_version": 1,
+        "status": "pass" if passed else "failed",
+        "repeat_count": int(comparison.get("repeat_count", 0)),
+        "tolerance": comparison.get("tolerance"),
+        "all_finite": all_finite,
+        "all_passed": all_passed,
+        "max_abs_diff": max_abs_diff,
+        "mean_abs_diff": mean_abs_diff,
+        "outputs": dict(outputs),
+        "record_id": smoke.get("record_id") if isinstance(smoke, Mapping) else None,
+        "source_manifest": smoke.get("source_manifest") if isinstance(smoke, Mapping) else None,
+    }
+
+
 def main() -> None:
     args = parse_args()
     config_path = Path(args.config).resolve()
@@ -502,6 +574,23 @@ def main() -> None:
     output_path = Path(args.output).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    repeatability_value = args.repeatability_output
+    if repeatability_value is None:
+        repeatability_value = (
+            config.get("reproduction", {})
+            .get("readiness", {})
+            .get("smoke_repeatability")
+        )
+    if not args.skip_smoke and repeatability_value:
+        repeatability_path = Path(str(repeatability_value)).expanduser().resolve()
+        repeatability_path.parent.mkdir(parents=True, exist_ok=True)
+        repeatability_path.write_text(
+            json.dumps(
+                build_repeatability_receipt(report), indent=2, ensure_ascii=False
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     print(json.dumps(report, indent=2, ensure_ascii=False))
     raise SystemExit(0 if report["status"] == "pass" else 1)
 

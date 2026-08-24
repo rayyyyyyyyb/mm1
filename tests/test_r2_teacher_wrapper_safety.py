@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import torch
 
+from src.teachers import clap_text
 from src.teachers.clap_text import _strict_load_clap_checkpoint
 from src.teachers.internvideo2_visual import (
     InternVideo2ClipB14Teacher,
@@ -59,11 +60,14 @@ def test_checkpoint_hash_is_verified_before_any_deserialization(tmp_path: Path) 
         verify_checkpoint_sha256(checkpoint, "UNRESOLVED", label="teacher")
 
 
-def test_internvideo_rejects_any_png_frame_group_fallback() -> None:
+def test_internvideo_canonical_keyframe_mode_rejects_png_extension() -> None:
     teacher = InternVideo2ClipB14Teacher.__new__(InternVideo2ClipB14Teacher)
+    teacher.input_mode = "official_segment_keyframes"
+    teacher.frame_expansion = "repeat_last_to_num_frames"
+    teacher.num_frames = 8
 
-    with pytest.raises(RuntimeError, match="raw video"):
-        teacher.export_segments([["single.png"]], "event")
+    with pytest.raises(ValueError, match="official .jpg extension"):
+        teacher._select_frame_paths(["single.png"])
 
 
 def test_clap_checkpoint_is_weights_only_and_strict(tmp_path: Path, monkeypatch) -> None:
@@ -86,6 +90,23 @@ def test_clap_checkpoint_is_weights_only_and_strict(tmp_path: Path, monkeypatch)
     torch.save({"model": {"weight": model.weight.detach().clone()}}, checkpoint)
     with pytest.raises(RuntimeError, match="bias"):
         _strict_load_clap_checkpoint(model, checkpoint)
+
+
+def test_clap_tokenizer_uses_the_pinned_upstream_padding_token() -> None:
+    class Tokenizer:
+        pad_token = None
+
+        def add_special_tokens(self, value):
+            self.pad_token = value["pad_token"]
+            return 0
+
+    tokenizer = Tokenizer()
+    configure = getattr(clap_text, "_configure_clap_tokenizer", None)
+
+    assert callable(configure), "CLAP tokenizer compatibility helper is missing"
+    configure(tokenizer)
+
+    assert tokenizer.pad_token == "!"
 
 
 def test_clap_strict_load_accepts_only_value_verified_nonpersistent_gpt2_masks(

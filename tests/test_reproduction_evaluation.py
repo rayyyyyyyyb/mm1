@@ -130,6 +130,16 @@ def test_prediction_collection_preserves_sample_and_segment_identity(tmp_path: P
         assert saved["sample_offsets"].tolist() == [0, 2, 5]
 
 
+def test_formal_prediction_collection_rejects_non_t10_metric_input() -> None:
+    with pytest.raises(ValueError, match="official task time axis 10"):
+        collect_predictions(
+            EchoLogitStudent(),
+            [prediction_batch()],
+            device=torch.device("cpu"),
+            expected_task_segments=10,
+        )
+
+
 def make_predictions(
     probabilities: list[float],
     labels: list[float],
@@ -200,6 +210,20 @@ def test_test_metrics_use_validation_threshold_without_recalibration() -> None:
     assert "best_binary_f1" in report["validation_calibration"]
     assert "best_f1" not in report["validation_calibration"]
     assert "binary_micro_f1_at_threshold" in report["test"]["metrics"]["total"]
+
+
+def test_formal_threshold_evaluation_rejects_flattened_non_t10_samples() -> None:
+    validation = make_predictions(
+        probabilities=[0.9, 0.6, 0.55, 0.1],
+        labels=[1.0, 1.0, 0.0, 0.0],
+    )
+
+    with pytest.raises(ValueError, match="exactly 10 metric segments"):
+        evaluate_prediction_sets(
+            validation,
+            validation,
+            expected_task_segments=10,
+        )
 
 
 def test_eval_only_artifact_helper_saves_structured_predictions_and_frozen_metrics(tmp_path: Path) -> None:

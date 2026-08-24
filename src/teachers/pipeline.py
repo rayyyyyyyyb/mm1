@@ -43,6 +43,32 @@ class TeacherExportBundle:
     text_teacher: Any | None = None
 
 
+def export_strong_visual_teacher(
+    teacher: Any,
+    record: Dict[str, Any],
+    *,
+    expected_segments: int,
+    query: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Dispatch using the teacher's declared input protocol, never method presence."""
+
+    input_mode = getattr(teacher, "input_mode", None)
+    if input_mode == "raw_multiframe_diagnostic":
+        return teacher.export_video(
+            video_path=resolve_raw_video(record),
+            query=query,
+        )
+    if input_mode in {"official_segment_keyframes", "segment_groups"}:
+        return teacher.export_segments(
+            frame_groups=resolve_frame_groups(record, expected_segments),
+            query=query,
+        )
+    raise ValueError(
+        "Strong visual teacher must declare input_mode as "
+        "official_segment_keyframes, raw_multiframe_diagnostic, or segment_groups"
+    )
+
+
 def _as_feature_matrix(array: np.ndarray, expected_rows: int, name: str) -> np.ndarray:
     output = np.asarray(array, dtype=np.float32)
     if output.ndim != 2:
@@ -309,18 +335,12 @@ def export_manifest_records(
                 record["strong_teacher_logits_path"] = str(logit_path)
                 if not overwrite and (feature_path.exists() or logit_path.exists()):
                     raise RuntimeError("strong artifacts exist without a validated receipt")
-                if callable(getattr(teachers.strong_visual, "export_video", None)):
-                    raw_video_path = resolve_raw_video(record)
-                    features, logits = teachers.strong_visual.export_video(
-                        video_path=raw_video_path, query=query
-                    )
-                else:
-                    # Legacy/mock-only path. The real InternVideo2 wrapper exposes
-                    # `export_video`, so canonical R3 execution cannot fall back to PNGs.
-                    frame_groups = resolve_frame_groups(record, expected_len)
-                    features, logits = teachers.strong_visual.export_segments(
-                        frame_groups=frame_groups, query=query
-                    )
+                features, logits = export_strong_visual_teacher(
+                    teachers.strong_visual,
+                    record,
+                    expected_segments=expected_len,
+                    query=query,
+                )
                 feature_array = _as_feature_matrix(features, expected_len, "strong teacher features")
                 logit_array = _as_logit_vector(logits, expected_len)
                 feature_metadata = atomic_save_array(feature_path, feature_array, expected_shape=feature_array.shape)

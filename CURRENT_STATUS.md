@@ -1,84 +1,63 @@
 # OV-OrthKD 当前状态与复现接续指南
 
 更新日期：2026-08-24
-
-分支：`repro/r3-assets-download-and-readiness`
-
+分支：`repro/r4-keyframe-readiness-and-experiment-prep`
 最终状态：`BLOCKED_BEFORE_CONFERENCE_REPRO`
 
 ## 一句话结论
 
-代码、RTX 5090 环境、五项教师权重、两个官方 OV-AVEBench 压缩包、安全解压和全量审计已经完成；正式会议复现仍被作者发布的 raw archive 中 13 个零字节 MP4，以及 1,019 个短于当前锁定十秒协议的视频流阻塞。不得用 YouTube 重切、第三方镜像、重复帧、静音填充或预处理 JPG/WAV 冒充官方 raw MP4。
+官方数据、教师 checkpoint、T=10 协议修正、24,800 条 source manifest 全量审计和三教师真实 repeat-2 smoke 已通过。当前不再等待作者解释 raw MP4：canonical 主线使用官方每秒关键帧与 WAV；距离正式会议复现还差全量教师 cache、full artifact audit、唯一一次真实一步 preflight 和人工 readiness review。
 
-## 已完成且可复核的事实
+## 已锁定的 temporal 协议
 
-- 五项教师 checkpoint 均已下载、锁定 SHA256 并通过结构检查和真实 wrapper strict-load：InternVideo2 B14、InternVideo2 CLIP-B14、MobileCLIP-B-LT、BEATs Iter3+ AS2M、Microsoft CLAP 2023。
-- 官方 preprocessed archive：24,618,769,924 bytes，SHA256 `ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e`。
-- 官方 raw archive：38,147,170,955 bytes，SHA256 `ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc`。
-- preprocessed 安全解压：272,800 files，27,959,350,079 bytes，tree SHA256 `7a2c848fcdfe5118b3ac1de23eaa7b9121c4e3a98f98d0112b3c6e6b72d75e60`。
-- raw 安全解压：24,836 files，38,365,245,540 bytes，tree SHA256 `33e467c428432c5b67876350cd3f3bac0e267730f56ee71631e8864bf2077a89`。
-- preprocessed 全量布局：24,800 samples，13,182/5,798/5,820 train/val/test；248,000 JPG + 24,800 WAV；metadata bijection 成立；missing/extra/duplicate/zero-byte/errors/warnings 全为 0。
-- raw 全量 ffprobe：24,800 个正式 ID 完整匹配；25 个 macOS AppleDouble sidecar 被排除；13 个正式 MP4 为零字节；1,019 个非空视频流短于 10.0 秒。
-- canonical source-manifest builder 在首个零字节视频处退出 1，且没有发布任何 partial manifest。
-- 最新完整测试：`319 passed in 309.73s`，退出码 0，stderr 为空。
-- `python -m compileall -q src scripts tests`、`python -m pip check`、五项权重验证和 RTX 5090 CUDA 12.8 FP16 验证均退出 0。
+- 官方 OV-AVEBench task timeline 固定为 10 个一秒 temporal segments。
+- 真实 label、student logits、visual/audio teacher temporal features 和 metric 输入均为 T=10；禁止 10→16 插值、复制、重采样或重新标注。
+- `student.max_position_segments=16` 只是 positional capacity，不是任务长度。
+- 历史 InternVideo2 wrapper 和配置证明 `num_frames=8`。canonical 输入以每个一秒 segment 的单张官方 keyframe 重复到 8 帧；没有代码证据支持“每秒固定解码 16 帧”。
+- `temporal_sampling_fps=16` 只保留在默认关闭的 raw-video diagnostic 中。
+- 论文中的 “16 fps / 16 temporal segments / per-16-seg clip” 作为写作与术语混淆处理，不改变官方 T=10 实验协议。
 
-## 尚未运行的阶段
+## 已完成并可复核
 
-- 正式 real-teacher 全量 cache：`0/24,800`，所以 cache root SHA256 不存在。
-- 真实数据的一步 optimizer preflight：调用次数 `0`。
-- 正式学生训练：未启动。
-- `configs/ov_orthkd_mm26_repro_ready.yaml`：有意保持不存在。
-- `configs/ov_orthkd_mm26_repro.yaml` 中 `full_run_blocked`：仍为 `true`。
+- 两个官方 archive 和五个教师 checkpoint 均已下载到 5090、锁定 bytes/SHA256，并通过 archive/checkpoint 验证。
+- 官方 preprocessed 数据全量布局：24,800 samples、248,000 JPG、24,800 WAV，split 13,182/5,798/5,820，全部 label/frame count 为 10。
+- canonical source manifests 已生成并全量审计通过：0 errors、0 warnings、0 duplicate、0 split overlap、0 temporal resampling。
+- source manifest SHA256：
+  - train `296e087bee10c2ef40ac647fa6d19ae355296366f4f281bca3b58dfd1663d9a0`
+  - val `deebdc384b6d12d9794b923b4c4387205bc33c819aac06cc92bb1c0febb5fa16`
+  - test `d2d7ec2a7b45651fb620d826edcef3d18c8eac861732f12af538bbb4a794a814`
+- 真实 train 样本 `EpxQKLhAP0s` 上三教师 repeat-2 smoke 通过：InternVideo2 `[10,512]` + logits `[10]`、BEATs `[10,768]`、CLAP `[1024]`；全部 finite、逐位一致、最大绝对差 0。
+- RTX 5090 canonical T=10 student efficiency receipt：29.631 ms/clip、33.748 clips/s。T=16 收据已明确改标为 synthetic positional-capacity analysis，不是论文任务协议。
+- raw archive 的 13 个零字节 MP4 和 1,019 个短流仍完整记录，但仅属于 optional diagnostic；canonical JPG/WAV 主线不读取、填充或替换它们。
 
-这些不是遗漏，而是 raw 数据未通过前必须保持的 fail-closed 边界。
+## 尚未完成
 
-## 当前外部阻塞项
+1. teacher cache 仍为 `0/24,800`；需运行可恢复、逐记录有 receipt 的全量导出。
+2. exported manifests 和所有 artifacts 尚未完成 full audit，因此 cache root SHA256 仍不存在。
+3. 真实数据一步 forward/backward preflight 尚未运行，调用次数保持 0；必须等完整 cache audit 通过后且最多运行一次。
+4. `configs/ov_orthkd_mm26_repro_ready.yaml` 仍有意不存在；canonical readiness receipt 尚不能 READY。
+5. 正式学生训练未启动，`reproduction.full_run_blocked: true` 保持不变。
 
-1. 从 OV-AVEL 作者获得修正后的官方 raw archive，或 13 个精确原始 MP4 与作者校验值。
-2. 从作者获得 1,019 个短视频的官方处理协议，或作者发布的修正源文件。
+## 下一步严格顺序
 
-VGGSound metadata 只能确认来源身份和候选开始时间，不能授权重新下载后冒充作者发布字节；其中 `di01T0hGboU` 还有两个候选时间戳，仓库没有猜测。
-
-可直接提交给作者的完整说明位于 [`reports/data/OVAVEBENCH_RAW_VIDEO_AUTHOR_REQUEST.md`](reports/data/OVAVEBENCH_RAW_VIDEO_AUTHOR_REQUEST.md)。建议在官方仓库创建 issue：<https://github.com/jasongief/OV-AVEL/issues/new>。
-
-## 作者材料到达后的严格顺序
-
-1. 保持两个原始下载 archive 不变，把作者修正文件放进未跟踪的 quarantine overlay。
-2. 为作者文件建立 declaration，并运行 `scripts/verify_ovave_raw_replacements.py`；必须是完整唯一的 13 项集合、作者控制的 locator、重新计算的 SHA256、非零字节、音视频流可解码且时长合规。
-3. 按作者正式说明锁定短视频协议；不得自行选择 padding、repeat、loop 或替代源。
-4. 重新运行完整 raw layout audit，要求零 error/zero-byte/short-policy violation。
-5. 重新构建并全量审计 train/val/test source manifests。
-6. 依次运行真实教师 smoke/repeatability、24,800 条全量教师导出和 artifact audit，生成 cache root SHA256。
-7. 最多运行一次真实数据的一步 forward/backward preflight。
-8. 重新生成 canonical readiness receipt；只有完整证据链为 READY 后才能进入下一次人工 review。不得在本阶段直接启动正式学生训练。
+1. 从已审计 source manifests 可恢复地导出 24,800 条 InternVideo2/BEATs/CLAP artifacts。
+2. 对 exported manifests 和 cache 全量逐文件审计，锁定 cache root SHA256。
+3. 运行且只运行一次真实数据单 optimizer-step preflight，核对 shape receipt 中所有 temporal 张量均为 T=10。
+4. 生成 ready config/readiness receipt，运行全测试并做人工审阅。
+5. 只有人工审阅确认 `READY_FOR_CONFERENCE_REPRO` 后，才按实验计划启动正式复现。
 
 ## Web 审阅入口
 
-- 阶段总报告：[`reports/R3_ASSET_DOWNLOAD_AND_READINESS_REPORT.md`](reports/R3_ASSET_DOWNLOAD_AND_READINESS_REPORT.md)
-- 最终 readiness：[`reports/mm26_conference_readiness.json`](reports/mm26_conference_readiness.json)
-- data lock：[`configs/locks/mm26_data_lock.yaml`](configs/locks/mm26_data_lock.yaml)
-- download lock：[`configs/locks/mm26_download_lock.yaml`](configs/locks/mm26_download_lock.yaml)
-- archival lock：[`configs/locks/mm26_archival_facts.yaml`](configs/locks/mm26_archival_facts.yaml)
-- teacher lock：[`configs/locks/mm26_teacher_lock.yaml`](configs/locks/mm26_teacher_lock.yaml)
-- raw 全量审计：[`reports/data/raw_video_layout_discovery.json`](reports/data/raw_video_layout_discovery.json)
-- raw 恢复清单：[`reports/data/ovave_raw_video_recovery_manifest.json`](reports/data/ovave_raw_video_recovery_manifest.json)
-- 预处理全量审计收据：[`reports/data/preprocessed_filesystem_layout_receipt.json`](reports/data/preprocessed_filesystem_layout_receipt.json)
+- 本阶段总报告：[`reports/R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md`](reports/R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md)
+- source audit：[`reports/mm26_source_manifest_audit.json`](reports/mm26_source_manifest_audit.json)
+- teacher identity：[`reports/teachers/teacher_identity.json`](reports/teachers/teacher_identity.json)
+- repeatability：[`reports/teachers/smoke_repeatability.json`](reports/teachers/smoke_repeatability.json)
+- data/download/teacher/archival/preprocessing locks：[`configs/locks`](configs/locks)
+- 当前 fail-closed readiness：[`reports/mm26_conference_readiness.json`](reports/mm26_conference_readiness.json)
+- 稿件精确替换文字：[`docs/MM26_TEMPORAL_PROTOCOL_TEXT_CORRECTIONS.md`](docs/MM26_TEMPORAL_PROTOCOL_TEXT_CORRECTIONS.md)
 
 ## 数据与仓库边界
 
-GitHub 仓库只包含代码、配置、锁、测试、小型审计收据以及不含媒体字节的结构化报告。下列内容由 `.gitignore` 排除且仅保留在 5090：
+GitHub 只上传代码、配置、测试和小型审计收据。`data/` 中的正式数据、source/export manifests、下载断点，`weights/`、teacher cache、outputs/logs/runs、Cookie/HAR/token/signed URL 都留在 5090，不上传。
 
-- `data/` 下的正式数据、解压树、下载断点、quarantine 和临时状态；
-- `weights/`、checkpoint、teacher cache；
-- outputs、logs、runs 和 evaluation results；
-- Cookie、HAR、signed URL、token、浏览器认证状态。
-
-5090 主工作路径为 `E:/OV-OrthKD-R3/repo`。正式数据和环境留在 5090，不应上传到 GitHub。
-
-## 审阅者需要判断的问题
-
-1. 是否认可当前对 13 个零字节 MP4 的 fail-closed 处理和作者替换边界？
-2. 是否存在可引用的作者证据，能够唯一确定 1,019 个短视频的正式 temporal boundary policy？
-3. 在上述两项解除前，是否同意继续禁止 source manifests、teacher cache、preflight 和正式训练？
-4. 作者证据到位后，是否按“raw audit → source audit → teacher export → artifact audit → one-step preflight → review”顺序进入下一阶段？
+5090 工作路径：`E:/OV-OrthKD-R3/repo`。

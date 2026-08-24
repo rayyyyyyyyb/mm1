@@ -31,7 +31,11 @@ def parse_args() -> argparse.Namespace:
         description="Build source manifests by referencing an already-discovered official OV-AVEBench layout."
     )
     parser.add_argument("--dataset-root", required=True)
-    parser.add_argument("--raw-video-root", required=True)
+    parser.add_argument(
+        "--raw-video-root",
+        default=None,
+        help="Optional raw-video tree used only for the fail-closed multiframe diagnostic.",
+    )
     parser.add_argument("--annotation-json", required=True)
     parser.add_argument("--meta-csv", required=True)
     parser.add_argument("--output-dir", default="data/ov_ave/source")
@@ -115,7 +119,7 @@ def build_official_record(
     dataset_root: Path,
     row: dict[str, str],
     annotations: dict[str, dict[str, Any]],
-    raw_video_path: Path,
+    raw_video_path: Path | None,
     path_root: Path,
     path_mode: str,
 ) -> dict[str, Any]:
@@ -132,15 +136,23 @@ def build_official_record(
         raise FileNotFoundError(f"Missing official WAV: {audio_path}")
     if not video_dir.is_dir():
         raise FileNotFoundError(f"Missing official JPG directory: {video_dir}")
-    raw_video_path = raw_video_path.expanduser().resolve()
-    if (
-        not raw_video_path.is_file()
-        or raw_video_path.suffix.lower() not in VIDEO_EXTENSIONS
-        or raw_video_path.stat().st_size <= 0
-    ):
-        raise FileNotFoundError(
-            f"Missing non-empty official raw video: {raw_video_path}"
-        )
+    resolved_raw_video = (
+        raw_video_path.expanduser().resolve() if raw_video_path is not None else None
+    )
+    raw_available = bool(
+        resolved_raw_video is not None
+        and resolved_raw_video.is_file()
+        and resolved_raw_video.suffix.lower() in VIDEO_EXTENSIONS
+        and resolved_raw_video.stat().st_size > 0
+    )
+    if resolved_raw_video is None or not resolved_raw_video.exists():
+        raw_status = "missing_optional_input"
+    elif resolved_raw_video.suffix.lower() not in VIDEO_EXTENSIONS:
+        raw_status = "unsupported_optional_input"
+    elif resolved_raw_video.stat().st_size <= 0:
+        raw_status = "zero_byte_optional_input"
+    else:
+        raw_status = "available"
     actual_files = sorted(
         (path for path in video_dir.iterdir() if path.is_file()), key=natural_path_key
     )
@@ -153,13 +165,15 @@ def build_official_record(
             "silent repetition, and temporal resampling are forbidden."
         )
     split_type = normalize_split_type(cls_type)
-    return {
+    record = {
         "id": clip_id,
         "query": category,
         "frame_paths": [[_serialize_path(path, path_root, path_mode)] for path in actual_files],
         "spectrogram_paths": [],
         "audio_path": _serialize_path(audio_path, path_root, path_mode),
-        "raw_video_path": _serialize_path(raw_video_path, path_root, path_mode),
+        "segment_timestamps": [
+            [float(index), float(index + 1)] for index in range(len(labels))
+        ],
         "segment_labels": labels,
         "split_type": split_type,
         "domain": "ov_avebench",
@@ -169,7 +183,10 @@ def build_official_record(
             "cls_type": cls_type,
             "split_type": split_type,
             "source": "released_ovavel_dataset_anno.json",
-            "raw_video_source": "official_sharepoint_raw_video",
+            "raw_video_diagnostic": {
+                "available": raw_available,
+                "status": raw_status,
+            },
             "preprocessing_mode": CANONICAL_MODE,
             "canonical_visual_extension": ".jpg",
             "canonical_frame_names": list(OFFICIAL_FRAME_NAMES),
@@ -180,6 +197,14 @@ def build_official_record(
             },
         },
     }
+    if raw_available and resolved_raw_video is not None:
+        record["raw_video_path"] = _serialize_path(
+            resolved_raw_video, path_root, path_mode
+        )
+        record["meta"]["raw_video_diagnostic"]["source"] = (
+            "official_sharepoint_raw_video"
+        )
+    return record
 
 
 def _build_record(**kwargs: Any) -> dict[str, Any]:
@@ -331,18 +356,22 @@ def main() -> None:
         return (PROJECT_ROOT / path).resolve() if not path.is_absolute() else path.resolve()
 
     dataset_root = resolved(args.dataset_root)
-    raw_video_root = resolved(args.raw_video_root)
+    raw_video_root = resolved(args.raw_video_root) if args.raw_video_root else None
     annotation_json = resolved(args.annotation_json)
     meta_csv = resolved(args.meta_csv)
     output_dir = resolved(args.output_dir)
     path_root = resolved(args.path_root)
     spectrogram_root = resolved(args.spectrogram_dir)
-    for required in (dataset_root, raw_video_root, annotation_json, meta_csv):
+    for required in (dataset_root, annotation_json, meta_csv):
         if not required.exists():
             raise FileNotFoundError(f"Required official input not found: {required}")
+    if raw_video_root is not None and not raw_video_root.exists():
+        raise FileNotFoundError(
+            f"Optional raw-video root was explicitly supplied but not found: {raw_video_root}"
+        )
     annotations = _load_annotations(annotation_json)
     rows = _load_meta_rows(meta_csv)
-    raw_video_index = index_raw_videos(raw_video_root)
+    raw_video_index = index_raw_videos(raw_video_root) if raw_video_root is not None else {}
     records_by_split: dict[str, list[dict[str, Any]]] = {"train": [], "val": [], "test": []}
     limit = None if args.limit_per_split is None else max(1, int(args.limit_per_split))
     for row in rows:
@@ -356,7 +385,7 @@ def main() -> None:
                 dataset_root=dataset_root,
                 row=row,
                 annotations=annotations,
-                raw_video_path=raw_video_index.get(row["vid_name"].strip(), raw_video_root / "__missing__"),
+                raw_video_path=raw_video_index.get(row["vid_name"].strip()),
                 path_root=path_root,
                 path_mode=args.path_mode,
             )

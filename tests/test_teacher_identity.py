@@ -7,7 +7,11 @@ from pathlib import Path
 
 import torch
 
-from scripts.inspect_teacher_identity import _run_smoke, inspect_teacher_identity
+from scripts.inspect_teacher_identity import (
+    _run_smoke,
+    build_repeatability_receipt,
+    inspect_teacher_identity,
+)
 
 
 def _git_repo(path: Path) -> str:
@@ -112,16 +116,47 @@ def test_declared_base_b14_is_bound_to_the_fixed_small_composition_class(tmp_pat
     assert report["teachers"]["internvideo2"]["upstream_class"] == "InternVideo2_CLIP_small"
 
 
-def test_real_smoke_uses_raw_video_all_ten_audio_segments_and_exact_shapes() -> None:
+def test_real_smoke_uses_explicit_visual_dispatch_all_ten_audio_segments_and_exact_shapes() -> None:
     source = inspect.getsource(_run_smoke)
 
-    assert "strong.export_video(raw_video_path" in source
-    assert "resolve_frame_groups" not in source
+    assert "export_strong_visual_teacher(" in source
+    assert "strong.export_video(" not in source
     assert "resolve_audio_segments(record, expected_segments)[:1]" not in source
     assert '"internvideo2_features": [10, 512]' in source
     assert '"beats_features": [10, 768]' in source
     assert '"clap_text_features": [1024]' in source
     assert "torch.cuda.synchronize" in source
+
+
+def test_repeatability_receipt_is_derived_from_real_smoke_comparisons() -> None:
+    identity = {
+        "smoke": {
+            "status": "pass",
+            "record_id": "clip",
+            "source_manifest": "train.jsonl",
+            "repeatability": {
+                "status": "pass",
+                "repeat_count": 2,
+                "tolerance": 0.0,
+                "outputs": {
+                    "strong": {
+                        "finite": True,
+                        "passed": True,
+                        "max_abs_diff": 0.0,
+                        "mean_abs_diff": 0.0,
+                    }
+                },
+            },
+        },
+        "errors": [],
+    }
+
+    receipt = build_repeatability_receipt(identity)
+
+    assert receipt["status"] == "pass"
+    assert receipt["all_finite"] is True
+    assert receipt["repeat_count"] == 2
+    assert receipt["max_abs_diff"] == 0.0
 
 
 def test_finetuned_beats_checkpoint_is_blocked(tmp_path: Path) -> None:

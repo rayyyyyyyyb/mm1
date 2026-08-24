@@ -18,8 +18,8 @@ def test_taskbook_reconstruction_claim_and_temporal_protocol_are_exact() -> None
     assert config["reproduction"]["claim_level"] == "paper_specified_reconstruction"
     assert config["reproduction"]["asset_download_lock_required"] is True
     assert config["reproduction"]["full_run_blocked"] is True
-    assert config["data"]["actual_segments"] == 10
-    assert config["data"]["max_segments"] == 16
+    assert config["data"]["num_segments"] == 10
+    assert config["student"]["max_position_segments"] == 16
     assert config["data"]["temporal_resampling"] is False
     assert config["data"]["temporal_overflow_policy"] == "error"
 
@@ -83,15 +83,24 @@ def test_taskbook_audio_and_visual_teacher_preprocessing_are_exact() -> None:
         "second_imagenet_normalization": False,
         "beats_source": "raw_16khz_waveform",
     }
-    assert internvideo["source"] == "official_raw_video"
-    assert internvideo["video_duration_seconds"] == 10
-    assert internvideo["intervals"] == 10
-    assert internvideo["decode"] == "deterministic_timestamps"
-    assert internvideo["temporal_sampling_fps"] == 16
+    assert internvideo["source"] == "official_segment_keyframes"
+    assert internvideo["input_mode"] == "official_segment_keyframes"
+    assert internvideo["task_segments"] == 10
     assert internvideo["num_frames"] == 8
-    assert internvideo["frame_sampling"] == "uniform_within_each_one_second_interval"
-    assert internvideo["short_clip_policy"] == "error"
-    assert internvideo["missing_video_policy"] == "block"
+    assert internvideo["frame_sampling"] == "repeat_segment_keyframe"
+    assert internvideo["frame_expansion"] == "repeat_last_to_num_frames"
+    assert internvideo["missing_keyframe_policy"] == "block"
+    assert internvideo["raw_video_diagnostic"] == {
+        "enabled": False,
+        "source": "official_raw_video",
+        "video_duration_seconds": 10,
+        "intervals": 10,
+        "decode": "deterministic_timestamps",
+        "temporal_sampling_fps": 16,
+        "frame_sampling": "uniform_within_each_one_second_interval",
+        "short_clip_policy": "error",
+        "missing_video_policy": "block_when_enabled",
+    }
     assert internvideo["repo_root"] == (
         "external/teachers/InternVideo/InternVideo2/multi_modality"
     )

@@ -212,6 +212,24 @@ def _ready_inputs(tmp_path: Path) -> dict[str, Path]:
                 "backward_completed": True,
                 "checkpoint_resume_completed": True,
                 "losses_finite": True,
+                "temporal_shape_receipt": {
+                    "schema_version": 1,
+                    "protocol": "official_ov_avebench_t10",
+                    "task_segments": 10,
+                    "shapes": {
+                        "visual_input": [1, 10, 3, 224, 224],
+                        "audio_input": [1, 10, 3, 224, 224],
+                        "visual_teacher_features": [1, 10, 512],
+                        "audio_teacher_features": [1, 10, 768],
+                        "label": [1, 10],
+                        "student_logits": [1, 10],
+                        "sequence_mask": [1, 10],
+                        "metric_labels": [10],
+                        "metric_probabilities": [10],
+                    },
+                    "alignment_valid": True,
+                    "temporal_resampling_performed": False,
+                },
             },
         ),
         "verification": _write(
@@ -267,6 +285,33 @@ def test_builder_rejects_structurally_plausible_but_forged_receipts(tmp_path: Pa
     assert report["ready"] is False
     assert report["requirements"]["canonical_evidence_chain"]["passed"] is False
     assert "canonical_evidence_chain" in report["blockers"]
+
+
+def test_builder_real_preflight_gate_requires_t10_shape_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inputs = _ready_inputs(tmp_path)
+    preflight = json.loads(inputs["real_preflight"].read_text(encoding="utf-8"))
+    preflight.pop("temporal_shape_receipt")
+    inputs["real_preflight"].write_text(json.dumps(preflight), encoding="utf-8")
+    config = _config_for_inputs(tmp_path, inputs)
+    monkeypatch.setattr(
+        readiness_module,
+        "validate_canonical_readiness",
+        lambda value: {"status": "ready"},
+    )
+
+    report = build_conference_readiness(config, inputs)
+
+    assert report["requirements"]["real_one_step_preflight"]["passed"] is False
+    assert "real_one_step_preflight" in report["blockers"]
+
+
+def test_builder_default_preflight_path_matches_current_r4_config() -> None:
+    assert readiness_module.DEFAULT_INPUTS["real_preflight"] == (
+        "reports/runtime/r4_real_preflight.json"
+    )
 
 
 def test_builder_rejects_cli_input_that_differs_from_config_readiness(

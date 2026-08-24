@@ -18,13 +18,39 @@ from src.models.ov_orthkd import OVOrthKDStudent
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Measure synchronized OV-OrthKD student latency")
-    parser.add_argument("--segments", type=int, default=16)
+    parser.add_argument("--segments", type=int, default=10)
+    parser.add_argument(
+        "--protocol-mode",
+        choices=("canonical_official_t10", "synthetic_capacity_analysis"),
+        default="canonical_official_t10",
+    )
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--text-dim", type=int, default=1024)
     parser.add_argument("--warmup", type=int, default=10)
     parser.add_argument("--iterations", type=int, default=100)
     parser.add_argument("--device", default=None)
     return parser.parse_args()
+
+
+def efficiency_protocol_receipt(segments: int, protocol_mode: str) -> dict[str, object]:
+    segments = int(segments)
+    if protocol_mode == "canonical_official_t10":
+        if segments != 10:
+            raise ValueError("canonical_official_t10 requires --segments 10")
+        paper_protocol_measurement = True
+    elif protocol_mode == "synthetic_capacity_analysis":
+        if segments < 1:
+            raise ValueError("synthetic capacity analysis requires positive segments")
+        paper_protocol_measurement = False
+    else:
+        raise ValueError(f"Unsupported protocol mode: {protocol_mode}")
+    return {
+        "protocol_mode": protocol_mode,
+        "input_segments": segments,
+        "task_segments": 10,
+        "paper_protocol_measurement": paper_protocol_measurement,
+        "temporal_resampling_performed": False,
+    }
 
 
 def count_parameters(model: torch.nn.Module) -> int:
@@ -75,6 +101,7 @@ def measure_latency(
 
 def main() -> None:
     args = parse_args()
+    protocol = efficiency_protocol_receipt(args.segments, args.protocol_mode)
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     model = OVOrthKDStudent(
         visual_backbone="convnextv2_tiny.fcmae_ft_in22k_in1k",
@@ -85,7 +112,7 @@ def main() -> None:
         path_mode="explicit_projected",
         temporal_layers=4,
         temporal_heads=8,
-        max_segments=max(16, args.segments),
+        max_position_segments=max(16, args.segments),
     )
     latency_ms = measure_latency(
         model,
@@ -98,9 +125,8 @@ def main() -> None:
     )
     trainable_parameters = count_parameters(model)
     result = {
+        **protocol,
         "device": str(device),
-        "segments": args.segments,
-        "segment_label": f"T={args.segments}",
         "average_latency_ms": latency_ms,
         "throughput_clips_per_second": 1000.0 / latency_ms,
         "trainable_parameters": trainable_parameters,

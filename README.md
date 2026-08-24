@@ -4,7 +4,9 @@ This package contains the core implementation of OV-OrthKD for research collabor
 
 Paper: *If You Hear It, Help Find It: Orthogonal Knowledge Distillation for Open-Vocabulary Audio-Visual Event Localization* (ACM Multimedia 2026).
 
-> **Current reproduction status (2026-08-24):** `BLOCKED_BEFORE_CONFERENCE_REPRO`. Both official archives and all public teacher weights are downloaded and audited on the RTX 5090, but the author-issued raw archive contains 13 zero-byte formal MP4s and 1,019 additional streams below the locked ten-second policy. Read [CURRENT_STATUS.md](CURRENT_STATUS.md) before reviewing or running the reproduction workflow.
+> **Current reproduction status (2026-08-24):** `BLOCKED_BEFORE_CONFERENCE_REPRO`. Official T=10 source manifests and a real repeat-2 InternVideo2/BEATs/CLAP smoke now pass on the RTX 5090. Formal reproduction remains blocked until the 24,800-record teacher cache, full artifact audit, cache root SHA256, single real-data preflight, and human readiness review are complete. Read [CURRENT_STATUS.md](CURRENT_STATUS.md) before reviewing or running the reproduction workflow.
+
+The canonical task protocol is ten one-second temporal segments. `student.max_position_segments=16` is model capacity, while InternVideo2 `num_frames=8` is the teacher input-frame count. No label, logit, teacher-feature, or metric path converts T=10 to T=16.
 
 ## Included
 
@@ -108,7 +110,7 @@ python scripts/inspect_teacher_identity.py \
 python scripts/export_teacher_artifacts.py --help
 ```
 
-The mock backend is only for pipeline validation. Full teacher export remains prohibited while the configured Base/B14 identity conflicts with the wrapper's actual `InternVideo2_CLIP_small` import or any checkpoint identity is unresolved.
+The mock backend is only for pipeline validation. The exact Base/B14 composition, pinned `InternVideo2_CLIP_small` upstream class, five checkpoint files, canonical keyframe input mode and output shapes are locked by `configs/locks/mm26_teacher_lock.yaml`. Run full export only from the passed official source manifests.
 
 ## Reproduction modes
 
@@ -125,7 +127,7 @@ Checkpoints and reports record the selected implementation mode. Cross-combining
 python scripts/train_ov_orthkd.py --config configs/ov_orthkd_mm26_repro.yaml
 ```
 
-The canonical command above intentionally stops before loading data. Formal claims first validate the versioned archive/layout/source/teacher/evaluator/export/preflight evidence chain, and `reproduction.full_run_blocked: true` then independently prohibits full training during R2. Nine archival facts remain unresolved. `--allow-blocked-reproduction` cannot bypass a formal canonical claim; it is limited to explicitly named diagnostic/noncanonical output namespaces and writes `NON_CANONICAL_UNRESOLVED_RUN.txt`.
+The canonical command above intentionally stops before loading data. Formal claims first validate the versioned archive/layout/source/teacher/evaluator/export/preflight evidence chain, and `reproduction.full_run_blocked: true` independently prohibits full training during the preparation stage. `--allow-blocked-reproduction` cannot bypass a formal canonical claim; it is limited to explicitly named diagnostic/noncanonical output namespaces and writes `NON_CANONICAL_UNRESOLVED_RUN.txt`.
 
 The single permitted real-data preflight is also gated and must never emit formal AP/F1 results:
 
@@ -137,7 +139,7 @@ python scripts/preflight_ov_orthkd.py \
   --real-data --optimizer-steps 1
 ```
 
-Training records resolved config, Git state, environment, manifest hashes, history, structured predictions, best/last checkpoints, and global optimizer step. Evaluation calibrates a threshold on validation once and freezes it for total/seen/unseen test metrics. See `reports/R2_CONFERENCE_REPRODUCTION_READINESS_REPORT.md` for the current evidence and blockers.
+Training records resolved config, Git state, environment, manifest hashes, history, structured predictions, best/last checkpoints, and global optimizer step. Evaluation calibrates a threshold on validation once and freezes it for total/seen/unseen test metrics. See `reports/R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md` for the current evidence and remaining gates.
 
 ## Collaboration note
 

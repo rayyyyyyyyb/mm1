@@ -1,6 +1,6 @@
 schema_version: 2
-status: blocked_raw_video_validation
-blocked_by: "Official raw archive has 13 zero-byte formal MP4s and 1,019 further streams below the locked ten-second policy"
+status: source_ready_teacher_export_pending
+blocked_by: "Canonical source data passed; the 24,800-record teacher export, full artifact audit, and one-step preflight remain pending"
 upstream:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
@@ -26,7 +26,7 @@ official_archive:
   archive_test: passed
   archive_listing_sha256: "288250bb0b74a800a731af5d224f058ddf54233178cd5216eeeda726c5106f31"
 raw_video_archive:
-  status: blocked_raw_video_validation
+  status: passed_optional_diagnostic_degraded
   filename: "OV-AVEBench_raw_videos.tar.gz"
   path: "data/downloads/incoming/ovave_raw_videos/OV-AVEBench_raw_videos.tar.gz"
   bytes: 38147170955
@@ -61,7 +61,7 @@ layout:
   errors: 0
   warnings: 0
 raw_video_layout:
-  status: blocked_raw_video_validation
+  status: optional_diagnostic_degraded
   report: "reports/data/raw_video_layout_discovery.json"
   report_sha256: "4831a1b93791ae1749d8ce8eb52e12cd129b672dfe815ed73cf1cef9952fd592"
   dataset_root: "data/official/ovave_raw/Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset"
@@ -74,17 +74,39 @@ raw_video_layout:
   shorter_than_ten_seconds: 1019
   ignored_macos_appledouble_sidecars: 25
 source_manifests:
-  status: blocked_raw_video_validation
-  train: {path: null, count: null, sha256: null}
-  val: {path: null, count: null, sha256: null}
-  test: {path: null, count: null, sha256: null}
+  status: passed
+  train:
+    path: "data/ov_ave/source/train.jsonl"
+    count: 13182
+    bytes: 30361994
+    sha256: "296e087bee10c2ef40ac647fa6d19ae355296366f4f281bca3b58dfd1663d9a0"
+  val:
+    path: "data/ov_ave/source/val.jsonl"
+    count: 5798
+    bytes: 13264784
+    sha256: "deebdc384b6d12d9794b923b4c4387205bc33c819aac06cc92bb1c0febb5fa16"
+  test:
+    path: "data/ov_ave/source/test.jsonl"
+    count: 5820
+    bytes: 13385007
+    sha256: "d2d7ec2a7b45651fb620d826edcef3d18c8eac861732f12af538bbb4a794a814"
 source_audit:
-  status: blocked_raw_video_validation
+  status: passed
   path: "reports/mm26_source_manifest_audit.json"
-  builder_exit_code: 1
-  partial_outputs_published: false
+  sha256: "a421698751e37ee3faff1f3176acb55c46babbc3a0a4793c71541e14b8974635"
+  builder_exit_code: 0
+  audit_exit_code: 0
+  record_count: 24800
+  errors: 0
+  warnings: 0
+  temporal_segments: 10
+  temporal_resampling_performed: false
+  partial_outputs_published: true
 blockers:
-  - "Obtain author-issued corrected bytes for the exact 13 zero-byte formal MP4 paths; do not reconstruct them from YouTube or a mirror."
-  - "Obtain an official temporal-policy clarification or corrected source bytes for the 1,019 non-empty streams below ten seconds."
-  - "Re-run raw layout audit, source-manifest build, real teacher smoke/export and one-step preflight only after both raw-data blockers are resolved."
+  - "Run the resumable 24,800-record teacher export from the audited official keyframe/WAV manifests."
+  - "Run a full exported-artifact audit and record the cache root SHA256."
+  - "Only after the full cache audit passes, run the single permitted real-data one-step preflight."
+diagnostics:
+  - "The optional raw archive retains 13 zero-byte MP4s and 1,019 non-empty streams shorter than ten seconds."
+  - "These facts remain recorded for raw-video diagnostics but do not block the canonical official JPG/WAV path under the user-approved T=10 protocol."
 final_status: BLOCKED_BEFORE_CONFERENCE_REPRO

@@ -1,16 +1,68 @@
 {
   "schema_version": 1,
-  "status": "blocked_auth_required",
-  "repeat_count": 0,
+  "status": "pass",
+  "repeat_count": 2,
   "tolerance": 0.0,
-  "outputs": null,
-  "all_finite": null,
-  "max_abs_diff": null,
-  "mean_abs_diff": null,
-  "strict_teacher_loads": {
-    "internvideo2": "passed",
-    "beats": "passed",
-    "clap": "passed"
+  "all_finite": true,
+  "all_passed": true,
+  "max_abs_diff": 0.0,
+  "mean_abs_diff": 0.0,
+  "outputs": {
+    "beats_features": {
+      "shape": [
+        10,
+        768
+      ],
+      "present_each_repeat": true,
+      "shape_identical": true,
+      "finite": true,
+      "bitwise_identical": true,
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "tolerance": 0.0,
+      "passed": true
+    },
+    "clap_text_features": {
+      "shape": [
+        1024
+      ],
+      "present_each_repeat": true,
+      "shape_identical": true,
+      "finite": true,
+      "bitwise_identical": true,
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "tolerance": 0.0,
+      "passed": true
+    },
+    "internvideo2_features": {
+      "shape": [
+        10,
+        512
+      ],
+      "present_each_repeat": true,
+      "shape_identical": true,
+      "finite": true,
+      "bitwise_identical": true,
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "tolerance": 0.0,
+      "passed": true
+    },
+    "internvideo2_logits": {
+      "shape": [
+        10
+      ],
+      "present_each_repeat": true,
+      "shape_identical": true,
+      "finite": true,
+      "bitwise_identical": true,
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "tolerance": 0.0,
+      "passed": true
+    }
   },
-  "blocked_by": "AUTH_REQUIRED: a real official train sample cannot be selected until both SharePoint archives are downloaded and fully audited"
+  "record_id": "EpxQKLhAP0s",
+  "source_manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\source\\train.jsonl"
 }

@@ -11,7 +11,6 @@ reproduction:
   mock_only: true
   implementation_mode: "camera_ready_explicit_paths"
   blocked_archival_facts:
-    - "T=10 official labels versus 16 temporal segments stated in camera-ready implementation table"
     - "exact InternVideo2 model class and three checkpoint identities"
     - "meaning of step400 schedule, scheduler gamma/interval, early-stop patience"
     - "student pretrained initialization and exact train augmentation"
@@ -45,7 +44,8 @@ data:
   batch_size: 2
   num_workers: 0
   pin_memory: true
-  max_segments: 16
+  num_segments: 10
+  temporal_resampling: false
   allow_missing_modalities: false
   strict_alignment: true
   required_artifacts:
@@ -60,6 +60,7 @@ data:
   train_augment: false
 
 student:
+  max_position_segments: 16
   visual_backbone: "convnextv2_tiny.fcmae_ft_in22k_in1k"
   audio_backbone: "tf_efficientnetv2_b2.in1k"
   fusion_dim: 384

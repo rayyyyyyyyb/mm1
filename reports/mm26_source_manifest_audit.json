@@ -1,29 +1,187 @@
 {
-  "schema_version": 2,
-  "status": "blocked_raw_video_validation",
+  "schema_version": 1,
+  "status": "passed",
   "stage": "source",
   "artifact_scan": "none",
-  "record_count": null,
-  "split_counts": null,
-  "split_seen_unseen_counts": null,
-  "manifest_bytes": {"train": null, "val": null, "test": null},
-  "source_manifest_sha256": {"train": null, "val": null, "test": null},
-  "builder_exit_code": 1,
-  "partial_outputs_published": false,
-  "first_rejected_path": "train/arc welding/IUUe8-Zn9cA.mp4",
-  "first_error": "Missing non-empty official raw video",
-  "upstream_raw_layout": {
-    "path": "reports/data/raw_video_layout_discovery.json",
-    "sha256": "4831a1b93791ae1749d8ce8eb52e12cd129b672dfe815ed73cf1cef9952fd592",
-    "formal_video_count": 24800,
-    "zero_byte_video_count": 13,
-    "shorter_than_ten_seconds_count": 1019,
-    "metadata_id_match_rate": 1.0
+  "path_root": "E:\\OV-OrthKD-R3\\repo",
+  "split_counts": {
+    "train": 13182,
+    "val": 5798,
+    "test": 5820
   },
-  "errors": [
-    "13 formal raw MP4 paths are zero-byte in the official author archive.",
-    "1,019 additional non-empty streams are shorter than the locked ten-second temporal policy; no alternative policy has author evidence."
+  "canonical_expected_split_counts": {
+    "train": 13182,
+    "val": 5798,
+    "test": 5820
+  },
+  "canonical_split_count_matches": {
+    "train": true,
+    "val": true,
+    "test": true
+  },
+  "canonical_expected_split_seen_unseen_counts": {
+    "train": {
+      "seen": 13182,
+      "unseen": 0
+    },
+    "val": {
+      "seen": 1651,
+      "unseen": 4147
+    },
+    "test": {
+      "seen": 1664,
+      "unseen": 4156
+    }
+  },
+  "record_count": 24800,
+  "category_count": 67,
+  "category_counts": {
+    "airplane flyby": 308,
+    "ambulance siren": 462,
+    "arc welding": 361,
+    "baby laughter": 221,
+    "basketball bounce": 430,
+    "bird chirping": 469,
+    "bowling impact": 318,
+    "cat purring": 264,
+    "cattle mooing": 268,
+    "chainsawing trees": 470,
+    "chicken crowing": 362,
+    "child singing": 310,
+    "child speech": 455,
+    "church bell ringing": 306,
+    "cricket chirping": 206,
+    "crow cawing": 306,
+    "dog barking": 330,
+    "driving buses": 501,
+    "electric shaver": 321,
+    "engine accelerating": 496,
+    "female singing": 472,
+    "female speech": 480,
+    "fire truck siren": 304,
+    "fireworks banging": 490,
+    "frog croaking": 298,
+    "gibbon howling": 228,
+    "goose honking": 320,
+    "helicopter": 495,
+    "horse clip-clop": 401,
+    "lions roaring": 262,
+    "missile launch": 279,
+    "motorboat": 500,
+    "mynah bird singing": 248,
+    "ocean burbling": 460,
+    "people booing": 376,
+    "people burping": 404,
+    "people cheering": 270,
+    "people clapping": 412,
+    "people crowd": 482,
+    "people sniggering": 388,
+    "people whistling": 358,
+    "playing acoustic guitar": 492,
+    "playing banjo": 497,
+    "playing bass drum": 300,
+    "playing bass guitar": 490,
+    "playing bassoon": 431,
+    "playing cymbal": 468,
+    "playing drum kit": 490,
+    "playing electric guitar": 491,
+    "playing glockenspiel": 322,
+    "playing harp": 462,
+    "playing mandolin": 216,
+    "playing piano": 490,
+    "playing saxophone": 450,
+    "playing sitar": 218,
+    "playing synthesizer": 349,
+    "playing violin": 490,
+    "race car": 500,
+    "roller coaster running": 194,
+    "singing bowl": 448,
+    "slot machine": 354,
+    "train horning": 289,
+    "turkey gobbling": 250,
+    "typing on typewriter": 238,
+    "vacuum cleaner cleaning floors": 291,
+    "volcano explosion": 259,
+    "woodpecker pecking tree": 230
+  },
+  "seen_classes": 46,
+  "unseen_classes": 21,
+  "split_type_counts": {
+    "seen": 16497,
+    "unseen": 8303
+  },
+  "split_seen_unseen_counts": {
+    "train": {
+      "seen": 13182,
+      "unseen": 0
+    },
+    "val": {
+      "seen": 1651,
+      "unseen": 4147
+    },
+    "test": {
+      "seen": 1664,
+      "unseen": 4156
+    }
+  },
+  "duplicate_ids": {
+    "train": [],
+    "val": [],
+    "test": []
+  },
+  "split_overlap": [],
+  "label_histogram": {
+    "0": 94597,
+    "1": 153403
+  },
+  "segment_length_histogram": {
+    "10": 24800
+  },
+  "frame_count_histogram": {
+    "10": 24800
+  },
+  "manifest_sha256": {
+    "train": "296e087bee10c2ef40ac647fa6d19ae355296366f4f281bca3b58dfd1663d9a0",
+    "val": "deebdc384b6d12d9794b923b4c4387205bc33c819aac06cc92bb1c0febb5fa16",
+    "test": "d2d7ec2a7b45651fb620d826edcef3d18c8eac861732f12af538bbb4a794a814"
+  },
+  "manifest_bytes": {
+    "train": 30361994,
+    "val": 13264784,
+    "test": 13385007
+  },
+  "source_manifest_sha256": {
+    "train": "296e087bee10c2ef40ac647fa6d19ae355296366f4f281bca3b58dfd1663d9a0",
+    "val": "deebdc384b6d12d9794b923b4c4387205bc33c819aac06cc92bb1c0febb5fa16",
+    "test": "d2d7ec2a7b45651fb620d826edcef3d18c8eac861732f12af538bbb4a794a814"
+  },
+  "exported_manifest_sha256": null,
+  "configured_task_segments": 10,
+  "configured_artifact_dimensions": {
+    "strong_teacher_features": 512,
+    "weak_teacher_features": 768,
+    "text_embedding": 1024
+  },
+  "resampling_performed_by_dataset": false,
+  "resampling_evidence": {
+    "records_with_resampling": 0,
+    "records_without_resampling": 24800,
+    "records_missing_evidence": 0
+  },
+  "preprocessing_lock_status": "resolved",
+  "teacher_lock_status": "smoke_passed_export_pending",
+  "teacher_checkpoint_sha256": [
+    "1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7",
+    "2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6",
+    "670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a",
+    "c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e",
+    "d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34"
   ],
-  "warnings": [],
-  "final_status": "BLOCKED_BEFORE_CONFERENCE_REPRO"
+  "cache_root_sha256": null,
+  "cache_tree": null,
+  "artifacts_scanned": 0,
+  "path_errors": [],
+  "artifact_errors": [],
+  "errors": [],
+  "warnings": []
 }

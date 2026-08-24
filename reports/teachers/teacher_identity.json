@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "blocked",
+  "status": "pass",
   "teachers": {
     "internvideo2": {
       "wrapper_class": "InternVideo2ClipB14Teacher",
@@ -582,7 +582,10 @@
         }
       },
       "feature_dimension": 512,
-      "num_frames": 8
+      "num_frames": 8,
+      "input_mode": "official_segment_keyframes",
+      "task_segments": 10,
+      "frame_expansion": "repeat_last_to_num_frames"
     },
     "beats": {
       "wrapper_class": "BEATsAudioTeacher",
@@ -625,15 +628,166 @@
     }
   },
   "smoke": {
-    "status": "blocked",
-    "reason": "source manifest missing"
-  },
-  "errors": [
-    {
-      "code": "smoke_manifest_missing",
-      "message": "--source-manifest is required unless --skip-smoke is used"
+    "status": "pass",
+    "source_manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\source\\train.jsonl",
+    "record_index": 0,
+    "record_id": "EpxQKLhAP0s",
+    "query": "people burping",
+    "outputs": {
+      "internvideo2_features": {
+        "shape": [
+          10,
+          512
+        ],
+        "dtype": "float32",
+        "finite": true,
+        "min": -9.749735832214355,
+        "max": 2.6203739643096924,
+        "mean": -0.03288106247782707,
+        "std": 0.9865188515758413,
+        "nan_count": 0,
+        "inf_count": 0,
+        "norm": {
+          "min": 21.500492118972794,
+          "max": 23.041946336761495,
+          "mean": 22.32945147045087
+        }
+      },
+      "internvideo2_logits": {
+        "shape": [
+          10
+        ],
+        "dtype": "float32",
+        "finite": true,
+        "min": 6.921089172363281,
+        "max": 11.786578178405762,
+        "mean": 8.832785606384277,
+        "std": 1.8163031257474473,
+        "nan_count": 0,
+        "inf_count": 0,
+        "norm": {
+          "min": 28.516144878659308,
+          "max": 28.516144878659308,
+          "mean": 28.516144878659308
+        }
+      },
+      "beats_features": {
+        "shape": [
+          10,
+          768
+        ],
+        "dtype": "float32",
+        "finite": true,
+        "min": -5.823094844818115,
+        "max": 1.8779693841934204,
+        "mean": -0.000578907725866884,
+        "std": 0.2721445348710479,
+        "nan_count": 0,
+        "inf_count": 0,
+        "norm": {
+          "min": 6.902807326334962,
+          "max": 8.61523603356908,
+          "mean": 7.524754441901256
+        }
+      },
+      "clap_text_features": {
+        "shape": [
+          1024
+        ],
+        "dtype": "float32",
+        "finite": true,
+        "min": -3.8522136211395264,
+        "max": 2.8976383209228516,
+        "mean": -0.0012971879914402962,
+        "std": 1.003643560748219,
+        "nan_count": 0,
+        "inf_count": 0,
+        "norm": {
+          "min": 32.1166207693173,
+          "max": 32.1166207693173,
+          "mean": 32.1166207693173
+        }
+      }
+    },
+    "timings_ms": [
+      {
+        "internvideo2": 1071.2783000199124,
+        "beats": 457.16660004109144,
+        "clap": 51.58650001976639
+      },
+      {
+        "internvideo2": 504.5261000050232,
+        "beats": 84.68780003022403,
+        "clap": 15.293699922040105
+      }
+    ],
+    "gpu_memory": {
+      "allocated_bytes": 1663893504,
+      "peak_allocated_bytes": 6183477760
+    },
+    "repeatability": {
+      "status": "pass",
+      "repeat_count": 2,
+      "tolerance": 0.0,
+      "outputs": {
+        "beats_features": {
+          "shape": [
+            10,
+            768
+          ],
+          "present_each_repeat": true,
+          "shape_identical": true,
+          "finite": true,
+          "bitwise_identical": true,
+          "max_abs_diff": 0.0,
+          "mean_abs_diff": 0.0,
+          "tolerance": 0.0,
+          "passed": true
+        },
+        "clap_text_features": {
+          "shape": [
+            1024
+          ],
+          "present_each_repeat": true,
+          "shape_identical": true,
+          "finite": true,
+          "bitwise_identical": true,
+          "max_abs_diff": 0.0,
+          "mean_abs_diff": 0.0,
+          "tolerance": 0.0,
+          "passed": true
+        },
+        "internvideo2_features": {
+          "shape": [
+            10,
+            512
+          ],
+          "present_each_repeat": true,
+          "shape_identical": true,
+          "finite": true,
+          "bitwise_identical": true,
+          "max_abs_diff": 0.0,
+          "mean_abs_diff": 0.0,
+          "tolerance": 0.0,
+          "passed": true
+        },
+        "internvideo2_logits": {
+          "shape": [
+            10
+          ],
+          "present_each_repeat": true,
+          "shape_identical": true,
+          "finite": true,
+          "bitwise_identical": true,
+          "max_abs_diff": 0.0,
+          "mean_abs_diff": 0.0,
+          "tolerance": 0.0,
+          "passed": true
+        }
+      }
     }
-  ],
+  },
+  "errors": [],
   "warnings": [],
   "config": "E:\\OV-OrthKD-R3\\repo\\configs\\ov_orthkd_mm26_repro.yaml"
 }

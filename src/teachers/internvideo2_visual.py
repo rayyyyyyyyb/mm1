@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 import numpy as np
+from PIL import Image
 import torch
 import torch.nn.functional as F
 from .common import to_attr_dict, verify_checkpoint_sha256
@@ -220,9 +221,13 @@ class InternVideo2ClipB14Teacher:
         device: str = "cpu",
         num_frames: int = 8,
         align_dim: int = 512,
-        intervals: int = 10,
-        video_duration_seconds: int = 10,
-        sampling_fps: int = 16,
+        input_mode: str = "official_segment_keyframes",
+        task_segments: int = 10,
+        frame_expansion: str = "repeat_last_to_num_frames",
+        raw_video_diagnostic: Mapping[str, object] | None = None,
+        intervals: int | None = None,
+        video_duration_seconds: int | None = None,
+        sampling_fps: int | None = None,
         decoder: Callable[[Path, np.ndarray], DecodedVideo] | None = None,
     ) -> None:
         repo_dir = Path(repo_root).resolve()
@@ -257,19 +262,48 @@ class InternVideo2ClipB14Teacher:
             ) from exc
 
         self.device = torch.device(device)
+        self.input_mode = str(input_mode)
         self.num_frames = int(num_frames)
-        self.intervals = int(intervals)
-        self.video_duration_seconds = int(video_duration_seconds)
-        self.sampling_fps = int(sampling_fps)
+        self.task_segments = int(task_segments)
+        self.frame_expansion = str(frame_expansion)
+        diagnostic = dict(raw_video_diagnostic or {})
+        self.raw_video_diagnostic_enabled = bool(diagnostic.get("enabled", False))
+        self.intervals = int(
+            intervals if intervals is not None else diagnostic.get("intervals", 10)
+        )
+        self.video_duration_seconds = int(
+            video_duration_seconds
+            if video_duration_seconds is not None
+            else diagnostic.get("video_duration_seconds", 10)
+        )
+        self.sampling_fps = int(
+            sampling_fps
+            if sampling_fps is not None
+            else diagnostic.get("sampling_fps", 16)
+        )
+        if self.input_mode not in {
+            "official_segment_keyframes",
+            "raw_multiframe_diagnostic",
+        }:
+            raise ValueError(f"Unsupported InternVideo2 input_mode: {self.input_mode}")
         if (
             self.num_frames != 8
+            or self.task_segments != 10
+            or self.frame_expansion != "repeat_last_to_num_frames"
+        ):
+            raise ValueError(
+                "canonical InternVideo2 export requires ten task segments, one official "
+                "keyframe per segment repeated to eight model frames"
+            )
+        if self.input_mode == "raw_multiframe_diagnostic" and (
+            not self.raw_video_diagnostic_enabled
             or self.intervals != 10
             or self.video_duration_seconds != 10
             or self.sampling_fps != 16
         ):
             raise ValueError(
-                "conference InternVideo2 export requires 10 seconds, ten intervals, "
-                "a 16-fps timestamp grid and eight frames per interval"
+                "raw multiframe diagnostic mode must be explicitly enabled with 10 seconds, "
+                "ten intervals and a 16-fps diagnostic timestamp grid"
             )
         self._decode_video = decoder or decode_video_with_decord
         self.feature_dim = int(align_dim)
@@ -381,7 +415,49 @@ class InternVideo2ClipB14Teacher:
             self.intervals, self.num_frames, *transformed[0].shape
         )
 
+    def _select_frame_paths(self, frame_group: Sequence[str]) -> list[str]:
+        items = [str(path) for path in frame_group if path]
+        if self.input_mode == "official_segment_keyframes":
+            if len(items) != 1:
+                raise ValueError(
+                    "Canonical InternVideo2 export requires exactly one official keyframe "
+                    "for each one-second task segment"
+                )
+            if Path(items[0]).suffix.lower() != ".jpg":
+                raise ValueError(
+                    "Canonical InternVideo2 keyframes must use the official .jpg extension"
+                )
+            if self.frame_expansion != "repeat_last_to_num_frames":
+                raise ValueError(f"Unsupported keyframe expansion: {self.frame_expansion}")
+            return items * self.num_frames
+        if not items:
+            raise ValueError("Frame group cannot be empty")
+        if len(items) == self.num_frames:
+            return items
+        if len(items) > self.num_frames:
+            indices = np.linspace(0, len(items) - 1, num=self.num_frames, dtype=int)
+            return [items[index] for index in indices.tolist()]
+        return [items[min(index, len(items) - 1)] for index in range(self.num_frames)]
+
+    def _load_segment_tensor(self, frame_group: Sequence[str]) -> torch.Tensor:
+        frames: list[torch.Tensor] = []
+        for path_string in self._select_frame_paths(frame_group):
+            path = Path(path_string).expanduser().resolve()
+            if not path.is_file():
+                raise FileNotFoundError(
+                    f"Missing official keyframe for InternVideo2 export: {path}"
+                )
+            with Image.open(path) as image:
+                array = np.asarray(image.convert("RGB"), dtype=np.uint8).copy()
+            tensor = torch.from_numpy(array).permute(2, 0, 1)
+            frames.append(self.model.transform(tensor))
+        return torch.stack(frames, dim=0)
+
     def export_video(self, video_path: str | Path, query: str) -> tuple[np.ndarray, np.ndarray]:
+        if self.input_mode != "raw_multiframe_diagnostic":
+            raise RuntimeError(
+                "Raw-video export is diagnostic-only and must be selected explicitly"
+            )
         batch = self._load_video_tensor(video_path).to(self.device)
         text_tokens = self.model.tokenizer([query] * self.intervals).to(self.device)
 
@@ -400,7 +476,27 @@ class InternVideo2ClipB14Teacher:
     def export_segments(
         self, frame_groups: Sequence[Sequence[str]], query: str
     ) -> tuple[np.ndarray, np.ndarray]:
-        raise RuntimeError(
-            "InternVideo2 conference export requires the official raw video; "
-            "PNG frame-group fallback is forbidden."
+        if self.input_mode != "official_segment_keyframes":
+            raise RuntimeError("Keyframe export requires official_segment_keyframes mode")
+        if len(frame_groups) != self.task_segments:
+            raise ValueError(
+                f"InternVideo2 requires exactly {self.task_segments} official task segments, "
+                f"got {len(frame_groups)}"
+            )
+        batch = torch.stack(
+            [self._load_segment_tensor(group) for group in frame_groups], dim=0
+        ).to(self.device)
+        text_tokens = self.model.tokenizer([query] * self.task_segments).to(self.device)
+
+        with torch.no_grad():
+            visual_features = self.model.encode_vision(batch, test=True)
+            text_features = self.model.encode_text(text_tokens)
+            logits = (
+                F.normalize(visual_features, dim=-1)
+                * F.normalize(text_features, dim=-1)
+            ).sum(dim=-1) / float(self.model.temp.detach().cpu())
+
+        return (
+            visual_features.detach().cpu().float().numpy().astype(np.float32),
+            logits.detach().cpu().float().numpy().astype(np.float32),
         )

@@ -37,6 +37,20 @@ def make_tiny_batch() -> dict[str, torch.Tensor]:
     }
 
 
+def test_position_capacity_is_not_silently_treated_as_task_segment_count() -> None:
+    model = build_tiny_test_student(path_mode="explicit_projected")
+    batch = make_tiny_batch()
+    batch["frame"] = torch.cat([batch["frame"], batch["frame"][:, :1]], dim=1)
+    batch["spectrogram"] = torch.cat(
+        [batch["spectrogram"], batch["spectrogram"][:, :1]], dim=1
+    )
+    for key in ("sequence_mask", "frame_valid", "audio_valid"):
+        batch[key] = torch.cat([batch[key], batch[key][:, :1]], dim=1)
+
+    with pytest.raises(ValueError, match="input task segments 3.*position capacity 2"):
+        model(**batch)
+
+
 def make_camera_ready_loss(**overrides: Any) -> torch.nn.Module:
     kwargs: dict[str, Any] = {
         "strong_teacher_dim": 3,

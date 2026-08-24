@@ -109,7 +109,7 @@ def test_raw_video_layout_fails_on_duplicate_id_missing_id_and_short_video(
     assert any("shorter than 10 seconds" in item["error"] for item in report["errors"])
 
 
-def test_source_audit_requires_existing_wav_and_raw_video_for_every_record(
+def test_source_audit_requires_wav_but_treats_raw_video_as_optional_diagnostic(
     tmp_path: Path,
 ) -> None:
     manifests = {}
@@ -144,7 +144,7 @@ def test_source_audit_requires_existing_wav_and_raw_video_for_every_record(
         expected_segments="10",
     )
     raw_video.unlink()
-    failed = audit_reproduction(
+    still_passed = audit_reproduction(
         train_manifest=manifests["train"],
         val_manifest=manifests["val"],
         test_manifest=manifests["test"],
@@ -156,4 +156,4 @@ def test_source_audit_requires_existing_wav_and_raw_video_for_every_record(
     )
 
     assert passed["errors"] == []
-    assert len([item for item in failed["errors"] if item["code"] == "missing_path"]) == 3
+    assert still_passed["errors"] == []

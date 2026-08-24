@@ -18,6 +18,17 @@ _GPT2_NONPERSISTENT_BUFFER = re.compile(
 )
 
 
+def _configure_clap_tokenizer(tokenizer: object) -> None:
+    """Apply the exact padding-token convention from pinned MS-CLAP 2023."""
+
+    add_special_tokens = getattr(tokenizer, "add_special_tokens", None)
+    if not callable(add_special_tokens):
+        raise TypeError("CLAP tokenizer does not support add_special_tokens")
+    add_special_tokens({"pad_token": "!"})
+    if getattr(tokenizer, "pad_token", None) != "!":
+        raise RuntimeError("Pinned MS-CLAP tokenizer padding token must be `!`")
+
+
 def _strip_verified_gpt2_compatibility_buffers(
     model: torch.nn.Module,
     state: Mapping[str, object],
@@ -162,6 +173,7 @@ class ClapTextTeacher:
             text_model_dir,
             local_files_only=True,
         )
+        _configure_clap_tokenizer(self.tokenizer)
         self.args = args
         self.clap.eval()
         self.clap.to(self.device)

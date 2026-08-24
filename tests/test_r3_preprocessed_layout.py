@@ -81,13 +81,18 @@ def test_official_jpg_sequence_is_the_only_canonical_visual_layout(
     assert record["meta"]["canonical_visual_extension"] == ".jpg"
 
 
-def test_canonical_builder_rejects_zero_byte_raw_video(tmp_path: Path) -> None:
+def test_canonical_builder_records_zero_byte_raw_video_as_optional_diagnostic(tmp_path: Path) -> None:
     dataset_root = tmp_path / "dataset"
     raw_video = _write_clip(dataset_root, OFFICIAL_JPG_NAMES)
     raw_video.write_bytes(b"")
 
-    with pytest.raises(FileNotFoundError, match="non-empty official raw video"):
-        _build(dataset_root, raw_video)
+    record = _build(dataset_root, raw_video)
+
+    assert "raw_video_path" not in record
+    assert record["meta"]["raw_video_diagnostic"] == {
+        "available": False,
+        "status": "zero_byte_optional_input",
+    }
 
 
 @pytest.mark.parametrize(

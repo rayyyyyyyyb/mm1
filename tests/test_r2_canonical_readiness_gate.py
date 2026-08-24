@@ -66,7 +66,12 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
     }
 
     archival_paths = {
-        "temporal_protocol": ("data.max_segments", "task.label_mode"),
+        "temporal_protocol": (
+            "data.num_segments",
+            "data.temporal_resampling",
+            "student.max_position_segments",
+            "task.label_mode",
+        ),
         "internvideo_identity": (
             "teacher_export.strong_visual_backend",
             "teacher_export.internvideo2.declared_model_class",
@@ -81,9 +86,13 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         "visual_l2_reduction": ("loss.visual_l2_reduction",),
         "query_aware_fusion": ("student.fusion_mode",),
         "frame_sampling": (
+            "teacher_export.internvideo2.source",
+            "teacher_export.internvideo2.input_mode",
+            "teacher_export.internvideo2.task_segments",
             "teacher_export.internvideo2.num_frames",
             "teacher_export.internvideo2.frame_sampling",
-            "teacher_export.internvideo2.short_clip_policy",
+            "teacher_export.internvideo2.frame_expansion",
+            "teacher_export.internvideo2.raw_video_diagnostic.enabled",
         ),
         "student_audio_preprocessing": ("data.audio_preprocessing",),
         "evaluator_mapping": (
@@ -92,7 +101,9 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         ),
     }
     locked_values = {
-        "data.max_segments": 10,
+        "data.num_segments": 10,
+        "data.temporal_resampling": False,
+        "student.max_position_segments": 16,
         "task.label_mode": "query_conditioned_binary",
         "teacher_export.strong_visual_backend": "internvideo2_clip_b14",
         "teacher_export.internvideo2.declared_model_class": "InternVideo2_CLIP_small",
@@ -104,9 +115,13 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         "data.train_augment": False,
         "loss.visual_l2_reduction": "mean",
         "student.fusion_mode": "query_aware_additive_transformer",
-        "teacher_export.internvideo2.num_frames": 10,
-        "teacher_export.internvideo2.frame_sampling": "natural_sorted_no_repeat",
-        "teacher_export.internvideo2.short_clip_policy": "error",
+        "teacher_export.internvideo2.source": "official_segment_keyframes",
+        "teacher_export.internvideo2.input_mode": "official_segment_keyframes",
+        "teacher_export.internvideo2.task_segments": 10,
+        "teacher_export.internvideo2.num_frames": 8,
+        "teacher_export.internvideo2.frame_sampling": "repeat_segment_keyframe",
+        "teacher_export.internvideo2.frame_expansion": "repeat_last_to_num_frames",
+        "teacher_export.internvideo2.raw_video_diagnostic.enabled": False,
         "data.audio_preprocessing": {"sample_rate": 16000, "representation": "waveform"},
         "evaluation.paper_f1_at_0_5_mapping": "segment",
         "evaluation.validation_calibrated_f1_mapping": "binary",
@@ -193,6 +208,7 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             {"path": "data.preprocessing_mode", "value": "canonical_official_jpg_wav"},
             {"path": "data.frame_policy", "value": "natural_sorted_no_repeat"},
             {"path": "data.canonical_visual_extension", "value": ".jpg"},
+            {"path": "data.num_segments", "value": 10},
         ],
     }
     evaluator_source = _file_evidence(root, "eval_metrics.py", "official evaluator")
@@ -350,6 +366,24 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
                 "backward_completed": True,
                 "checkpoint_resume_completed": True,
                 "losses_finite": True,
+                "temporal_shape_receipt": {
+                    "schema_version": 1,
+                    "protocol": "official_ov_avebench_t10",
+                    "task_segments": 10,
+                    "alignment_valid": True,
+                    "temporal_resampling_performed": False,
+                    "shapes": {
+                        "visual_input": [1, 10, 3, 224, 224],
+                        "audio_input": [1, 10, 3, 224, 224],
+                        "visual_teacher_features": [1, 10, 512],
+                        "audio_teacher_features": [1, 10, 768],
+                        "label": [1, 10],
+                        "student_logits": [1, 10],
+                        "sequence_mask": [1, 10],
+                        "metric_labels": [10],
+                        "metric_probabilities": [10],
+                    },
+                },
             }
         ),
         encoding="utf-8",
@@ -365,7 +399,8 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         },
         "data": {
             "path_root": str(root),
-            "max_segments": locked_values["data.max_segments"],
+            "num_segments": locked_values["data.num_segments"],
+            "temporal_resampling": locked_values["data.temporal_resampling"],
             "train_augment": locked_values["data.train_augment"],
             "audio_preprocessing": locked_values["data.audio_preprocessing"],
             "preprocessing_mode": "canonical_official_jpg_wav",
@@ -378,6 +413,7 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "path_mode": "explicit_projected",
             "pretrained": locked_values["student.pretrained"],
             "fusion_mode": locked_values["student.fusion_mode"],
+            "max_position_segments": locked_values["student.max_position_segments"],
         },
         "loss": {"visual_l2_reduction": locked_values["loss.visual_l2_reduction"]},
         "training": {
@@ -400,13 +436,23 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
                 "declared_model_class": locked_values[
                     "teacher_export.internvideo2.declared_model_class"
                 ],
+                "source": locked_values["teacher_export.internvideo2.source"],
+                "input_mode": locked_values["teacher_export.internvideo2.input_mode"],
+                "task_segments": locked_values[
+                    "teacher_export.internvideo2.task_segments"
+                ],
                 "num_frames": locked_values["teacher_export.internvideo2.num_frames"],
                 "frame_sampling": locked_values[
                     "teacher_export.internvideo2.frame_sampling"
                 ],
-                "short_clip_policy": locked_values[
-                    "teacher_export.internvideo2.short_clip_policy"
+                "frame_expansion": locked_values[
+                    "teacher_export.internvideo2.frame_expansion"
                 ],
+                "raw_video_diagnostic": {
+                    "enabled": locked_values[
+                        "teacher_export.internvideo2.raw_video_diagnostic.enabled"
+                    ]
+                },
                 "vision_ckpt_path": str(checkpoint_paths[("internvideo2", "vision")]),
                 "vision_ckpt_sha256": teachers["internvideo2"]["checkpoint_files"][0]["sha256"],
                 "text_ckpt_path": str(checkpoint_paths[("internvideo2", "text")]),
@@ -472,6 +518,16 @@ def test_resolved_locks_and_exported_audit_pass_content_validation(tmp_path: Pat
     assert receipt["official_counts"] == {"test": 5820, "train": 13182, "val": 5798}
     assert receipt["cache_root_sha256"] == "a" * 64
     assert receipt["errors"] == []
+
+
+def test_real_preflight_must_prove_t10_at_every_temporal_boundary(tmp_path: Path) -> None:
+    config, paths = _resolved_fixture(tmp_path)
+    preflight = json.loads(paths["real_preflight"].read_text(encoding="utf-8"))
+    preflight["temporal_shape_receipt"]["shapes"]["student_logits"] = [1, 16]
+    paths["real_preflight"].write_text(json.dumps(preflight), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="real_preflight.*temporal shape receipt"):
+        validate_canonical_readiness(config)
 
 
 def test_resolved_evidence_cannot_bypass_full_run_block(tmp_path: Path) -> None:

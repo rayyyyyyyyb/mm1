@@ -270,6 +270,9 @@ def build_teachers(args: argparse.Namespace, config: Dict[str, Any]) -> tuple[Te
         from src.teachers.internvideo2_visual import InternVideo2ClipB14Teacher
 
         iv_cfg = export_cfg.get("internvideo2", {})
+        raw_diagnostic_cfg = iv_cfg.get("raw_video_diagnostic", {})
+        if not isinstance(raw_diagnostic_cfg, Mapping):
+            raise ValueError("teacher_export.internvideo2.raw_video_diagnostic must be a mapping")
         bundle.strong_visual = InternVideo2ClipB14Teacher(
             repo_root=require(choose(args.internvideo2_repo_root, iv_cfg.get("repo_root")), "teacher_export.internvideo2.repo_root"),
             vision_ckpt_path=require(choose(args.internvideo2_vision_ckpt, iv_cfg.get("vision_ckpt_path")), "teacher_export.internvideo2.vision_ckpt_path"),
@@ -281,9 +284,21 @@ def build_teachers(args: argparse.Namespace, config: Dict[str, Any]) -> tuple[Te
             device=device,
             num_frames=int(choose(args.internvideo2_num_frames, iv_cfg.get("num_frames"), 8)),
             align_dim=int(iv_cfg.get("align_dim", data_cfg.get("strong_teacher_dim", 512))),
-            intervals=int(iv_cfg.get("intervals", 10)),
-            video_duration_seconds=int(iv_cfg.get("video_duration_seconds", 10)),
-            sampling_fps=int(iv_cfg.get("temporal_sampling_fps", 16)),
+            input_mode=str(iv_cfg.get("input_mode", "official_segment_keyframes")),
+            task_segments=int(iv_cfg.get("task_segments", data_cfg.get("num_segments", 10))),
+            frame_expansion=str(
+                iv_cfg.get("frame_expansion", "repeat_last_to_num_frames")
+            ),
+            raw_video_diagnostic={
+                "enabled": bool(raw_diagnostic_cfg.get("enabled", False)),
+                "video_duration_seconds": int(
+                    raw_diagnostic_cfg.get("video_duration_seconds", 10)
+                ),
+                "intervals": int(raw_diagnostic_cfg.get("intervals", 10)),
+                "sampling_fps": int(
+                    raw_diagnostic_cfg.get("temporal_sampling_fps", 16)
+                ),
+            },
         )
 
     if weak_backend == "mock":

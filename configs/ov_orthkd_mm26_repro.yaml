@@ -27,7 +27,7 @@ reproduction:
     teacher_identity: "reports/teachers/teacher_identity.json"
     smoke_repeatability: "reports/teachers/smoke_repeatability.json"
     exported_audit: "reports/mm26_exported_artifact_audit.json"
-    real_preflight: "reports/runtime/r3_real_preflight.json"
+    real_preflight: "reports/runtime/r4_real_preflight.json"
     readiness_receipt: "reports/mm26_conference_readiness.json"
   approved_reconstruction_assumptions: "configs/locks/mm26_archival_facts.yaml"
 
@@ -54,7 +54,7 @@ data:
   preprocessing_mode: "canonical_official_jpg_wav"
   frame_policy: "natural_sorted_no_repeat"
   canonical_visual_extension: ".jpg"
-  actual_segments: 10
+  num_segments: 10
   temporal_resampling: false
   audio_preprocessing:
     source: "official_wav"
@@ -100,7 +100,6 @@ data:
   num_workers: 4
   persistent_workers: false
   pin_memory: true
-  max_segments: 16
   temporal_overflow_policy: "error"
   allow_missing_modalities: false
   strict_alignment: true
@@ -126,6 +125,7 @@ student:
   temporal_dropout: 0.1
   pretrained: false
   fusion_mode: "concat_mlp_query_conditioned"
+  max_position_segments: 16
 
 loss:
   projection_dim: 256
@@ -180,15 +180,23 @@ teacher_export:
     text_ckpt_sha256: "670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a"
     extra_ckpt_path: "weights/internvideo2/InternVideo2_CLIP_B14.pth"
     extra_ckpt_sha256: "c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e"
-    source: "official_raw_video"
-    video_duration_seconds: 10
-    intervals: 10
-    decode: "deterministic_timestamps"
-    temporal_sampling_fps: 16
+    source: "official_segment_keyframes"
+    input_mode: "official_segment_keyframes"
+    task_segments: 10
     num_frames: 8
-    frame_sampling: "uniform_within_each_one_second_interval"
-    short_clip_policy: "error"
-    missing_video_policy: "block"
+    frame_sampling: "repeat_segment_keyframe"
+    frame_expansion: "repeat_last_to_num_frames"
+    missing_keyframe_policy: "block"
+    raw_video_diagnostic:
+      enabled: false
+      source: "official_raw_video"
+      video_duration_seconds: 10
+      intervals: 10
+      decode: "deterministic_timestamps"
+      temporal_sampling_fps: 16
+      frame_sampling: "uniform_within_each_one_second_interval"
+      short_clip_policy: "error"
+      missing_video_policy: "block_when_enabled"
     align_dim: 512
   beats:
     repo_root: "external/teachers/unilm/beats"

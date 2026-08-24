@@ -28,6 +28,7 @@ class MockTextTeacher:
 
 class MockStrongVisualTeacher:
     def __init__(self, feature_dim: int, logit_scale: float = 4.0) -> None:
+        self.input_mode = "segment_groups"
         self.feature_dim = int(feature_dim)
         self.logit_scale = float(logit_scale)
 

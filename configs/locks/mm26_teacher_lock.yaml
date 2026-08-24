@@ -1,7 +1,7 @@
 schema_version: 1
-status: blocked
+status: smoke_passed_export_pending
 blocked_by:
-  - "AUTH_REQUIRED: official OV-AVEBench preprocessed archive and raw videos require one authorized Microsoft login"
+  - "The 24,800-record teacher cache, full artifact audit, and cache root SHA256 are not yet complete"
 teachers:
   internvideo2:
     status: resolved
@@ -13,12 +13,14 @@ teachers:
     wrapper_class: "src.teachers.internvideo2_visual.InternVideo2ClipB14Teacher"
     declared_variant: "InternVideo2-Base / CLIP-B14"
     preprocessing:
-      source: official_raw_video
-      duration_seconds: 10
-      intervals: 10
-      timestamp_grid_fps: 16
-      frames_per_interval: 8
-      sampling: uniform_within_each_one_second_interval
+      source: official_segment_keyframes
+      input_mode: official_segment_keyframes
+      task_segments: 10
+      num_frames: 8
+      frame_sampling: repeat_segment_keyframe
+      frame_expansion: repeat_last_to_num_frames
+      temporal_resampling: false
+      raw_video_diagnostic_enabled: false
     output_dim: 512
     determinism_tolerance: 0.0
     strict_load:
@@ -104,6 +106,7 @@ teachers:
       tokenizer_repository: "openai-community/gpt2"
       tokenizer_revision: "607a30d783dfa663caf39e06633721c8d4cfcd7e"
       padding: max_length
+      pad_token: "!"
       length_source: config_2023.yml
     output_dim: 1024
     determinism_tolerance: 0.0
@@ -126,13 +129,25 @@ teachers:
         top_level_keys: "epoch, model, optimizer, scheduler; model has 381 keys"
         pretrained_or_finetuned: "Microsoft CLAP version 2023 pretrained checkpoint"
 real_smoke:
-  status: blocked_auth_required
-  records: 0
-  repeat: 0
+  status: passed
+  records: 1
+  repeat: 2
   report: "reports/teachers/teacher_identity.json"
+  report_sha256: "80211d53295e5c70dcf7baefd6d9c0bc796b44d53bc255152f363fc9c070f9e1"
   repeatability: "reports/teachers/smoke_repeatability.json"
+  repeatability_sha256: "e44026094c33c5b1b7e1095b7a239b394659cb0c2d8339e97044e706e2e60818"
+  input_mode: official_segment_keyframes
+  task_segments: 10
+  output_shapes:
+    internvideo2_features: [10, 512]
+    internvideo2_logits: [10]
+    beats_features: [10, 768]
+    clap_text_features: [1024]
+  all_finite: true
+  bitwise_repeatable: true
+  max_abs_diff: 0.0
 full_export:
-  status: blocked_auth_required
+  status: pending
   records: 0
   errors: null
   cache_root_sha256: null
@@ -140,5 +155,5 @@ full_export:
   val_manifest_sha256: null
   test_manifest_sha256: null
 blockers:
-  - "Obtain and audit both official SharePoint data archives before running real teacher smoke."
-  - "Run the resumable 24,800-record full export only after source manifests pass the full audit."
+  - "Run the resumable 24,800-record full export from the passed source manifests."
+  - "Run the full exported-artifact audit and lock the cache root SHA256 before the one-step preflight."

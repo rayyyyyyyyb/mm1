@@ -64,6 +64,11 @@ from src.losses import OVOrthKDLoss, OVOrthKDLegacyLoss
 from src.models import OVOrthKDStudent
 from src.utils.atomic_artifacts import canonical_tree_hash
 from src.utils.canonical_readiness import validate_canonical_readiness
+from src.utils.temporal_protocol import (
+    task_segments_from_config,
+    validate_temporal_alignment,
+)
+from src.utils.temporal_protocol import max_position_segments_from_config
 from src.utils.reproduction_fingerprint import (
     build_reproduction_fingerprint,
     capture_rng_state,
@@ -365,7 +370,7 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
         temporal_layers=int(student_cfg.get("temporal_layers", 4)),
         temporal_heads=int(student_cfg.get("temporal_heads", 8)),
         temporal_dropout=float(student_cfg.get("temporal_dropout", 0.1)),
-        max_segments=int(data_cfg.get("max_segments", 16)),
+        max_position_segments=max_position_segments_from_config(config),
         pretrained=bool(student_cfg.get("pretrained", False)),
     ).to(device)
 
@@ -472,6 +477,11 @@ def _flatten_valid_segments(
     labels: torch.Tensor,
     mask: torch.Tensor,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    validate_temporal_alignment(
+        student_logits=logits,
+        labels=labels,
+        sequence_mask=mask,
+    )
     valid = mask.bool().view(-1)
     return logits.view(-1)[valid].detach().cpu().numpy(), labels.view(-1)[valid].detach().cpu().numpy()
 
@@ -535,6 +545,7 @@ def collect_predictions(
     loader: Any,
     device: torch.device,
     max_batches: int | None = None,
+    expected_task_segments: int | None = None,
 ) -> Dict[str, np.ndarray]:
     student.eval()
     ids: list[str] = []
@@ -562,6 +573,12 @@ def collect_predictions(
         batch_logits = batch_logits.detach().cpu()
         batch_labels = batch["segment_label"].detach().cpu()
         batch_mask = batch["sequence_mask"].detach().cpu().bool()
+        validate_temporal_alignment(
+            student_logits=batch_logits,
+            labels=batch_labels,
+            sequence_mask=batch_mask,
+            task_segments=expected_task_segments,
+        )
 
         for sample_index in range(batch_logits.shape[0]):
             valid_indices = torch.nonzero(batch_mask[sample_index], as_tuple=False).view(-1)
@@ -575,7 +592,7 @@ def collect_predictions(
 
     logits_array = np.asarray(logits, dtype=np.float64)
     probabilities = 1.0 / (1.0 + np.exp(-logits_array))
-    return {
+    predictions = {
         "ids": np.asarray(ids, dtype=str),
         "queries": np.asarray(queries, dtype=str),
         "split_types": np.asarray(split_types, dtype=str),
@@ -585,6 +602,45 @@ def collect_predictions(
         "logits": logits_array,
         "probabilities": probabilities,
     }
+    if expected_task_segments is not None:
+        validate_prediction_task_segments(predictions, expected_task_segments)
+    return predictions
+
+
+def validate_prediction_task_segments(
+    predictions: Dict[str, np.ndarray],
+    expected_task_segments: int,
+) -> None:
+    """Fail before metrics if a formal sample is not exactly official T=10."""
+
+    expected = int(expected_task_segments)
+    offsets = np.asarray(predictions["sample_offsets"], dtype=np.int64)
+    sample_count = int(np.asarray(predictions["ids"]).size)
+    if offsets.ndim != 1 or offsets.size != sample_count + 1 or offsets[0] != 0:
+        raise ValueError("Prediction sample_offsets are malformed")
+    segment_counts = np.diff(offsets)
+    if np.any(segment_counts != expected):
+        raise ValueError(
+            f"Formal OV-AVEBench evaluation requires exactly {expected} metric "
+            f"segments per sample; got counts {segment_counts.tolist()}"
+        )
+    total_segments = int(offsets[-1])
+    for name in ("segment_indices", "labels", "logits", "probabilities"):
+        if np.asarray(predictions[name]).size != total_segments:
+            raise ValueError(
+                f"Prediction field {name} does not match sample_offsets total "
+                f"{total_segments}"
+            )
+    segment_indices = np.asarray(predictions["segment_indices"], dtype=np.int64)
+    official_indices = np.arange(expected, dtype=np.int64)
+    for sample_index in range(sample_count):
+        start = int(offsets[sample_index])
+        end = int(offsets[sample_index + 1])
+        if not np.array_equal(segment_indices[start:end], official_indices):
+            raise ValueError(
+                "Formal OV-AVEBench metric input must preserve ordered official "
+                f"segment indices 0..{expected - 1} for sample {sample_index}"
+            )
 
 
 def save_predictions_npz(path: str | Path, predictions: Dict[str, np.ndarray]) -> None:
@@ -704,8 +760,15 @@ def evaluate_with_predictions(
     device: torch.device,
     max_batches: int | None = None,
     threshold: float = 0.5,
+    expected_task_segments: int | None = None,
 ) -> tuple[Dict[str, np.ndarray], Dict[str, Any]]:
-    predictions = collect_predictions(student, loader, device, max_batches=max_batches)
+    predictions = collect_predictions(
+        student,
+        loader,
+        device,
+        max_batches=max_batches,
+        expected_task_segments=expected_task_segments,
+    )
     metrics = compute_grouped_metrics(predictions, threshold=threshold)["total"]
     return predictions, metrics
 
@@ -714,9 +777,15 @@ def save_evaluation_artifacts(
     output_dir: str | Path,
     validation_predictions: Dict[str, np.ndarray],
     test_predictions: Dict[str, np.ndarray] | None = None,
+    expected_task_segments: int | None = None,
 ) -> Dict[str, Any]:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+    if expected_task_segments is not None:
+        validate_prediction_task_segments(
+            validation_predictions,
+            expected_task_segments,
+        )
     save_predictions_npz(output_path / "validation_predictions.npz", validation_predictions)
     if test_predictions is None:
         return {
@@ -726,10 +795,16 @@ def save_evaluation_artifacts(
             }
         }
 
+    if expected_task_segments is not None:
+        validate_prediction_task_segments(test_predictions, expected_task_segments)
     save_predictions_npz(output_path / "test_predictions.npz", test_predictions)
     from scripts.evaluate_pr_f1 import evaluate_prediction_sets
 
-    evaluation_report = evaluate_prediction_sets(validation_predictions, test_predictions)
+    evaluation_report = evaluate_prediction_sets(
+        validation_predictions,
+        test_predictions,
+        expected_task_segments=expected_task_segments,
+    )
     calibration = evaluation_report["validation_calibration"]
     np.savez_compressed(
         output_path / "validation_pr_curve.npz",
@@ -1207,6 +1282,12 @@ def main() -> None:
         if loader is not None and loader.generator is not None
     }
     reproduction_cfg = config.get("reproduction", {})
+    claim_level = str(reproduction_cfg.get("claim_level", "")).strip().lower()
+    expected_metric_task_segments = (
+        task_segments_from_config(config)
+        if claim_level in {"archival_exact", "paper_specified_reconstruction"}
+        else None
+    )
     reproduction_fingerprint = build_runtime_reproduction_fingerprint(config)
 
     if args.eval_only:
@@ -1223,6 +1304,7 @@ def main() -> None:
             val_loader,
             device,
             max_batches=args.max_eval_batches,
+            expected_task_segments=expected_metric_task_segments,
         )
         logger.info("Validation metrics: %s", val_metrics)
         test_predictions = None
@@ -1232,8 +1314,14 @@ def main() -> None:
                 test_loader,
                 device,
                 max_batches=args.max_eval_batches,
+                expected_task_segments=expected_metric_task_segments,
             )
-        final_metrics = save_evaluation_artifacts(output_dir, val_predictions, test_predictions)
+        final_metrics = save_evaluation_artifacts(
+            output_dir,
+            val_predictions,
+            test_predictions,
+            expected_task_segments=expected_metric_task_segments,
+        )
         if "test" in final_metrics:
             logger.info("Test metrics: %s", final_metrics["test"]["metrics"]["total"])
         (output_dir / "final_metrics.json").write_text(
@@ -1352,6 +1440,7 @@ def main() -> None:
             val_loader,
             device,
             max_batches=args.max_eval_batches,
+            expected_task_segments=expected_metric_task_segments,
         )
         mean_stats = {name: value / step_count for name, value in running_stats.items()}
         logger.info(
@@ -1451,6 +1540,7 @@ def main() -> None:
             val_loader,
             device,
             max_batches=args.max_eval_batches,
+            expected_task_segments=expected_metric_task_segments,
         )
         save_predictions_npz(
             output_dir / "best_validation_predictions.npz",
@@ -1462,16 +1552,19 @@ def main() -> None:
                 test_loader,
                 device,
                 max_batches=args.max_eval_batches,
+                expected_task_segments=expected_metric_task_segments,
             )
             final_metrics = save_evaluation_artifacts(
                 output_dir,
                 validation_predictions,
                 test_predictions,
+                expected_task_segments=expected_metric_task_segments,
             )
         else:
             final_metrics = save_evaluation_artifacts(
                 output_dir,
                 validation_predictions,
+                expected_task_segments=expected_metric_task_segments,
             )
         logger.info("Best validation metric: %.4f", best_metric)
         logger.info("Final metrics from best checkpoint: %s", final_metrics)

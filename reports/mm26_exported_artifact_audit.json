@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "blocked_auth_required",
+  "status": "pending_full_export",
   "stage": "exported",
   "artifact_scan": "full",
-  "blocked_by": "AUTH_REQUIRED: full source manifests cannot be built before both official SharePoint archives pass extraction and layout audits",
+  "blocked_by": "source manifests and real teacher smoke pass; the resumable 24,800-record full export has not started",
   "record_count": 0,
   "split_counts": {"train": 0, "val": 0, "test": 0},
   "split_seen_unseen_counts": null,
@@ -17,6 +17,6 @@
     "2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6"
   ],
   "cache_root_sha256": null,
-  "errors": ["full teacher export not started because the official data gate is blocked"],
+  "errors": ["full teacher export and full artifact audit have not run; cache root SHA256 is unavailable"],
   "warnings": []
 }

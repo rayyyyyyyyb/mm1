@@ -207,7 +207,6 @@ def main() -> None:
             summary["missing_frames"]
             + summary["missing_spectrograms"]
             + summary["missing_audio_sources"]
-            + summary["missing_raw_videos"]
             + summary["missing_strong_teacher_features"]
             + summary["missing_strong_teacher_logits"]
             + summary["missing_weak_teacher_features"]

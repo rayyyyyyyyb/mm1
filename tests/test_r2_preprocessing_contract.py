@@ -85,6 +85,9 @@ def test_official_builder_uses_exact_jpg_sequence_and_never_repeats_frames(tmp_p
     )
     assert len({group[0] for group in record["frame_paths"]}) == 10
     assert record["audio_path"].endswith("clip.wav")
+    assert record["segment_timestamps"] == [
+        [float(index), float(index + 1)] for index in range(10)
+    ]
     assert record["raw_video_path"].endswith("clip.mp4")
     assert record["spectrogram_paths"] == []
     assert record["split_type"] == "unseen"
@@ -130,7 +133,7 @@ def test_absolute_path_mode_and_atomic_jsonl_publication(tmp_path: Path) -> None
     assert not output.with_suffix(output.suffix + ".partial").exists()
 
 
-def test_canonical_builder_blocks_missing_raw_video_and_uses_taskbook_output_names(
+def test_canonical_builder_allows_missing_optional_raw_video_and_uses_taskbook_output_names(
     tmp_path: Path,
 ) -> None:
     assert source_manifest_outputs is not None
@@ -138,15 +141,20 @@ def test_canonical_builder_blocks_missing_raw_video_and_uses_taskbook_output_nam
     raw_video = _official_clip(dataset_root)
     raw_video.unlink()
 
-    with pytest.raises(FileNotFoundError, match="Missing non-empty official raw video"):
-        build_official_record(
-            dataset_root=dataset_root,
-            row={"split": "val", "cls_name": "cat", "cls_type": "open", "vid_name": "clip"},
-            annotations={"clip": {"label": [0, 1]}},
-            raw_video_path=raw_video,
-            path_root=tmp_path,
-            path_mode="relative_to_path_root",
-        )
+    record = build_official_record(
+        dataset_root=dataset_root,
+        row={"split": "val", "cls_name": "cat", "cls_type": "open", "vid_name": "clip"},
+        annotations={"clip": {"label": [0, 1] * 5}},
+        raw_video_path=None,
+        path_root=tmp_path,
+        path_mode="relative_to_path_root",
+    )
+
+    assert "raw_video_path" not in record
+    assert record["meta"]["raw_video_diagnostic"] == {
+        "available": False,
+        "status": "missing_optional_input",
+    }
 
     assert source_manifest_outputs(tmp_path / "source") == {
         "train": tmp_path / "source/train.jsonl",

@@ -37,7 +37,8 @@ data:
   batch_size: 4
   num_workers: 4
   pin_memory: true
-  max_segments: 16
+  num_segments: 10
+  temporal_resampling: false
   allow_missing_modalities: true
   strict_alignment: true
   strong_teacher_dim: 512
@@ -47,6 +48,7 @@ data:
   train_augment: true
 
 student:
+  max_position_segments: 16
   visual_backbone: "convnextv2_tiny.fcmae_ft_in22k_in1k"
   audio_backbone: "tf_efficientnetv2_b2.in1k"
   fusion_dim: 384
@@ -87,7 +89,12 @@ teacher_export:
     vision_ckpt_path: "weights/internvideo2/B14_dist_1B_stage2.pth"
     text_ckpt_path: "weights/internvideo2/mobileclip_blt.pt"
     extra_ckpt_path: "weights/internvideo2/InternVideo2_CLIP_B14.pth"
+    source: "official_segment_keyframes"
+    input_mode: "official_segment_keyframes"
+    task_segments: 10
     num_frames: 8
+    frame_sampling: "repeat_segment_keyframe"
+    frame_expansion: "repeat_last_to_num_frames"
     align_dim: 512
   beats:
     repo_root: "external/teachers/unilm/beats"

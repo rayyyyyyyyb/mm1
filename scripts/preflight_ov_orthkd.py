@@ -53,6 +53,7 @@ from scripts.train_ov_orthkd import (
 )
 from src.data import create_ov_avel_data_loaders
 from src.utils.reproduction_fingerprint import build_reproduction_fingerprint
+from src.utils.temporal_protocol import build_temporal_shape_receipt
 
 
 def parse_args() -> argparse.Namespace:
@@ -90,7 +91,7 @@ def _summary_for_manifest(path_str: str) -> Dict[str, Any]:
 def _probe_dataset(dataset, probe_samples: int) -> Dict[str, Any]:
     observed = {
         "samples_probed": 0,
-        "max_segments": 0,
+        "observed_task_segments": 0,
         "strong_teacher_feature_dim": None,
         "weak_teacher_feature_dim": None,
         "text_dim": None,
@@ -98,7 +99,10 @@ def _probe_dataset(dataset, probe_samples: int) -> Dict[str, Any]:
     for index in range(min(len(dataset), max(1, int(probe_samples)))):
         sample = dataset[index]
         observed["samples_probed"] += 1
-        observed["max_segments"] = max(observed["max_segments"], int(sample["segment_label"].shape[0]))
+        observed["observed_task_segments"] = max(
+            observed["observed_task_segments"],
+            int(sample["segment_label"].shape[0]),
+        )
         observed["strong_teacher_feature_dim"] = int(sample["strong_teacher_features"].shape[-1])
         observed["weak_teacher_feature_dim"] = int(sample["weak_teacher_features"].shape[-1])
         observed["text_dim"] = int(sample["text_embedding"].shape[-1])
@@ -134,6 +138,17 @@ def _run_train_probe(
             frame_valid=batch["frame_valid"].to(device),
             audio_valid=batch["audio_valid"].to(device),
         )
+        temporal_shape_receipt = None
+        if real_data or int(batch["segment_label"].shape[1]) == 10:
+            temporal_shape_receipt = build_temporal_shape_receipt(
+                visual_input=batch["frame"],
+                audio_input=batch["spectrogram"],
+                visual_teacher_features=batch["strong_teacher_features"],
+                audio_teacher_features=batch["weak_teacher_features"],
+                labels=batch["segment_label"],
+                student_logits=outputs["segment_logits"],
+                sequence_mask=batch["sequence_mask"],
+            )
         loss, stats = compute_loss_for_batch(loss_module, outputs, batch, device)
 
     scaler.scale(loss).backward()
@@ -205,6 +220,7 @@ def _run_train_probe(
         "backward_completed": True,
         "optimizer_step_completed": True,
         "scheduler_interval": scheduler_interval,
+        "temporal_shape_receipt": temporal_shape_receipt,
         "input_shapes": {
             key: list(batch[key].shape)
             for key in ("frame", "spectrogram", "text_embedding", "sequence_mask")

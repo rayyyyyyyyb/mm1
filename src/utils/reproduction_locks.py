@@ -83,8 +83,10 @@ def validate_teacher_lock(lock: Mapping[str, Any]) -> dict[str, Any]:
     if lock.get("schema_version") != 1:
         errors.append("schema_version must equal 1")
     status = lock.get("status")
-    if status not in {"resolved", "blocked"}:
-        errors.append("status must be resolved or blocked")
+    if status not in {"resolved", "blocked", "smoke_passed_export_pending"}:
+        errors.append(
+            "status must be resolved, blocked, or smoke_passed_export_pending"
+        )
 
     teachers = lock.get("teachers")
     if not isinstance(teachers, Mapping):

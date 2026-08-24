@@ -28,6 +28,7 @@ from scripts.train_ov_orthkd import (
     collect_predictions,
     compute_grouped_metrics,
     save_predictions_npz,
+    validate_prediction_task_segments,
 )
 from src.utils.canonical_readiness import validate_canonical_readiness
 
@@ -102,7 +103,16 @@ def flatten_valid_segments(
     logits: torch.Tensor,
     labels: torch.Tensor,
     mask: torch.Tensor,
+    expected_task_segments: int | None = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    from src.utils.temporal_protocol import validate_temporal_alignment
+
+    validate_temporal_alignment(
+        student_logits=logits,
+        labels=labels,
+        sequence_mask=mask,
+        task_segments=expected_task_segments,
+    )
     valid = mask.bool().view(-1)
     logits_np = logits.view(-1)[valid].detach().cpu().numpy()
     labels_np = labels.view(-1)[valid].detach().cpu().numpy()
@@ -135,6 +145,7 @@ def collect_probs_and_labels(
             outputs["segment_logits"].detach().cpu(),
             batch["segment_label"].detach().cpu(),
             batch["sequence_mask"].detach().cpu(),
+            expected_task_segments=10,
         )
         probs_np = 1.0 / (1.0 + np.exp(-logits_np))
         all_probs.append(probs_np)
@@ -180,7 +191,14 @@ def metrics_at_threshold(labels: np.ndarray, probs: np.ndarray, threshold: float
 def evaluate_prediction_sets(
     validation_predictions: Dict[str, np.ndarray],
     test_predictions: Dict[str, np.ndarray],
+    expected_task_segments: int | None = None,
 ) -> Dict[str, Any]:
+    if expected_task_segments is not None:
+        validate_prediction_task_segments(
+            validation_predictions,
+            expected_task_segments,
+        )
+        validate_prediction_task_segments(test_predictions, expected_task_segments)
     val_labels = validation_predictions["labels"]
     val_probs = validation_predictions["probabilities"]
     best = best_threshold_from_pr(val_labels, val_probs)
@@ -259,16 +277,19 @@ def main() -> None:
             val_loader,
             device,
             max_batches=args.max_batches,
+            expected_task_segments=10,
         )
         test_predictions = collect_predictions(
             student,
             test_loader,
             device,
             max_batches=args.max_batches,
+            expected_task_segments=10,
         )
         evaluation_report = evaluate_prediction_sets(
             validation_predictions,
             test_predictions,
+            expected_task_segments=10,
         )
         calibration = evaluation_report["validation_calibration"]
         validation_total = evaluation_report["validation"]["metrics"]["total"]

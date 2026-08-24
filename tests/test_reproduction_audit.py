@@ -88,7 +88,8 @@ def test_valid_exported_t10_audit_reports_reproduction_facts(tmp_path: Path) -> 
     assert report["warnings"] == []
     assert report["split_counts"] == {"train": 1, "val": 1, "test": 1}
     assert report["segment_length_histogram"] == {"10": 3}
-    assert report["configured_max_segments"] == 16
+    assert report["configured_task_segments"] == 10
+    assert "configured_max_segments" not in report
     assert report["resampling_performed_by_dataset"] is False
     assert report["seen_classes"] == 2
     assert report["unseen_classes"] == 1

@@ -11,7 +11,7 @@
     },
     "p0_p1_tests": {
       "passed": true,
-      "details": "Required R2 regression tests must pass"
+      "details": "Required regression tests must pass"
     },
     "data_lock": {
       "passed": false,
@@ -30,7 +30,7 @@
       "details": "Full official layout discovery must pass without warnings"
     },
     "source_manifest_audit": {
-      "passed": false,
+      "passed": true,
       "details": "24,800 source records must pass 0-error/0-warning audit"
     },
     "nine_archival_facts": {
@@ -42,7 +42,7 @@
       "details": "Three teachers and five checkpoints must be exact and hashed"
     },
     "teacher_smoke_repeatability": {
-      "passed": false,
+      "passed": true,
       "details": "Real teacher smoke and repeatability must pass"
     },
     "full_exported_artifact_audit": {
@@ -63,15 +63,13 @@
     },
     "canonical_full_run_guard": {
       "passed": true,
-      "details": "full_run_blocked must remain true for R2 review"
+      "details": "full_run_blocked must remain true until conference-reproduction review"
     }
   },
   "blockers": [
     "canonical_evidence_chain",
     "data_lock",
-    "source_manifest_audit",
     "teacher_lock_and_checkpoints",
-    "teacher_smoke_repeatability",
     "full_exported_artifact_audit",
     "real_one_step_preflight"
   ],
@@ -79,17 +77,17 @@
     "data_lock": {
       "path": "configs/locks/mm26_data_lock.yaml",
       "exists": true,
-      "sha256": "2432dfe1e6761efec548e96fb9ef2baa90d93521d5924e0b978cd9369ab6d26d"
+      "sha256": "2f47ecfe71251cbfc89d749aab7daa95ce21d3b39d555f1e7ea4fb5b0d7ca0c3"
     },
     "preprocessing_lock": {
       "path": "configs/locks/mm26_preprocessing_lock.yaml",
       "exists": true,
-      "sha256": "47b81e3a2b402aa844802658e48622ab6a932f156f0cd99545259816f63446ed"
+      "sha256": "cba9a2dd0d11efceb0a43328f7e97cfa4ed7b3afd06f8c8977ded3f9d63ee4e9"
     },
     "archive_receipt": {
       "path": "reports/data/official_archive_extraction_receipt.json",
       "exists": true,
-      "sha256": "59bea45fc0ca84bf8fa38696609a2905d8ed28b8c813a080828652b9c49a4c3e"
+      "sha256": "5f43bdf44e723f585875a263c451f3e6f8b0534c7aa44e7e18585b7cf8e49e30"
     },
     "layout_discovery": {
       "path": "reports/data/preprocessed_layout_discovery.json",
@@ -99,48 +97,48 @@
     "source_audit": {
       "path": "reports/mm26_source_manifest_audit.json",
       "exists": true,
-      "sha256": "6b5c171db99708e22844ae04978d603fd3671f8db8a6ceaa725876b74a6f199a"
+      "sha256": "a421698751e37ee3faff1f3176acb55c46babbc3a0a4793c71541e14b8974635"
     },
     "archival_lock": {
       "path": "configs/locks/mm26_archival_facts.yaml",
       "exists": true,
-      "sha256": "2abdd12c7bd5515cb477333597b934f7f24c91ca9e88eb47e302e8e103bca975"
+      "sha256": "fcfa1b3bb6be28fce4eab8ec29f2dbf225fa4f6578ace64983efafa90d996954"
     },
     "teacher_lock": {
       "path": "configs/locks/mm26_teacher_lock.yaml",
       "exists": true,
-      "sha256": "e5bc1e1daf7c3c5957459bcaee1a3066ad0ed017d4ef47e3a57750f4b770921b"
+      "sha256": "d795bb8d9b6ab1eb1d9adad592c56816ea1ff27bfe5480542855539faa8e99af"
     },
     "teacher_identity": {
       "path": "reports/teachers/teacher_identity.json",
       "exists": true,
-      "sha256": "a174517618b04c09ce7c1027f773ea74462fbdddd42a0d38bc8712c5aee03e26"
+      "sha256": "80211d53295e5c70dcf7baefd6d9c0bc796b44d53bc255152f363fc9c070f9e1"
     },
     "smoke_repeatability": {
       "path": "reports/teachers/smoke_repeatability.json",
       "exists": true,
-      "sha256": "20a9e0bca58b079bff3406d777296d7a3c00f939b3a86cdeb12d4cd9feab380e"
+      "sha256": "e44026094c33c5b1b7e1095b7a239b394659cb0c2d8339e97044e706e2e60818"
     },
     "exported_audit": {
       "path": "reports/mm26_exported_artifact_audit.json",
       "exists": true,
-      "sha256": "c3b382691fcb7fda58dcd2d3d73db86831c7c450c0f32d6afe2b4c8a7f909ed9"
+      "sha256": "694ccc3de8e61bb4ffb2acf9ba298d852a7c87a9e5262c3d03891adf9e9b2de5"
     },
     "evaluator_lock": {
       "path": "configs/locks/mm26_evaluator_lock.yaml",
       "exists": true,
-      "sha256": "71f477f5a7ae48fe95abb7753121943c71579f08b74c5249f2b9d7c445ebe7c2"
+      "sha256": "dc2e1f25380830db7481c80c7763a56a4b59a8c7505c7e4b14e78bc57c3114c0"
     },
     "real_preflight": {
-      "path": "reports/runtime/r3_real_preflight.json",
-      "exists": false,
-      "sha256": null
+      "path": "reports/runtime/r4_real_preflight.json",
+      "exists": true,
+      "sha256": "a439a193c0caff1eb5221e4ae08b8eecd7374e25603325fc3d3763acdba3eeaf"
     },
     "verification": {
       "path": "reports/runtime/r2_verification.json",
       "exists": true,
-      "sha256": "3682127909ab6416d69cf9c9126ec2d3cf2a4d777ba2d74e889d2ff31e3ff67a"
+      "sha256": "5dd824ad3f698b8f5463d8e8c70e06ad808e2312b900e86e51bc46406d40be67"
     }
   },
-  "canonical_validation_error": "Canonical readiness gate failed: Missing readiness input: E:\\OV-OrthKD-R3\\repo\\reports\\runtime\\r3_real_preflight.json"
+  "canonical_validation_error": "Canonical readiness gate failed:\n- data_lock: status must be 'ready', got 'source_ready_teacher_export_pending'\n- teacher_lock: status must be 'ready', got 'smoke_passed_export_pending'\n- exported_audit: status must be 'passed', got 'pending_full_export'\n- real_preflight: status must be 'passed', got 'not_executed_cache_gate_blocked'\n- data_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers']\n- teacher_lock: unresolved/blocked markers remain at ['blocked_by', 'blockers']\n- exported_audit: unresolved/blocked markers remain at ['blocked_by']\n- real_preflight: unresolved/blocked markers remain at ['blocked_by', 'status']\n- teacher_lock: full_export must be passed\n- teacher_lock: full_export.cache_root_sha256 must be a SHA256\n- exported_audit: full exact official audit with zero issues is required\n- exported_audit: cache root SHA256 does not match teacher lock\n- exported manifest SHA256 mismatch for train\n- exported manifest byte count mismatch for train\n- teacher_lock: full_export train manifest SHA256 mismatch\n- exported manifest SHA256 mismatch for val\n- exported manifest byte count mismatch for val\n- teacher_lock: full_export val manifest SHA256 mismatch\n- exported manifest SHA256 mismatch for test\n- exported manifest byte count mismatch for test\n- teacher_lock: full_export test manifest SHA256 mismatch\n- real_preflight: exactly one structural real-data step must pass without formal metrics\n- real_preflight: temporal shape receipt must prove official T=10 at student inputs, teacher features, labels, logits and metric inputs"
 }

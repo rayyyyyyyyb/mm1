@@ -103,7 +103,12 @@ GPT2_REQUIRED_FILES = {
     "vocab.json",
 }
 REQUIRED_ARCHIVAL_CONFIG_PATHS = {
-    "temporal_protocol": {"data.max_segments", "task.label_mode"},
+    "temporal_protocol": {
+        "data.num_segments",
+        "data.temporal_resampling",
+        "student.max_position_segments",
+        "task.label_mode",
+    },
     "internvideo_identity": {
         "teacher_export.strong_visual_backend",
         "teacher_export.internvideo2.declared_model_class",
@@ -118,9 +123,13 @@ REQUIRED_ARCHIVAL_CONFIG_PATHS = {
     "visual_l2_reduction": {"loss.visual_l2_reduction"},
     "query_aware_fusion": {"student.fusion_mode"},
     "frame_sampling": {
+        "teacher_export.internvideo2.source",
+        "teacher_export.internvideo2.input_mode",
+        "teacher_export.internvideo2.task_segments",
         "teacher_export.internvideo2.num_frames",
         "teacher_export.internvideo2.frame_sampling",
-        "teacher_export.internvideo2.short_clip_policy",
+        "teacher_export.internvideo2.frame_expansion",
+        "teacher_export.internvideo2.raw_video_diagnostic.enabled",
     },
     "student_audio_preprocessing": {"data.audio_preprocessing"},
     "evaluator_mapping": {
@@ -132,7 +141,48 @@ REQUIRED_PREPROCESSING_CONFIG_PATHS = {
     "data.preprocessing_mode",
     "data.frame_policy",
     "data.canonical_visual_extension",
+    "data.num_segments",
 }
+
+
+def _valid_t10_temporal_shape_receipt(value: Any) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    shapes = value.get("shapes")
+    if not isinstance(shapes, Mapping):
+        return False
+    if not (
+        value.get("schema_version") == 1
+        and value.get("protocol") == "official_ov_avebench_t10"
+        and value.get("task_segments") == 10
+        and value.get("alignment_valid") is True
+        and value.get("temporal_resampling_performed") is False
+    ):
+        return False
+    label = shapes.get("label")
+    if not isinstance(label, list) or len(label) != 2 or label[1] != 10:
+        return False
+    batch_size = label[0]
+    exact_shapes = {
+        "visual_input": [batch_size, 10, 3, 224, 224],
+        "audio_input": [batch_size, 10, 3, 224, 224],
+        "visual_teacher_features": [batch_size, 10, 512],
+        "audio_teacher_features": [batch_size, 10, 768],
+        "label": label,
+        "student_logits": label,
+        "sequence_mask": label,
+    }
+    if any(shapes.get(name) != shape for name, shape in exact_shapes.items()):
+        return False
+    metric_labels = shapes.get("metric_labels")
+    metric_probabilities = shapes.get("metric_probabilities")
+    return bool(
+        isinstance(metric_labels, list)
+        and len(metric_labels) == 1
+        and metric_labels == metric_probabilities
+        and isinstance(metric_labels[0], int)
+        and 0 <= metric_labels[0] <= batch_size * 10
+    )
 EVALUATOR_CONFIG_PATHS = {
     "paper_f1_at_0_5_mapping": "evaluation.paper_f1_at_0_5_mapping",
     "validation_calibrated_f1_mapping": "evaluation.validation_calibrated_f1_mapping",
@@ -974,6 +1024,13 @@ def validate_canonical_readiness(
             and preflight.get("losses_finite") is True
         ):
             errors.append("real_preflight: exactly one structural real-data step must pass without formal metrics")
+        if not _valid_t10_temporal_shape_receipt(
+            preflight.get("temporal_shape_receipt")
+        ):
+            errors.append(
+                "real_preflight: temporal shape receipt must prove official T=10 at "
+                "student inputs, teacher features, labels, logits and metric inputs"
+            )
 
     errors.extend(_validate_file_evidence(project_root, documents))
     try:

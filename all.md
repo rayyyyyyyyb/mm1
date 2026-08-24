@@ -1762,3 +1762,227 @@
 
 1. 第一次暂存 `README.md` 与 `CURRENT_STATUS.md` 后，`git diff --cached --check` 因状态文档第 3、4 行用于 Markdown 强制换行的两个尾随空格退出 2；未提交。
 2. 用空白行替代强制换行尾随空格，重新暂存并复核：`git diff --cached --check` 退出 0；staged stat 为 2 files changed、86 insertions，且仅包含 README 状态入口和 `CURRENT_STATUS.md`。
+## 517. 2026-08-24 — 最终 activity ledger 提交与公开网页复核
+
+1. `all.md` 敏感值扫描未发现 GitHub token、Bearer、FedAuth/rtFa、X-Amz-Signature、Cookie/Authorization 值或 query token；`git diff --check` 退出 0，文件 343,361 bytes。
+2. 提交 `eae79f1c07b037cc7e6a7080402988b60d314dd1`（`docs: publish complete activity ledger`），1 file changed、325 insertions；推送 `59262dd..eae79f1` 退出 0。
+3. 最终 `git ls-remote` SHA 与本地 HEAD 均为 `eae79f1c07b037cc7e6a7080402988b60d314dd1`，本地 repo 工作树干净。
+4. 再次用公开网页匿名打开最终 commit、branch 上的 `all.md` 和 `CURRENT_STATUS.md`，均成功；确认网页端审阅入口已生效。此第 517 项只追加到用户指定的父目录主日志，避免为“记录日志提交本身”制造无限递归提交；GitHub commit 历史本身提供该最后一步的不可变证据。
+
+## 518. 2026-08-24 — 识别并完整读取新增 R4 指导书与会议论文
+
+1. 用户要求仔细阅读扩刊目录中新放入的会议 PDF 与下一阶段指导 MD，并判断按指导解决问题后是否可开始复现；本轮范围固定为只读审阅与结论，不启动 R4 实现、教师导出、preflight 或正式训练。
+2. 新增指导书为 `MM26_OVORTHKD_R4_CONFERENCE_REPRODUCTION_IMPLEMENTATION_AND_EXPERIMENT_PLAN.md`，53,120 bytes、2,284 行、SHA256 `94aa5c9d0a3fa3f012e8292b562f2b23591ac1fcc762ef2a1eb30c2e012950cf`；会议稿为 `mfp2306_final.pdf`，1,170,806 bytes、9 页、SHA256 `ed2088c17cc611764d1b7d7cf00ba501ca07659404b0e89540b853e2b810c590`。
+3. 按 PDF 审阅技能完整读取其 `SKILL.md`，同时读取 `using-superpowers` 流程技能。第一次按过宽的相对位置寻找 `references/codex-tools.md` 得到 path-not-found、未修改任何文件；递归定位后在 `skills/using-superpowers/references/codex-tools.md` 找到并完整读取。
+4. 指导书按 UTF-8 从第 1 行读至第 2,284 行。一次未显式指定 UTF-8 的 PowerShell 输出在第 1,710–1,973 行出现 mojibake；立即用 `-Encoding UTF8` 从第 1,710 行重新读取到 EOF，确认完整内容而未依赖乱码输出。
+5. 用 `pdftotext -layout -enc UTF-8` 分页读取论文第 1–9 页全文；此前已将全部 9 页以 110 DPI 渲染为临时 PNG，本轮又用图像查看器逐页目视检查全部页面。确认标题、公式、表 1–7、图 1–5、图注、参考文献均可读，未发现截页、空白页或渲染遗漏；临时文本/PNG 仅用于审阅，不是正式交付物。
+6. 第一次批量输出两份文件 SHA256 的 PowerShell `foreach ... | Format-Table` 写法产生 `empty pipe element` 解析错误，未改变文件；改为先收集 `$rows` 再 `Format-List`，成功取得上述精确大小和 SHA256。
+
+## 519. 2026-08-24 — R4 指导书的任务边界与准入链判断
+
+1. R4 明确撤销 R3 的 `raw-video-only` canonical 假设：会议主线改用官方每秒中间关键帧，单张关键帧确定性重复到 InternVideo2 所需 8 帧；raw multiframe 仍作为 fail-closed 的 optional diagnostic，13 个零字节与 1,019 个短流事实继续保留但不再阻塞关键帧主线。
+2. R4 的 P0 必修项包括：keyframe/raw 双模式和显式 dispatch、raw path 可选化、locks/readiness 更新、orth loss 去除错误教师-mask依赖、旧 YAML 淘汰、`fusion_mode` 真正绑定模型/fingerprint、按 validation-selected official segment F1 校准，以及 Decision KD/shared/role-swap 的可追溯 reconstructed 实现；P1 还要求稳定 sigmoid、GFLOPs/显存、registry/runner/聚合器和教师诊断/污染/定性工具。
+3. R4 的数据与真实运行门槛是一个完整链，不是单个布尔值：24,800 条 source manifest 全量生成与 0-error audit；三教师 repeat-2 smoke；24,800 条教师 cache 可恢复、逐记录 receipt、全量 artifact audit 与 cache root SHA256；一次且仅一次真实 optimizer-step preflight；随后才生成 `ov_orthkd_mm26_repro_ready.yaml` 和 readiness receipt。
+4. 任务书将本轮最高状态定义为 `READY_FOR_CONFERENCE_REPRO`，同时两次明确规定本轮“不启动完整正式训练”；正式 E0–E8 顺序只能在 R4 人工审计后启动。因此“完成 R4”表示取得开始正式复现的候选资格，不等于同一阶段立即开跑全量训练。
+
+## 520. 2026-08-24 — 会议论文逐项核对结果
+
+1. 论文为 ACM MM 2026 九页稿《If You Hear It, Help Find It: Orthogonal Knowledge Distillation for Open-Vocabulary Audio-Visual Event Localization》，DOI `10.1145/3767308.3835302`，论文脚注给出作者官方项目仓库 `https://github.com/ScottBlizzard/OV-OrthKD`。
+2. 论文确认核心结构：ConvNeXtV2-Tiny + EfficientNetV2-B2 学生、4 层 temporal transformer、隐藏维度 384；InternVideo2/BEATs/CLAP 三个冻结监督源；视觉 decision-aligned、音频 auxiliary、文本语义锚、教师特定投影间 cosine-squared orthogonality；默认 visual-logit KD=0 且没有 audio-logit loss。
+3. 论文表 1 锁定损失权重 `sup=1.0, text=0.8, visual-feature=0.4, audio-feature=0.1, orth=0.5, visual-logit-KD=0.0`，优化只明确写 AdamW、base LR `2e-4`、`step400`、early stopping；论文没有完整给出 R4 计划中的 30 epochs、weight decay、cosine scheduler 等所有工程细节，所以这些仍必须按已恢复历史证据或显式 reconstruction 管理，不能称为 PDF 直接指定。
+4. 论文明确写 `Video at 224×224, 16 fps, 16 temporal segments`，并在效率表以 per-16-seg clip 报告；它没有定义“官方每段一张 JPG 如何送入 InternVideo2”，也没有写“重复到 8 帧”。因此 R4 的真实 `T=10`、每段关键帧 repeat-to-8 是有官方数据/历史 wrapper 支撑的可审计重建选择，但不是从本论文唯一恢复出的原始协议。R4 正确要求将该矛盾公开披露、不做 10→16 标签重采样，并把 T=16 仅用于合成效率对齐。
+5. 论文明确给出主要复现目标：Student-only AP 0.714、Visual feature only 0.778、Full 0.816；Full 的 AUROC 0.750、F1@0.5 0.596、calibrated F1 0.781；官方 baseline 总体 F1 0.569、Full 提升 +2.7，unseen 提升 +3.4；orth sweep 每点 5 seeds、标准差约 ±0.003。
+6. 论文表 3 只用标签说明 `Decision KD: Audio route=Decision`、`Symmetric transfer: Audio route=Shared`，没有给出足以唯一实现的损失/投影/路由细节；role swap 和 corruption 也只有结果与高层描述。R4 将这些标为 `reconstructed controls`、预注册候选协议且禁止根据 test 结果事后挑选，是必要而正确的证据边界。
+
+## 521. 2026-08-24 — 只读核对当前公开官方仓库与 OV-AVEBench loader
+
+1. 因论文脚注所指作者仓库的当前发布状态会直接影响是否还需重建，本轮只读打开 `https://github.com/ScottBlizzard/OV-OrthKD`。截至本次核对，它是公开仓库但仅 1 个 commit、只有 README；README 明确写 training/evaluation code、configs、pretrained models 和 preparation instructions 正在整理、计划后续发布。因此当前不能靠作者公开实现消除 16-vs-10、fusion、scheduler 或 reconstructed-control 歧义，也不必无限等待作者才开展已披露的重建实验。
+2. 只读核对官方 OV-AVEBench 仓库 `https://github.com/jasongief/OV-AVEL`：README 明确允许直接下载并使用预处理 audio/visual 开发模型，同时把 raw videos 表述为 “also available”；这支持将损坏 raw archive 从 canonical keyframe 主线硬阻塞中移出。
+3. 进一步打开官方 `proposed_method/ImageBind-main/dataloader.py`：loader 明确 `assert len(os.listdir(visual_frames_dir)) == 10`，排序并加载 10 张图像；标签和视觉/音频张量也沿 T=10 处理。这为 R4 的真实 T=10 source manifest 和评估协议提供直接代码证据，但仍不能证明 repeat-to-8 是作者 OV-OrthKD 唯一采用的 InternVideo2 采样法。
+
+## 522. 2026-08-24 — 是否可以开始复现的最终判断
+
+1. 当前状态仍是 `BLOCKED_BEFORE_CONFERENCE_REPRO`：source manifest 未生成、teacher cache 0/24,800、真实一步 preflight 0 次，不能现在开始正式学生训练。
+2. 若 R4 全部 P0 修复、24,800 source/cache 全量审计、三教师 repeat-2 smoke、唯一一次真实 optimizer-step preflight、ready config/readiness receipt、全测试与 runner/aggregator dry-run均真实通过，并由下一轮人工审计确认没有门禁绕过，则可以开始核心正式复现，首先运行 E0 teacher diagnostics，再运行 E1 的 Student-only/Visual-only/Full seed 42。
+3. 这个“可以”属于 `paper-specified reconstruction` 的受控复现资格，不等于已恢复作者唯一原始实现。必须持续披露四类残余歧义：论文 16 segments 与官方 T=10 的冲突、keyframe repeat-to-8 非论文显式定义、fusion 公式与历史实现差异、Decision KD/Symmetric transfer 欠定义。
+4. 核心 E1 启动不需要等待作者回复；作者代码/checkpoint 若后续公开，应作为新的高优先级证据重新锁定并做敏感性复核。完整复现论文全部表图则还需要 E2–E8，尤其 reconstructed controls、5-seed sweep、corruption、efficiency、qualitative 和 UnAV-100；这些不应被误写成 R4 完成时已经取得的正式结果。
+
+## 523. 2026-08-24 — 本轮审阅交付前验证
+
+1. 按 completion verification 流程重新验证原始材料：指导 MD 为 2,284 行且 SHA256 仍为 `94aa5c9d0a3fa3f012e8292b562f2b23591ac1fcc762ef2a1eb30c2e012950cf`；PDF 为 9 页且 SHA256 仍为 `ed2088c17cc611764d1b7d7cf00ba501ca07659404b0e89540b853e2b810c590`。
+2. UTF-8 读取主日志并机械检查：第 518–522 项全部存在，且同时包含“当前不能训练”“完成全部门槛并经人工审计后可以开始核心复现”两侧条件，未把条件判断误写为当前 READY。
+3. 复核本地实验仓库仍在 `repro/r3-assets-download-and-readiness`，HEAD `eae79f1c07b037cc7e6a7080402988b60d314dd1`，`git status --short` 为空；本轮没有修改仓库代码、提交、推送或启动训练。此项为父目录主日志的最终追加，和第 517 项相同，不为“记录日志记录本身”递归生成无限条目。
+
+## 524. 2026-08-24 — 接受用户对 T=10/16 的最终协议裁定并启动代码修正
+
+1. 用户将以下内容设为当前复现、代码审计和文档修正的默认工作假设：官方 OV-AVEBench 的任务时间轴严格为 T=10；label、student logits、teacher temporal features 与 F1/AP/AUROC 都必须在 10 个一秒段上对齐；禁止新增任何 10→16 标签插值、复制、重采样或重标注。论文中的 16 fps / 16 temporal segments / per-16-seg 更可能是视觉采样或教师编码参数与任务时间段的系统性术语混淆，未获代码证明前不得写死“每秒 16 帧”。
+2. 用户补充：其他细节可以从扩刊目录外的源码寻找。由此将证据优先级固定为：扩刊外初始源码/历史 Git 实现 > 官方 OV-AVEBench loader/标签/评价协议 > 当前重建代码 > 论文含混文字；找不到源码证据就保留未确定，不猜 `clip_len`、`num_frames`、`fps` 或 `sampling_rate`。
+3. 宣布采用需求梳理、书面计划、TDD、隔离 worktree 和完成前验证流程；读取 `using-superpowers`、`brainstorming`、`writing-plans`、`test-driven-development`、`using-git-worktrees` 五个技能文件。技能批量读取输出因总量超过工具预算被截断，但每个单独 `Get-Content -Raw` 命令均 exit 0；此前已完整读取 `using-superpowers`，本轮取得其余技能的执行约束。
+4. 建立六步执行计划：Git/源码基线；跨源码 temporal 变量审计；TDD 锁定 T=10 与 shape receipt；代码/配置/文档修正；5090 真实 shape 与测试；独立复核、提交推送及剩余 blocker 报告。用户已明确要求直接执行且随后补充源码范围，因此不再请求重复确认。
+
+## 525. 2026-08-24 — Git 隔离状态与 R4 分支建立
+
+1. 全工作区未发现 `AGENTS.md`。`扩刊/OV-OrthKD-R2` 的 `.git` 指向项目根 common Git，`git-dir != git-common-dir` 且无 superproject，确认它本身已经是 linked worktree；按隔离技能不再嵌套创建 worktree。
+2. 项目根 `C:/Users/lwz20/Desktop/OV-OrthKD-Collaboration-Base1` 是 `main` checkout，HEAD `dca9f052fbe4a1e9d7982f24bdcec3edf1363fd4`，仅有本轮 PDF 审阅产生的未跟踪 `tmp/`；它作为扩刊外初始源码证据，只读不改。
+3. 在扩刊 worktree 执行 `git fetch --all --tags --prune`、checkout R3、`git pull --ff-only`，均 exit 0；唯一 R4 起点确认是 `eae79f1c07b037cc7e6a7080402988b60d314dd1` 且工作区干净。随后新建并切换 `repro/r4-keyframe-readiness-and-experiment-prep`，新分支 HEAD 与起点完全相同。
+4. 一次为并行目录/Git检查编写的 JavaScript 字符串存在语法错误，工具在执行任何 shell 命令前终止；第二次因 `rg` 未找到 AGENTS 返回 1 导致批量调用整体报告 exit 1；改为 `Promise.allSettled` 且将“未找到”作为显式正常结果后，四项只读检查均成功，未改变代码或数据。
+
+## 526. 2026-08-24 — 扩刊外初始源码对 10/16 语义的直接证据
+
+1. 对项目根初始源码和当前 R3 全局搜索 `num_segments`、`num_frames`、`clip_len`、`fps`、`sampling_rate`、`max_segments`、T=10/T=16。第一次当前树扫描误包含 4.9 MB raw audit JSON，产生 14,871 行并被工具截断；随后把范围收紧到 `.py/.yaml/.md` 且排除大审计文件，取得可读结果。
+2. Git 历史只有初始 artifact `dca9f05` 及 R0–R3 生成提交。初始 commit 的 `src/teachers/internvideo2_visual.py` 已明确 `num_frames: int = 8`，frame group 少于 8 时重复现有帧、超过 8 时均匀选 8；初始 `configs/ov_orthkd.yaml` 同样为 `teacher_export.internvideo2.num_frames: 8`。没有发现 `num_frames=16` 或 `clip_len=16` 的历史证据。
+3. 初始 student/dataset 确实使用 `max_segments: int = 16`；model 建立长度 16 的 positional embedding，真实 forward 使用输入 `seq_len`。初始 `scripts/measure_efficiency.py` 还直接构造 `[1,16,...]` 合成输入并打印 “Latency (16 segments)”。因此现有源码最强解释是：16 至少表示 student positional capacity 和旧效率脚本的合成长度，而非真实任务标签长度。
+4. 初始 teacher wrapper blob 为 `dc833ad4a0560867f191d8305c405a62582d94a9`，R3 wrapper blob 为 `629cc48ce5607a6b1fe1fc4378c8733866d4d7e3`；初始 model blob 为 `27262ed5ead0fa460639ee7bd3cbc273500cfbbe`，R3 model blob 为 `7e0ecdd73fee12598b3e9b0b2c4e5a71756ee9eb`。`git log -S` 确认 `num_frames=8` 与 `max_segments=16` 都源自初始 `dca9f05`，不是本轮事后猜测。
+5. 当前 R3 的 `sampling_fps=16`、每一秒间隔取 8 帧和 raw-only 是后续重建实现；扩刊外初始 wrapper 没有 raw decoder 或 16-fps 网格，只消费已有 `frame_groups`。故必须撤销“每秒固定 16 帧”作为 archival fact；canonical keyframe 路径应保留已证实的 teacher `num_frames=8`，而 raw/fps 只能作为可选诊断参数。
+
+## 527. 2026-08-24 — T=10 协议修正设计、计划与首轮 RED
+
+1. 用 `apply_patch` 新增设计规格 `docs/superpowers/specs/2026-08-24-t10-temporal-protocol-correction-design.md` 和执行计划 `docs/superpowers/plans/2026-08-24-t10-temporal-protocol-correction.md`；机械 placeholder 扫描未发现残留占位符，`git diff --check` exit 0。
+2. 设计明确区分四种尺度：官方任务时间轴 `data.num_segments=10`；student positional capacity `student.max_position_segments=16`；InternVideo2 teacher 输入帧数 `num_frames=8`；raw `sampling_fps=16` 只属于默认禁用的诊断路径。shape receipt 目标固定为 student visual/audio、teacher temporal feature、label、logits 均保留任务轴 T=10，metric 只在严格校验后展平。
+3. 按 TDD 先修改三组回归测试而未改生产代码：配置语义拆分；source manifest 允许缺失可选 raw 视频；teacher pipeline 依据显式 `input_mode` 选择 canonical keyframe 或 raw diagnostic，不再依据是否存在 `export_video` 猜测。
+4. 首轮聚焦 pytest 取得预期 RED，exit 1，结果 `5 failed in 4.32s`。失败原因逐一对应旧实现：缺 `data.num_segments`；teacher source 仍是 raw；builder 对 `raw_video_path=None` 调用 `expanduser`；pipeline 因检测到 `export_video` 错走 raw；teacher builder 未传 canonical input mode。没有 collection/import 环境噪声，证明测试准确锁定待修行为。
+
+## 528. 2026-08-24 — canonical keyframe 数据与教师输入实现
+
+1. 按 TDD 把 `build_ov_avebench_source_manifests.py` 的 raw video root 改为可选：canonical official JPG/WAV 清单不再要求 raw MP4；仅在 raw 文件真实存在且非零时写入 `raw_video_path`，并将 raw 状态写入 diagnostic metadata。
+2. 为 mock 与真实 InternVideo2 wrapper 增加显式 `input_mode`；teacher pipeline 不再凭方法是否存在猜测输入路径。canonical 路径把每个官方 1 秒 segment 的单张 keyframe 确定性重复到历史 wrapper 已证实的 `num_frames=8`，raw multiframe 仅作为默认关闭的 diagnostic。
+3. 聚焦回归由首轮 RED 转为 `8 passed`。随后较宽测试发现 raw loader 两项回归；按 systematic-debugging 定位为新增方法误插入 `_load_video_tensor` 中部，恢复原解码代码块后 raw 聚焦测试为 `2 passed`。
+
+## 529. 2026-08-24 — T=10 shape receipt、运行时对齐与锁文件
+
+1. 新增 `src/utils/temporal_protocol.py`，将官方 task length 10、student positional capacity 16 与 InternVideo2 input frames 8 分开建模；新增严格的 label/logits/mask T=10 对齐检查与机器可审计 shape receipt。
+2. 将对齐检查接入训练、验证、测试和真实 preflight；receipt 明确记录 visual/audio input `[B,10,...]`、visual teacher `[B,10,512]`、audio teacher `[B,10,768]`、label/logits/mask `[B,10]` 及扁平 metric input，仅允许对齐后展平，不存在 10→16 处理。
+3. 对应 TDD 依次取得预期 RED 后转绿：基础协议 `3 passed`，新增 alignment 后最终 `5 passed`；readiness 对缺 shape receipt 的真实 preflight 先拒绝，补实现后相关 fixture 通过。
+4. 新增 `reports/archival/R4_USER_APPROVED_TEMPORAL_PROTOCOL.md`，并更新 archival/preprocessing locks：绑定 `data.num_segments=10`、`data.temporal_resampling=false`、`student.max_position_segments=16`、canonical keyframes、`num_frames=8` 与 raw diagnostic disabled，不再把论文中的 16 当成标签时间轴。
+
+## 530. 2026-08-24 — 配置、loader、模型容量与效率脚本去歧义
+
+1. 所有正式/消融配置把旧 `data.max_segments: 16` 改为 `data.num_segments: 10` 和 `student.max_position_segments: 16`；数据集正式路径严格拒绝非 10 长度，短序列只保留在显式 mock smoke。
+2. 模型参数改名为 `max_position_segments`，16 仅作为 position embedding 容量；输入超过容量时给出明确错误。训练构建器和审计字段同步改名，避免把 capacity 误报为 task segments。
+3. 效率脚本默认使用 canonical T=10；只有显式 `synthetic_capacity_analysis` 才允许 T=16，并在输出中标记它不是论文 task protocol、不是标签重采样。
+4. 上述变更均先增加失败测试再实现：正式配置解析、loader T=16 拒绝、模型 capacity 错误、审计命名与效率模式均完成 RED→GREEN；本地 Anaconda 的 NumPy/BLAS 在个别 torch 测试 collection 前发生进程 abort，因此所有 torch 相关验证改用 5090 上已验证的 venv 执行并记录该环境差异。
+
+## 531. 2026-08-24 — source 审计和 teacher smoke 调用链修正
+
+1. `audit_mm26_reproduction.py` 在 source stage 只把官方 JPG/WAV/label 视为 canonical 必需输入；raw 缺失/零字节只留 diagnostic warning，不再阻塞 canonical keyframe 主线。`check_manifest.py --fail-on-missing` 同样不把 optional raw 算作 required missing。
+2. `inspect_teacher_identity.py` 与全量 exporter 共用显式 visual teacher dispatch，identity receipt 会记录 input mode、10 个 task segments、8 teacher input frames 与 keyframe repeat 规则，避免 smoke 和正式导出走不同实现。
+3. source optional-raw、identity dispatch、审计命名及效率协议的新增聚焦测试均已在 5090 转绿。
+
+## 532. 2026-08-24 — 5090 代码同步与 24,800 条官方 source manifest 全量生成
+
+1. 将本地 R4 源码打包为临时归档（1,232,216 bytes，明确排除 `.git`、data、weights、outputs、logs、runs），SCP 到 `E:\OV-OrthKD-R3\repo` 并覆盖同步代码；远端已有大数据和 checkpoint 未被上传、删除或改写。
+2. 在 5090 的 `E:\OV-OrthKD-R0\env\.venv` 启动 canonical official JPG/WAV manifest builder，不传 raw root。运行 157.4 秒，exit 0；输出 train/val/test 记录数精确为 `13,182 / 5,798 / 5,820`，总计 24,800，文件写入远端 `data/ov_ave/source/`。
+3. 长任务期间持续检查 Python 进程存活和资源占用；builder 正常完成，没有因等待时长中止。
+4. 首次启动 full source audit 时远端 Python 因脚本目录启动语义未把仓库根加入 `sys.path`，在导入 `src` 时退出 1；没有读取或改写审计输出，也没有改变数据。根因是缺少 `PYTHONPATH=.`，随后按该根因修正调用环境重跑。
+5. 第二次审计调用给本地 SSH wrapper 错设 34 秒 timeout；远端任务随 SSH 终止，旧 R3 JSON 未被替换。确认无审计 Python 残留后，以 600 秒外层 timeout 和 30 秒轮询重新启动唯一实例。
+
+## 533. 2026-08-24 — 官方 source manifest 全量审计通过
+
+1. 全量 source audit 运行 97.5 秒，exit 0，`status=passed`，errors/warnings 均为空；`--fail-on-warning` 生效。
+2. 精确结果：24,800 records、67 categories；split `13,182 / 5,798 / 5,820`；seen/unseen 为 train `13,182/0`、val `1,651/4,147`、test `1,664/4,156`；duplicate IDs 与 split overlap 均为空。
+3. 每条记录 label length 和官方 frame count 均为 10：`segment_length_histogram={10:24800}`、`frame_count_histogram={10:24800}`；dataset resampling 为 false，24,800 条均有 no-resampling evidence。
+4. 清单 SHA256：train `d36d2c38c6f24c840cd117b8e79f57da9029a4bc5cf7a6a4bb94a0bb346c4552`，val `d4fee7a13eb001d5cc0617d6b083585ddc5e0c8fec622384340b9651d5f26454`，test `c75e71fcf75ad32031a8879b25936150948bb26ccdde7d0660c12ba8f632faac`；bytes 为 28,450,604 / 12,424,074 / 12,541,107。
+5. 将小型审计 JSON 从 5090 复制回本地仓库的 `reports/mm26_source_manifest_audit.json`；未复制或提交三个大型 manifest 或任何数据集内容。
+
+## 534. 2026-08-24 — 真实三教师 repeat-2 smoke 启动
+
+1. 首次 teacher identity/smoke 调用在身份审计的 `git rev-parse` 处于 8.9 秒后 exit 1：5090 的服务型 SSH 环境 PATH 没有系统 Git，Python 抛出 `FileNotFoundError [WinError 2]`；模型尚未构建或推理，未产生 smoke 结果。
+2. 已定位现成的受控 MinGit 为 `E:\OV-OrthKD-R3\tools\mingit-2.55.0.5\root\cmd\git.exe`；后续仅把该目录前置到本次命令 PATH 后重跑，不安装第二套 Git，也不改变 checkpoint 或数据。
+3. 加入 MinGit 后身份审计成功复算三仓库 Git SHA 与五个 checkpoint SHA；smoke 在模型推理前因 source record 只有 `audio_path`、缺少 10 个 `segment_timestamps` 而 exit 1。该失败证明 builder 与教师 audio resolver 的 schema 未闭合，不是资源缺失。
+4. 按 TDD 先在 canonical builder 测试中要求精确 `[[0,1],...,[9,10]]`，获得预期 RED：`1 failed in 3.94s`、KeyError `segment_timestamps`；随后 builder 按现有官方 10 个一秒段写入该字段，聚焦测试转绿为 `1 passed in 2.69s`。
+5. 因 manifest bytes 会改变，旧的已通过 source audit 只保留为诊断证据；必须用修复后的 builder 重新全量生成并再次全量审计，不能手工修改 24,800 行或沿用旧 SHA。
+
+## 535. 2026-08-24 — 修复后 manifest 重建、最终 source audit 与 CLAP 兼容修复
+
+1. 修复后的第二次全量 builder 运行 156.6 秒、exit 0，仍为 13,182/5,798/5,820；第二次 full source audit 运行 97.7 秒、exit 0，仍为 24,800 records、全部 T=10、0 resampling、0 errors、0 warnings。
+2. 最终 manifest SHA256/bytes 更新为：train `296e087bee10c2ef40ac647fa6d19ae355296366f4f281bca3b58dfd1663d9a0` / 30,361,994；val `deebdc384b6d12d9794b923b4c4387205bc33c819aac06cc92bb1c0febb5fa16` / 13,264,784；test `d2d7ec2a7b45651fb620d826edcef3d18c8eac861732f12af538bbb4a794a814` / 13,385,007。最终 audit JSON 已重新复制回本地。
+3. 第二次真实 smoke 越过音频 schema 后，CLAP GPT-2 tokenizer 因 `padding=max_length` 但无 pad token 而 exit 1。只读搜索 pinned Microsoft CLAP commit `e8a6467...` 的 `msclap/CLAPWrapper.py`，确认上游在两处精确调用 `tokenizer.add_special_tokens({'pad_token': '!'})`，并同样使用 `padding='max_length'`；因此没有猜用 EOS。
+4. 按 TDD 新增 pinned padding 规则测试，预期 RED 为 `1 failed in 1.76s`（helper missing），随后加入 `_configure_clap_tokenizer` 并在本地转绿 `1 passed in 1.54s`；该 helper 明确验证最终 pad token 为 `!`。
+
+## 536. 2026-08-24 — 三教师真实 repeat-2 smoke 通过
+
+1. 修复后的真实 teacher identity/smoke 在 5090 GPU 运行 28.3 秒、exit 0、status pass；随后为生成独立 repeatability receipt 再运行一次同参 smoke，27.9 秒、exit 0。日志里的 `deepspeed is not installed` 为 pinned InternVideo2 上游的可选依赖提示，实际模型加载、推理与所有严格输出检查均成功。
+2. 样本为官方 train index 0、ID `EpxQKLhAP0s`、query `people burping`。实测输出：InternVideo2 features `[10,512]`、logits `[10]`；BEATs features `[10,768]`；CLAP text `[1024]`；全部 finite，无 NaN/Inf。GPU peak allocated 6,183,477,760 bytes。
+3. 两次运行的四项输出均 bitwise identical，`max_abs_diff=0.0`、`mean_abs_diff=0.0`、locked tolerance=0.0；teacher identity errors/warnings 均为空。输入模式明确为 `official_segment_keyframes`，task_segments=10，InternVideo2 num_frames=8，frame expansion 为 keyframe repeat-to-num-frames。
+4. 为避免手工拼 receipt，按 TDD 新增 `build_repeatability_receipt`：5090 上实现前得到预期 import RED（1 collection error），实现后聚焦测试 `1 passed in 2.55s`；CLI 现在同时原子写出 identity 与独立 repeatability JSON。两份小型报告已复制回本地仓库，数据和 checkpoint 未复制。
+
+## 537. 2026-08-24 — 当前锁、状态文档与效率措辞更新
+
+1. data lock 更新为 `source_ready_teacher_export_pending`，写入最终三 split count/bytes/SHA；download lock 更新为 ready，raw archive 自身 bytes/hash/archive test 为 passed，同时以 `diagnostic_result` 保留 13 zero-byte + 1,019 short-stream 事实；teacher lock 更新为 `smoke_passed_export_pending`，写入 keyframe/T=10/num_frames=8、CLAP pad token `!`、real smoke shape 和 repeatability receipt SHA。
+2. teacher lock 更新后第三次运行 source audit 103.5 秒、exit 0；最终仍为 24,800、全部 T=10、0 errors/warnings，receipt 内 teacher status 与最终 lock 一致。最终 source audit SHA256 为 `a421698751e37ee3faff1f3176acb55c46babbc3a0a4793c71541e14b8974635`。
+3. 在 5090 重新运行效率脚本：canonical T=10 为 29.6313659668 ms/clip、33.7480223193 clips/s；显式 synthetic capacity T=16 为 29.5303436279 ms/clip、33.8634731989 clips/s。两份 receipt 都记录 task_segments=10 和 no resampling；T=16 明确 `paper_protocol_measurement=false`。
+4. 重写 `CURRENT_STATUS.md`，新增 `reports/R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md`，更新 README；为 R0/R3/archival 历史报告加 superseded banner，并把 teacher readiness gate 更新为 smoke passed/export pending。旧 raw 事实没有删除，当前文档不再把它们描述为 canonical blocker。
+5. canonical config 的未执行 preflight receipt 改名为 `r4_real_preflight.json`，明确 optimizer_steps=0/invocation_count=0；exported audit 占位收据改为 pending full export，不再错误写 auth required。重新计算 canonical experiment config SHA 为 `1deb9d826fdbce5b62c6b461d06aa16234c291b72060bd9f93c46a2156cdb1c9` 并更新 archival lock。
+
+## 538. 2026-08-24 — 首次 R4 全套测试与八项失败修复
+
+1. 将最终候选代码同步到 5090（临时归档 1,241,374 bytes，排除 `.git/data/weights/external/outputs/logs/runs`），运行全套 pytest；结果 exit 1，`325 passed, 8 failed in 521.35s`。没有沿用旧 319-pass 作为本阶段证据。
+2. 八项根因全部定位：三个旧的非正式短序列 fixture 被 loader 误施加 exact-task-length；teacher-lock helper 不接受新的中间状态；一个 formal audit fixture 缺 `data.num_segments=10`；canonical keyframe PNG 扩展未显式拒绝；旧 raw test 仍要求零字节 optional raw 阻塞；新 R4 evidence 未加 LF 属性。
+3. 修复为：exact T length 只对 formal claim 或显式 `data.num_segments` 生效，legacy unit fixture 保持变长能力；teacher-lock helper 接受 smoke-passed/export-pending 但 ready 仍为 false；canonical keyframe 强制 `.jpg`；更新过时 fixtures/status 断言；为 R4 approval 加 `text eol=lf`。
+4. 在 5090 精确重跑首次失败的八个测试，exit 0，`8 passed in 8.76s`。
+### 539. 2026-08-24：最终独立评价边界审计
+
+- 阅读 `scripts/evaluate_pr_f1.py`、`scripts/train_ov_orthkd.py`、`src/utils/temporal_protocol.py` 和评价测试。
+- 发现训练预测收集会检查 `label/logits/mask` 同形，但独立 PR/F1 正式评价尚未显式拒绝三者都为 T=16 的情况，也未验证扁平化后每个样本恰好贡献 10 个 metric segments。
+- 决定保留通用短序列单元测试能力，仅在正式评价调用中显式传入 `expected_task_segments=10`。
+
+### 540. 2026-08-24：T=10 正式评价失败测试
+
+- 新增 3 个测试：拒绝同形 T=16 张量、拒绝非 T=10 的正式 prediction collection、拒绝每样本不是 10 段的正式阈值评价。
+- 本地测试因 Anaconda NumPy BLAS 初始化异常在 collection 阶段 abort，未得到语义退出码。
+- 将两份测试同步到 5090，在固定虚拟环境执行，结果为预期 RED：`3 failed in 6.37s`，退出码 1；三个失败均为待实现的关键字参数不存在，而非环境故障。
+### 541. 2026-08-24：T=10 正式评价与 readiness builder 闭合
+
+- 实现正式 metric contract：`validate_temporal_alignment(..., task_segments=10)` 会拒绝同形 T=16；正式 prediction collection 会验证每个样本恰好包含按顺序排列的 0..9 共 10 个 metric segments；训练正式评价与独立 PR/F1 脚本均显式传递该约束。
+- 5090 上聚焦评价测试退出码 0：`14 passed in 6.46s`。
+- 独立审计 readiness builder 时发现其默认 preflight 路径仍指向 R3，且 builder 自身的 `real_one_step_preflight` 子门未直接验证 T=10 shape receipt。
+- 按 TDD 新增两项测试；5090 预期 RED 为 `2 failed in 2.82s`、退出码 1。实现默认路径 `reports/runtime/r4_real_preflight.json` 并复用 canonical T=10 receipt validator 后，完整 builder 测试退出码 0：`9 passed in 5.82s`。
+- 同步把 readiness 文案从阶段限定的 R2 改为当前 conference-reproduction review，不改变 `full_run_blocked=true`。
+
+### 542. 2026-08-24：稿件术语修正与证据边界
+
+- 新建 `docs/MM26_TEMPORAL_PROTOCOL_TEXT_CORRECTIONS.md`，给出数据协议、教师输入、配置解释、图表标题和效率描述的精确替换文字；会议 PDF 保持不可变历史证据。
+- 文档明确：官方任务 T=10；student position capacity=16；canonical InternVideo2 wrapper `num_frames=8`；raw diagnostic sampling grid=16 fps 且默认关闭；不存在 10→16 标签处理。
+- 明确没有 editable paper source，且在 full teacher cache audit 和唯一真实一步 preflight 完成前，不把尚未实测的学生 `[B,10]` shape 写成已验证事实。
+- 修正 `CURRENT_STATUS.md` 与 R4 报告尾随空格，并更新实施计划使其与实际文件名、已完成证据和仍待执行的唯一真实 preflight 一致。
+### 543. 2026-08-24：最终全套测试首次调用的环境失败诊断
+
+- 将最终候选代码归档为 1,247,805 bytes 并同步到 5090；归档排除 `.git/data/weights/external/outputs/logs/runs`，未覆盖大数据、checkpoint 或教师缓存。
+- 首次最终全套 pytest 运行 499.35 秒，结果为 `304 passed, 34 failed`、退出码 1。
+- 逐项检查失败栈与失败列表，34 项均依赖子进程 `git`，共同根因是本次 SSH 命令遗漏 MinGit PATH，首个异常为 `FileNotFoundError [WinError 2]`；没有观察到 T=10 实现断言失败。
+- 在不修改实现的前提下，把已锁定 MinGit `E:/OV-OrthKD-R3/tools/mingit-2.55.0.5/root/cmd` 加回本次命令 PATH；`git --version` 为 `2.55.0.windows.5`，精确复跑 canonical readiness、repository locking、teacher identity 三个代表性失败，退出码 0：`3 passed in 9.67s`。
+- 根因验证成立；下一步在相同最终候选代码和正确 PATH 下重新运行完整 pytest，不能把 304-pass 结果作为最终通过证据。
+### 544. 2026-08-24：最终验证与 readiness 实际文件复算
+
+- 正确 MinGit 环境下第一次完整最终回归退出码 0：`338 passed in 520.49s`；compileall 退出码 0；pip check 退出码 0、`No broken requirements found`。
+- CUDA 只读验证退出码 0：Python 3.11.9、PyTorch 2.10.0+cu128、CUDA 12.8、cuDNN 91002、RTX 5090 capability 12.0；2048×2048 FP16 矩阵乘 finite=true，平均 0.0966208 ms。
+- 用实际远端文件运行 fail-closed readiness builder，耗时 222.9 秒并按预期退出 1、状态 `BLOCKED_BEFORE_CONFERENCE_REPRO`；source audit、preprocessing、archive/layout、九项 archival、teacher smoke、evaluator parity、exact resume、full-run guard 子门均通过；full export/cache audit 与真实一步 preflight 保持阻塞。
+- readiness 复算同时发现基线 preprocessing lock 的收据 SHA 错写：锁为 `bb5a...fab3`，而 Git 基线与本地/远端实际 1,700-byte LF receipt 均为 `307774d55d3886c5a9d0ad1ac838f12eafa5932e17e8a4138328d1a8f84992ec`。新增回归断言，5090 先得到预期 RED `1 failed in 0.18s`，再更新为实际字节 SHA 后 GREEN `1 passed in 0.09s`。
+- 第二次全量 readiness 字节复算耗时 216.1 秒；错误 preprocessing SHA 阻塞已消失，剩余内容阻塞仅为 full export/cache audit 与真实一步 preflight；远端解包测试树的 Git dirty 是临时状态，将用干净 worktree 生成最终收据。
+- 包含锁修复与最新收据的最终完整 pytest 再次退出 0：`338 passed in 519.30s`。
+
+### 545. 2026-08-24：提交前静态审计与 activity ledger 同步准备
+
+- `git diff --check` 退出码 0；全部 YAML 和关键 JSON 可解析；敏感模式扫描无命中；变更路径 72 个，其中 data/weights/external/outputs/logs/runs 或模型/压缩包/媒体禁入路径为 0，大于 5MB 的变更文件为 0。
+- 当前分支精确为 `repro/r4-keyframe-readiness-and-experiment-prep`，HEAD 与 merge-base 均为唯一 R4 起点 `eae79f1c07b037cc7e6a7080402988b60d314dd1`。
+- 即将把父目录权威 `all.md` 机械同步到仓库根 `all.md`，随后创建尚未公开的临时单一提交，用 5090 干净临时 worktree 重建 readiness，最后把干净收据纳入同一最终提交再推送；大数据和环境仍不进入 Git。
+### 546. 2026-08-24：标准 Git clean checkout 的 evidence 换行可移植性修复
+
+- 为生成无临时 dirty 噪声的 readiness，先创建未推送 provisional commit `f07fd5c5264a203ead0628c4e3b70d64a55e637b`，打包 Git bundle 并在 5090 建立 detached clean worktree；该 SHA 仅为本地/远端临时验证对象，最终会 amend，不会公开推送。
+- 临时 worktree 的 `git status --porcelain` 为空；通过 junction 只读复用原 repo 的 source manifests、weights、teacher repos 和 HF cache，不复制大文件、不修改目标资源。
+- clean checkout readiness 耗时 134.1 秒并按预期 BLOCKED，但发现 Windows Git `core.autocrlf` 把两份被 SHA 锁定的 JSON checkout 为 CRLF，导致正常 clean checkout 的 receipt/layout SHA 与锁不一致；tar 同步树因保留 LF 曾掩盖此缺陷。
+- 在 `test_hash_locked_text_evidence_is_checked_out_with_lf_bytes` 中加入两份文件，先得到预期 RED：`1 failed in 0.16s`、`eol: unspecified`；再在 `.gitattributes` 精确锁定 `reports/data/official_preprocessed_download_receipt.json` 和 `reports/data/preprocessed_layout_discovery.json` 为 `text eol=lf`，聚焦测试 GREEN：`2 passed in 0.32s`。
+- clean worktree 中的 archive missing 仅因尚未为 `data/downloads/incoming` 建 junction，不是正式 repo 资产缺失；下一轮 clean worktree 会补齐该只读 junction 后重建最终 readiness。
+### 547. 2026-08-24：最终 clean readiness 收据生成
+
+- 将换行修复纳入第二个未推送 provisional commit `53dc809d399dadb66e2e0c1563b6e94e903dcc7e`，通过 Git bundle 在 5090 创建第二个 detached clean worktree。
+- clean worktree 精确验证：HEAD 匹配、`git status --porcelain` 为空；receipt/layout 均为 `eol=lf`；preprocessed receipt SHA256 为 `307774...992ec`；source、weights、external、HF cache 和 incoming archive junction 均指向已核验原资源。
+- 最终 clean readiness builder 运行 224.1 秒并按预期退出 1；状态 `BLOCKED_BEFORE_CONFERENCE_REPRO`。最终 canonical error 中已不存在 Git dirty、preprocessing receipt/layout SHA mismatch、archive missing 或 evidence missing。
+- 剩余 canonical error 精确限于：data/teacher lock 尚为 export pending、full exported manifests/cache root 尚未产生、真实一步 preflight 尚未执行及其 T=10 student shape receipt 尚未产生。
+- 回收最终 `reports/mm26_conference_readiness.json`，SHA256 `785f91ec55b0ec5688dcf8cd7a0d6dd01da0a9da151f8a4e3278681119585fe3`；对应 Markdown readiness 报告 SHA256 `796304a64c34c2167b2e8043de8b4507f0365b2bd5f6077a055dd5d4c5482d62`。
+- 下一步把本条日志和两份 clean 收据 amend 进同一个最终 commit；provisional SHA 不作为最终交付 SHA。
+### 548. 2026-08-24：标准 clean checkout 最终全量回归
+
+- 在包含换行可移植性修复的第二个 clean worktree 上，以正确 MinGit PATH 运行最终完整 pytest；退出码 0，`338 passed in 533.15s (0:08:53)`。
+- 该 clean worktree 的实现与测试代码逐字节对应最终候选；最终本地 commit 相比它仅增加 clean readiness 收据与 activity ledger，不改变被测实现。
+- 将 R4 总报告中的最终全量测试证据更新为本次 clean checkout 结果；随后只做最终 amend、Git 静态核验、推送与远端 SHA 复核，不再修改实现。

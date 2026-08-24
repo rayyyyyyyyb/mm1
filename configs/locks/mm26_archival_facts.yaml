@@ -1,25 +1,34 @@
 schema_version: 2
 status: resolved
 claim_level: paper_specified_reconstruction
-canonical_experiment_config_sha256: "7d2087bfaf483012aba1f82fb06bde725514145332000bca889d4633e2a603da"
-resolution_rule: "R3 facts are explicit user-approved reconstruction assumptions, not recovered archival history."
-approval_document: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
-approval_document_sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
+canonical_experiment_config_sha256: "1deb9d826fdbce5b62c6b461d06aa16234c291b72060bd9f93c46a2156cdb1c9"
+resolution_rule: "R4 temporal/keyframe facts use the latest explicit user ruling; all other facts retain the R3 approved reconstruction assumptions."
+approval_documents:
+  - path: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
+    sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
+  - path: "reports/archival/R4_USER_APPROVED_TEMPORAL_PROTOCOL.md"
+    sha256: "4307242c389022bf48da3080c8e8d5c92158fd75bc9f50233c31b065fc5e3ed0"
 facts:
   temporal_protocol:
     status: approved_reconstruction_assumption
     approved_by: user
     selected_value:
-      data.max_segments: 16
+      data.num_segments: 10
+      data.temporal_resampling: false
+      student.max_position_segments: 16
       task.label_mode: query_conditioned_binary
-    evidence: &user_approval
+    evidence: &r4_temporal_approval
       - kind: user_approval
         approved_by: user
-        path: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
-        sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
-    required_config_paths: ["data.max_segments", "task.label_mode"]
+        path: "reports/archival/R4_USER_APPROVED_TEMPORAL_PROTOCOL.md"
+        sha256: "4307242c389022bf48da3080c8e8d5c92158fd75bc9f50233c31b065fc5e3ed0"
+    required_config_paths: ["data.num_segments", "data.temporal_resampling", "student.max_position_segments", "task.label_mode"]
     config_bindings:
-      - path: "data.max_segments"
+      - path: "data.num_segments"
+        value: 10
+      - path: "data.temporal_resampling"
+        value: false
+      - path: "student.max_position_segments"
         value: 16
       - path: "task.label_mode"
         value: query_conditioned_binary
@@ -29,7 +38,11 @@ facts:
     selected_value:
       teacher_export.strong_visual_backend: internvideo2_clip_b14
       teacher_export.internvideo2.declared_model_class: "InternVideo2-Base / CLIP-B14"
-    evidence: *user_approval
+    evidence: &r3_user_approval
+      - kind: user_approval
+        approved_by: user
+        path: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
+        sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
     required_config_paths: ["teacher_export.strong_visual_backend", "teacher_export.internvideo2.declared_model_class"]
     config_bindings:
       - path: "teacher_export.strong_visual_backend"
@@ -47,7 +60,7 @@ facts:
         interval: epoch
       training.early_stop_patience: null
       training.early_stop_min_delta: 0.0
-    evidence: *user_approval
+    evidence: *r3_user_approval
     required_config_paths: ["training.epochs", "training.scheduler", "training.early_stop_patience", "training.early_stop_min_delta"]
     config_bindings:
       - path: "training.epochs"
@@ -67,7 +80,7 @@ facts:
     selected_value:
       student.pretrained: false
       data.train_augment: true
-    evidence: *user_approval
+    evidence: *r3_user_approval
     required_config_paths: ["student.pretrained", "data.train_augment"]
     config_bindings:
       - path: "student.pretrained"
@@ -79,7 +92,7 @@ facts:
     approved_by: user
     selected_value:
       loss.visual_l2_reduction: mean_feature_then_masked_mean_segments
-    evidence: *user_approval
+    evidence: *r3_user_approval
     required_config_paths: ["loss.visual_l2_reduction"]
     config_bindings:
       - path: "loss.visual_l2_reduction"
@@ -89,7 +102,7 @@ facts:
     approved_by: user
     selected_value:
       student.fusion_mode: concat_mlp_query_conditioned
-    evidence: *user_approval
+    evidence: *r3_user_approval
     required_config_paths: ["student.fusion_mode"]
     config_bindings:
       - path: "student.fusion_mode"
@@ -98,18 +111,30 @@ facts:
     status: approved_reconstruction_assumption
     approved_by: user
     selected_value:
+      teacher_export.internvideo2.source: official_segment_keyframes
+      teacher_export.internvideo2.input_mode: official_segment_keyframes
+      teacher_export.internvideo2.task_segments: 10
       teacher_export.internvideo2.num_frames: 8
-      teacher_export.internvideo2.frame_sampling: uniform_within_each_one_second_interval
-      teacher_export.internvideo2.short_clip_policy: error
-    evidence: *user_approval
-    required_config_paths: ["teacher_export.internvideo2.num_frames", "teacher_export.internvideo2.frame_sampling", "teacher_export.internvideo2.short_clip_policy"]
+      teacher_export.internvideo2.frame_sampling: repeat_segment_keyframe
+      teacher_export.internvideo2.frame_expansion: repeat_last_to_num_frames
+      teacher_export.internvideo2.raw_video_diagnostic.enabled: false
+    evidence: *r4_temporal_approval
+    required_config_paths: ["teacher_export.internvideo2.source", "teacher_export.internvideo2.input_mode", "teacher_export.internvideo2.task_segments", "teacher_export.internvideo2.num_frames", "teacher_export.internvideo2.frame_sampling", "teacher_export.internvideo2.frame_expansion", "teacher_export.internvideo2.raw_video_diagnostic.enabled"]
     config_bindings:
+      - path: "teacher_export.internvideo2.source"
+        value: official_segment_keyframes
+      - path: "teacher_export.internvideo2.input_mode"
+        value: official_segment_keyframes
+      - path: "teacher_export.internvideo2.task_segments"
+        value: 10
       - path: "teacher_export.internvideo2.num_frames"
         value: 8
       - path: "teacher_export.internvideo2.frame_sampling"
-        value: uniform_within_each_one_second_interval
-      - path: "teacher_export.internvideo2.short_clip_policy"
-        value: error
+        value: repeat_segment_keyframe
+      - path: "teacher_export.internvideo2.frame_expansion"
+        value: repeat_last_to_num_frames
+      - path: "teacher_export.internvideo2.raw_video_diagnostic.enabled"
+        value: false
   student_audio_preprocessing:
     status: approved_reconstruction_assumption
     approved_by: user
@@ -134,7 +159,7 @@ facts:
         save_as_jpeg: false
         second_imagenet_normalization: false
         beats_source: raw_16khz_waveform
-    evidence: *user_approval
+    evidence: *r3_user_approval
     required_config_paths: ["data.audio_preprocessing"]
     config_bindings:
       - path: "data.audio_preprocessing"
@@ -145,7 +170,7 @@ facts:
     selected_value:
       evaluation.paper_f1_at_0_5_mapping: ovavel_segment_f1_at_0_5
       evaluation.validation_calibrated_f1_mapping: ovavel_segment_f1_at_validation_selected_threshold
-    evidence: *user_approval
+    evidence: *r3_user_approval
     required_config_paths: ["evaluation.paper_f1_at_0_5_mapping", "evaluation.validation_calibrated_f1_mapping"]
     config_bindings:
       - path: "evaluation.paper_f1_at_0_5_mapping"

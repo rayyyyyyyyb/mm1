@@ -80,6 +80,7 @@ class QueryConditionedOVAvelDataset(Dataset):
         manifest_path: str,
         image_size: int = 224,
         max_segments: int = 16,
+        expected_task_segments: int | None = None,
         augment: bool = False,
         allow_missing_modalities: bool = True,
         strict_alignment: bool = True,
@@ -106,6 +107,11 @@ class QueryConditionedOVAvelDataset(Dataset):
         self.max_segments = max_segments
         if self.max_segments < 1:
             raise ValueError("max_segments must be at least 1")
+        self.expected_task_segments = (
+            None if expected_task_segments is None else int(expected_task_segments)
+        )
+        if self.expected_task_segments is not None and self.expected_task_segments < 1:
+            raise ValueError("expected_task_segments must be positive")
         self.temporal_overflow_policy = str(temporal_overflow_policy).lower()
         if self.temporal_overflow_policy not in {"error", "uniform"}:
             raise ValueError(
@@ -452,6 +458,14 @@ class QueryConditionedOVAvelDataset(Dataset):
             raise ValueError("segment_labels must be binary values 0 or 1")
 
         seq_len = int(labels_array.shape[0])
+        if (
+            self.expected_task_segments is not None
+            and seq_len != self.expected_task_segments
+        ):
+            raise ValueError(
+                f"official task segments={self.expected_task_segments}, "
+                f"but record label length={seq_len}; temporal conversion is forbidden"
+            )
         indices = self._select_indices(seq_len)
 
         frame_value = (
@@ -600,9 +614,24 @@ def seed_worker(worker_id: int) -> None:
 
 def create_ov_avel_data_loaders(config: Dict[str, Any]) -> tuple[DataLoader, DataLoader, DataLoader | None]:
     data_cfg = config["data"]
+    from src.utils.temporal_protocol import task_segments_from_config
+
+    task_segments = task_segments_from_config(config)
+    reproduction = config.get("reproduction", {})
+    mock_only = bool(reproduction.get("mock_only", False)) if isinstance(reproduction, dict) else False
+    formal_claim = (
+        reproduction.get("claim_level")
+        in {"archival_exact", "paper_specified_reconstruction"}
+        if isinstance(reproduction, dict)
+        else False
+    )
+    enforce_task_length = formal_claim or "num_segments" in data_cfg
     dataset_kwargs = {
         "image_size": int(data_cfg.get("image_size", 224)),
-        "max_segments": int(data_cfg.get("max_segments", 16)),
+        "max_segments": task_segments,
+        "expected_task_segments": (
+            task_segments if enforce_task_length and not mock_only else None
+        ),
         "allow_missing_modalities": bool(data_cfg.get("allow_missing_modalities", True)),
         "strict_alignment": bool(data_cfg.get("strict_alignment", True)),
         "strong_teacher_dim": int(data_cfg.get("strong_teacher_dim", 1024)),

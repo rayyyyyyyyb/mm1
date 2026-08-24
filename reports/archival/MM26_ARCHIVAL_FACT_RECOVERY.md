@@ -1,5 +1,7 @@
 # MM26 R2 Archival Fact Recovery
 
+> Historical R2 search result. The temporal and frame-sampling decisions are now superseded by explicit user approval plus source evidence recorded in `R4_USER_APPROVED_TEMPORAL_PROTOCOL.md`; the original negative search evidence remains preserved below.
+
 Status: `SEARCH_COMPLETED_NO_RESOLVING_EVIDENCE`
 
 The R2 search covered all Git refs/tags/reflogs, the collaboration workspace's code/config/report files, local R0/R1/R2 outputs, and the task-scoped R0/R1/R2 directories on the 5090 host. Git history contains only the initial artifact and the generated R0/R1 commits. No pre-R0 branch, tag, reflog entry, run directory, or conference checkpoint was found.

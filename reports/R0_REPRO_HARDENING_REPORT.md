@@ -1,5 +1,7 @@
 # OV-OrthKD ACM MM 2026 R0 Reproduction Hardening Report
 
+> Historical R0 snapshot. Current protocol interpretation is locked by `R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md`: the official task is T=10; 16 is student positional capacity or an explicitly synthetic efficiency input, not a label timeline.
+
 Date: 2026-08-20
 Repository: `https://github.com/rayyyyyyyyb/mm1`
 Branch: `repro/r0-paper-faithfulness`

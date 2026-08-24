@@ -63,7 +63,8 @@ class OVOrthKDStudent(nn.Module):
         temporal_layers: int = 4,
         temporal_heads: int = 8,
         temporal_dropout: float = 0.1,
-        max_segments: int = 16,
+        max_position_segments: int = 16,
+        max_segments: int | None = None,
         pretrained: bool = False,
     ) -> None:
         super().__init__()
@@ -78,7 +79,11 @@ class OVOrthKDStudent(nn.Module):
         self.fusion_dim = fusion_dim
         self.projection_dim = projection_dim
         self.path_mode = path_mode
-        self.max_segments = max_segments
+        if max_segments is not None:
+            max_position_segments = int(max_segments)
+        self.max_position_segments = int(max_position_segments)
+        if self.max_position_segments < 1:
+            raise ValueError("max_position_segments must be positive")
 
         self.visual_proj = nn.Sequential(
             nn.LayerNorm(self.visual_dim),
@@ -110,7 +115,9 @@ class OVOrthKDStudent(nn.Module):
             nn.GELU(),
             nn.Dropout(temporal_dropout),
         )
-        self.position_embedding = nn.Parameter(torch.zeros(1, max_segments, fusion_dim))
+        self.position_embedding = nn.Parameter(
+            torch.zeros(1, self.max_position_segments, fusion_dim)
+        )
 
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=fusion_dim,
@@ -143,6 +150,12 @@ class OVOrthKDStudent(nn.Module):
         frame_valid: Optional[torch.Tensor] = None,
         audio_valid: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor | None]:
+        input_segments = int(frame.shape[1])
+        if input_segments > self.max_position_segments:
+            raise ValueError(
+                f"input task segments {input_segments} exceed student position capacity "
+                f"{self.max_position_segments}"
+            )
         visual_tokens = self.visual_proj(self.visual_encoder(frame))
         audio_tokens = self.audio_proj(self.audio_encoder(spectrogram))
         text_token = self.text_proj(text_embedding).unsqueeze(1).expand(-1, visual_tokens.size(1), -1)

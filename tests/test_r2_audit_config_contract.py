@@ -79,7 +79,8 @@ def test_audit_uses_config_dimensions_and_per_record_resampling_evidence(tmp_pat
     )
 
     assert report["errors"] == []
-    assert report["configured_max_segments"] == 2
+    assert report["configured_task_segments"] == 2
+    assert "configured_max_segments" not in report
     assert report["configured_artifact_dimensions"] == {
         "strong_teacher_features": 3,
         "weak_teacher_features": 4,
@@ -137,7 +138,7 @@ def test_formal_audit_rejects_wrong_official_seen_unseen_matrix(tmp_path: Path) 
         expected_segments="auto",
         config={
             "reproduction": {"claim_level": "archival_exact"},
-            "data": {"max_segments": 2},
+            "data": {"num_segments": 10, "temporal_resampling": False},
         },
     )
 

@@ -52,6 +52,20 @@ def test_canonical_temporal_overflow_fails_instead_of_sampling(tmp_path: Path) -
         _ = _dataset(manifest)[0]
 
 
+def test_formal_loader_requires_exact_t10_labels_even_with_t16_position_capacity(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "data.jsonl"
+    _write_manifest(manifest, _record([0.0] * 16))
+
+    with pytest.raises(ValueError, match="official task segments=10.*label length=16"):
+        _ = _dataset(
+            manifest,
+            max_segments=16,
+            expected_task_segments=10,
+        )[0]
+
+
 def test_explicit_uniform_overflow_is_unique_monotone_and_noncanonical(tmp_path: Path) -> None:
     manifest = tmp_path / "data.jsonl"
     _write_manifest(manifest, _record([0.0, 1.0, 0.0, 1.0, 0.0]))

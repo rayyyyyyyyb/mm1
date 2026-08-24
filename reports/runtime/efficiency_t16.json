@@ -1,9 +1,12 @@
 {
+  "protocol_mode": "synthetic_capacity_analysis",
+  "input_segments": 16,
+  "task_segments": 10,
+  "paper_protocol_measurement": false,
+  "temporal_resampling_performed": false,
   "device": "cuda",
-  "segments": 16,
-  "segment_label": "T=16",
-  "average_latency_ms": 30.27122802734375,
-  "throughput_clips_per_second": 33.03466906254045,
+  "average_latency_ms": 29.53034362792969,
+  "throughput_clips_per_second": 33.86347319894387,
   "trainable_parameters": 46278129,
   "visual_parameters": 27866496,
   "audio_parameters": 8687086

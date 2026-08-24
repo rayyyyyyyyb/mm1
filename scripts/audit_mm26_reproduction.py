@@ -225,7 +225,9 @@ def audit_reproduction(
     teacher_lock_value = teacher_lock or readiness_cfg.get("teacher_lock")
     preprocessing_lock_document = _load_mapping(preprocessing_lock_value)
     teacher_lock_document = _load_mapping(teacher_lock_value)
-    configured_max_segments = int(data_cfg.get("max_segments", 16))
+    from src.utils.temporal_protocol import task_segments_from_config
+
+    configured_task_segments = task_segments_from_config(config_document)
     artifact_dimensions = {
         "strong_teacher_features": int(
             data_cfg.get(
@@ -374,10 +376,6 @@ def audit_reproduction(
                             "waveform_paths",
                         ),
                     ),
-                    "raw_video_path": _record_path_value(
-                        record,
-                        ("raw_video_path", "official_video_path", "video_path"),
-                    ),
                 }
                 for field, value in source_assets.items():
                     paths = list(_iter_paths(value))
@@ -402,6 +400,21 @@ def audit_reproduction(
                                     f"Missing {field}: {resolved}",
                                 )
                             )
+                optional_raw_video = _record_path_value(
+                    record,
+                    ("raw_video_path", "official_video_path", "video_path"),
+                )
+                for raw_path in _iter_paths(optional_raw_video):
+                    resolved = _resolve(root, raw_path)
+                    if not resolved.is_file():
+                        warnings.append(
+                            _issue(
+                                "missing_optional_raw_video_diagnostic",
+                                split,
+                                record_id,
+                                f"Optional raw-video diagnostic input is missing: {resolved}",
+                            )
+                        )
 
             if stage != "exported":
                 continue
@@ -561,7 +574,7 @@ def audit_reproduction(
         "manifest_bytes": manifest_bytes,
         "source_manifest_sha256": manifest_hashes if stage == "source" else None,
         "exported_manifest_sha256": manifest_hashes if stage == "exported" else None,
-        "configured_max_segments": configured_max_segments,
+        "configured_task_segments": configured_task_segments,
         "configured_artifact_dimensions": artifact_dimensions,
         "resampling_performed_by_dataset": resampling_counts["records_with_resampling"] > 0,
         "resampling_evidence": resampling_counts,

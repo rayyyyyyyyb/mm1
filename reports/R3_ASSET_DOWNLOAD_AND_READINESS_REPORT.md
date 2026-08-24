@@ -1,5 +1,7 @@
 # R3 Asset Download and Conference Readiness Report
 
+> Historical R3 snapshot. Its raw-video canonical blocker is superseded by the user-approved official T=10 JPG/WAV protocol and R4 evidence in `R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md`. The 13 zero-byte and 1,019 short raw streams remain valid optional-diagnostic facts.
+
 Date: 2026-08-24
 
 Branch: `repro/r3-assets-download-and-readiness`

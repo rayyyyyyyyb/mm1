@@ -4,6 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+from PIL import Image
 import pytest
 import torch
 import yaml
@@ -83,8 +84,30 @@ def test_missing_or_short_raw_video_blocks_without_png_fallback(tmp_path) -> Non
         teacher._load_video_tensor(short)
 
 
+def test_canonical_teacher_repeats_each_official_keyframe_to_eight_model_frames(
+    tmp_path: Path,
+) -> None:
+    keyframe = tmp_path / "00000001.jpg"
+    Image.new("RGB", (3, 2), color=(7, 11, 13)).save(keyframe)
+    teacher = InternVideo2ClipB14Teacher.__new__(InternVideo2ClipB14Teacher)
+    teacher.input_mode = "official_segment_keyframes"
+    teacher.num_frames = 8
+    teacher.frame_expansion = "repeat_last_to_num_frames"
+    teacher.model = SimpleNamespace(transform=lambda value: value.float())
+
+    selected = teacher._select_frame_paths([str(keyframe)])
+    tensor = teacher._load_segment_tensor([str(keyframe)])
+
+    assert selected == [str(keyframe)] * 8
+    assert tensor.shape == (8, 3, 2, 3)
+
+    with pytest.raises(ValueError, match="exactly one official keyframe"):
+        teacher._select_frame_paths([str(keyframe), str(keyframe)])
+
+
 class _RawVideoTeacher:
     def __init__(self) -> None:
+        self.input_mode = "raw_multiframe_diagnostic"
         self.paths: list[str] = []
 
     def export_video(self, video_path, query):
@@ -92,7 +115,7 @@ class _RawVideoTeacher:
         return np.ones((10, 512), dtype=np.float32), np.ones(10, dtype=np.float32)
 
 
-def test_teacher_pipeline_routes_real_visual_teacher_to_raw_video_only(tmp_path) -> None:
+def test_teacher_pipeline_routes_explicit_raw_diagnostic_mode_to_raw_video(tmp_path) -> None:
     raw_video = tmp_path / "clip.mp4"
     raw_video.write_bytes(b"fixture")
     teacher = _RawVideoTeacher()
@@ -119,6 +142,52 @@ def test_teacher_pipeline_routes_real_visual_teacher_to_raw_video_only(tmp_path)
     assert teacher.paths == [str(raw_video.resolve())]
 
 
+class _KeyframeTeacherWithBothInterfaces:
+    def __init__(self) -> None:
+        self.input_mode = "official_segment_keyframes"
+        self.frame_groups: list[list[list[str]]] = []
+
+    def export_video(self, video_path, query):
+        raise AssertionError("canonical keyframe mode must not touch raw video")
+
+    def export_segments(self, frame_groups, query):
+        self.frame_groups.append(frame_groups)
+        return np.ones((10, 512), dtype=np.float32), np.ones(10, dtype=np.float32)
+
+
+def test_teacher_pipeline_routes_canonical_mode_to_ten_official_keyframes(tmp_path) -> None:
+    teacher = _KeyframeTeacherWithBothInterfaces()
+    frame_paths: list[list[str]] = []
+    for index in range(1, 11):
+        path = tmp_path / f"{index:08d}.jpg"
+        path.write_bytes(b"fixture")
+        frame_paths.append([str(path)])
+    records = [
+        {
+            "id": "clip-1",
+            "query": "event",
+            "segment_labels": [0, 1] * 5,
+            "frame_paths": frame_paths,
+        }
+    ]
+
+    summary = export_manifest_records(
+        records=records,
+        artifact_dir=tmp_path / "cache",
+        output_manifest=tmp_path / "exported.jsonl",
+        teachers=TeacherExportBundle(strong_visual=teacher),
+        source_manifest_sha256="1" * 64,
+        teacher_lock_sha256="2" * 64,
+        split="train",
+    )
+
+    assert summary["records_exported"] == 1
+    assert len(teacher.frame_groups) == 1
+    assert [Path(group[0]).name for group in teacher.frame_groups[0]] == [
+        f"{index:08d}.jpg" for index in range(1, 11)
+    ]
+
+
 def test_teacher_pipeline_blocks_when_raw_video_field_is_missing(tmp_path) -> None:
     records = [{"id": "clip-1", "query": "event", "segment_labels": [0, 1] * 5}]
 
@@ -134,7 +203,7 @@ def test_teacher_pipeline_blocks_when_raw_video_field_is_missing(tmp_path) -> No
         )
 
 
-def test_export_builder_passes_all_raw_video_geometry_to_internvideo_wrapper(
+def test_export_builder_passes_canonical_keyframe_mode_and_optional_raw_geometry(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     project_root = Path(__file__).resolve().parents[1]
@@ -173,7 +242,8 @@ def test_export_builder_passes_all_raw_video_geometry_to_internvideo_wrapper(
 
     build_teachers(args, config)
 
-    assert observed["video_duration_seconds"] == 10
-    assert observed["intervals"] == 10
-    assert observed["sampling_fps"] == 16
+    assert observed["input_mode"] == "official_segment_keyframes"
+    assert observed["task_segments"] == 10
     assert observed["num_frames"] == 8
+    assert observed["frame_expansion"] == "repeat_last_to_num_frames"
+    assert observed["raw_video_diagnostic"]["sampling_fps"] == 16
