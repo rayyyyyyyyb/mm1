@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "extraction_status": "passed",
+  "archive": "E:/OV-OrthKD-R3/repo/data/downloads/incoming/ovave_raw_videos/OV-AVEBench_raw_videos.tar.gz",
+  "archive_type": "tar",
+  "archive_bytes": 38147170955,
+  "archive_sha256": "ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc",
+  "destination": "E:/OV-OrthKD-R3/repo/data/official/ovave_raw",
+  "files": 24836,
+  "uncompressed_bytes": 38365245540,
+  "tree_sha256": "33e467c428432c5b67876350cd3f3bac0e267730f56ee71631e8864bf2077a89",
+  "safety": {
+    "path_traversal_rejected": true,
+    "links_rejected": true,
+    "duplicate_destinations_rejected": true,
+    "max_files": 2000000,
+    "max_total_bytes": 2000000000000,
+    "max_compression_ratio": 500.0
+  }
+}

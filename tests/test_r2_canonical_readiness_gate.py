@@ -185,12 +185,14 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
     preprocessing_lock = {
         "schema_version": 1,
         "status": "resolved",
-        "mode": "canonical_official_png_wav",
+        "mode": "canonical_official_jpg_wav",
         "path_mode": "relative_to_path_root",
         "frame_policy": "natural_sorted_no_repeat",
+        "canonical_visual_extension": ".jpg",
         "config_bindings": [
-            {"path": "data.preprocessing_mode", "value": "canonical_official_png_wav"},
+            {"path": "data.preprocessing_mode", "value": "canonical_official_jpg_wav"},
             {"path": "data.frame_policy", "value": "natural_sorted_no_repeat"},
+            {"path": "data.canonical_visual_extension", "value": ".jpg"},
         ],
     }
     evaluator_source = _file_evidence(root, "eval_metrics.py", "official evaluator")
@@ -366,8 +368,9 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "max_segments": locked_values["data.max_segments"],
             "train_augment": locked_values["data.train_augment"],
             "audio_preprocessing": locked_values["data.audio_preprocessing"],
-            "preprocessing_mode": "canonical_official_png_wav",
+            "preprocessing_mode": "canonical_official_jpg_wav",
             "frame_policy": "natural_sorted_no_repeat",
+            "canonical_visual_extension": ".jpg",
             **{f"{split}_manifest": value["path"] for split, value in manifests.items()},
         },
         "task": {"label_mode": locked_values["task.label_mode"]},

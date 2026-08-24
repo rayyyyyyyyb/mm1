@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 import csv
 import json
 import math
@@ -18,12 +19,23 @@ VIDEO_EXTENSIONS = {".avi", ".m4v", ".mkv", ".mov", ".mp4", ".webm"}
 OFFICIAL_SPLIT_COUNTS = {"train": 13182, "val": 5798, "test": 5820}
 
 
-def _video_paths_by_id(root: Path) -> dict[str, list[Path]]:
+def _raw_video_inventory(root: Path) -> tuple[dict[str, list[Path]], list[Path]]:
     paths: dict[str, list[Path]] = {}
+    appledouble_sidecars: list[Path] = []
     for path in root.rglob("*"):
         if path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS:
+            if path.name.startswith("._"):
+                appledouble_sidecars.append(path.resolve())
+                continue
             paths.setdefault(path.stem, []).append(path.resolve())
-    return {key: sorted(value) for key, value in sorted(paths.items())}
+    return (
+        {key: sorted(value) for key, value in sorted(paths.items())},
+        sorted(appledouble_sidecars),
+    )
+
+
+def _video_paths_by_id(root: Path) -> dict[str, list[Path]]:
+    return _raw_video_inventory(root)[0]
 
 
 def index_raw_videos(raw_video_root: str | Path) -> dict[str, Path]:
@@ -110,6 +122,7 @@ def discover_raw_video_layout(
     enforce_official_counts: bool = True,
     ffprobe_path: str | Path | None = None,
     probe_fn: Callable[[Path], dict[str, object]] | None = None,
+    max_workers: int = 1,
 ) -> dict[str, Any]:
     root = Path(raw_video_root).expanduser().resolve()
     metadata_path = Path(meta_csv).expanduser().resolve()
@@ -118,7 +131,7 @@ def discover_raw_video_layout(
     if not metadata_path.is_file():
         raise FileNotFoundError(f"Official metadata CSV not found: {metadata_path}")
 
-    paths_by_id = _video_paths_by_id(root)
+    paths_by_id, appledouble_sidecars = _raw_video_inventory(root)
     duplicate_video_ids = sorted(
         clip_id for clip_id, paths in paths_by_id.items() if len(paths) > 1
     )
@@ -148,7 +161,9 @@ def discover_raw_video_layout(
     fps_histogram: Counter[str] = Counter()
     duration_histogram: Counter[str] = Counter()
     zero_byte_files: list[str] = []
+    short_video_files: list[dict[str, object]] = []
     records: list[dict[str, object]] = []
+    probe_jobs: list[tuple[str, Path, str, int]] = []
     if probe_fn is None:
         if ffprobe_path is None:
             raise ValueError("ffprobe_path or probe_fn is required for full raw-video audit")
@@ -163,8 +178,39 @@ def discover_raw_video_layout(
                 zero_byte_files.append(relative)
                 errors.append({"path": relative, "error": "zero-byte raw video"})
                 continue
+            probe_jobs.append((clip_id, path, relative, size))
+
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least one")
+
+    def run_probe(
+        job: tuple[str, Path, str, int],
+    ) -> tuple[tuple[str, Path, str, int], dict[str, object] | None, BaseException | None]:
+        try:
+            return job, probe_fn(job[1]), None
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            json.JSONDecodeError,
+            subprocess.TimeoutExpired,
+        ) as error:
+            return job, None, error
+
+    if max_workers == 1:
+        probe_results = map(run_probe, probe_jobs)
+        executor = None
+    else:
+        executor = ThreadPoolExecutor(max_workers=max_workers)
+        probe_results = executor.map(run_probe, probe_jobs)
+    try:
+        for (clip_id, path, relative, size), probed, probe_error in probe_results:
+            if probe_error is not None or probed is None:
+                errors.append(
+                    {"path": relative, "error": f"video probe failed: {probe_error}"}
+                )
+                continue
             try:
-                probed = probe_fn(path)
                 codec = str(probed.get("codec") or "")
                 fps = float(probed.get("fps") or 0.0)
                 duration = float(probed.get("duration_seconds") or 0.0)
@@ -176,6 +222,9 @@ def discover_raw_video_layout(
                     raise ValueError("invalid video duration")
                 if duration < 10.0:
                     errors.append({"path": relative, "error": "raw video is shorter than 10 seconds"})
+                    short_video_files.append(
+                        {"path": relative, "duration_seconds": duration}
+                    )
                 codec_counts[codec] += 1
                 fps_histogram[f"{fps:.6f}"] += 1
                 duration_histogram[f"{duration:.6f}"] += 1
@@ -191,6 +240,9 @@ def discover_raw_video_layout(
                 )
             except (OSError, ValueError, TypeError, json.JSONDecodeError, subprocess.TimeoutExpired) as error:
                 errors.append({"path": relative, "error": f"video probe failed: {error}"})
+    finally:
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     metadata_bijection_verified = not any(
         (duplicate_metadata_ids, duplicate_video_ids, missing_clip_ids, extra_clip_ids)
@@ -208,7 +260,15 @@ def discover_raw_video_layout(
         "extra_clip_ids": extra_clip_ids,
         "duplicate_video_ids": duplicate_video_ids,
         "duplicate_metadata_ids": duplicate_metadata_ids,
+        "ignored_appledouble_sidecars": [
+            path.relative_to(root).as_posix() for path in appledouble_sidecars
+        ],
         "zero_byte_files": sorted(zero_byte_files),
+        "minimum_required_duration_seconds": 10.0,
+        "short_video_count": len(short_video_files),
+        "short_video_files": sorted(
+            short_video_files, key=lambda item: str(item["path"])
+        ),
         "extension_counts": dict(sorted(extension_counts.items())),
         "codec_counts": dict(sorted(codec_counts.items())),
         "fps_histogram": dict(sorted(fps_histogram.items())),
@@ -239,12 +299,14 @@ def main() -> None:
     parser.add_argument("--raw-video-root", required=True)
     parser.add_argument("--meta-csv", required=True)
     parser.add_argument("--ffprobe", default="ffprobe")
+    parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--output-json", required=True)
     args = parser.parse_args()
     report = discover_raw_video_layout(
         args.raw_video_root,
         meta_csv=args.meta_csv,
         ffprobe_path=args.ffprobe,
+        max_workers=args.workers,
     )
     _atomic_write(Path(args.output_json), report)
     print(json.dumps(report, indent=2, ensure_ascii=False))

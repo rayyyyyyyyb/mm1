@@ -1,0 +1,35 @@
+schema_version: 1
+status: locked
+purpose: source_identity_evidence_only
+repository: https://github.com/hche11/VGGSound.git
+commit: 1e75f4d30de3a99115ee9333464854c5e3d161a7
+path: data/vggsound.csv
+git_blob_sha1: 53da0dc492b8a3fadf770f0f175cef1e652c0447
+immutable_api_url: https://api.github.com/repos/hche11/VGGSound/contents/data/vggsound.csv?ref=1e75f4d30de3a99115ee9333464854c5e3d161a7
+download:
+  path: E:/OV-OrthKD-R3/repo/data/downloads/incoming/vggsound_metadata/vggsound.csv
+  bytes: 7949116
+  sha256: c1816c00a237afa4994e873e88f56bac206cbb285fddb05c564184b9c3d6e6ce
+  content_type: application/vnd.github.raw+json
+  etag: 53da0dc492b8a3fadf770f0f175cef1e652c0447
+  last_modified_utc: 2020-05-19T21:09:35Z
+  retrieved_at_utc: 2026-08-24T02:29:13.7408653Z
+audit:
+  total_rows: 199467
+  column_count: 4
+  fields: [youtube_id, start_seconds, label, split]
+  malformed_rows: 0
+  empty_required_fields: 0
+  non_integer_start_seconds: 0
+  exact_duplicate_id_start_pairs: 0
+  target_ovave_ids: 13
+  matched_target_ids: 13
+  matched_rows: 14
+  ambiguous_target_ids: [di01T0hGboU]
+receipt:
+  path: reports/data/vggsound_source_metadata_receipt.json
+  sha256: 0713a279321e9ca0b022ce35ba5bb6e5265c9ff9ba8c1939601ba3e892c310e4
+constraints:
+  - This file identifies VGGSound source segments; it is not an OV-AVEBench raw-video replacement.
+  - A YouTube recut, mirror, or reconstructed clip cannot satisfy official raw-video provenance.
+  - Distinct timestamps for one ID must remain ambiguous until author evidence resolves them.

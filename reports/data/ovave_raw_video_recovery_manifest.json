@@ -1,0 +1,311 @@
+{
+  "conference_readiness_delegated": true,
+  "evidence_inputs": {
+    "ovavel_metadata": {
+      "bytes": 989749,
+      "path": "external/OV-AVEL/meta_anno_files/ovave_dataset_meta.csv",
+      "sha256": "f916b2a7fbaed53c95c6124efe3f11189766a2516805406639578c9a5fd4fb9d"
+    },
+    "vggsound_metadata": {
+      "bytes": 7949116,
+      "path": "data/downloads/incoming/vggsound_metadata/vggsound.csv",
+      "sha256": "c1816c00a237afa4994e873e88f56bac206cbb285fddb05c564184b9c3d6e6ce"
+    },
+    "zero_member_audit": {
+      "bytes": 1833,
+      "path": "data/downloads/state/audit-20260824/raw.zero_members.json",
+      "sha256": "177111dc0acdd708826021f156dfac72ffdd53904fb0885a29df7e1eb93c7b12"
+    }
+  },
+  "final_status": "BLOCKED_BEFORE_CONFERENCE_REPRO",
+  "next_required_gate": "complete_author_replacement_set",
+  "records": [
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/val/basketball bounce/ri2DVH0Q-so.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "basketball bounce",
+        "class_type": "open",
+        "split": "val"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "ri2DVH0Q-so",
+      "vggsound_candidates": [
+        {
+          "label": "basketball bounce",
+          "source_url": "https://www.youtube.com/watch?v=ri2DVH0Q-so",
+          "split": "train",
+          "start_seconds": 40,
+          "youtube_id": "ri2DVH0Q-so"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/val/basketball bounce/tm870k_Vr2s.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "basketball bounce",
+        "class_type": "open",
+        "split": "val"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "tm870k_Vr2s",
+      "vggsound_candidates": [
+        {
+          "label": "basketball bounce",
+          "source_url": "https://www.youtube.com/watch?v=tm870k_Vr2s",
+          "split": "train",
+          "start_seconds": 0,
+          "youtube_id": "tm870k_Vr2s"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/val/basketball bounce/u13LAp8oBUE.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "basketball bounce",
+        "class_type": "open",
+        "split": "val"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "u13LAp8oBUE",
+      "vggsound_candidates": [
+        {
+          "label": "basketball bounce",
+          "source_url": "https://www.youtube.com/watch?v=u13LAp8oBUE",
+          "split": "train",
+          "start_seconds": 256,
+          "youtube_id": "u13LAp8oBUE"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/val/church bell ringing/Uuti9EHClMk.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "church bell ringing",
+        "class_type": "open",
+        "split": "val"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "Uuti9EHClMk",
+      "vggsound_candidates": [
+        {
+          "label": "church bell ringing",
+          "source_url": "https://www.youtube.com/watch?v=Uuti9EHClMk",
+          "split": "train",
+          "start_seconds": 330,
+          "youtube_id": "Uuti9EHClMk"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/val/people crowd/4xR6HvjYEII.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "people crowd",
+        "class_type": "close",
+        "split": "val"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "4xR6HvjYEII",
+      "vggsound_candidates": [
+        {
+          "label": "people crowd",
+          "source_url": "https://www.youtube.com/watch?v=4xR6HvjYEII",
+          "split": "train",
+          "start_seconds": 30,
+          "youtube_id": "4xR6HvjYEII"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/val/arc welding/di01T0hGboU.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "arc welding",
+        "class_type": "close",
+        "split": "val"
+      },
+      "resolution_status": "source_timestamp_ambiguous",
+      "sample_id": "di01T0hGboU",
+      "vggsound_candidates": [
+        {
+          "label": "arc welding",
+          "source_url": "https://www.youtube.com/watch?v=di01T0hGboU",
+          "split": "train",
+          "start_seconds": 51,
+          "youtube_id": "di01T0hGboU"
+        },
+        {
+          "label": "arc welding",
+          "source_url": "https://www.youtube.com/watch?v=di01T0hGboU",
+          "split": "train",
+          "start_seconds": 359,
+          "youtube_id": "di01T0hGboU"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/train/race car/7J8LMbtzJLs.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "race car",
+        "class_type": "close",
+        "split": "train"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "7J8LMbtzJLs",
+      "vggsound_candidates": [
+        {
+          "label": "race car, auto racing",
+          "source_url": "https://www.youtube.com/watch?v=7J8LMbtzJLs",
+          "split": "train",
+          "start_seconds": 180,
+          "youtube_id": "7J8LMbtzJLs"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/train/people crowd/YPisuHnthCo.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "people crowd",
+        "class_type": "close",
+        "split": "train"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "YPisuHnthCo",
+      "vggsound_candidates": [
+        {
+          "label": "people crowd",
+          "source_url": "https://www.youtube.com/watch?v=YPisuHnthCo",
+          "split": "train",
+          "start_seconds": 20,
+          "youtube_id": "YPisuHnthCo"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/train/people crowd/fQWT4MDmVGw.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "people crowd",
+        "class_type": "close",
+        "split": "train"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "fQWT4MDmVGw",
+      "vggsound_candidates": [
+        {
+          "label": "people crowd",
+          "source_url": "https://www.youtube.com/watch?v=fQWT4MDmVGw",
+          "split": "train",
+          "start_seconds": 200,
+          "youtube_id": "fQWT4MDmVGw"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/train/people crowd/H3z1RRazXhc.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "people crowd",
+        "class_type": "close",
+        "split": "train"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "H3z1RRazXhc",
+      "vggsound_candidates": [
+        {
+          "label": "people crowd",
+          "source_url": "https://www.youtube.com/watch?v=H3z1RRazXhc",
+          "split": "train",
+          "start_seconds": 30,
+          "youtube_id": "H3z1RRazXhc"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/train/arc welding/IUUe8-Zn9cA.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "arc welding",
+        "class_type": "close",
+        "split": "train"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "IUUe8-Zn9cA",
+      "vggsound_candidates": [
+        {
+          "label": "arc welding",
+          "source_url": "https://www.youtube.com/watch?v=IUUe8-Zn9cA",
+          "split": "train",
+          "start_seconds": 249,
+          "youtube_id": "IUUe8-Zn9cA"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/test/basketball bounce/EDal0UtzjTA.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "basketball bounce",
+        "class_type": "open",
+        "split": "test"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "EDal0UtzjTA",
+      "vggsound_candidates": [
+        {
+          "label": "basketball bounce",
+          "source_url": "https://www.youtube.com/watch?v=EDal0UtzjTA",
+          "split": "train",
+          "start_seconds": 380,
+          "youtube_id": "EDal0UtzjTA"
+        }
+      ]
+    },
+    {
+      "archive_member": "Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset/test/female speech/bTpB0vwqb8M.mp4",
+      "canonical_raw_video_usable": false,
+      "ovavel": {
+        "category": "female speech",
+        "class_type": "close",
+        "split": "test"
+      },
+      "resolution_status": "source_identified_only",
+      "sample_id": "bTpB0vwqb8M",
+      "vggsound_candidates": [
+        {
+          "label": "female speech, woman speaking",
+          "source_url": "https://www.youtube.com/watch?v=bTpB0vwqb8M",
+          "split": "train",
+          "start_seconds": 100,
+          "youtube_id": "bTpB0vwqb8M"
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "status": "blocked",
+  "summary": {
+    "author_replacement_verified_count": 0,
+    "source_identified_count": 12,
+    "source_timestamp_ambiguous_count": 1,
+    "unresolved_count": 0,
+    "zero_member_count": 13
+  },
+  "vggsound_source_lock": {
+    "commit": "1e75f4d30de3a99115ee9333464854c5e3d161a7",
+    "path": "data/vggsound.csv",
+    "receipt": {
+      "bytes": 2755,
+      "path": "reports/data/vggsound_source_metadata_receipt.json",
+      "sha256": "0713a279321e9ca0b022ce35ba5bb6e5265c9ff9ba8c1939601ba3e892c310e4"
+    },
+    "repository": "https://github.com/hche11/VGGSound.git",
+    "verified": true
+  }
+}

@@ -1,11 +1,29 @@
 {
-  "schema_version": 1,
-  "status": "not_executed_gate_blocked",
+  "schema_version": 2,
+  "status": "blocked_raw_video_validation",
   "stage": "source",
-  "blocked_by": "official archive extraction and layout discovery not completed",
+  "artifact_scan": "none",
   "record_count": null,
   "split_counts": null,
-  "source_manifest_sha256": null,
-  "errors": null,
-  "warnings": null
+  "split_seen_unseen_counts": null,
+  "manifest_bytes": {"train": null, "val": null, "test": null},
+  "source_manifest_sha256": {"train": null, "val": null, "test": null},
+  "builder_exit_code": 1,
+  "partial_outputs_published": false,
+  "first_rejected_path": "train/arc welding/IUUe8-Zn9cA.mp4",
+  "first_error": "Missing non-empty official raw video",
+  "upstream_raw_layout": {
+    "path": "reports/data/raw_video_layout_discovery.json",
+    "sha256": "4831a1b93791ae1749d8ce8eb52e12cd129b672dfe815ed73cf1cef9952fd592",
+    "formal_video_count": 24800,
+    "zero_byte_video_count": 13,
+    "shorter_than_ten_seconds_count": 1019,
+    "metadata_id_match_rate": 1.0
+  },
+  "errors": [
+    "13 formal raw MP4 paths are zero-byte in the official author archive.",
+    "1,019 additional non-empty streams are shorter than the locked ten-second temporal policy; no alternative policy has author evidence."
+  ],
+  "warnings": [],
+  "final_status": "BLOCKED_BEFORE_CONFERENCE_REPRO"
 }

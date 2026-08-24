@@ -1,0 +1,12 @@
+{
+  "aggregate_sha256": null,
+  "complete_unique_expected_set": false,
+  "declared_record_count": 0,
+  "expected_record_count": 13,
+  "records": [],
+  "schema_version": 1,
+  "status": "blocked",
+  "verifier": "ovave_raw_replacement_audit/v1",
+  "remote_exit_code": 2,
+  "final_status": "BLOCKED_BEFORE_CONFERENCE_REPRO"
+}

@@ -1,6 +1,6 @@
 schema_version: 1
-status: blocked_auth_required
-generated_at: "2026-08-20T14:31:00+00:00"
+status: blocked_raw_video_validation
+generated_at: "2026-08-24T02:59:31+00:00"
 assets:
   internvideo2_b14:
     status: passed
@@ -76,31 +76,48 @@ assets:
     content_type: "application/octet-stream"
     validation_result: passed
   ovave_preprocessed:
-    status: AUTH_REQUIRED
+    status: passed
     kind: data
-    path: "data/downloads/manual_sources/ovave_preprocessed_archive"
+    path: "E:/OV-OrthKD-R3/repo/data/downloads/incoming/ovave_preprocessed/ovave_dataset_preprocessed.tar.gz"
     source_url: "https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/Efm9NKaGQFBAsOC2ZOMZRvcB26TKXJ84H4VW6g8BR5SukQ?e=OPgMOt"
     alternate_urls: []
-    download_started_at: null
-    download_completed_at: null
-    resume_count: 0
-    bytes: null
-    sha256: null
-    content_type: null
-    validation_result: AUTH_REQUIRED
+    download_started_at: "2026-08-21T02:17:30.3767380+00:00"
+    download_completed_at: "2026-08-23T12:13:47.4599737+00:00"
+    resume_count: 3
+    bytes: 24618769924
+    sha256: "ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e"
+    content_type: "application/x-gzip"
+    validation_result: passed
   ovave_raw_videos:
-    status: AUTH_REQUIRED
+    status: blocked_zero_and_short_video_protocol
     kind: data
-    path: "data/downloads/manual_sources/ovave_raw_video_archive"
+    path: "E:/OV-OrthKD-R3/repo/data/downloads/incoming/ovave_raw_videos/OV-AVEBench_raw_videos.tar.gz"
     source_url: "https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/EcVHOp2zOyVHvi1Au-i1zFQBf5wQNi-Yff9Aso_SJ4MV8Q?e=OeRlQh"
     alternate_urls: []
-    download_started_at: null
-    download_completed_at: null
+    download_started_at: "2026-08-21T03:02:54.6083814+00:00"
+    download_completed_at: "2026-08-23T14:16:51.8575994+00:00"
+    resume_count: 2
+    bytes: 38147170955
+    sha256: "ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc"
+    content_type: "application/x-gzip"
+    validation_result: failed_13_zero_byte_members_and_1019_shorter_than_locked_ten_seconds
+  vggsound_metadata:
+    status: passed
+    kind: data
+    path: "E:/OV-OrthKD-R3/repo/data/downloads/incoming/vggsound_metadata/vggsound.csv"
+    source_url: "https://api.github.com/repos/hche11/VGGSound/contents/data/vggsound.csv?ref=1e75f4d30de3a99115ee9333464854c5e3d161a7"
+    alternate_urls:
+      - "https://github.com/hche11/VGGSound/blob/1e75f4d30de3a99115ee9333464854c5e3d161a7/data/vggsound.csv"
+    download_started_at: "2026-08-24T02:28:52+00:00"
+    download_completed_at: "2026-08-24T02:29:13.7408653+00:00"
     resume_count: 0
-    bytes: null
-    sha256: null
-    content_type: null
-    validation_result: AUTH_REQUIRED
+    bytes: 7949116
+    sha256: "c1816c00a237afa4994e873e88f56bac206cbb285fddb05c564184b9c3d6e6ce"
+    content_type: "text/csv"
+    validation_result: passed
 blockers:
-  - "A legal Microsoft organization login is required once for each official SharePoint asset."
-  - "Do not write credentials, cookies, tokens or captured signed URLs into this lock."
+  - "The byte-complete official raw archive contains 13 zero-byte MP4 members."
+  - "The full ffprobe audit also finds 1,019 non-empty formal videos shorter than the currently locked 10-second raw-video policy; 958 are estimated not to cover the final 9.875-second deterministic sampling point."
+  - "Author clarification or corrected author-issued bytes are required before changing the short-clip policy; padding, repetition, resampling, or a silent boundary relaxation is forbidden."
+  - "Do not treat VGGSound metadata, YouTube recuts, mirrors, or preprocessed JPG/WAV files as official raw-video replacements."
+  - "Do not write credentials, cookies, tokens, HAR files, or captured signed URLs into this lock."

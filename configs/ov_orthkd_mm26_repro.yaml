@@ -51,8 +51,9 @@ teachers:
 
 data:
   path_root: "."
-  preprocessing_mode: "canonical_official_png_wav"
+  preprocessing_mode: "canonical_official_jpg_wav"
   frame_policy: "natural_sorted_no_repeat"
+  canonical_visual_extension: ".jpg"
   actual_segments: 10
   temporal_resampling: false
   audio_preprocessing:
@@ -90,7 +91,7 @@ data:
       resize: [224, 224]
       to_tensor: true
       normalization: "imagenet_mean_std"
-    pngs_per_segment: 1
+    jpgs_per_segment: 1
   train_manifest: "data/ov_ave/source/train.jsonl"
   val_manifest: "data/ov_ave/source/val.jsonl"
   test_manifest: "data/ov_ave/source/test.jsonl"

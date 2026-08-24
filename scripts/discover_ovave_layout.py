@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 import csv
 import json
 import os
@@ -17,6 +18,8 @@ from PIL import Image
 
 TRACKED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".wav", ".npy", ".npz"}
 OFFICIAL_SPLIT_COUNTS = {"train": 13182, "val": 5798, "test": 5820}
+VISUAL_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+OFFICIAL_FRAME_NAMES = tuple(f"{index:08d}.jpg" for index in range(1, 11))
 
 
 def _name_pattern(name: str) -> str:
@@ -30,19 +33,47 @@ def _natural_key(path: Path) -> tuple[object, ...]:
     )
 
 
+def _inspect_media(
+    job: tuple[Path, str, str],
+) -> tuple[str, str, dict[str, object] | None, str | None]:
+    path, extension, relative = job
+    try:
+        if extension in VISUAL_EXTENSIONS:
+            with Image.open(path) as image:
+                payload: dict[str, object] = {
+                    "dimensions": f"{image.width}x{image.height}x{len(image.getbands())}",
+                    "name_pattern": _name_pattern(path.name),
+                }
+            return extension, relative, payload, None
+        if extension == ".wav":
+            with wave.open(str(path), "rb") as handle:
+                rate = int(handle.getframerate())
+                channels = int(handle.getnchannels())
+                duration = handle.getnframes() / rate if rate else 0.0
+            return extension, relative, {
+                "sample_rate": rate,
+                "channels": channels,
+                "duration_bucket": f"{round(duration, 3):.3f}",
+            }, None
+    except (OSError, ValueError, wave.Error, EOFError) as error:
+        return extension, relative, None, str(error)
+    return extension, relative, {}, None
+
+
 def discover_layout(
     dataset_root: str | Path,
     *,
     meta_csv: str | Path | None = None,
     enforce_official_counts: bool = True,
+    max_workers: int = 1,
 ) -> dict[str, Any]:
     root = Path(dataset_root).expanduser().resolve()
     if not root.is_dir():
         raise FileNotFoundError(f"Official preprocessed root not found: {root}")
     split_presence = {split: (root / split).is_dir() for split in ("train", "val", "test")}
     extension_counts: Counter[str] = Counter()
-    png_dimensions: Counter[str] = Counter()
-    png_name_patterns: Counter[str] = Counter()
+    visual_dimensions: Counter[str] = Counter()
+    visual_name_patterns: Counter[str] = Counter()
     wav_sample_rates: Counter[str] = Counter()
     wav_channels: Counter[str] = Counter()
     wav_duration_buckets: Counter[str] = Counter()
@@ -53,6 +84,7 @@ def discover_layout(
     paths_by_basename: dict[str, list[str]] = {}
     paths_by_logical_basename: dict[tuple[str, str, str], list[str]] = {}
     discovered_ids_by_split = {split: set() for split in ("train", "val", "test")}
+    inspection_jobs: list[tuple[Path, str, str]] = []
 
     for path in root.rglob("*"):
         if not path.is_file():
@@ -75,38 +107,75 @@ def discover_layout(
         extension_counts[extension] += 1
         relative_parent = path.parent.relative_to(root).as_posix()
         directory_counts.setdefault(relative_parent, Counter())[extension] += 1
-        if extension == ".png":
-            try:
-                with Image.open(path) as image:
-                    channels = len(image.getbands())
-                    png_dimensions[f"{image.width}x{image.height}x{channels}"] += 1
-                png_name_patterns[_name_pattern(path.name)] += 1
-            except (OSError, ValueError) as exc:
-                errors.append({"path": path.relative_to(root).as_posix(), "error": str(exc)})
-        elif extension == ".wav":
-            try:
-                with wave.open(str(path), "rb") as handle:
-                    rate = int(handle.getframerate())
-                    channels = int(handle.getnchannels())
-                    duration = handle.getnframes() / rate if rate else 0.0
-                wav_sample_rates[str(rate)] += 1
-                wav_channels[str(channels)] += 1
-                bucket = f"{round(duration, 3):.3f}"
-                wav_duration_buckets[bucket] += 1
-            except (wave.Error, OSError, EOFError) as exc:
-                errors.append({"path": path.relative_to(root).as_posix(), "error": str(exc)})
+        if extension in VISUAL_EXTENSIONS or extension == ".wav":
+            inspection_jobs.append((path, extension, relative.as_posix()))
+
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least one")
+    if max_workers == 1:
+        inspection_results = map(_inspect_media, inspection_jobs)
+        executor = None
+    else:
+        executor = ThreadPoolExecutor(max_workers=max_workers)
+
+        def bounded_results():
+            for offset in range(0, len(inspection_jobs), 4096):
+                yield from executor.map(
+                    _inspect_media, inspection_jobs[offset : offset + 4096]
+                )
+
+        inspection_results = bounded_results()
+    try:
+        for extension, relative, payload, error in inspection_results:
+            if error is not None or payload is None:
+                errors.append({"path": relative, "error": str(error)})
+            elif extension in VISUAL_EXTENSIONS:
+                visual_dimensions[str(payload["dimensions"])] += 1
+                visual_name_patterns[str(payload["name_pattern"])] += 1
+            elif extension == ".wav":
+                wav_sample_rates[str(payload["sample_rate"])] += 1
+                wav_channels[str(payload["channels"])] += 1
+                wav_duration_buckets[str(payload["duration_bucket"])] += 1
+    finally:
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     visual_segment_histogram: Counter[str] = Counter()
-    for counts in directory_counts.values():
-        png_count = int(counts.get(".png", 0))
-        if png_count:
-            visual_segment_histogram[str(png_count)] += 1
+    for directory, paths in files_by_directory.items():
+        visual_files = sorted(
+            (path for path in paths if path.suffix.lower() in VISUAL_EXTENSIONS),
+            key=_natural_key,
+        )
+        if not visual_files:
+            continue
+        visual_segment_histogram[str(len(visual_files))] += 1
+        actual_names = tuple(path.name for path in visual_files)
+        if actual_names != OFFICIAL_FRAME_NAMES:
+            errors.append(
+                {
+                    "path": directory.relative_to(root).as_posix(),
+                    "error": (
+                        "canonical visual layout must be exactly 00000001.jpg "
+                        "through 00000010.jpg"
+                    ),
+                }
+            )
     warnings: list[str] = []
     missing_splits = [split for split, present in split_presence.items() if not present]
     if missing_splits:
         warnings.append(f"missing split directories: {missing_splits}")
-    if extension_counts.get(".png", 0) == 0:
-        warnings.append("no PNG files found")
+    visual_extension_counts = {
+        extension: int(extension_counts.get(extension, 0))
+        for extension in sorted(VISUAL_EXTENSIONS)
+        if extension_counts.get(extension, 0)
+    }
+    canonical_visual_extension = (
+        ".jpg" if set(visual_extension_counts) == {".jpg"} else None
+    )
+    if canonical_visual_extension is None:
+        warnings.append(
+            "canonical visual extension is not exclusively .jpg"
+        )
     if extension_counts.get(".wav", 0) == 0:
         warnings.append("no WAV files found")
     if zero_byte_files:
@@ -214,8 +283,19 @@ def discover_layout(
         "zero_byte_files": sorted(zero_byte_files),
         "natural_sort_changed_directories": natural_sort_changed_directories,
         "extension_counts": dict(sorted(extension_counts.items())),
-        "png_dimensions": dict(sorted(png_dimensions.items())),
-        "png_name_patterns": dict(sorted(png_name_patterns.items())),
+        "canonical_visual_extension": canonical_visual_extension,
+        "visual_dimensions": dict(sorted(visual_dimensions.items())),
+        "visual_name_patterns": dict(sorted(visual_name_patterns.items())),
+        "png_dimensions": (
+            dict(sorted(visual_dimensions.items()))
+            if extension_counts.get(".png", 0)
+            else {}
+        ),
+        "png_name_patterns": (
+            dict(sorted(visual_name_patterns.items()))
+            if extension_counts.get(".png", 0)
+            else {}
+        ),
         "visual_segment_count_histogram": dict(sorted(visual_segment_histogram.items())),
         "wav_sample_rates": dict(sorted(wav_sample_rates.items())),
         "wav_channels": dict(sorted(wav_channels.items())),
@@ -243,8 +323,8 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.extend(f"- {split}: {present}" for split, present in report["split_presence"].items())
     lines.extend(["", "## Extension counts", ""])
     lines.extend(f"- {extension}: {count}" for extension, count in report["extension_counts"].items())
-    lines.extend(["", "## PNG dimensions", ""])
-    lines.extend(f"- {key}: {value}" for key, value in report["png_dimensions"].items())
+    lines.extend(["", "## Visual dimensions", ""])
+    lines.extend(f"- {key}: {value}" for key, value in report["visual_dimensions"].items())
     lines.extend(["", "## WAV sample rates", ""])
     lines.extend(f"- {key}: {value}" for key, value in report["wav_sample_rates"].items())
     if report["errors"] or report["warnings"]:
@@ -272,8 +352,11 @@ def main() -> None:
     parser.add_argument("--meta-csv", default=None)
     parser.add_argument("--output-json", required=True)
     parser.add_argument("--output-md", required=True)
+    parser.add_argument("--workers", type=int, default=16)
     args = parser.parse_args()
-    report = discover_layout(args.dataset_root, meta_csv=args.meta_csv)
+    report = discover_layout(
+        args.dataset_root, meta_csv=args.meta_csv, max_workers=args.workers
+    )
     _atomic_write(Path(args.output_json), json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     _atomic_write(Path(args.output_md), _markdown(report))
     print(json.dumps(report, indent=2, ensure_ascii=False))

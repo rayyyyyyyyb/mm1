@@ -48,8 +48,9 @@ def _ready_inputs(tmp_path: Path) -> dict[str, Path]:
             {
                 "schema_version": 1,
                 "status": "resolved",
-                "mode": "canonical_official_png_wav",
+                "mode": "canonical_official_jpg_wav",
                 "frame_policy": "natural_sorted_no_repeat",
+                "canonical_visual_extension": ".jpg",
             },
         ),
         "archive_receipt": _write(
@@ -251,7 +252,7 @@ def test_builder_returns_ready_only_when_every_gate_passes(
 
     report = build_conference_readiness(config, inputs)
 
-    assert report["status"] == "READY_TO_IMPLEMENT_CONFERENCE_EXPERIMENTS"
+    assert report["status"] == "READY_FOR_CONFERENCE_REPRO"
     assert report["ready"] is True
     assert all(item["passed"] for item in report["requirements"].values())
 
@@ -262,7 +263,7 @@ def test_builder_rejects_structurally_plausible_but_forged_receipts(tmp_path: Pa
 
     report = build_conference_readiness(config, inputs)
 
-    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS"
+    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_REPRO"
     assert report["ready"] is False
     assert report["requirements"]["canonical_evidence_chain"]["passed"] is False
     assert "canonical_evidence_chain" in report["blockers"]
@@ -304,7 +305,7 @@ def test_builder_is_blocked_when_official_archive_is_missing(tmp_path: Path) -> 
 
     report = build_conference_readiness(config, inputs)
 
-    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS"
+    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_REPRO"
     assert report["ready"] is False
     assert report["requirements"]["official_archive_and_extraction"]["passed"] is False
     assert "official_archive_and_extraction" in report["blockers"]
@@ -325,7 +326,7 @@ def test_builder_requires_exactly_five_hashed_teacher_checkpoints(tmp_path: Path
 
     report = build_conference_readiness(config, inputs)
 
-    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS"
+    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_REPRO"
     assert report["requirements"]["teacher_lock_and_checkpoints"]["passed"] is False
 
 
@@ -344,7 +345,7 @@ def test_builder_requires_resolved_canonical_preprocessing_lock(tmp_path: Path) 
 
     report = build_conference_readiness(config, inputs)
 
-    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS"
+    assert report["status"] == "BLOCKED_BEFORE_CONFERENCE_REPRO"
     assert report["requirements"]["preprocessing_lock"]["passed"] is False
 
 

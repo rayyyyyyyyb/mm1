@@ -4,7 +4,6 @@
   "archive_test": "passed",
   "content_magic_valid": true,
   "archive": "data/downloads/incoming/ovave_preprocessed/ovave_dataset_preprocessed.tar.gz",
-  "archive_type": "tar.gz",
   "archive_bytes": 24618769924,
   "archive_sha256": "ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e",
   "archive_listing": {
@@ -18,10 +17,19 @@
   "files_extracted": 272800,
   "uncompressed_bytes": 27959350079,
   "extracted_tree_sha256": "7a2c848fcdfe5118b3ac1de23eaa7b9121c4e3a98f98d0112b3c6e6b72d75e60",
-  "safety": {
-    "path_traversal_rejected": true,
-    "links_rejected": true,
-    "duplicate_destinations_rejected": true,
-    "zero_byte_files": 0
+  "archive_layout_audit": {
+    "path": "reports/data/preprocessed_layout_discovery.json",
+    "status": "passed",
+    "sample_count": 24800,
+    "logical_layout_sha256": "756cdb8e73ced5610c708ca43e76c7cb1cac867573c567501c35d52953720919"
+  },
+  "filesystem_layout_audit": {
+    "remote_path": "E:/OV-OrthKD-R3/repo/data/downloads/state/audit-20260824/preprocessed.filesystem_layout.json",
+    "bytes": 18553544,
+    "sha256": "b663233b35c2f210c705ac7a6441c4947488b80ae2eba65fa4bd32aeee76b787",
+    "status": "passed",
+    "sample_count": 24800,
+    "errors": 0,
+    "warnings": 0
   }
 }

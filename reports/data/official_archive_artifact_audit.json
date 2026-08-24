@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "status": "blocked",
+  "raw_archive": {
+    "bytes": 38147170955,
+    "sha256": "ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc",
+    "tar_read_status": "passed",
+    "seven_zip_test_exit": 0,
+    "files": 24836,
+    "zero_byte_files": 13,
+    "member_manifest_sha256": "ef1827635a143ec60eb295afb8ef60af20d263eb01a473f80f3783aa50f3e6b2",
+    "safe_extraction_status": "passed",
+    "extracted_tree_sha256": "33e467c428432c5b67876350cd3f3bac0e267730f56ee71631e8864bf2077a89",
+    "formal_video_count": 24800,
+    "metadata_id_match_rate": 1.0,
+    "shorter_than_ten_seconds": 1019,
+    "layout_status": "blocked_raw_video_validation"
+  },
+  "preprocessed_archive": {
+    "bytes": 24618769924,
+    "sha256": "ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e",
+    "tar_read_status": "passed",
+    "seven_zip_test_exit": 0,
+    "files": 272800,
+    "zero_byte_files": 0,
+    "extension_counts": {".jpg": 248000, ".wav": 24800},
+    "member_manifest_sha256": "288250bb0b74a800a731af5d224f058ddf54233178cd5216eeeda726c5106f31",
+    "safe_extraction_status": "passed",
+    "extracted_tree_sha256": "7a2c848fcdfe5118b3ac1de23eaa7b9121c4e3a98f98d0112b3c6e6b72d75e60",
+    "filesystem_layout_status": "passed",
+    "filesystem_layout_report_sha256": "b663233b35c2f210c705ac7a6441c4947488b80ae2eba65fa4bd32aeee76b787"
+  },
+  "crosscheck": {
+    "raw_zero_byte_ids": 13,
+    "matched_in_preprocessed_archive": 13,
+    "each_match_has_nonzero_jpg_count": 10,
+    "each_match_has_nonzero_wav_count": 1,
+    "preprocessed_bytes_are_not_raw_video_replacements": true
+  },
+  "final_status": "BLOCKED_BEFORE_CONFERENCE_REPRO"
+}

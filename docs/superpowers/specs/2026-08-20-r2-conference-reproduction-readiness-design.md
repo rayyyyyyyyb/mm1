@@ -37,7 +37,7 @@ The reproduction fingerprint incorporates canonical inputs rather than configura
 
 ### Preprocessing and manifests
 
-The canonical manifest builder references official PNG/WAV assets and never invents JPEG mel inputs. Frame ordering is natural and insufficient frames are rejected instead of silently repeated. External path serialization is explicit (`relative_to_path_root` or `absolute`) and JSONL output is atomic. Legacy generated JPEG-mel behavior, where retained, is labeled noncanonical.
+The canonical manifest builder references the actual released JPG/WAV archive bytes and never invents JPEG mel inputs. The full archive audit supersedes the README's `.png` wording: every official visual directory contains exactly `00000001.jpg` through `00000010.jpg`. Missing, extra, mixed, or misnamed frames are rejected instead of silently repeated. External path serialization is explicit (`relative_to_path_root` or `absolute`) and JSONL output is atomic. Legacy generated JPEG-mel behavior, where retained, is labeled noncanonical.
 
 Safe archive extraction uses staging, rejects traversal, links, duplicate destinations, and suspicious decompression ratios, and promotes a validated tree atomically. Layout discovery inventories candidate metadata, PNG, and WAV assets without inventing mappings.
 

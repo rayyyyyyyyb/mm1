@@ -1,6 +1,6 @@
 # R3 Asset Download and Conference Readiness Report
 
-Date: 2026-08-20
+Date: 2026-08-24
 
 Branch: `repro/r3-assets-download-and-readiness`
 
@@ -10,9 +10,21 @@ Final status: `BLOCKED_BEFORE_CONFERENCE_REPRO`
 
 ## Decision
 
-All five public teacher checkpoints, the pinned GPT-2 snapshot, five fixed upstream repositories, the RTX 5090 teacher environment, and the native Windows toolchain are downloaded and byte-audited. All three real teacher classes strict-load their real checkpoint combinations successfully.
+All five public teacher checkpoints, the pinned GPT-2 snapshot, five fixed upstream repositories, the RTX 5090 teacher environment, the native Windows toolchain, and both official OV-AVEBench SharePoint archives are downloaded and byte-audited. Both archives were safely extracted and their complete extracted-tree hashes were frozen. All three real teacher classes strict-load their real checkpoint combinations successfully.
 
-The two official OV-AVEBench SharePoint archives still require one legal Microsoft organization login. Their original bytes are not present in `E:\OV-OrthKD-R3\repo\data\downloads\manual_sources\`. Consequently the workflow intentionally did not extract data, build source manifests, run real repeat-2 smoke, export the 24,800-record teacher cache, or claim the single allowed optimizer-step preflight. No ready configuration was created and the canonical full-run guard remains enabled.
+The preprocessed archive is complete and contains exactly 248,000 JPG files plus 24,800 WAV files. This byte-level observation corrects the official README's `.png` wording; every sample has the exact names `00000001.jpg` through `00000010.jpg`. A second audit of all extracted files decoded the entire release, proved the 24,800-row metadata bijection, and reported zero missing, extra, duplicate, zero-byte, error, or warning entries. The raw archive is also byte-complete and its gzip/tar container is fully readable. A full 16-worker ffprobe audit matches exactly 24,800 official IDs after excluding 25 macOS AppleDouble sidecars, but finds 13 zero-byte formal MP4s and 1,019 additional non-empty streams shorter than the currently locked ten-second policy. Of the latter, 958 are estimated not to cover the last deterministic 9.875-second InternVideo2 sampling point. The workflow therefore did not start formal student training, did not consume the one allowed real optimizer-step preflight, and keeps the canonical full-run guard enabled. Author-issued corrected bytes plus an official short-video protocol clarification are the remaining external blockers.
+
+## Official data and source-metadata audit
+
+| Asset | Bytes | SHA256 | Audit |
+|---|---:|---|---|
+| OV-AVEBench preprocessed | 24,618,769,924 | `ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e` | container passed; 248,000 `.jpg`, 24,800 `.wav`, zero empty files |
+| OV-AVEBench raw videos | 38,147,170,955 | `ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc` | container/extraction passed; exact 24,800-ID match; 13 zero-byte MP4s; 1,019 streams below locked 10 s; formal use blocked |
+| Official VGGSound CSV | 7,949,116 | `c1816c00a237afa4994e873e88f56bac206cbb285fddb05c564184b9c3d6e6ce` | 199,467 four-column rows; all 13 IDs found; `di01T0hGboU` has two distinct timestamps |
+
+Safe extraction produced 272,800 preprocessed files / 27,959,350,079 bytes with tree SHA256 `7a2c848fcdfe5118b3ac1de23eaa7b9121c4e3a98f98d0112b3c6e6b72d75e60`, and 24,836 raw-archive files / 38,365,245,540 bytes with tree SHA256 `33e467c428432c5b67876350cd3f3bac0e267730f56ee71631e8864bf2077a89`. The complete extracted preprocessed layout report is 18,553,544 bytes with SHA256 `b663233b35c2f210c705ac7a6441c4947488b80ae2eba65fa4bd32aeee76b787`.
+
+The VGGSound CSV is locked to `hche11/VGGSound@1e75f4d30de3a99115ee9333464854c5e3d161a7`, path `data/vggsound.csv`, Git blob `53da0dc492b8a3fadf770f0f175cef1e652c0447`. It is source-identity evidence only. The deterministic recovery manifest reports 12 `source_identified_only`, one `source_timestamp_ambiguous`, zero author replacements, and `BLOCKED_BEFORE_CONFERENCE_REPRO`.
 
 ## Public weight receipts
 
@@ -33,6 +45,7 @@ All five passed non-empty/non-HTML/non-XML/non-LFS validation, published SHA256 
 - GPT-2 seven-file root SHA256: `b153066835c920d5713823134e00bde77a6ec5af4746c11984658debbaddbf0a`.
 - FFmpeg 9.0.1 distribution: 111,253,802 bytes, SHA256 `fec81ae03971d9dd4be3ebe02e263bd2ec1d789483f931bdba5f5715e65da2e9`; identical bytes obtained from the GyanD GitHub release mirror after the Gyan rolling endpoint proved slow.
 - Tool receipt: ready for aria2 1.37.0, curl 8.21.0, FFmpeg 9.0.1, Git LFS 3.7.1, jq 1.8.2, Python 3.11.9, and 7-Zip 26.02. Windows-native background processes, SCP/SFTP, and curl replace tmux, rsync, and wget where those POSIX tools do not exist.
+- Official VGGSound source metadata: `hche11/VGGSound@1e75f4d30de3a99115ee9333464854c5e3d161a7`, `data/vggsound.csv`, immutable API download with Range support.
 
 ## Fixed repositories
 
@@ -50,10 +63,10 @@ The InternVideo receipt includes `InternVideo2/multi_modality/models/internvideo
 
 | Lock | State | Summary |
 |---|---|---|
-| download | blocked_auth_required | Five weights passed; two SharePoint data assets AUTH_REQUIRED. |
-| data | blocked | Official metadata counts 13,182/5,798/5,820 are locked; both archive byte streams, extraction, layouts, and manifests remain gated. |
+| download | blocked_raw_video_validation | Five weights, two archive downloads, and VGGSound metadata are byte-complete; raw payload has 13 zero-byte MP4s and 1,019 clips below the locked duration policy. |
+| data | blocked_raw_video_validation | Official metadata counts 13,182/5,798/5,820, both archive hashes, both extracted-tree hashes and the passed preprocessed layout are locked; raw formal use awaits 13 author replacements and official resolution of the short-video protocol. |
 | archival | resolved | Nine taskbook choices are explicit user-approved paper-specified reconstruction assumptions, not claimed as recovered archival history. |
-| preprocessing | resolved | Official PNG/WAV student path, ImageBind-compatible audio semantics, and official raw-video InternVideo path are fixed. |
+| preprocessing | resolved | Actual release layout is locked to `00000001.jpg`–`00000010.jpg` plus WAV; mixed/missing/extra frames fail. |
 | teacher | blocked | Three identities and five checkpoints resolved and strict-loaded; real smoke/full export wait on official data. |
 | evaluator | resolved | Paper F1@0.5 and validation-calibrated F1 mappings are bound to config; event F1 remains supplemental. |
 
@@ -65,7 +78,7 @@ The InternVideo receipt includes `InternVideo2/multi_modality/models/internvideo
 | BEATs | `BEATs.BEATs` | 768 | passed, 2.544 s CPU |
 | CLAP | `msclap.models.clap.CLAP` | 1024 | passed, 6.291 s CPU |
 
-- Real repeat-2 smoke: not run; no audited official train sample exists.
+- Real repeat-2 smoke: prior teacher readiness evidence remains available, but conference reconstruction is blocked before any raw-video-dependent rerun because 13 formal samples are empty and the locked short-video policy rejects 1,019 more.
 - Full teacher export: not started; 0/24,800 records, no cache root SHA256 exists.
 - Real optimizer-step preflight: not invoked; invocation count is 0 and no invocation marker/report exists.
 - Full conference training: not started.
@@ -76,7 +89,7 @@ The InternVideo receipt includes `InternVideo2/multi_modality/models/internvideo
 | Command/check | Exit | Result |
 |---|---:|---|
 | `python -m compileall -q src scripts tests` | 0 | passed |
-| `python -m pytest -q` | 0 | 296 passed in 104.21 s, no warnings |
+| `python -m pytest -q` | 0 | 319 passed in 309.73 s; stderr empty |
 | `python -m pip check` | 0 | no broken requirements |
 | `python scripts/verify_cuda_runtime.py` | 0 | RTX 5090, CUDA 12.8, capability 12.0, FP16 result finite |
 | `python scripts/assets/download_mm26_assets.py --verify --root .` | 0 | all five weights passed |
@@ -85,10 +98,10 @@ The InternVideo receipt includes `InternVideo2/multi_modality/models/internvideo
 | tool receipt validator | 0 | ready; zero errors |
 | three real teacher strict-load commands | 0 | all passed |
 
-The final conference readiness command ran in a clean Windows checkout of the exact candidate commit, exited 1, and serialized `BLOCKED_BEFORE_CONFERENCE_REPRO` (receipt SHA256 `d764e12218cdb328dca7ad84effaed0e1c4dc3f1b1bab6e767451328fcc2beb1`). Its immediate blocker is the intentionally absent real-preflight receipt. A second canonical audit with `require_real_preflight=False` exhaustively checked the rest of the chain: no Git-dirty, archival, preprocessing, evaluator-parity, teacher-checkpoint, environment, or repository error remained; every reported blocker was the missing SharePoint bytes or a data-dependent extraction/layout/manifest/smoke/export consequence. This expected fail-closed result is not a test failure.
+The fail-closed readiness builder exited 1 and serialized `BLOCKED_BEFORE_CONFERENCE_REPRO` (receipt SHA256 `baf60e11c642a26a9763caed797d1c9975600b6ba265139e555be920149ed09c`). Its archive/extraction and full preprocessed-layout gates pass. The blocked gates are the intentionally incomplete data/source chain, data-dependent teacher smoke/export, and the intentionally absent R3 real-preflight receipt. The builder's stale R2-only final-state names and default preflight path were corrected with a red/green regression test so the repository now emits only the two R3 taskbook statuses.
 
 ## Required human action
 
-Follow `reports/downloads/SHAREPOINT_AUTH_REQUIRED.md`: sign in through an authorized browser/RDP session, download both original files without renaming or modifying them, and place them in `E:\OV-OrthKD-R3\repo\data\downloads\manual_sources\`. Do not send a password, MFA code, cookie, token, or signed URL. After the files are present, rerun the byte validation, safe extraction, full layout/manifest audits, real repeat-2 teacher smoke, resumable full export, full artifact audit, and only then the one allowed optimizer-step preflight.
+Do not download the same two archives again and do not provide an account password. Use the ready-to-send request in `reports/data/OVAVEBENCH_RAW_VIDEO_AUTHOR_REQUEST.md` to ask the OV-AVEL authors for (a) either a corrected official raw archive or the exact 13 original MP4 files with author-hosted locators/checksums, and (b) the official non-repeating temporal policy or corrected source bytes for released clips shorter than ten seconds. When replacement bytes arrive, keep them in a separate quarantine overlay and run `scripts/verify_ovave_raw_replacements.py`; the original archive must remain unchanged. YouTube recuts, mirrors, repeated frames, silent padding/resampling, and the official JPG/WAV derivatives are not canonical replacements.
 
 Final status: `BLOCKED_BEFORE_CONFERENCE_REPRO`

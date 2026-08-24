@@ -1,17 +1,146 @@
 {
-  "blockers": [
-    "RuntimeError: Canonical readiness gate failed: Missing readiness input: E:\\OV-OrthKD-R3\\readiness-clean-c675403\\reports\\runtime\\r3_real_preflight.json"
-  ],
-  "canonical_evidence_chain": false,
-  "canonical_receipt": null,
-  "config_path": "E:\\OV-OrthKD-R3\\readiness-clean-c675403\\configs\\ov_orthkd_mm26_repro.yaml",
-  "config_sha256": "1bfc2f764c344e2c71490223761ff953546383a38fb76ec517a9b5e5bfe5619f",
-  "full_run_started": false,
-  "generated_at_utc": "2026-08-20T15:40:08.424168Z",
-  "ready": false,
-  "ready_config_created": false,
-  "ready_config_path": "E:\\OV-OrthKD-R3\\readiness-clean-c675403\\configs\\ov_orthkd_mm26_repro_ready.yaml",
-  "ready_config_removed_as_stale": false,
   "schema_version": 1,
-  "status": "BLOCKED_BEFORE_CONFERENCE_REPRO"
+  "status": "BLOCKED_BEFORE_CONFERENCE_REPRO",
+  "ready": false,
+  "claim_level": "paper_specified_reconstruction",
+  "variant": "conference_baseline",
+  "requirements": {
+    "canonical_evidence_chain": {
+      "passed": false,
+      "details": "The shared canonical validator must verify exact files, hashes, config bindings and Git state"
+    },
+    "p0_p1_tests": {
+      "passed": true,
+      "details": "Required R2 regression tests must pass"
+    },
+    "data_lock": {
+      "passed": false,
+      "details": "Official archive and manifests must be frozen in the data lock"
+    },
+    "preprocessing_lock": {
+      "passed": true,
+      "details": "Canonical official JPG/WAV preprocessing must be fully resolved"
+    },
+    "official_archive_and_extraction": {
+      "passed": true,
+      "details": "Official archive SHA and safe extraction must pass"
+    },
+    "layout_discovery": {
+      "passed": true,
+      "details": "Full official layout discovery must pass without warnings"
+    },
+    "source_manifest_audit": {
+      "passed": false,
+      "details": "24,800 source records must pass 0-error/0-warning audit"
+    },
+    "nine_archival_facts": {
+      "passed": true,
+      "details": "All nine facts require direct evidence or approved reconstruction"
+    },
+    "teacher_lock_and_checkpoints": {
+      "passed": false,
+      "details": "Three teachers and five checkpoints must be exact and hashed"
+    },
+    "teacher_smoke_repeatability": {
+      "passed": false,
+      "details": "Real teacher smoke and repeatability must pass"
+    },
+    "full_exported_artifact_audit": {
+      "passed": false,
+      "details": "24,800 exported records and cache hash must pass"
+    },
+    "official_evaluator_parity": {
+      "passed": true,
+      "details": "Official evaluator mapping and parity must be resolved"
+    },
+    "real_one_step_preflight": {
+      "passed": false,
+      "details": "Exactly one real-data optimizer step must pass"
+    },
+    "exact_epoch_resume": {
+      "passed": true,
+      "details": "Exact multi-worker augmented resume test must pass"
+    },
+    "canonical_full_run_guard": {
+      "passed": true,
+      "details": "full_run_blocked must remain true for R2 review"
+    }
+  },
+  "blockers": [
+    "canonical_evidence_chain",
+    "data_lock",
+    "source_manifest_audit",
+    "teacher_lock_and_checkpoints",
+    "teacher_smoke_repeatability",
+    "full_exported_artifact_audit",
+    "real_one_step_preflight"
+  ],
+  "input_evidence": {
+    "data_lock": {
+      "path": "configs/locks/mm26_data_lock.yaml",
+      "exists": true,
+      "sha256": "2432dfe1e6761efec548e96fb9ef2baa90d93521d5924e0b978cd9369ab6d26d"
+    },
+    "preprocessing_lock": {
+      "path": "configs/locks/mm26_preprocessing_lock.yaml",
+      "exists": true,
+      "sha256": "47b81e3a2b402aa844802658e48622ab6a932f156f0cd99545259816f63446ed"
+    },
+    "archive_receipt": {
+      "path": "reports/data/official_archive_extraction_receipt.json",
+      "exists": true,
+      "sha256": "59bea45fc0ca84bf8fa38696609a2905d8ed28b8c813a080828652b9c49a4c3e"
+    },
+    "layout_discovery": {
+      "path": "reports/data/preprocessed_layout_discovery.json",
+      "exists": true,
+      "sha256": "7d8eed820dce10a914f4254777749b4592ee4ad869187616ae25f11e2e42299c"
+    },
+    "source_audit": {
+      "path": "reports/mm26_source_manifest_audit.json",
+      "exists": true,
+      "sha256": "6b5c171db99708e22844ae04978d603fd3671f8db8a6ceaa725876b74a6f199a"
+    },
+    "archival_lock": {
+      "path": "configs/locks/mm26_archival_facts.yaml",
+      "exists": true,
+      "sha256": "2abdd12c7bd5515cb477333597b934f7f24c91ca9e88eb47e302e8e103bca975"
+    },
+    "teacher_lock": {
+      "path": "configs/locks/mm26_teacher_lock.yaml",
+      "exists": true,
+      "sha256": "e5bc1e1daf7c3c5957459bcaee1a3066ad0ed017d4ef47e3a57750f4b770921b"
+    },
+    "teacher_identity": {
+      "path": "reports/teachers/teacher_identity.json",
+      "exists": true,
+      "sha256": "a174517618b04c09ce7c1027f773ea74462fbdddd42a0d38bc8712c5aee03e26"
+    },
+    "smoke_repeatability": {
+      "path": "reports/teachers/smoke_repeatability.json",
+      "exists": true,
+      "sha256": "20a9e0bca58b079bff3406d777296d7a3c00f939b3a86cdeb12d4cd9feab380e"
+    },
+    "exported_audit": {
+      "path": "reports/mm26_exported_artifact_audit.json",
+      "exists": true,
+      "sha256": "c3b382691fcb7fda58dcd2d3d73db86831c7c450c0f32d6afe2b4c8a7f909ed9"
+    },
+    "evaluator_lock": {
+      "path": "configs/locks/mm26_evaluator_lock.yaml",
+      "exists": true,
+      "sha256": "71f477f5a7ae48fe95abb7753121943c71579f08b74c5249f2b9d7c445ebe7c2"
+    },
+    "real_preflight": {
+      "path": "reports/runtime/r3_real_preflight.json",
+      "exists": false,
+      "sha256": null
+    },
+    "verification": {
+      "path": "reports/runtime/r2_verification.json",
+      "exists": true,
+      "sha256": "3682127909ab6416d69cf9c9126ec2d3cf2a4d777ba2d74e889d2ff31e3ff67a"
+    }
+  },
+  "canonical_validation_error": "Canonical readiness gate failed: Missing readiness input: E:\\OV-OrthKD-R3\\repo\\reports\\runtime\\r3_real_preflight.json"
 }

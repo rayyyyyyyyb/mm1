@@ -154,7 +154,7 @@ def test_canonical_dataset_uses_official_wav_not_legacy_spectrogram_images(
     dataset = QueryConditionedOVAvelDataset(
         str(manifest),
         path_root=str(tmp_path),
-        preprocessing_mode="canonical_official_png_wav",
+        preprocessing_mode="canonical_official_jpg_wav",
         audio_preprocessing=audio_config,
         allow_missing_modalities=True,
     )

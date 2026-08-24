@@ -17,7 +17,11 @@ WEIGHT_HASHES = {
 
 def _lock(root: Path) -> dict:
     assets = {}
-    names = tuple(WEIGHT_HASHES) + ("ovave_preprocessed", "ovave_raw_videos")
+    names = tuple(WEIGHT_HASHES) + (
+        "ovave_preprocessed",
+        "ovave_raw_videos",
+        "vggsound_metadata",
+    )
     for name in names:
         path = root / f"{name}.bin"
         if name in WEIGHT_HASHES:

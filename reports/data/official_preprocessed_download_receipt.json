@@ -1,24 +1,44 @@
 {
-  "schema_version": 1,
-  "status": "blocked_authentication_required",
+  "schema_version": 2,
+  "status": "passed",
   "source_repository": "https://github.com/jasongief/OV-AVEL.git",
   "source_commit": "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6",
-  "source_document": "external/OV-AVEL/README.md:21",
+  "source_document": "README.md:21",
   "official_share_url": "https://mailhfuteducn-my.sharepoint.com/:u:/g/personal/2018110964_mail_hfut_edu_cn/Efm9NKaGQFBAsOC2ZOMZRvcB26TKXJ84H4VW6g8BR5SukQ?e=OPgMOt",
-  "attempted_at_utc": "2026-08-19T18:15:00Z",
-  "browser_control_available": false,
-  "anonymous_access": {
-    "default_curl": "http_403_after_redirect",
-    "chrome_user_agent": "microsoft_login_redirect_page",
-    "legacy_onedrive_shares_api": "http_308_user_migrated",
-    "microsoft_graph_drive_item": "http_401_oauth_required",
-    "microsoft_graph_root_content": "http_401_oauth_required"
+  "remote_path": "E:/OV-OrthKD-R3/repo/data/downloads/incoming/ovave_preprocessed/ovave_dataset_preprocessed.tar.gz",
+  "download": {
+    "completed": true,
+    "resumable_range_verified": true,
+    "resume_count": 3,
+    "bytes": 24618769924,
+    "sha256": "ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e",
+    "content_type": "application/x-gzip",
+    "completed_at_utc": "2026-08-23T12:13:47.4599737Z"
   },
-  "download_completed": false,
-  "files": [],
-  "archive_listing_completed": false,
-  "extraction_completed": false,
+  "archive_audit": {
+    "status": "passed",
+    "files": 272800,
+    "directories": 25170,
+    "zero_byte_files": 0,
+    "unsafe_paths": 0,
+    "duplicate_destinations": 0,
+    "extension_counts": {".jpg": 248000, ".wav": 24800},
+    "member_manifest_sha256": "288250bb0b74a800a731af5d224f058ddf54233178cd5216eeeda726c5106f31"
+  },
+  "safe_extraction": {
+    "status": "passed",
+    "files": 272800,
+    "uncompressed_bytes": 27959350079,
+    "tree_sha256": "7a2c848fcdfe5118b3ac1de23eaa7b9121c4e3a98f98d0112b3c6e6b72d75e60"
+  },
+  "filesystem_layout_audit": {
+    "status": "passed",
+    "sample_count": 24800,
+    "split_counts": {"train": 13182, "val": 5798, "test": 5820},
+    "errors": 0,
+    "warnings": 0,
+    "full_report_sha256": "b663233b35c2f210c705ac7a6441c4947488b80ae2eba65fa4bd32aeee76b787"
+  },
   "credentials_or_tokens_recorded": false,
-  "third_party_mirror_used": false,
-  "blocker": "The pinned official SharePoint share currently requires Microsoft authentication, and no authorized browser session is available."
+  "third_party_mirror_used": false
 }

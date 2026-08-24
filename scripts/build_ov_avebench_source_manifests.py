@@ -21,8 +21,9 @@ from src.data.split_types import normalize_split_type
 from scripts.discover_ovave_raw_video_layout import VIDEO_EXTENSIONS, index_raw_videos
 
 
-CANONICAL_MODE = "canonical_official_png_wav"
+CANONICAL_MODE = "canonical_official_jpg_wav"
 LEGACY_MODE = "noncanonical_legacy_generated_jpeg_mel"
+OFFICIAL_FRAME_NAMES = tuple(f"{index:08d}.jpg" for index in range(1, 11))
 
 
 def parse_args() -> argparse.Namespace:
@@ -130,24 +131,32 @@ def build_official_record(
     if not audio_path.is_file() or audio_path.suffix.lower() != ".wav":
         raise FileNotFoundError(f"Missing official WAV: {audio_path}")
     if not video_dir.is_dir():
-        raise FileNotFoundError(f"Missing official PNG directory: {video_dir}")
+        raise FileNotFoundError(f"Missing official JPG directory: {video_dir}")
     raw_video_path = raw_video_path.expanduser().resolve()
-    if not raw_video_path.is_file() or raw_video_path.suffix.lower() not in VIDEO_EXTENSIONS:
-        raise FileNotFoundError(f"Missing official raw video: {raw_video_path}")
-    png_paths = sorted(
-        (path for path in video_dir.iterdir() if path.is_file() and path.suffix.lower() == ".png"),
-        key=natural_path_key,
+    if (
+        not raw_video_path.is_file()
+        or raw_video_path.suffix.lower() not in VIDEO_EXTENSIONS
+        or raw_video_path.stat().st_size <= 0
+    ):
+        raise FileNotFoundError(
+            f"Missing non-empty official raw video: {raw_video_path}"
+        )
+    actual_files = sorted(
+        (path for path in video_dir.iterdir() if path.is_file()), key=natural_path_key
     )
-    if len(png_paths) != len(labels):
+    actual_names = tuple(path.name for path in actual_files)
+    if len(labels) != 10 or actual_names != OFFICIAL_FRAME_NAMES:
         raise ValueError(
-            f"Canonical clip {clip_id} requires exactly {len(labels)} PNG files; found {len(png_paths)}. "
-            "Silent frame repetition or temporal resampling is forbidden."
+            f"Canonical clip {clip_id} requires exactly 00000001.jpg through "
+            f"00000010.jpg and ten labels; found {list(actual_names)} and "
+            f"{len(labels)} labels. Mixed extensions, missing/extra/misnamed frames, "
+            "silent repetition, and temporal resampling are forbidden."
         )
     split_type = normalize_split_type(cls_type)
     return {
         "id": clip_id,
         "query": category,
-        "frame_paths": [[_serialize_path(path, path_root, path_mode)] for path in png_paths],
+        "frame_paths": [[_serialize_path(path, path_root, path_mode)] for path in actual_files],
         "spectrogram_paths": [],
         "audio_path": _serialize_path(audio_path, path_root, path_mode),
         "raw_video_path": _serialize_path(raw_video_path, path_root, path_mode),
@@ -162,6 +171,8 @@ def build_official_record(
             "source": "released_ovavel_dataset_anno.json",
             "raw_video_source": "official_sharepoint_raw_video",
             "preprocessing_mode": CANONICAL_MODE,
+            "canonical_visual_extension": ".jpg",
+            "canonical_frame_names": list(OFFICIAL_FRAME_NAMES),
             "student_audio_preprocessing": "unresolved_not_generated",
             "preprocessing_evidence": {
                 "temporal_resampling_performed": False,

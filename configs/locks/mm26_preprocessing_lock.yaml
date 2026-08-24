@@ -1,26 +1,53 @@
 schema_version: 1
 status: resolved
 claim_level: paper_specified_reconstruction
-mode: canonical_official_png_wav
+mode: canonical_official_jpg_wav
 frame_policy: natural_sorted_no_repeat
+canonical_visual_extension: .jpg
 config_bindings:
   - path: data.preprocessing_mode
-    value: canonical_official_png_wav
+    value: canonical_official_jpg_wav
   - path: data.frame_policy
     value: natural_sorted_no_repeat
+  - path: data.canonical_visual_extension
+    value: .jpg
 reference:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
   path: "external/OV-AVEL/proposed_method/ImageBind-main/imagebind/data.py"
   sha256: "2a044e75c704bae90dcb1445e0b9647132fb934929902508dbe9efc367c211ed"
 canonical_manifest:
-  visual_source: official_png
+  visual_source: official_jpg
   audio_source: official_wav
   raw_video_source: official_raw_video
   frame_order: natural_path_key
   generated_spectrograms: false
   temporal_resampling: false
   atomic_publication: partial_fsync_os_replace
+  official_frame_names:
+    - 00000001.jpg
+    - 00000002.jpg
+    - 00000003.jpg
+    - 00000004.jpg
+    - 00000005.jpg
+    - 00000006.jpg
+    - 00000007.jpg
+    - 00000008.jpg
+    - 00000009.jpg
+    - 00000010.jpg
+official_archive_observation:
+  receipt:
+    path: reports/data/official_preprocessed_download_receipt.json
+    sha256: bb5a40822745ad696d959ab69ba3f74b5b1252417b049129c48d99902799fab3
+  layout_audit:
+    path: reports/data/preprocessed_layout_discovery.json
+    sha256: 7d8eed820dce10a914f4254777749b4592ee4ad869187616ae25f11e2e42299c
+  archive_sha256: ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e
+  jpg_files: 248000
+  wav_files: 24800
+  samples: 24800
+  metadata_bijection_verified: true
+  logical_layout_sha256: 756cdb8e73ced5610c708ca43e76c7cb1cac867573c567501c35d52953720919
 visual:
   train:
     resize: [224, 224]
@@ -36,7 +63,7 @@ visual:
     resize: [224, 224]
     to_tensor: true
     normalization: imagenet_mean_std
-  pngs_per_segment: 1
+  jpgs_per_segment: 1
 audio:
   source: official_wav
   reference: fixed_commit_ov_avel_imagebind_data_py

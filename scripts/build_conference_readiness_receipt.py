@@ -25,8 +25,8 @@ from src.utils.canonical_readiness import (
 )
 
 
-READY_STATUS = "READY_TO_IMPLEMENT_CONFERENCE_EXPERIMENTS"
-BLOCKED_STATUS = "BLOCKED_BEFORE_CONFERENCE_EXPERIMENTS"
+READY_STATUS = "READY_FOR_CONFERENCE_REPRO"
+BLOCKED_STATUS = "BLOCKED_BEFORE_CONFERENCE_REPRO"
 
 
 DEFAULT_INPUTS = {
@@ -41,7 +41,7 @@ DEFAULT_INPUTS = {
     "smoke_repeatability": "reports/teachers/smoke_repeatability.json",
     "exported_audit": "reports/mm26_exported_artifact_audit.json",
     "evaluator_lock": "configs/locks/mm26_evaluator_lock.yaml",
-    "real_preflight": "reports/runtime/r2_real_preflight.json",
+    "real_preflight": "reports/runtime/r3_real_preflight.json",
     "verification": "reports/runtime/r2_verification.json",
 }
 
@@ -189,8 +189,9 @@ def build_conference_readiness(
         preprocessing_lock.get("schema_version") == REQUIRED_SCHEMA_VERSIONS["preprocessing_lock"]
         and
         _status(preprocessing_lock) == "resolved"
-        and preprocessing_lock.get("mode") == "canonical_official_png_wav"
+        and preprocessing_lock.get("mode") == "canonical_official_jpg_wav"
         and preprocessing_lock.get("frame_policy") == "natural_sorted_no_repeat"
+        and preprocessing_lock.get("canonical_visual_extension") == ".jpg"
     )
     layout = documents["layout_discovery"]
     layout_ready = (
@@ -381,7 +382,7 @@ def build_conference_readiness(
         "p0_p1_tests": _require(p0_p1_ready, "Required R2 regression tests must pass"),
         "data_lock": _require(data_lock_ready, "Official archive and manifests must be frozen in the data lock"),
         "preprocessing_lock": _require(
-            preprocessing_ready, "Canonical official PNG/WAV preprocessing must be fully resolved"
+            preprocessing_ready, "Canonical official JPG/WAV preprocessing must be fully resolved"
         ),
         "official_archive_and_extraction": _require(archive_ready, "Official archive SHA and safe extraction must pass"),
         "layout_discovery": _require(layout_ready, "Full official layout discovery must pass without warnings"),
@@ -416,7 +417,7 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         "",
         f"Final status: `{report['status']}`",
         "",
-        f"Claim level: `{report['claim_level']}`  ",
+        f"Claim level: `{report['claim_level']}`",
         f"Variant: `{report['variant']}`",
         "",
         "## Readiness gates",

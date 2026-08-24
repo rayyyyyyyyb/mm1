@@ -55,6 +55,21 @@ def _check_duplicate(relative: Path, seen: set[str]) -> None:
     seen.add(key)
 
 
+def _update_listing_digest(
+    digest: Any,
+    *,
+    kind: str,
+    relative: Path,
+    size: int,
+) -> None:
+    """Bind every accepted member name, type, and logical size deterministically."""
+
+    for value in (kind.encode("ascii"), relative.as_posix().encode("utf-8")):
+        digest.update(len(value).to_bytes(8, "big"))
+        digest.update(value)
+    digest.update(int(size).to_bytes(8, "big"))
+
+
 def _extract_zip(
     archive_path: Path,
     staging: Path,
@@ -62,21 +77,33 @@ def _extract_zip(
     max_files: int,
     max_total_bytes: int,
     max_compression_ratio: float,
-) -> tuple[int, int]:
+) -> tuple[int, int, int, str]:
     files = 0
     total_bytes = 0
+    member_count = 0
+    listing_digest = hashlib.sha256()
     seen: set[str] = set()
     with zipfile.ZipFile(archive_path) as archive:
         for member in archive.infolist():
             relative = _safe_relative_name(member.filename.rstrip("/"))
             _check_duplicate(relative, seen)
+            member_count += 1
             unix_mode = member.external_attr >> 16
             if stat.S_ISLNK(unix_mode):
                 raise ValueError(f"unsafe archive member is a symlink: {member.filename!r}")
             destination = staging / relative
             if member.is_dir():
+                _update_listing_digest(
+                    listing_digest, kind="directory", relative=relative, size=0
+                )
                 destination.mkdir(parents=True, exist_ok=False)
                 continue
+            _update_listing_digest(
+                listing_digest,
+                kind="file",
+                relative=relative,
+                size=member.file_size,
+            )
             files += 1
             if files > max_files:
                 raise ValueError(f"archive exceeds max_files={max_files}")
@@ -92,7 +119,7 @@ def _extract_zip(
                 written = _copy_member(source, destination)
             if written != member.file_size:
                 raise OSError(f"short extraction for {member.filename}: {written} != {member.file_size}")
-    return files, total_bytes
+    return files, total_bytes, member_count, listing_digest.hexdigest()
 
 
 def _extract_tar(
@@ -102,23 +129,35 @@ def _extract_tar(
     max_files: int,
     max_total_bytes: int,
     max_compression_ratio: float,
-) -> tuple[int, int]:
+) -> tuple[int, int, int, str]:
     files = 0
     total_bytes = 0
+    member_count = 0
+    listing_digest = hashlib.sha256()
     seen: set[str] = set()
     with tarfile.open(archive_path, mode="r:*") as archive:
         members = archive.getmembers()
         for member in members:
             relative = _safe_relative_name(member.name.rstrip("/"))
             _check_duplicate(relative, seen)
+            member_count += 1
             if member.issym() or member.islnk() or member.isdev() or member.isfifo():
                 raise ValueError(f"unsafe archive member type: {member.name!r}")
             destination = staging / relative
             if member.isdir():
+                _update_listing_digest(
+                    listing_digest, kind="directory", relative=relative, size=0
+                )
                 destination.mkdir(parents=True, exist_ok=False)
                 continue
             if not member.isfile():
                 raise ValueError(f"unsupported archive member type: {member.name!r}")
+            _update_listing_digest(
+                listing_digest,
+                kind="file",
+                relative=relative,
+                size=member.size,
+            )
             files += 1
             total_bytes += int(member.size)
             if files > max_files:
@@ -135,7 +174,7 @@ def _extract_tar(
     ratio = total_bytes / max(1, archive_path.stat().st_size)
     if ratio > max_compression_ratio:
         raise ValueError(f"archive compression ratio {ratio:.1f} exceeds {max_compression_ratio}")
-    return files, total_bytes
+    return files, total_bytes, member_count, listing_digest.hexdigest()
 
 
 def _tree_sha256(root: Path) -> str:
@@ -171,7 +210,7 @@ def safe_extract_archive(
     try:
         if zipfile.is_zipfile(archive):
             archive_type = "zip"
-            files, total_bytes = _extract_zip(
+            files, total_bytes, member_count, listing_sha256 = _extract_zip(
                 archive,
                 staging,
                 max_files=max_files,
@@ -180,7 +219,7 @@ def safe_extract_archive(
             )
         elif tarfile.is_tarfile(archive):
             archive_type = "tar"
-            files, total_bytes = _extract_tar(
+            files, total_bytes, member_count, listing_sha256 = _extract_tar(
                 archive,
                 staging,
                 max_files=max_files,
@@ -197,18 +236,29 @@ def safe_extract_archive(
         if staging.exists():
             shutil.rmtree(staging)
         raise
+    archive_sha256 = _sha256_file(archive)
     return {
         "schema_version": 1,
         "status": "passed",
         "extraction_status": "passed",
+        "archive_test": "passed",
+        "content_magic_valid": True,
         "archive": str(archive),
         "archive_type": archive_type,
         "archive_bytes": archive.stat().st_size,
-        "archive_sha256": _sha256_file(archive),
+        "archive_sha256": archive_sha256,
+        "archive_listing": {
+            "algorithm": "ovorthkd-safe-member-listing-v1",
+            "sha256": listing_sha256,
+            "member_count": member_count,
+            "file_count": files,
+        },
         "destination": str(target),
         "files": files,
+        "files_extracted": files,
         "uncompressed_bytes": total_bytes,
         "tree_sha256": tree_sha256,
+        "extracted_tree_sha256": tree_sha256,
         "safety": {
             "path_traversal_rejected": True,
             "links_rejected": True,

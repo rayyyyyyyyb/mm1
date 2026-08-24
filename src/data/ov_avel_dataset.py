@@ -123,7 +123,7 @@ class QueryConditionedOVAvelDataset(Dataset):
         self.preprocessing_mode = str(preprocessing_mode)
         self.audio_spec = (
             AudioPreprocessingSpec.from_mapping(audio_preprocessing or {})
-            if self.preprocessing_mode == "canonical_official_png_wav"
+            if self.preprocessing_mode == "canonical_official_jpg_wav"
             else None
         )
 
@@ -462,7 +462,7 @@ class QueryConditionedOVAvelDataset(Dataset):
         )
         frame_paths = self._normalize_segment_frame_paths(frame_value, seq_len)
         frames, frame_valid = self._load_image_sequence(frame_paths, indices, self.frame_transform)
-        if self.preprocessing_mode == "canonical_official_png_wav":
+        if self.preprocessing_mode == "canonical_official_jpg_wav":
             spectrograms, audio_valid = self._load_canonical_student_audio(
                 record, seq_len, indices
             )

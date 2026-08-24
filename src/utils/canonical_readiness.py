@@ -74,6 +74,7 @@ REQUIRED_DOWNLOAD_ASSETS = {
     "clap_2023",
     "ovave_preprocessed",
     "ovave_raw_videos",
+    "vggsound_metadata",
 }
 PUBLISHED_WEIGHT_SHA256 = {
     "internvideo2_b14": "1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7",
@@ -127,7 +128,11 @@ REQUIRED_ARCHIVAL_CONFIG_PATHS = {
         "evaluation.validation_calibrated_f1_mapping",
     },
 }
-REQUIRED_PREPROCESSING_CONFIG_PATHS = {"data.preprocessing_mode", "data.frame_policy"}
+REQUIRED_PREPROCESSING_CONFIG_PATHS = {
+    "data.preprocessing_mode",
+    "data.frame_policy",
+    "data.canonical_visual_extension",
+}
 EVALUATOR_CONFIG_PATHS = {
     "paper_f1_at_0_5_mapping": "evaluation.paper_f1_at_0_5_mapping",
     "validation_calibrated_f1_mapping": "evaluation.validation_calibrated_f1_mapping",
@@ -878,10 +883,12 @@ def validate_canonical_readiness(
         errors.append("smoke_repeatability: repeat-2 finite comparison must pass")
 
     preprocessing_lock = documents["preprocessing_lock"]
-    if preprocessing_lock.get("mode") != "canonical_official_png_wav":
-        errors.append("preprocessing_lock: mode must be canonical_official_png_wav")
+    if preprocessing_lock.get("mode") != "canonical_official_jpg_wav":
+        errors.append("preprocessing_lock: mode must be canonical_official_jpg_wav")
     if preprocessing_lock.get("frame_policy") != "natural_sorted_no_repeat":
         errors.append("preprocessing_lock: frame policy must forbid silent repeats")
+    if preprocessing_lock.get("canonical_visual_extension") != ".jpg":
+        errors.append("preprocessing_lock: canonical visual extension must be .jpg")
     errors.extend(
         _validate_config_bindings(
             "preprocessing_lock",

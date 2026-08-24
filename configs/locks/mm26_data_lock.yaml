@@ -1,6 +1,6 @@
 schema_version: 2
-status: blocked
-blocked_by: "AUTH_REQUIRED: both official OV-AVEBench SharePoint archives require one authorized Microsoft session"
+status: blocked_raw_video_validation
+blocked_by: "Official raw archive has 13 zero-byte formal MP4s and 1,019 further streams below the locked ten-second policy"
 upstream:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
@@ -13,75 +13,78 @@ metadata:
   audit_sha256: "65667d659281ac46ac9cf77f7656e29d6d882a2f0d238d61d7ffa61423288f83"
   csv_sha256: "f916b2a7fbaed53c95c6124efe3f11189766a2516805406639578c9a5fd4fb9d"
   annotation_sha256: "4a1b170095c0427b1ca3e6f178ced2b0dd1efbf753959f03905fe33c6f01f009"
-  counts:
-    train: 13182
-    val: 5798
-    test: 5820
-    total: 24800
-  classes:
-    total: 67
-    close_seen: 46
-    open_unseen: 21
-  records_by_group:
-    close_seen: 16497
-    open_unseen: 8303
-  segment_length_histogram:
-    "10": 24800
+  counts: {train: 13182, val: 5798, test: 5820, total: 24800}
+  classes: {total: 67, close_seen: 46, open_unseen: 21}
+  records_by_group: {close_seen: 16497, open_unseen: 8303}
+  segment_length_histogram: {"10": 24800}
 official_archive:
-  status: blocked_official_archive_not_provided
-  filename: null
-  bytes: null
-  sha256: null
-  archive_test: not_executed
-  archive_listing: not_executed
-  source: "authorized manual download required; third-party mirrors forbidden"
+  status: passed
+  filename: "ovave_dataset_preprocessed.tar.gz"
+  path: "data/downloads/incoming/ovave_preprocessed/ovave_dataset_preprocessed.tar.gz"
+  bytes: 24618769924
+  sha256: "ebecec9915052beffbba7ae1debd7b45cfef7b70fd7866196b964ab8542a413e"
+  archive_test: passed
+  archive_listing_sha256: "288250bb0b74a800a731af5d224f058ddf54233178cd5216eeeda726c5106f31"
 raw_video_archive:
-  status: blocked_official_archive_not_provided
-  filename: null
-  bytes: null
-  sha256: null
-  archive_test: not_executed
-  archive_listing: not_executed
-  source: "authorized manual download required; third-party mirrors forbidden"
+  status: blocked_raw_video_validation
+  filename: "OV-AVEBench_raw_videos.tar.gz"
+  path: "data/downloads/incoming/ovave_raw_videos/OV-AVEBench_raw_videos.tar.gz"
+  bytes: 38147170955
+  sha256: "ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc"
+  archive_test: passed
+  archive_listing_sha256: "ef1827635a143ec60eb295afb8ef60af20d263eb01a473f80f3783aa50f3e6b2"
 extraction:
-  status: not_executed_gate_blocked
+  status: passed
   receipt: "reports/data/official_archive_extraction_receipt.json"
-  extracted_tree_sha256: null
+  destination: "data/official/ovave_preprocessed"
+  files_extracted: 272800
+  uncompressed_bytes: 27959350079
+  extracted_tree_sha256: "7a2c848fcdfe5118b3ac1de23eaa7b9121c4e3a98f98d0112b3c6e6b72d75e60"
+raw_video_extraction:
+  status: passed
+  receipt: "reports/data/official_raw_video_extraction_receipt.json"
+  destination: "data/official/ovave_raw"
+  files_extracted: 24836
+  uncompressed_bytes: 38365245540
+  extracted_tree_sha256: "33e467c428432c5b67876350cd3f3bac0e267730f56ee71631e8864bf2077a89"
 layout:
-  status: not_executed_gate_blocked
-  report: "reports/data/preprocessed_layout_discovery.json"
-  dataset_root: null
-  frame_count_histogram: null
-  wav_sample_rate_histogram: null
+  status: passed
+  archive_report: "reports/data/preprocessed_layout_discovery.json"
+  archive_logical_layout_sha256: "756cdb8e73ced5610c708ca43e76c7cb1cac867573c567501c35d52953720919"
+  filesystem_receipt: "reports/data/preprocessed_filesystem_layout_receipt.json"
+  filesystem_full_report: "E:/OV-OrthKD-R3/repo/data/downloads/state/audit-20260824/preprocessed.filesystem_layout.json"
+  filesystem_full_report_sha256: "b663233b35c2f210c705ac7a6441c4947488b80ae2eba65fa4bd32aeee76b787"
+  dataset_root: "data/official/ovave_preprocessed/ovave_dataset_preprocessed"
+  split_counts: {train: 13182, val: 5798, test: 5820}
+  frame_count_histogram: {"10": 24800}
+  wav_sample_rate_histogram: {"16000": 24800}
+  errors: 0
+  warnings: 0
 raw_video_layout:
-  status: not_executed_gate_blocked
+  status: blocked_raw_video_validation
   report: "reports/data/raw_video_layout_discovery.json"
-  dataset_root: null
-  matched_ids: null
-  missing_ids: null
-  extra_ids: null
-  duplicate_ids: null
-  short_videos: null
+  report_sha256: "4831a1b93791ae1749d8ce8eb52e12cd129b672dfe815ed73cf1cef9952fd592"
+  dataset_root: "data/official/ovave_raw/Users/zhoujx/Documents/Research/AVEL/OpenVocabularyAVEL/ovave_dataset"
+  formal_video_count: 24800
+  id_match_rate: 1.0
+  missing_ids: 0
+  extra_ids: 0
+  duplicate_ids: 0
+  zero_byte_videos: 13
+  shorter_than_ten_seconds: 1019
+  ignored_macos_appledouble_sidecars: 25
 source_manifests:
-  status: not_executed_gate_blocked
-  train:
-    path: null
-    count: null
-    sha256: null
-  val:
-    path: null
-    count: null
-    sha256: null
-  test:
-    path: null
-    count: null
-    sha256: null
+  status: blocked_raw_video_validation
+  train: {path: null, count: null, sha256: null}
+  val: {path: null, count: null, sha256: null}
+  test: {path: null, count: null, sha256: null}
 source_audit:
-  status: not_executed_gate_blocked
+  status: blocked_raw_video_validation
   path: "reports/mm26_source_manifest_audit.json"
-  errors: null
-  warnings: null
+  builder_exit_code: 1
+  partial_outputs_published: false
 blockers:
-  - "Manually provide both official archives from the authorized SharePoint session."
-  - "Hash and test both original byte streams, then run safe extraction and full preprocessed/raw-video layout discovery."
-  - "Do not infer source manifests or preprocessing parameters before those gates pass."
+  - "Obtain author-issued corrected bytes for the exact 13 zero-byte formal MP4 paths; do not reconstruct them from YouTube or a mirror."
+  - "Obtain an official temporal-policy clarification or corrected source bytes for the 1,019 non-empty streams below ten seconds."
+  - "Re-run raw layout audit, source-manifest build, real teacher smoke/export and one-step preflight only after both raw-data blockers are resolved."
+final_status: BLOCKED_BEFORE_CONFERENCE_REPRO

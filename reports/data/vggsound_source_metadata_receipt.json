@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "purpose": "source_identity_evidence_only",
+  "source": {
+    "repository": "https://github.com/hche11/VGGSound.git",
+    "commit": "1e75f4d30de3a99115ee9333464854c5e3d161a7",
+    "path": "data/vggsound.csv",
+    "git_blob_sha1": "53da0dc492b8a3fadf770f0f175cef1e652c0447",
+    "immutable_api_url": "https://api.github.com/repos/hche11/VGGSound/contents/data/vggsound.csv?ref=1e75f4d30de3a99115ee9333464854c5e3d161a7"
+  },
+  "download": {
+    "remote_path": "E:/OV-OrthKD-R3/repo/data/downloads/incoming/vggsound_metadata/vggsound.csv",
+    "bytes": 7949116,
+    "sha256": "c1816c00a237afa4994e873e88f56bac206cbb285fddb05c564184b9c3d6e6ce",
+    "content_type": "application/vnd.github.raw+json; charset=utf-8",
+    "etag": "53da0dc492b8a3fadf770f0f175cef1e652c0447",
+    "accept_ranges": "bytes",
+    "retrieved_at_utc": "2026-08-24T02:29:13.7408653Z"
+  },
+  "full_file_audit": {
+    "rows": 199467,
+    "columns_per_row": 4,
+    "malformed_rows": 0,
+    "empty_required_fields": 0,
+    "non_integer_start_seconds": 0,
+    "exact_duplicate_id_start_pairs": 0
+  },
+  "target_audit": {
+    "required_ids": 13,
+    "matched_ids": 13,
+    "matched_rows": 14,
+    "missing_ids": [],
+    "ambiguous_ids": ["di01T0hGboU"],
+    "rows": [
+      {"youtube_id":"4xR6HvjYEII","start_seconds":30,"label":"people crowd","split":"train"},
+      {"youtube_id":"7J8LMbtzJLs","start_seconds":180,"label":"race car, auto racing","split":"train"},
+      {"youtube_id":"bTpB0vwqb8M","start_seconds":100,"label":"female speech, woman speaking","split":"train"},
+      {"youtube_id":"di01T0hGboU","start_seconds":51,"label":"arc welding","split":"train"},
+      {"youtube_id":"di01T0hGboU","start_seconds":359,"label":"arc welding","split":"train"},
+      {"youtube_id":"EDal0UtzjTA","start_seconds":380,"label":"basketball bounce","split":"train"},
+      {"youtube_id":"fQWT4MDmVGw","start_seconds":200,"label":"people crowd","split":"train"},
+      {"youtube_id":"H3z1RRazXhc","start_seconds":30,"label":"people crowd","split":"train"},
+      {"youtube_id":"IUUe8-Zn9cA","start_seconds":249,"label":"arc welding","split":"train"},
+      {"youtube_id":"ri2DVH0Q-so","start_seconds":40,"label":"basketball bounce","split":"train"},
+      {"youtube_id":"tm870k_Vr2s","start_seconds":0,"label":"basketball bounce","split":"train"},
+      {"youtube_id":"u13LAp8oBUE","start_seconds":256,"label":"basketball bounce","split":"train"},
+      {"youtube_id":"Uuti9EHClMk","start_seconds":330,"label":"church bell ringing","split":"train"},
+      {"youtube_id":"YPisuHnthCo","start_seconds":20,"label":"people crowd","split":"train"}
+    ]
+  },
+  "canonical_raw_video_usable": false,
+  "final_status": "BLOCKED_BEFORE_CONFERENCE_REPRO"
+}

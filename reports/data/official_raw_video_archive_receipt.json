@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "blocked_raw_video_validation",
+  "download_status": "passed",
+  "archive_test": "passed",
+  "content_magic_valid": true,
+  "archive": "E:/OV-OrthKD-R3/repo/data/downloads/incoming/ovave_raw_videos/OV-AVEBench_raw_videos.tar.gz",
+  "archive_bytes": 38147170955,
+  "archive_sha256": "ac9c8fc6e8b905ed414082132d6c2f8c81f5a8aad5d2c996e7512a40ff12b1bc",
+  "archive_listing": {
+    "algorithm": "full-tar-member-manifest-v1",
+    "sha256": "ef1827635a143ec60eb295afb8ef60af20d263eb01a473f80f3783aa50f3e6b2",
+    "member_count": 25020,
+    "file_count": 24836
+  },
+  "extraction_status": "passed",
+  "destination": "E:/OV-OrthKD-R3/repo/data/official/ovave_raw",
+  "files_extracted": 24836,
+  "uncompressed_bytes": 38365245540,
+  "extracted_tree_sha256": "33e467c428432c5b67876350cd3f3bac0e267730f56ee71631e8864bf2077a89",
+  "layout_audit": {
+    "path": "reports/data/raw_video_layout_discovery.json",
+    "sha256": "4831a1b93791ae1749d8ce8eb52e12cd129b672dfe815ed73cf1cef9952fd592",
+    "status": "failed",
+    "formal_video_count": 24800,
+    "metadata_id_match_rate": 1.0,
+    "zero_byte_video_count": 13,
+    "shorter_than_ten_seconds_count": 1019,
+    "ignored_macos_appledouble_sidecars": 25,
+    "missing_ids": 0,
+    "extra_ids": 0,
+    "duplicate_ids": 0
+  },
+  "final_status": "BLOCKED_BEFORE_CONFERENCE_REPRO"
+}

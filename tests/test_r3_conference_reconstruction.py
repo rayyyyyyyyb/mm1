@@ -53,7 +53,7 @@ def test_taskbook_student_and_visual_preprocessing_are_exact() -> None:
             "to_tensor": True,
             "normalization": "imagenet_mean_std",
         },
-        "pngs_per_segment": 1,
+        "jpgs_per_segment": 1,
     }
 
 
