@@ -1986,3 +1986,227 @@
 - 在包含换行可移植性修复的第二个 clean worktree 上，以正确 MinGit PATH 运行最终完整 pytest；退出码 0，`338 passed in 533.15s (0:08:53)`。
 - 该 clean worktree 的实现与测试代码逐字节对应最终候选；最终本地 commit 相比它仅增加 clean readiness 收据与 activity ledger，不改变被测实现。
 - 将 R4 总报告中的最终全量测试证据更新为本次 clean checkout 结果；随后只做最终 amend、Git 静态核验、推送与远端 SHA 复核，不再修改实现。
+
+### 549. 2026-08-24：最终 push、5090 部署与临时资源清理
+
+- 最终单一 commit 为 `82901e4e24caec768525ded84c865e0d39acaccb`；普通非强制 push 到 `origin/repro/r4-keyframe-readiness-and-experiment-prep` 成功，GitHub `ls-remote` 返回同一 SHA；本地分支与 upstream 同步且工作树干净。
+- 最终相对唯一 R4 起点恰好领先 1 个 commit；diff stat 为 `73 files changed, 2731 insertions, 390 deletions`；GitHub 分支入口为 `https://github.com/rayyyyyyyyb/mm1/tree/repro/r4-keyframe-readiness-and-experiment-prep`。
+- 从最终 commit 生成纯 tracked-code 部署归档并解包到 5090 `E:/OV-OrthKD-R3/repo`；首次尝试从 5090 fetch GitHub 因连接 reset 失败，随后改用本地最终 Git bundle 离线传递同一 commit 对象。
+- 不能使用旧 R3 index 的普通 `git diff <final>` 验证新 tracked 文件，因为旧 index 会忽略相对 R3 的 untracked 新文件；改为逐个读取最终 commit 的 253 个 blob，并以各路径的 Git filter 规范化远端工作文件后比较 object SHA。结果：2 个由后台下载监控器持续刷新的 operational 文件 `reports/downloads/live_status.json/.md` 明确排除；其余 251 个 tracked 文件 `missing=0, mismatched=0`。
+- 已精确验证并移除本轮创建的 9 个 junction，原 source manifest、weight、archive 目标文件均仍存在；随后移除两个 `r4-readiness-clean*` 临时 worktree、全部远端 `r4-*` bundle/tar 和临时验证脚本。删除的均是可由 Git/本地重新生成的临时副本，不影响数据、checkpoint、cache 或正式报告。
+- 本地临时目录中的 11 个 `ovorthkd-r4-*` bundle/tar（合计 8,588,291 bytes）因删除命令被工具策略拒绝而保留；它们位于系统 TEMP、在仓库外、可由最终 commit 重建，不进入 GitHub，也不影响复现状态。
+- 最终状态保持 `BLOCKED_BEFORE_CONFERENCE_REPRO`：正式训练未启动，真实 preflight 调用数仍为 0，canonical full-run guard 仍为 true。
+
+### 550. 2026-08-25：扩刊外原始视觉采样与测试视图审计
+
+- 只读检查根目录初始提交 `dca9f052fbe4a1e9d7982f24bdcec3edf1363fd4` 的数据 loader、source-manifest builder、InternVideo2 教师 wrapper、训练/评估脚本及全部配置；未修改实验实现、数据或运行状态。
+- 根目录实现将按文件名排序的发布 JPG 均分到标签定义的任务段；学生每段固定取帧组中间帧。训练只对该图像做随机水平翻转和 ColorJitter，验证/测试只 Resize/Normalize；不存在随机抽 16 帧、顺序轮换或测试多视图平均。
+- InternVideo2 wrapper 的所有可见配置均为 `num_frames=8`：帧组多于 8 时用 `np.linspace` 等距取 8 帧，少于 8 时重复最后一帧；调用一次 `encode_vision(..., test=True)`。上游 `InternVideo2_CLIP_small.encode_vision` 中 `test` 参数不参与分支或聚合，transform 也只是确定性 Resize/归一化。
+- 通过 SSH 对 5090 `E:/OV-OrthKD-R3/repo` 做只读核对：官方预处理 train/val/test 分别为 13,182/5,798/5,820 个视频目录，每个目录的 JPG 数均严格为 10；官方 OV-AVEL loader 断言恰有 10 张图、排序后逐张读取，视觉变换为 bicubic Resize、CenterCrop、ToTensor、Normalize。官方代码中的通用 raw-video 多 clip/三裁剪 helper 没有任何 OV-AVEL 调用者。
+- 因此当前可核验证据不支持“每个 1 秒段实际采 16 帧”这一实现描述：官方路径为每段一张固定关键帧；本仓库学生路径在这张固定关键帧上做训练期空间增强；当前 InternVideo2 教师路径把单张关键帧重复到 8 帧输入。`16` 在根目录主配置中是学生 `max_segments` 容量而非任务段内采样数，不能据此写成 16-frame augmentation。
+
+### 551. 2026-08-25：最终运行协议设计与实施计划冻结
+
+- 完整读取并采用 `superpowers:using-superpowers`、`brainstorming`、`writing-plans`、`test-driven-development`、`writing-good-tests`、`systematic-debugging`、`receiving-code-review` 和 `verification-before-completion` 的适用流程；用户本条图示与直接执行命令构成最终设计批准，不再等待额外确认。
+- 从 R4 最终提交创建 `repro/r5-final-runtime-protocol-and-readiness` 分支；未启动正式训练，也未修改数据、checkpoint 或远端 cache。
+- 冻结唯一运行口径：`T_task=10, T_max=16, K_student=1, K_teacher=8, V_test=1`；教师 8 帧为同一官方关键帧重复，测试为单次确定性前向，禁止将容量 16 写成任务段数或真实解码帧率。
+- 根因审计确认教师全量导出存在 whole-lock SHA 自引用循环：锁未 ready 时禁止导出，而导出完成后修改锁状态又会使全部记录收据失效；设计改为只绑定不可变教师身份与推理语义的 `teacher_identity_sha256`。
+- 新增设计文档和逐任务实施计划；后续严格按 RED→GREEN→独立 diff 检查、5090 全量验证、可恢复导出、全量审计、最多一次真实 preflight、canonical readiness、提交和推送的顺序执行。
+
+### 552. 2026-08-25：最终协议门禁与教师不可变身份绑定 TDD
+
+- 新增最终协议行为测试；首次运行因 `validate_final_runtime_protocol` 尚不存在而 `14 failed`、退出码 1，证明测试确实处于 RED。实现后第一次为 `13 passed, 1 failed`，该失败实际捕获 `teacher_export.internvideo2.task_segments` 漏绑；补齐后 `14 passed`、退出码 0。
+- 正式配置门禁现在分别锁定 `T_task=10`、`T_max=16`、`K_student=1`、`K_teacher=8`、教师关键帧重复策略、`V_test=1`、无测试视图聚合与 `temporal_resampling=false`；训练入口、canonical readiness 和 preflight 共用同一 validator，preflight 顶层记录运行协议与 T=10 shape receipt。
+- 旧 R4 张量测试在本地启动时因 Anaconda Torch/NumPy 的 BLAS 初始化 abort 而退出 3，尚未进入测试收集；这是本机环境失败而非断言失败，已保留给 5090 锁定环境复验。
+- 教师身份摘要测试首次因两个新函数不存在而 `4 failed`、退出码 1；实现不可变身份投影、SHA256 和 smoke-passed 导出许可后 `4 passed`。随后新增收据绑定测试，先以 unexpected keyword 失败，再将 per-record receipt 升级到 schema 3、shared-text binding 升级到 schema 2 并统一改用 `teacher_identity_sha256` 后通过。
+- 新增 full audit 收据交叉绑定测试，先因 audit helper 不存在失败；实现后 audit 会对 24,800 个收据逐一校验 schema、record/split、source-manifest SHA、teacher identity SHA 及实际 artifact bytes/hash/shape，并把校验数量与 identity SHA 写入报告。
+- 新增 canonical audit/teacher identity 交叉绑定测试，先因 validator 不存在失败；实现后 mismatch 被 fail-closed 拒绝。当前纯本地聚焦集合为 `21 passed`，扩展的非 Torch 集合为 `23 passed`，`git diff --check` 退出码 0。
+
+### 553. 2026-08-25：5090 回归、兼容性修正与导出入口准备
+
+- 首次批量同步因 Windows OpenSSH 的远端盘符/嵌套 `cmd` 引号规则没有进入 `E:/OV-OrthKD-R3/repo`，仅在 `C:/Users/LXT` 产生了代码副本；实验仓库、数据、checkpoint 和 cache 均未受影响。随后改用 `scp ...:/E:/...` 与明确路径同步，并以本地/远端 SHA256 相等验证关键文件。
+- 新增可复用 `scripts/run_r5_remote_stage.ps1`，固定 repo、Python、MinGit 和 HF offline 环境，提供聚焦测试、全测试、1-record 探测、三 split 断点续传导出及 full audit 动作；脚本第一次解析因 `$LASTEXITCODE:` 变量边界报错，修为 `${LASTEXITCODE}` 后 PowerShell parser 与远端执行均通过。
+- 5090 首轮聚焦回归退出码 0：`55 passed in 14.78s`。首次完整回归退出码 1：`346 passed, 18 failed in 554.89s`；失败根因是通用非 canonical audit 被错误强制要求教师锁、旧 canonical fixture 缺新协议/identity 字段、会议配置断言仍为旧 diagnostic/evaluator 内容，以及远端 train 文件未覆盖。
+- 修正通用 audit 仅在提供 teacher lock 时启用 identity receipt audit；补齐 canonical fixture 的五量协议、教师 checkpoint/variant/smoke、schema-3 receipt 和 evaluator 单视图；更新旧配置断言；把训练参数安全检查保持在 canonical protocol gate 之前，并依赖 canonical validator/preflight validator 执行正式协议门禁。
+- 第二轮受影响集合为 `97 passed, 9 failed`；9 项堆栈均仍指向远端旧 `train_ov_orthkd.py:169`。单文件直传后本地/远端 SHA256 均为 `b079dd6417647b26b42f0c19b33438aba72070267ab003db442cd726d3317f2d`，第三轮受影响集合退出码 0：`106 passed in 242.19s`。
+- 最终 fresh 5090 完整回归退出码 0：`364 passed in 543.08s (0:09:03)`。正式学生训练未启动，真实 preflight 调用次数仍为 0。
+- 将进入正式 cache 的 1-record 教师探测设计为真实全量导出的首条可恢复记录；成功 receipt 将由后续 `--resume` 校验并复用。
+
+### 554. 2026-08-25：真实教师探测、恢复验证与持久化全量导出启动
+
+- 第一次 1-record 探测在模型加载前 fail-closed：exporter 的 CLAP 期望类误写为 `msclap.CLAP`，与锁和 wrapper 的真实 `from msclap.models.clap import CLAP` 不一致；退出码 1，cache receipt 计数仍为 0。修为精确类 `msclap.models.clap.CLAP` 并核对本地/远端 exporter SHA 相等。
+- 第二次探测退出码 0：真实 train 首条记录导出完成，`records_exported=1`；三教师全部启用，source manifest SHA256 为 `296e087b...9a0`，teacher identity SHA256 为 `a40bf89a...f319`，cache 当时 6 files/57,486 bytes。
+- 第三次运行同一探测退出码 0：`records_exported=0, records_resumed=1`、教师 query 编码数 0，证明 schema-3 receipt、source SHA、identity SHA 与 artifact bytes 校验通过并真正跳过已完成记录。
+- 新增 `scripts/supervise_r5_teacher_export.ps1`：最多 100 次失败自动等待 60 秒后以同一 receipt/cache `--resume`，原子写 supervisor state，并分离保存 stdout/stderr；正式学生训练不在该脚本中。
+- 第一次 background launcher 返回 PID 但子进程未进入 supervisor、无 state/无 export；增加启动后 2 秒 `HasExited` 检查，并用 `MaxAttempts=0` 前台探针确认 supervisor 能写 state。第二次启动 PID 28072，状态稳定为 `running, attempt=1/100`；全量 train 导出开始加载三教师，已完成 1 条正式 receipt 将继续复用。
+### 555. 2026-08-25：持久化导出启动方式更正与首个进度采样
+
+- 更正上一条对第二个 `Start-Process` 后台进程的判断：SSH 会话退出后再次检查时，5090 上没有 Python 导出进程且 receipt 仍为 1，因此 PID 28072 并非有效的持久化导出实例；历史记录保留，本条明确覆盖该判断。
+- 将后台启动改为 Windows WMI/CIM `Win32_Process.Create`，得到持续存活的 supervisor PID 9764、虚拟环境 Python launcher PID 25728 和基础 Python PID 28116；监督器状态为 `running, attempt=1/100`，意外退出会等待 60 秒并用既有 schema-3 receipt 断点续跑。
+- 为避免完整日志淹没状态输出，给远程 runner 增加只输出 JSON 摘要的 `CompactStatus` 动作。首次采样为 train `99/13182`、val/test 尚未开始、train receipts=99、cache 401 files/5,285,075 bytes，三个进程均存活；正式学生训练与唯一真实 preflight 均仍未启动。
+### 556. 2026-08-25：全部公开真实实验配置的五元协议显式化
+
+- 独立检索所有公开实验配置后，确认 canonical 配置已经显式包含五元协议，但五个基础/消融配置仍依赖部分隐式默认值；先新增逐配置断言，得到预期 RED：`6 failed, 18 deselected`，缺失项主要是 `visual_preprocessing.jpgs_per_segment`、raw-video 禁用状态和单视图测试声明。
+- 在 `ov_orthkd.yaml`、student-only、weak-feature-only、strong-feature-only、dual-feature-orth-sweep 五份配置中显式补入 `jpgs_per_segment=1`、raw diagnostic `enabled=false/executed=false`、`test_views=1/view_aggregation=none`；原有 `T_task=10`、`T_max=16`、`K_teacher=8` 与关键帧重复策略保持不变。
+- 修改后单独重跑该配置矩阵测试，结果为 `6 passed, 18 deselected`、退出码 0；`git diff --check` 退出码 0。该修改不触碰正在运行的教师导出输入，也未启动正式训练或 preflight。
+### 557. 2026-08-25：真实导出第 100 条故障、可恢复性修复与 BEATs 任务窗锁定
+
+- 持久导出在 train 第 100 条 `S_beSW7ifXM` 后由 supervisor 自动重试到 attempt 5；保留 100 条有效 receipt。最初重试只暴露 `strong artifacts exist without a validated receipt`，停止精确匹配的 supervisor/exporter 进程后，从完整 stderr 追溯到首个根因为官方 WAV 的 `[9.0,10.0]` 裁剪为空，即该 WAV 短于 9 秒，并非网络、GPU 或 checkpoint 故障。
+- 新增中断恢复测试：强教师文件已经原子发布、弱教师随后失败时，第二次 `--resume` 原先得到预期 RED `1 failed`；实现仅在 `resume=true` 且没有已验证 receipt 时删除该记录的强/弱半成品并重新计算，验证成功后清除该记录旧 error receipt，整 split 成功后原子清空 aggregate error JSONL。随后 orphan 测试 `1 passed`，相关导出/身份集合 `20 passed`，扩大本地集合最终 `52 passed`。
+- 对照已经锁定的学生官方 WAV 逻辑（短于十秒补零、长于十秒截断）修复 BEATs：先确定性拟合到 10 秒任务窗，再按十个一秒 `[0,1]…[9,10]` 裁剪；不插值、不重采样、不重复最后样本。新增 helper 测试先因函数缺失 RED，再 GREEN；formal protocol 同时 fail-closed 锁定 16 kHz、T=10、1 秒段、10 秒窗和补零/截断策略。
+- BEATs 预处理语义加入全部公开真实配置、archival/preprocessing/teacher lock 和 exporter/identity smoke 入口；不可变教师身份 SHA256 从旧 `a40bf89a...f319` 更新为 `c15bc96f00d6e391083bd8d00a31443a356870592a3afa809df528bf973ed90c`，canonical config SHA256 更新为 `5e375fc034c306e05e64c470079803862b7885d1d1f5bfb13ef71a253160fc3c`。
+- 5090 首轮受影响回归为 `106 passed, 10 failed in 245.49s`；10 项均是五个基础配置尚未传到远端、四个合成 readiness fixture 缺新字段和一个旧精确字典断言。逐项修正并重传后第二轮为 `129 passed in 248.59s`、exit 0。
+- 把旧身份下的 cache、导出清单、receipt、error/progress/supervisor 日志整体移动到可恢复 quarantine `r5-pre-beats-task-window-fix-20260825`，没有直接删除。新身份 repeat-2 真实 smoke exit 0：四类输出形状仍为 `[10,512]`、`[10]`、`[10,768]`、`[1024]`，全部 bitwise identical、最大/平均差 0，峰值显存 6,183,477,760 bytes；新 identity report SHA256 为 `17dffbfa324f2e7861dbcc2ba8e57015382976c15316ed71b9a3fa5c26f10406`。
+
+### 558. 2026-08-25：24,800 个官方 WAV 全量任务窗审计与新身份导出恢复
+
+- 按 TDD 新增 `audit_ovave_audio_task_windows.py`：初始两个测试因模块缺失得到 RED `2 failed`，实现后 `2 passed`；远端第一次直接 CLI 因脚本缺仓库根 `sys.path` exit 1，修复后本地 CLI exit 0、测试仍为 `2 passed`。
+- 5090 全量读取 24,800 个官方 WAV header，317.6 秒、exit 0、status passed：split 精确为 13,182/5,798/5,820，零错误；23,844 条恰好 10 秒，954 条按锁定规则尾部补零，2 条截断；合计补 11,249,600 samples、截 7,040 samples。最短为 val `JsxLvhJ4P6w` 的 2.0 秒，最长为 val `2_9UtSV9F9I` 的 10.33 秒；没有 temporal resampling。
+- 审计 receipt 为 `reports/data/official_audio_task_window_audit.json`，bytes=3,616，SHA256=`b8d779aa5e748d10ffdeef8663901306f0c25ceb74cb17adedfc2d6599e306e7`；data lock 已加入统计与字节绑定，canonical validator 新增 exact policy/record/split/error/fit-count 交叉验证。新增该绑定测试先因 helper 缺失 RED，再转为本地 `3 passed`；相关协议/导出集合另为 `44 passed`。
+- 新身份全量导出重新启动于 supervisor attempt 1；已经越过原第 100 条故障点。最近一次采样为 train 506/13,182、receipts=506、cache 2,028 files/26,734,589 bytes，三个进程存活；正式学生训练与唯一真实 preflight 仍未启动。
+### 559. 2026-08-25：音频审计 canonical 绑定的 5090 独立复验
+
+- 将 data lock、canonical validator、全量 WAV audit receipt 和对应测试同步到 5090；只运行音频任务窗审计与集成门禁用例，结果 `4 passed, 32 deselected in 10.98s`、退出码 0。该测试同时证明即使攻击者重写 report 并更新其 SHA，非补零策略仍会被语义门禁拒绝。
+- 测试与正在运行的教师导出并行但不调用 GPU、不修改 cache；正式学生训练和真实 preflight 仍未启动。
+
+### 560. 2026-08-25：全仓第二轮文字复核、音频窗口状态同步与进度采样
+
+- 独立检索当前代码、配置、报告和文档中所有 `16 fps`、`16 temporal segments`、`num_segments`、`num_frames`、`max_position_segments`、`multi-view` 等关键词；确认现行 canonical 口径均为 `T_task=10, T_max=16, K_student=1, K_teacher=8, V_test=1`。历史 R3 原始批准文件保留原文与 SHA，R5 批准文件已经明确在冲突处取代它，避免篡改历史证据。
+- 更新 `CURRENT_STATUS.md`、`README.md` 和 `reports/teachers/TEACHER_READINESS_GATE.md`：增加 24,800 条 WAV 全量审计事实（23,844 条不变、954 条补零、2 条截断、0 错误、无时间重采样），并把全量教师导出状态从“未开始/0 条”改为正在运行且只接受最终 24,800/24,800。
+- 文档独立断言第一次因 PowerShell 向 Python stdin 传递中文时被当前控制台编码替换为问号而失败；未发现文件内容损坏。改用 ASCII/数字锚点重新验证后，三份文档断言全部通过，`git diff --check` 退出码 0。
+- 5090 `CompactStatus` 最新采样：supervisor attempt 1，train 852/13,182，receipts=852，cache 3,416 files/45,018,813 bytes，PID 4316/23988/28628 均存活；已越过原第 100 条故障点。正式学生训练与唯一一次真实 preflight 仍未启动。
+
+### 561. 2026-08-25：补齐两个遗漏的公开真实实验配置
+
+- 第一条 PowerShell `rg configs/*.yaml` 检索因 Windows 不展开该 glob 而退出 1；改用 `rg configs --glob 'ov_orthkd*.yaml'` 后成功。复核发现 `ov_orthkd_text_align.yaml` 与 `ov_orthkd_paper_setting.yaml` 已有 T=10/Tmax=16，但缺少其余最终协议显式字段。
+- 先把这两个入口加入公开真实配置矩阵，局部测试按预期得到 RED：`2 failed, 6 passed, 21 deselected`，两项均因缺少 `data.visual_preprocessing`。
+- 在两份配置中补齐 `jpgs_per_segment=1`、官方 segment keyframe 输入、InternVideo2 每段同帧重复到 8、raw-video diagnostic 禁用且未执行、BEATs 固定 10 秒窗口的补零/截断策略，以及 `test_views=1/view_aggregation=none`。独立重跑为 `8 passed, 21 deselected`、退出码 0，相关 `git diff --check` 退出码 0。
+- 第一次将三文件批量 `scp` 到远端目录时错误地落在仓库顶层；先用只读 `Get-Item` 精确确认三个误放副本，再用 `Remove-Item -LiteralPath` 只删除这三个可由本地重传的副本。随后分别传到 `configs/` 与 `tests/`，正确目标文件存在；远端矩阵独立复验 `8 passed, 21 deselected in 0.23s`、退出码 0。期间没有触碰数据、checkpoint、cache 或运行中的导出进程。
+
+### 562. 2026-08-25：可恢复 val sidecar 并行导出
+
+- 5090 主导出实测约 0.85 条/秒、显存 7,523/32,607 MiB。为缩短长时间等待且不碰主 train 断点，先写 sidecar 契约测试；因脚本/runner 动作不存在得到预期 RED `2 failed`。
+- 新增 `supervise_r5_teacher_split_export.ps1`，只允许 `val/test`，固定锁定 Python/MinGit/offline 环境、canonical config/teacher lock、split 独立 manifest/aggregate receipt/error/progress/state/log，最大 100 次、60 秒间隔、每次 `--resume`。runner 新增 `StartSidecarExport -SidecarSplit`，CompactStatus 同时显示 sidecar state，停止/隔离前的进程检测也纳入 sidecar。
+- 实现后本地测试 `2 passed`、PowerShell 两脚本 parser 通过、`git diff --check` 退出码 0；加入 FocusedTests 后再次 `2 passed`。同步到 5090 后独立复验 `2 passed in 0.07s`。
+- 启动 val sidecar supervisor PID 18328；它与主 train 均稳定在 attempt 1。首次确认实际产出时 train 1,569/13,182、val 30/5,798，receipts 分别一致，显存 14,403/32,607 MiB，六个 supervisor/exporter 相关进程均存活。两 split 的记录 ID 无交集、artifact/receipt/progress 路径分离，共享文本文件使用原子发布；主 supervisor 之后仍会逐 receipt 验证并 resume 已完成 val。未启动第三路，也未启动训练/preflight。
+
+### 563. 2026-08-25：当前阶段命名清理与重负载下测试进程处置
+
+- 把 `validate_conference_readiness.py` 的旧“final R3”描述改为阶段无关的 final conference-reproduction readiness；`py_compile` 与 `git diff --check` 均退出 0。把真实 preflight 的旧 R2/R3 错误文字改为“single real preflight / bounded preflight”，不改变执行逻辑或唯一调用 marker。
+- 预检脚本 `py_compile` 通过；本机 focused pytest 再次在 Torch/NumPy BLAS 初始化时 abort、退出码 3，未收集用例。同步到 5090 后第一次误用 `-k optimizer_steps`，得到 4 deselected、没有执行测试；第二次完整 4 用例在两路教师导出的重负载下超过 SSH 60 秒并遗留远端 pytest 进程，未进入数据加载或 preflight。
+- 只读 WMI 精确确认该命令行对应 PID 22560/16656/27972 后，仅停止这个超时 pytest 进程树；随后确认匹配进程数为 0。两路导出仍为 attempt 1 且继续前进到 train 1,707、val 199，receipt 数一致，未损伤 cache。该测试保留到导出结束后的 fresh 全量测试统一复验，且不计作真实 preflight 调用。
+
+### 564. 2026-08-25：R5 总报告初稿与 Web 审阅入口
+
+- 新建 `reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md`，集中记录五个独立运行量、T=10 shape 边界、全部公开真实配置门禁、官方数据/WAV 审计、教师身份与 repeat-2 smoke、原子可恢复导出、full audit/唯一 preflight 条件和 Git/5090 数据边界。
+- 报告在导出未完成期间明确保持 `BLOCKED_BEFORE_CONFERENCE_REPRO`、真实 preflight 调用数 0、正式训练未启动，不提前声称 READY。独立 ASCII/数字/SHA 断言通过，并确认文中不存在 `READY_FOR_CONFERENCE_REPRO`；`git diff --check` 退出码 0。
+- 将 `README.md` 与 `CURRENT_STATUS.md` 的本阶段入口指向 R5 总报告，同时保留 R4 为历史修正报告；独立检查报告目标存在且两处链接文本一致，退出码 0。导出/audit/preflight 完成后只更新同一报告的机械结果与最终判定。
+
+### 565. 2026-08-25：清理“仍需作者/导出未开始”的现行误导文字
+
+- 独立搜索 `0/24,800`、`not started`、`pending_full_export`、旧 preflight placeholder 等状态词，确认 R3 历史报告、raw-video 作者请求草稿和 exported-audit placeholder 仍可能被脱离上下文误读。
+- 在 R3 报告顶端明确：其 raw-video blocker 与等待作者的结论已被 R5 最终批准取代，正文只保留为历史快照；在作者请求草稿顶端明确它仅是 optional diagnostic correspondence，canonical JPG/WAV 复现无需作者回复。
+- 把 exported-audit placeholder 从“full export has not started”改为 `full_export_running`，仍保持 record_count=0、cache SHA=null 和 fail-closed error，避免用动态未审计进度冒充结果。独立 JSON 解析/语义断言和两份文档断言通过，`git diff --check` 退出码 0；该 placeholder 将在 full audit 后由真实报告整体替换。
+
+### 566. 2026-08-25：同一官方关键帧的单次解码/变换与八张量重复优化
+
+- 代码性能审计发现 canonical InternVideo2 先把同一 JPG 路径重复 8 次，再对它做 8 次相同解码和确定性 transform；这没有产生八张独立观测，却造成不必要 I/O/CPU。先新增精确行为测试，要求一次 transform 后得到 8 个逐位相同张量。
+- 在 train 1,940、val 504 的 receipt 安全点记录状态后，用 runner 只停止六个 main/sidecar supervisor/exporter 进程；停止结果精确返回原 PID 列表，既有数据、checkpoint、receipt/cache 未删除。同步测试后旧实现得到预期 RED：transform_calls 实际 8，`1 failed, 8 deselected`。
+- 修改 `_load_segment_tensor`：canonical `official_segment_keyframes` 路径只解码/transform 唯一关键帧一次，再以 `repeat(num_frames=8)` 产生八个输入张量；raw diagnostic 的多帧路径保持逐帧加载。`py_compile`/`git diff --check` 退出 0；5090 局部 GREEN `1 passed, 8 deselected`，完整该测试文件 `9 passed`。
+- 停止导出期间运行真实三教师 repeat-2 smoke，exit 0：四类 shape `[10,512]`、`[10]`、`[10,768]`、`[1024]` 全部 finite/bitwise identical，最大/平均差 0；InternVideo2 第二次推理 278.53 ms。新 identity report bytes=39,743、SHA256=`2894263aaed63f26ec2c02db825cc94815e328a0bd17bda4fbeaec8b35dfd74f`，repeatability SHA 仍为 `e4402609...0818`；不可变 teacher identity digest 复算仍为 `c15bc96f...d90c`。
+- 更新并独立验证 teacher lock 的 smoke report 字节绑定，`validate_teacher_export_identity.ready=true`；同步新 lock 后重新启动 main PID 6792 与 val sidecar PID 26772，继续对已有 1,946/509 条 receipt 做验证后断点恢复。此次有意短暂停止不是失败重试，也未调用真实 preflight/正式训练。
+
+### 567. 2026-08-25：三 split 并行与 Windows 原子替换共享冲突修复
+
+- 单次关键帧变换优化后，两路总吞吐实测由约 1.0 提升到约 2.5 records/s；显存约 14.4/32.6 GiB，因而启动受同一锁与 receipt 约束的 test sidecar PID 9232。三路加载期显存仍低于上限，但 main train 在写 progress JSON 时遇到一次 `os.replace` WinError 5；state 自动进入 attempt 1 retry_wait，train receipt 安全停在 2,062，val/test 继续运行。日志确认不是 OOM、模型、checkpoint 或 artifact 错误。
+- 第一次寻找专用 atomic 测试文件时，`test_atomic_artifacts.py` 尚不存在而 `Get-Content` 退出 1；随后新建测试，注入首次 `os.replace` 的 PermissionError。旧实现按预期 RED `1 failed`。
+- 在 `atomic_artifacts.py` 新增最多 8 次、10 ms 起步且封顶 250 ms 的仅 PermissionError 指数退避替换，并同时用于 JSON/text 与 NumPy artifact 原子发布；其他错误仍立即失败，最终仍失败则保留原异常。实现后本地 `1 passed`、py_compile/diff-check 退出 0；同步 5090 后 `1 passed in 0.28s`。
+- main supervisor 自动进入 attempt 2；为避免 main/val/test 已启动的旧 Python 模块继续缺少退避，记录当时 train 2,062 / val 862 / test 171 后，精确停止九个相关进程并用已同步补丁重新启动 main PID 22040、val PID 12472、test PID 23828。重启前后 receipts 只增不减，三个 split 均会先验证并 resume；未删除任何产物，也未调用训练/preflight。
+
+### 568. 2026-08-25：三 split 导出完成度复核与阶段边界确认
+
+- 接续旧的自动监控会话时，该会话仍在运行但没有返回新文本；先终止的仅是本地监控轮询，不影响 5090 上由 WMI 持久化启动的监督器和导出进程。第一次手动状态查询误用了不存在的 runner `Monitor` action，参数校验按预期退出 1，未执行任何远程动作；改用 `CompactStatus` 后退出 0。
+- 5090 实时状态确认 val 已完成 `5,798/5,798`、test 已完成 `5,820/5,820`，两个 sidecar 均为 attempt 1、status completed、last_exit_code 0；train 为 attempt 1、`8,608/13,182`。总完成量 `20,226/24,800`，剩余 4,574 条，cache 81,073 files / 1,069,090,277 bytes；现存 PID 22040/27392/28404 属于 train 监督链，导出正常前进。
+- 应用户询问再次明确阶段边界：当前仍是正式复现前最后准备，教师真实推理与缓存导出不属于学生正式复现；正式学生训练、主表、消融均为 0 次，唯一真实一步 preflight 也仍为 0 次。后续只完成导出、full artifact audit、最多一次真实一步 preflight、最终测试与 readiness 封板，达到可正式复现状态后停下等待用户指令。
+
+### 569. 2026-08-25：已完成 sidecar 产物核验与 InternVideo2 批处理表述精修
+
+- 第一次读取 val/test 最终 manifest 的远程 PowerShell 命令因 SSH/PowerShell 嵌套引号重解释而得到无效空对象并退出 1；该命令只读且未改变文件。改用明确 `cmd /c dir` 后确认 `data/ov_ave/exported/val.jsonl` 为 16,447,628 bytes、test 为 16,597,404 bytes，两个文件确实存在。
+- 分别用 `certutil -hashfile ... SHA256` 独立复算：val=`df2e8979c3fa05dcadaeb5ff7ef9726263fae7950b7478d30cb709aefbc97160`，test=`ae8bd54c74d7e1c522c7d41cce9c2b8b2e96556ba80480ab6c1382d481ab2ea3`；两个 sidecar aggregate error JSONL 均为 0 bytes。最终仍以三 split 全量 audit 的复算结果为锁定依据。
+- 对照 `InternVideo2ClipB14Teacher.export_segments` 的实际实现独立复核 R5 报告，发现“ten independent segment calls”不够准确：真实代码把十个 task-segment item 堆成一个 batch，再单次调用 `encode_vision(..., test=True)`。已把报告改为该精确描述，同时把 16-fps 测试名称明确标为 `raw_diagnostic`，不改变测试逻辑或 canonical 运行路径。
+- 修改后 `py_compile` 退出 0，报告精确句和测试名检索均命中，`git diff --check` 退出 0；输出仅含现有 Windows checkout 的 LF/CRLF 提示，没有 whitespace error。
+
+### 570. 2026-08-25：canonical 学生单关键帧 loader 门禁补强
+
+- 独立审计 `QueryConditionedOVAvelDataset` 发现：正式配置和真实 manifest 虽已锁定每段一张 JPG，但通用 `_normalize_segment_frame_paths` 对多候选列表仍会静默取中间项。该分支不会被当前已审计官方数据触发，却不符合 `K_student=1` 的 fail-closed 要求。
+- 先增加两个行为测试，分别传入每段两张候选和单张 PNG。第一次远程运行命令因 `cmd /c` 工作目录嵌套引号未生效而找不到测试文件、退出 1；改用测试文件绝对路径后，最初 fixture 又因缺少完整 audio spec 在目标断言前失败。将测试收窄为直接调用目标 normalization helper 后，旧实现得到正确 RED：两项均 `DID NOT RAISE`，`2 failed, 20 deselected`、exit 1。
+- 在 `canonical_official_jpg_wav` 且 `allow_missing_modalities=false` 路径中，逐任务段明确要求恰好一个非空候选且扩展名为 `.jpg`；多候选、零候选或非 JPG 均立即报错。其他 legacy/mock/允许缺失路径仍保持原有中间候选兼容行为。
+- 同步 5090 后目标测试 GREEN：`2 passed, 20 deselected in 5.77s`、exit 0；随后完整 `tests/test_r1_dataset_integrity.py` 为 `22 passed in 6.29s`、exit 0。该 loader 修改不被正在运行的教师 exporter 导入，不改变在途 cache/receipt，也未运行 preflight 或训练。
+
+### 571. 2026-08-25：字节证据换行策略复核与 preflight 占位收据移除
+
+- 查询确认本地与 5090 Git 均为 `core.autocrlf=true`。最初考虑把常见文本扩展名全部强制为 LF，但复核发现既有 teacher/audio JSON 的锁定 SHA 是按 Windows checkout 的 CRLF 实际字节生成；若现在全局强制 LF，会无必要地改变既有已验证证据字节并要求级联重锁。
+- 因此在提交前把策略收窄为只固定新的、其 SHA 本来就按 LF 生成的 `reports/archival/R5_USER_APPROVED_FINAL_RUNTIME_PROTOCOL.md`，同时固定 `.gitattributes` 自身为 LF；其余证据继续沿用 R4 已验证的逐文件策略和 Windows clean-checkout 字节。`git check-attr` 确认 R5 批准文件为 `text/eol=lf`，实际 SHA256 复算仍为 `c8a6796ce85dc7e3c596aa444edd36300419e223540e29951a953f0132febb63`，与 archival lock 两处绑定一致；`git diff --check` exit 0。
+- 检查唯一 preflight 状态时确认 invocation marker 不存在、调用数仍为 0；tracked `reports/runtime/r4_real_preflight.json` 只是 `not_executed_cache_gate_blocked` 占位文件。由于 real-preflight 脚本会把任何既存同名报告视为调用名额已占用，现已用补丁删除该占位文件；只有 full audit 和 clean 前置门禁通过后才允许脚本原子生成同名正式报告与唯一 marker。
+
+### 572. 2026-08-25：24,800 条真实教师缓存全量导出完成
+
+- 用一分钟级只读轮询持续监控 main/val/test progress、receipt 和进程。train 从 10,929 稳定增长到 13,182；达到 receipt 总数后，main 又逐一验证/resume 已由 sidecar 完成的 val/test，并完成最终 cache tree 统计。轮询本身不写 cache；完成后终止的只是已无必要的本地监控 cell。
+- 最终主 state 为 `completed`、attempt 1、last_exit_code 0、message=`all three split exports completed`；train/val/test progress 均为 completed，receipt 精确为 `13,182 / 5,798 / 5,820`，合计 `24,800/24,800`；两个 sidecar 同样是 completed/attempt 1/exit 0，相关 supervisor/exporter process 数为 0。
+- 导出完成时 cache 为 99,334 files、1,310,102,478 bytes。该数字包含 artifact、逐记录 receipt 和共享文本产物；它只是进入审计前的文件系统统计，cache root SHA256 和最终有效性仍必须由接下来的 full artifact audit 逐字节复算后才能锁定。真实 preflight 调用数仍为 0，正式训练仍为 0。
+
+### 573. 2026-08-25：full artifact audit CLI 修复与全量通过
+
+- 第一次 `AuditFull` 在读取任何 manifest/artifact 前即 exit 1：直接执行 `scripts/audit_mm26_reproduction.py` 时，脚本目录而非仓库根进入 `sys.path`，导致 `ModuleNotFoundError: src`；旧 placeholder audit 未被有效审计结果冒充。先加入“从仓库外 cwd 运行绝对脚本 `--help`”的 CLI 回归测试，正确 RED 为 `1 failed, 3 deselected`、exit 1。
+- 在 audit 入口的项目 import 之前显式插入 `Path(__file__).resolve().parents[1]`。同步 5090 后目标 GREEN `1 passed, 3 deselected in 9.27s`、exit 0，完整 audit contract 文件 `4 passed in 9.67s`、exit 0。
+- 第二次 full audit 自然运行 459.9 秒并 exit 0，status=`passed`、stage=`exported`、artifact_scan=`full`：记录/split 精确为 24,800 和 13,182/5,798/5,820，seen/unseen 矩阵精确匹配，T=10 与 frame-count=10 均覆盖 24,800 条，24,800 个 receipt identity binding 与 24,800 个 artifact record 全部通过，0 path/artifact errors、0 errors、0 warnings、0 temporal resampling。
+- exported manifest 锁定为 train 37,677,446 bytes / `cb30035c533d56d44469d063ba11720ae3660266535ede670db6b6f53bdc7666`，val 16,447,628 bytes / `df2e8979c3fa05dcadaeb5ff7ef9726263fae7950b7478d30cb709aefbc97160`，test 16,597,404 bytes / `ae8bd54c74d7e1c522c7d41cce9c2b8b2e96556ba80480ab6c1382d481ab2ea3`。
+- cache tree 精确为 99,334 files / 1,310,102,478 bytes / SHA256 `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`；teacher identity `c15bc96f...d90c` 与五个 checkpoint SHA 均匹配。回收的 audit receipt 为 5,430 bytes、SHA256 `f284c166428cb8957a354d3209ccfe8a4f2f34cd7c712ea397cc9c1b37d1d9fc`。
+- 已把 teacher lock 提升为 ready/full_export passed，把 data lock 提升为 ready 并记录 audit/manifest/cache 全部事实，把 canonical 运行 manifest 切换到 `data/ov_ave/exported/{split}.jsonl`。独立 YAML/JSON/哈希交叉断言通过，canonical experiment config SHA 仍为 `5e375fc034c306e05e64c470079803862b7885d1d1f5bfb13ef71a253160fc3c`（位置字段按设计不进入实验语义摘要），`git diff --check` exit 0。
+
+### 574. 2026-08-25：clean 前置门禁与唯一真实一步 preflight 通过
+
+- 提交前 compileall exit 0、`git diff --check` exit 0、全部 YAML 解析通过；第一次批量 JSON 解析因一个既有 Windows BOM 文件使用 `utf-8` 而报 `JSONDecodeError`，改用 `utf-8-sig` 后全部 report JSON 解析通过。未跟踪文件最大仅 17,161 bytes，没有数据集、checkpoint 或 cache 误入 Git。
+- 创建未推送 provisional commit `5b28ea84297d99a89a94d0c943244f749d87ed6e`，相对 R4 base 为单一 commit；bundle 1,305,417 bytes 且 `git bundle verify` 通过。传到 5090 后创建 detached clean worktree `E:/OV-OrthKD-R3/r5-readiness-clean`，八个 ignored junction 只指向原 repo 的 official/source/exported/cache/download/weights/external 资产。第一次用 `cmd if exist (...)` 检查报告路径因远程 cmd 引号解析退出 1，改用 PowerShell `Test-Path` 后确认正式 report/marker 均不存在；Git status 为空且 HEAD 精确匹配 provisional SHA。
+- clean worktree 的 `validate_canonical_readiness(..., require_real_preflight=false)` 用时 230 秒、exit 0，返回 status=ready/errors=[]/git_dirty=false；两个官方 archive、五个 checkpoint、全部 evidence、三份 source/exported manifest、teacher identity 和 cache root 实际 SHA 均匹配。此时仍未创建 marker。
+- 随后只调用一次 `preflight_ov_orthkd.py --real-data --optimizer-steps 1`，用时 358.2 秒、exit 0。正式 receipt：status passed、invocation_count=1、optimizer_steps=1、forward/backward/checkpoint-resume/losses_finite 全 true、formal_metrics_emitted=false、val_metrics/test_metrics=null、AMP CUDA 峰值 6,434,842,112 bytes；613/613 个可训练参数均收到 finite gradient，无缺失或非有限梯度。
+- 顶层 shape receipt 明确为 official T=10：visual/audio input `[4,10,3,224,224]`，visual teacher `[4,10,512]`，audio teacher `[4,10,768]`，label/student logits/sequence mask `[4,10]`，metric labels/probabilities `[40]`，alignment_valid=true、temporal_resampling=false；恢复后 logits 仍为 `[4,10]`。这不是论文指标或正式训练结果。
+- 回收报告 10,641 bytes / SHA256 `09a70816a2828eb1f3db95a976a47ee2e6b35f94ec50413be0da2c597c2f083a`；唯一 marker 456 bytes / SHA256 `033634ce57c713681ef59bc5a754341698cf8f550aabd051bbe0cb176eb2caf7`，marker 内 report SHA 与实际字节一致、status completed、planned/completed optimizer steps 都为 1。后续禁止再次运行真实 preflight。
+
+### 575. 2026-08-25：最终 readiness 生成与现行文档封板
+
+- 将 preflight report/marker 和本日志 amend 进仍相对 R4 仅一个 commit 的 provisional 历史，新 SHA 为 `69a6800ae88b6ba0b08458915731719fe39ac548`；生成并验证 1,310,203-byte bundle，在 5090 创建第二个 detached clean worktree `r5-readiness-final`，挂接同一组 ignored 已审计资产，Git status 为空。
+- 在该 clean worktree 运行 `validate_conference_readiness.py` 用时 222 秒、exit 0：status=`READY_FOR_CONFERENCE_REPRO`、ready=true、canonical_evidence_chain=true、blockers=[]、git_dirty=false、full_run_started=false；完整 canonical receipt 再次绑定相同 cache/config/checkpoint/evidence SHA。生成 readiness receipt 3,031 bytes / SHA256 `6aa11a2e3db214f8611cd538a637d704f08bbefe11fb26cc58733503f72a365c`，ready config 7,398 bytes / SHA256 `ccbceb83f2ca20a15d353057217515fa501e8fa9678727fe99080cc3dc3190a7`。
+- 独立深比较确认 ready config 与 canonical preparation config 的唯一差异是 `reproduction.full_run_blocked: true -> false`；readiness receipt 明确 full_run_started=false。没有执行 ready config，没有启动训练、主表、消融或正式指标计算。
+- 第一次尝试一次性更新 R5/CURRENT_STATUS/README/teacher gate 时，因 teacher gate 目标句与实际文件不完全一致而 apply_patch verification failed；补丁是原子失败，前三文件也未部分修改。随后分别按实际上下文更新成功：现行状态统一为 READY、写入 export/audit/preflight/cache/manifest 事实，并明确到此停止等待用户指令。
+- 独立 stale-status 检索只命中 exported audit 的 `teacher_lock_status=smoke_passed_export_pending`。这是审计先产生 cache/manifest 身份、随后才把 mutable teacher lock 提升为 ready 的真实时间快照；R5 报告已解释该顺序，最终 canonical gate 已用 promoted ready lock 重验实际字节。`git diff --check` exit 0，最终 status/preflight JSON 断言通过。
+
+### 576. 2026-08-25：最终候选提交与第一次全量回归的旧阶段断言
+
+- 将 readiness receipt、ready config 和现行 READY 文档 amend 进相对 R4 仍只有一个提交的候选历史，得到本轮候选 SHA `9734e81d468a69145012fedf3bc605b59c410285`；在 5090 的 `r5-final-verify` clean worktree 上运行第一次完整 pytest。
+- 第一次完整 pytest 用时 561.59 秒、exit 1，结果为 `4 failed, 384 passed`。四个失败均是测试仍断言旧阶段状态：teacher lock 必须 pending、committed canonical config 必须被 gate 拒绝、真实 preflight 尚未调用、canonical config 必须使用 source manifest；没有实现路径或资产字节失败。
+- 逐项更新四个测试，使其断言现行真实状态：teacher lock ready/full export passed/24,800 条；committed receipt 通过完整 canonical gate；completed marker 拒绝第二次 preflight claim；canonical config 使用三份 exported runtime manifests。没有再次运行真实 preflight，也没有执行 ready config。
+
+### 577. 2026-08-25：聚焦回归的环境与 clean-tree fail-closed 取证
+
+- 旧聚焦测试会话的执行 cell 在上下文恢复后已不存在，因此没有把缺失回执当成通过。只读检查确认 5090 没有 pytest 遗留进程，只有既有下载监控 Python；本地和远端候选树都只修改了上述四个测试文件。
+- 一次远程 WMI 查询因 PowerShell/SSH 的 `$_.CommandLine` 转义错误退出；改用 UTF-16LE encoded PowerShell 后精确确认两个 Python 都是 `monitor_downloads.py`，没有训练或 pytest。第一次聚焦 pytest 又因写错一个 node id 而 exit 4、`no tests ran`；修正为实际函数名后重新执行。
+- 修正 node id 的聚焦回归用时 230.545 秒、exit 1，结果 `3 passed, 1 failed`；唯一失败是 isolated PowerShell 未把 MinGit 放进 PATH，canonical gate 按设计报无法检查 Git。补齐 MinGit PATH 后仅重跑该 gate，用时 228.655 秒、exit 1；这次完成全部资产复算后准确拒绝当前 worktree，因为四个新测试通过 SCP 覆盖在旧提交上使 Git 状态为 dirty。
+- 以上两次失败分别证明“缺 Git fail-closed”和“dirty tree fail-closed”，不是 readiness 内容失败。下一步先把四个最终测试纳入候选提交，再从该提交创建全新 clean worktree 运行全量回归；正式训练、主表、消融和第二次真实 preflight 均未启动。
+
+### 578. 2026-08-25：clean 候选树完整 388 项回归通过
+
+- 四个最终状态测试、repo `all.md` 和上述失败证据经 `git diff --check`、四测试文件 compileall exit 0 后 amend 为单一候选提交 `4dab1a4c9a231f3c3044963f78790adab47cb016`；相对 R4 base 仍精确一个 commit，工作树 clean。生成 1,316,174-byte bundle，`git bundle verify` exit 0 并传到 5090。
+- 从该 bundle 新建 detached `E:/OV-OrthKD-R3/r5-handoff-candidate`，HEAD 精确为候选 SHA、Git status 0 行；逐一验证 8 个 ignored junction 只指向主 repo 的 external/weights/official/teacher_cache/download/source/exported 已审计资产目录。
+- 在该真正 clean worktree、显式 MinGit PATH 和锁定 Python 环境中运行完整 pytest，用时 328.59 秒（外层 331.032 秒），结果 `388 passed`、exit 0。它包含最终 committed canonical receipt 的全量字节复算，没有再次运行真实 preflight、ready config 或正式训练。
+
+### 579. 2026-08-25：5090 环境、编译和结构化证据最终检查
+
+- `python -m pip check` 报 `No broken requirements found`、exit 0；`verify_cuda_runtime.py` exit 0，确认 Python 3.11.9、Torch `2.10.0+cu128`、CUDA 12.8、RTX 5090 capability 12.0、cuDNN 91002，FP16 2048 方阵乘输出 finite=true。
+- `python -m compileall -q src scripts tests` exit 0，`git diff --check` exit 0，检查后 Git status 仍 0 行。第一次 tracked YAML/JSON 批量解析因 native PowerShell 去掉 Python 字符串引号而 `SyntaxError`、exit 1；改为 Base64 传代码后又因把 Base64 参数误纳入文件列表而 exit 1，两次均未写文件且工作树保持 clean。
+- 将文件参数起点修正为 `sys.argv[2:]` 后，63 个 tracked `.json/.yaml/.yml` 全部用 `utf-8-sig` 成功解析、exit 0，Git status 仍 0 行。R5 总报告据实补入完整 pytest、依赖、CUDA、compileall、结构化解析和 diff-check 结果；正式训练、主表、消融、正式指标和第二次真实 preflight 仍全部未运行。
+
+### 580. 2026-08-25：R4→R5 整体 whitespace 独立复核
+
+- 报告和日志首次 amend 后的候选 SHA 为 `bb7c18f437d9f03ac38a5d5e693a493212f7cd3e`，相对 R4 仍只有一个 commit。本次不只检查 worktree，而是对完整 `82901e4..HEAD` diff 执行 `git diff --check`，发现 6 处 R5 新文件格式问题：报告头 3 个 Markdown 硬换行尾空格，以及 plan/spec/supervisor 各一个 EOF 多余空行；命令因此 exit 1。
+- 仅机械移除这些空白：报告头字段改用空行分隔，三文件删除 EOF 多余空行；不改变协议、实现、锁、哈希、测试或运行证据。将再次对完整 R4→R5 diff 运行 whitespace 检查后才允许最终提交。

@@ -19,6 +19,8 @@ from src.teachers import TeacherExportBundle, export_manifest_file
 from src.teachers.mock import MockStrongVisualTeacher, MockTextTeacher, MockWeakAudioTeacher
 from src.utils.atomic_artifacts import sha256_file
 from src.utils.canonical_readiness import EXPECTED_CHECKPOINT_ROLES
+from src.utils.reproduction_locks import validate_teacher_export_identity
+from src.utils.temporal_protocol import validate_final_runtime_protocol
 
 
 def parse_args() -> argparse.Namespace:
@@ -113,7 +115,7 @@ def validate_teacher_lock_binding(
     config: Mapping[str, Any],
     teacher_lock_path: str | Path | None,
 ) -> str:
-    """Bind every real export to the exact ready lock before importing upstream code."""
+    """Bind every real export to immutable exact identities before upstream imports."""
 
     backends = _non_mock_backends(args, config)
     real_teachers = {
@@ -132,8 +134,43 @@ def validate_teacher_lock_binding(
     if not path.is_file():
         raise FileNotFoundError(f"Teacher lock not found: {path}")
     lock = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(lock, Mapping) or lock.get("schema_version") != 1 or lock.get("status") != "ready":
-        raise RuntimeError("Non-mock export requires a schema_version=1 ready teacher lock")
+    if not isinstance(lock, Mapping):
+        raise RuntimeError("Non-mock export requires a mapping teacher lock")
+    locked_teachers = lock.get("teachers", {})
+    for teacher_name in sorted(real_teachers):
+        identity = (
+            locked_teachers.get(teacher_name, {})
+            if isinstance(locked_teachers, Mapping)
+            else {}
+        )
+        checkpoints = identity.get("checkpoint_files", []) if isinstance(identity, Mapping) else []
+        roles = [
+            str(checkpoint.get("role", ""))
+            for checkpoint in checkpoints
+            if isinstance(checkpoint, Mapping)
+        ]
+        expected_roles = EXPECTED_CHECKPOINT_ROLES[teacher_name]
+        if (
+            not isinstance(checkpoints, list)
+            or len(roles) != len(checkpoints)
+            or len(roles) != len(set(roles))
+            or set(roles) != expected_roles
+        ):
+            raise RuntimeError(
+                f"Teacher lock checkpoint roles for {teacher_name} must be exactly "
+                f"{sorted(expected_roles)} with no duplicates, got {roles}"
+            )
+    identity_validation = validate_teacher_export_identity(lock)
+    if not identity_validation["ready"]:
+        details = identity_validation["errors"] + [
+            f"unresolved teacher: {name}"
+            for name in identity_validation["unresolved"]
+        ]
+        raise RuntimeError(
+            "Non-mock export requires exact teacher identities and passed real smoke: "
+            + "; ".join(details)
+        )
+    validate_final_runtime_protocol(config)
 
     export_cfg = config.get("teacher_export", {})
     teacher_cfg = {
@@ -148,11 +185,10 @@ def validate_teacher_lock_binding(
         ("beats", "encoder"): ("checkpoint_path", "checkpoint_sha256", "beats_ckpt"),
         ("clap", "text_encoder"): ("checkpoint_path", "checkpoint_sha256", "clap_ckpt"),
     }
-    locked_teachers = lock.get("teachers", {})
     repository_fields = {
         "internvideo2": ("repo_root", "internvideo2_repo_root", "InternVideo2_CLIP_small"),
         "beats": ("repo_root", "beats_repo_root", "BEATs"),
-        "clap": ("repo_root", "clap_repo_root", "msclap.CLAP"),
+        "clap": ("repo_root", "clap_repo_root", "msclap.models.clap.CLAP"),
     }
     for teacher_name in sorted(real_teachers):
         identity = locked_teachers.get(teacher_name, {}) if isinstance(locked_teachers, Mapping) else {}
@@ -178,6 +214,50 @@ def validate_teacher_lock_binding(
             raise RuntimeError(f"Teacher output dimension does not match config: {teacher_name}")
         if not identity.get("preprocessing", identity.get("input_preprocessing")):
             raise RuntimeError(f"Teacher preprocessing is not locked: {teacher_name}")
+        if teacher_name == "internvideo2":
+            raw_diagnostic = section.get("raw_video_diagnostic", {})
+            if not isinstance(raw_diagnostic, Mapping):
+                raise RuntimeError("InternVideo2 raw_video_diagnostic config must be a mapping")
+            configured_preprocessing = {
+                "source": section.get("source"),
+                "input_mode": section.get("input_mode"),
+                "task_segments": section.get("task_segments"),
+                "num_frames": int(
+                    choose(args.internvideo2_num_frames, section.get("num_frames"), 8)
+                ),
+                "frame_sampling": section.get("frame_sampling"),
+                "frame_expansion": section.get("frame_expansion"),
+                "temporal_resampling": config.get("data", {}).get("temporal_resampling"),
+                "raw_video_diagnostic_enabled": raw_diagnostic.get("enabled"),
+                "raw_video_diagnostic_executed": raw_diagnostic.get("executed"),
+            }
+            if identity.get("preprocessing") != configured_preprocessing:
+                raise RuntimeError(
+                    "InternVideo2 preprocessing/config does not exactly match teacher lock"
+                )
+        if teacher_name == "beats":
+            configured_preprocessing = {
+                "source": "raw_waveform",
+                "sample_rate": int(section.get("sample_rate", 16_000)),
+                "channels": "mono",
+                "task_segments": int(section.get("task_segments", 10)),
+                "segment_seconds": int(section.get("segment_seconds", 1)),
+                "clip_duration_seconds": int(
+                    section.get("clip_duration_seconds", 10)
+                ),
+                "short_waveform_policy": section.get("short_waveform_policy"),
+                "long_waveform_policy": section.get("long_waveform_policy"),
+            }
+            if identity.get("preprocessing") != configured_preprocessing:
+                raise RuntimeError("BEATs preprocessing/config does not exactly match teacher lock")
+        if teacher_name == "clap":
+            configured_version = str(choose(args.clap_version, section.get("version"), "2023"))
+            configured_normalize = bool(args.clap_normalize or section.get("normalize", False))
+            if (
+                identity.get("version") != configured_version
+                or identity.get("normalize") is not configured_normalize
+            ):
+                raise RuntimeError("CLAP version/normalization does not match teacher lock")
         locked_tolerance = identity.get("determinism_tolerance")
         configured_tolerance = export_cfg.get("determinism_tolerance")
         if (
@@ -250,7 +330,7 @@ def validate_teacher_lock_binding(
                 or sha256_file(selected_path) != selected_hash
             ):
                 raise RuntimeError(f"Teacher checkpoint does not match lock: {teacher_name}/{role}")
-    return sha256_file(path)
+    return str(identity_validation["teacher_identity_sha256"])
 
 
 def build_teachers(args: argparse.Namespace, config: Dict[str, Any]) -> tuple[TeacherExportBundle, str, str]:
@@ -312,6 +392,16 @@ def build_teachers(args: argparse.Namespace, config: Dict[str, Any]) -> tuple[Te
             checkpoint_path=require(choose(args.beats_ckpt, beats_cfg.get("checkpoint_path")), "teacher_export.beats.checkpoint_path"),
             checkpoint_sha256=require(beats_cfg.get("checkpoint_sha256"), "teacher_export.beats.checkpoint_sha256"),
             device=device,
+            sample_rate=int(beats_cfg.get("sample_rate", 16_000)),
+            task_segments=int(beats_cfg.get("task_segments", data_cfg.get("num_segments", 10))),
+            segment_seconds=int(beats_cfg.get("segment_seconds", 1)),
+            clip_duration_seconds=int(beats_cfg.get("clip_duration_seconds", 10)),
+            short_waveform_policy=str(
+                beats_cfg.get("short_waveform_policy", "zero_pad_to_task_duration")
+            ),
+            long_waveform_policy=str(
+                beats_cfg.get("long_waveform_policy", "truncate_to_task_duration")
+            ),
         )
 
     if text_backend == "mock":
@@ -348,7 +438,7 @@ def main() -> None:
         export_cfg.get("teacher_lock_path"),
         readiness.get("teacher_lock") if isinstance(readiness, Mapping) else None,
     )
-    teacher_lock_sha256 = validate_teacher_lock_binding(args, config, teacher_lock_value)
+    teacher_identity_sha256 = validate_teacher_lock_binding(args, config, teacher_lock_value)
     teachers, device, artifact_dir = build_teachers(args, config)
     split = args.split or Path(args.output_manifest).stem
     if split not in {"train", "val", "test"}:
@@ -368,7 +458,7 @@ def main() -> None:
         copy_unprocessed_records=args.copy_unprocessed_records,
         receipt_jsonl=receipt_jsonl,
         error_jsonl=error_jsonl,
-        teacher_lock_sha256=teacher_lock_sha256,
+        teacher_identity_sha256=teacher_identity_sha256,
         split=split,
         resume=bool(args.resume),
         progress_path=progress_path,

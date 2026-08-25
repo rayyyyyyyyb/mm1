@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Issue the final R3 conference-reproduction readiness decision.
+"""Issue the final conference-reproduction readiness decision.
 
 This command deliberately delegates every substantive decision to the single
 canonical validator.  It can unguard the ready configuration only after that
@@ -138,7 +138,7 @@ def validate_and_write(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate final R3 conference-reproduction readiness")
+    parser = argparse.ArgumentParser(description="Validate final conference-reproduction readiness")
     parser.add_argument("--config", default="configs/ov_orthkd_mm26_repro.yaml")
     parser.add_argument("--output", default="reports/mm26_conference_readiness.json")
     parser.add_argument(

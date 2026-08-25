@@ -1,0 +1,224 @@
+seed: 42
+project:
+  name: ov_orthkd_mm26_reproduction
+  stage: conference_reproduction
+reproduction:
+  paper: ACM MM 2026 OV-OrthKD
+  base_commit: f6e85eb61cdc09e530038d46671f70ee2618ea5c
+  claim_level: paper_specified_reconstruction
+  variant: conference_baseline
+  full_run_blocked: false
+  asset_download_lock_required: true
+  implementation_mode: camera_ready_explicit_paths
+  project_root: .
+  readiness:
+    data_lock: configs/locks/mm26_data_lock.yaml
+    archival_lock: configs/locks/mm26_archival_facts.yaml
+    teacher_lock: configs/locks/mm26_teacher_lock.yaml
+    preprocessing_lock: configs/locks/mm26_preprocessing_lock.yaml
+    evaluator_lock: configs/locks/mm26_evaluator_lock.yaml
+    download_lock: configs/locks/mm26_download_lock.yaml
+    teacher_environment: reports/downloads/teacher_environment.json
+    archive_receipt: reports/data/official_archive_extraction_receipt.json
+    layout_discovery: reports/data/preprocessed_layout_discovery.json
+    source_audit: reports/mm26_source_manifest_audit.json
+    teacher_identity: reports/teachers/teacher_identity.json
+    smoke_repeatability: reports/teachers/smoke_repeatability.json
+    exported_audit: reports/mm26_exported_artifact_audit.json
+    real_preflight: reports/runtime/r4_real_preflight.json
+    readiness_receipt: reports/mm26_conference_readiness.json
+  approved_reconstruction_assumptions: configs/locks/mm26_archival_facts.yaml
+task:
+  name: open_vocabulary_audio_visual_event_localization
+  label_mode: query_conditioned_binary
+teachers:
+  strong_visual:
+    name: InternVideo2 Base / CLIP-B14
+    backend: internvideo2_clip_b14
+    export: segment_logits + segment_features
+  weak_audio:
+    name: BEATs Iter3+ AS2M Pre-Trained
+    backend: beats
+    export: segment_features_only
+  text_prototype:
+    name: Microsoft CLAP version 2023 text encoder
+    backend: clap
+    export: query_embeddings
+data:
+  path_root: .
+  preprocessing_mode: canonical_official_jpg_wav
+  frame_policy: natural_sorted_no_repeat
+  canonical_visual_extension: .jpg
+  num_segments: 10
+  temporal_resampling: false
+  audio_preprocessing:
+    source: official_wav
+    reference: fixed_commit_ov_avel_imagebind_data_py
+    sample_rate: 16000
+    duration_seconds: 10
+    segments: 10
+    segment_seconds: 1
+    repeat_waveform_to_seconds: 2
+    representation: kaldi_fbank
+    num_mel_bins: 128
+    frame_length_ms: 25
+    frame_shift_ms: 10
+    target_length: 204
+    mean: -4.268
+    std: 9.138
+    student_channels: 3
+    student_resize:
+    - 224
+    - 224
+    save_as_jpeg: false
+    second_imagenet_normalization: false
+    beats_source: raw_16khz_waveform
+    beats_task_window_seconds: 10
+    beats_short_waveform_policy: zero_pad_to_task_duration
+    beats_long_waveform_policy: truncate_to_task_duration
+  visual_preprocessing:
+    train:
+      resize:
+      - 224
+      - 224
+      random_horizontal_flip_probability: 0.5
+      color_jitter:
+        brightness: 0.2
+        contrast: 0.2
+        saturation: 0.2
+        hue: 0.02
+      to_tensor: true
+      normalization: imagenet_mean_std
+    validation_test:
+      resize:
+      - 224
+      - 224
+      to_tensor: true
+      normalization: imagenet_mean_std
+    jpgs_per_segment: 1
+  train_manifest: data/ov_ave/exported/train.jsonl
+  val_manifest: data/ov_ave/exported/val.jsonl
+  test_manifest: data/ov_ave/exported/test.jsonl
+  image_size: 224
+  batch_size: 4
+  num_workers: 4
+  persistent_workers: false
+  pin_memory: true
+  temporal_overflow_policy: error
+  allow_missing_modalities: false
+  strict_alignment: true
+  required_artifacts:
+  - strong_teacher_features
+  - weak_teacher_features
+  - text_embedding
+  strong_teacher_dim: 512
+  weak_teacher_dim: 768
+  strong_teacher_logit_dim: 1
+  weak_teacher_logit_dim: 1
+  text_dim: 1024
+  train_augment: true
+student:
+  visual_backbone: convnextv2_tiny.fcmae_ft_in22k_in1k
+  audio_backbone: tf_efficientnetv2_b2.in1k
+  fusion_dim: 384
+  projection_dim: 256
+  path_mode: explicit_projected
+  temporal_layers: 4
+  temporal_heads: 8
+  temporal_dropout: 0.1
+  pretrained: false
+  fusion_mode: concat_mlp_query_conditioned
+  max_position_segments: 16
+loss:
+  projection_dim: 256
+  temperature: 2.0
+  alpha_bce: 1.0
+  alpha_strong_logit: 0.0
+  alpha_weak_logit: 0.0
+  alpha_strong_feat: 0.4
+  alpha_weak_feat: 0.1
+  alpha_text_align: 0.8
+  alpha_orth: 0.5
+  text_alignment_mode: paper_probability
+  confidence_weighting: false
+  confidence_scale: 2.0
+  visual_l2_reduction: mean_feature_then_masked_mean_segments
+training:
+  deterministic: true
+  epochs: 30
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  grad_clip: 1.0
+  mixed_precision: true
+  max_batches_per_epoch: 400
+  max_optimizer_steps: null
+  early_stop_patience: null
+  early_stop_min_delta: 0.0
+  optimizer:
+    type: AdamW
+  scheduler:
+    type: CosineAnnealingLR
+    T_max: 30
+    interval: epoch
+  model_selection:
+    metric: validation_segment_AP
+    run_all_30_epochs: true
+    save_best_checkpoint: true
+teacher_export:
+  artifact_dir: data/teacher_cache/mm26
+  device: cuda
+  strong_visual_backend: internvideo2_clip_b14
+  weak_audio_backend: beats
+  text_backend: clap
+  determinism_tolerance: 0.0
+  internvideo2:
+    declared_model_class: InternVideo2-Base / CLIP-B14
+    repo_root: external/teachers/InternVideo/InternVideo2/multi_modality
+    vision_ckpt_path: weights/internvideo2/B14_dist_1B_stage2.pth
+    vision_ckpt_sha256: 1037a4785a830f9d663cab72da5751129e012042e428a74e019f84f016cd0be7
+    text_ckpt_path: weights/internvideo2/mobileclip_blt.pt
+    text_ckpt_sha256: 670844f7a886dd6eff7a9285adfc53f3d3c889c03bfc8354010cb5c6bf27441a
+    extra_ckpt_path: weights/internvideo2/InternVideo2_CLIP_B14.pth
+    extra_ckpt_sha256: c76ebe61e955500056e83f137e028eb6ad5101e1ace137c62fbde6c3569fb05e
+    source: official_segment_keyframes
+    input_mode: official_segment_keyframes
+    task_segments: 10
+    num_frames: 8
+    frame_sampling: repeat_segment_keyframe
+    frame_expansion: repeat_last_to_num_frames
+    missing_keyframe_policy: block
+    raw_video_diagnostic:
+      enabled: false
+      executed: false
+      note: Not part of the approved canonical runtime; no raw-video decode or 16-fps
+        path is executed.
+    align_dim: 512
+  beats:
+    repo_root: external/teachers/unilm/beats
+    checkpoint_path: weights/beats/BEATs_iter3_plus_AS2M.pt
+    checkpoint_sha256: d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34
+    sample_rate: 16000
+    task_segments: 10
+    segment_seconds: 1
+    clip_duration_seconds: 10
+    short_waveform_policy: zero_pad_to_task_duration
+    long_waveform_policy: truncate_to_task_duration
+  clap:
+    repo_root: external/teachers/microsoft-clap
+    checkpoint_path: weights/clap/CLAP_weights_2023.pth
+    checkpoint_sha256: 2cef4016d47d00eb28d153d522f397222057f95000e9bad6b9583c631284a1e6
+    text_model_root: data/downloads/hf_cache/models--openai-community--gpt2/snapshots/607a30d783dfa663caf39e06633721c8d4cfcd7e
+    text_model_repository: openai-community/gpt2
+    text_model_revision: 607a30d783dfa663caf39e06633721c8d4cfcd7e
+    version: '2023'
+    normalize: false
+logging:
+  log_dir: outputs/ov_orthkd_mm26_reproduction
+  save_last: true
+  save_predictions: true
+  save_environment: true
+evaluation:
+  test_views: 1
+  view_aggregation: none
+  paper_f1_at_0_5_mapping: ovavel_segment_f1_at_0_5
+  validation_calibrated_f1_mapping: ovavel_segment_f1_at_validation_selected_threshold

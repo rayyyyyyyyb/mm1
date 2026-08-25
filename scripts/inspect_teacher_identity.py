@@ -266,6 +266,16 @@ def _run_smoke(
         checkpoint_path=_path(beats_cfg["checkpoint_path"], path_root),
         checkpoint_sha256=str(beats_cfg["checkpoint_sha256"]),
         device=device,
+        sample_rate=int(beats_cfg.get("sample_rate", 16_000)),
+        task_segments=int(beats_cfg.get("task_segments", expected_segments)),
+        segment_seconds=int(beats_cfg.get("segment_seconds", 1)),
+        clip_duration_seconds=int(beats_cfg.get("clip_duration_seconds", 10)),
+        short_waveform_policy=str(
+            beats_cfg.get("short_waveform_policy", "zero_pad_to_task_duration")
+        ),
+        long_waveform_policy=str(
+            beats_cfg.get("long_waveform_policy", "truncate_to_task_duration")
+        ),
     )
     text = ClapTextTeacher(
         repo_root=_path(clap_cfg["repo_root"], path_root),
@@ -456,6 +466,26 @@ def inspect_teacher_identity(
             "checkpoint": beats_checkpoint,
             "feature_dimension": beats_dimension,
             "finetuned_model": beats_finetuned,
+            "preprocessing": {
+                "source": "raw_waveform",
+                "sample_rate": int(beats_cfg.get("sample_rate", 16_000)),
+                "channels": "mono",
+                "task_segments": int(beats_cfg.get("task_segments", 10)),
+                "segment_seconds": int(beats_cfg.get("segment_seconds", 1)),
+                "clip_duration_seconds": int(
+                    beats_cfg.get("clip_duration_seconds", 10)
+                ),
+                "short_waveform_policy": str(
+                    beats_cfg.get(
+                        "short_waveform_policy", "zero_pad_to_task_duration"
+                    )
+                ),
+                "long_waveform_policy": str(
+                    beats_cfg.get(
+                        "long_waveform_policy", "truncate_to_task_duration"
+                    )
+                ),
+            },
         },
         "clap": {
             "wrapper_class": "ClapTextTeacher",

@@ -6,6 +6,7 @@ from typing import List, Sequence
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 from .common import AudioSegmentSpec, verify_checkpoint_sha256
 
@@ -28,6 +29,31 @@ def _load_waveform_array(path: Path) -> np.ndarray:
     return normalized
 
 
+def _fit_waveform_to_task_duration(
+    waveform: torch.Tensor,
+    *,
+    sample_rate: int,
+    duration_seconds: int,
+    short_policy: str,
+    long_policy: str,
+) -> torch.Tensor:
+    """Fit an official clip waveform to its fixed task window without resampling time."""
+
+    normalized = torch.as_tensor(waveform, dtype=torch.float32).reshape(-1)
+    if normalized.numel() == 0 or not bool(torch.isfinite(normalized).all()):
+        raise ValueError("Official waveform must be non-empty and finite")
+    if int(sample_rate) <= 0 or int(duration_seconds) <= 0:
+        raise ValueError("Task waveform sample rate and duration must be positive")
+    if short_policy != "zero_pad_to_task_duration":
+        raise ValueError("BEATs short-waveform policy must be zero_pad_to_task_duration")
+    if long_policy != "truncate_to_task_duration":
+        raise ValueError("BEATs long-waveform policy must be truncate_to_task_duration")
+    target_samples = int(sample_rate) * int(duration_seconds)
+    if normalized.numel() < target_samples:
+        return F.pad(normalized, (0, target_samples - normalized.numel()))
+    return normalized[:target_samples]
+
+
 class BEATsAudioTeacher:
     def __init__(
         self,
@@ -35,6 +61,12 @@ class BEATsAudioTeacher:
         checkpoint_path: str | Path,
         checkpoint_sha256: str,
         device: str = "cpu",
+        sample_rate: int = 16_000,
+        task_segments: int = 10,
+        segment_seconds: int = 1,
+        clip_duration_seconds: int = 10,
+        short_waveform_policy: str = "zero_pad_to_task_duration",
+        long_waveform_policy: str = "truncate_to_task_duration",
     ) -> None:
         repo_dir = Path(repo_root).resolve()
         checkpoint = Path(checkpoint_path).resolve()
@@ -55,6 +87,27 @@ class BEATsAudioTeacher:
             ) from exc
 
         self.device = torch.device(device)
+        self.sample_rate = int(sample_rate)
+        self.task_segments = int(task_segments)
+        self.segment_seconds = int(segment_seconds)
+        self.clip_duration_seconds = int(clip_duration_seconds)
+        self.short_waveform_policy = str(short_waveform_policy)
+        self.long_waveform_policy = str(long_waveform_policy)
+        if (
+            self.sample_rate != 16_000
+            or self.task_segments != 10
+            or self.segment_seconds != 1
+            or self.clip_duration_seconds != 10
+            or self.task_segments * self.segment_seconds != self.clip_duration_seconds
+        ):
+            raise ValueError("Canonical BEATs export requires 16 kHz and ten one-second task segments")
+        _fit_waveform_to_task_duration(
+            torch.ones(1),
+            sample_rate=self.sample_rate,
+            duration_seconds=self.clip_duration_seconds,
+            short_policy=self.short_waveform_policy,
+            long_policy=self.long_waveform_policy,
+        )
 
         payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
         cfg = BEATsConfig(payload["cfg"])
@@ -86,6 +139,17 @@ class BEATsAudioTeacher:
                 waveform_np = waveform_np.mean(axis=1)
             waveform = torch.as_tensor(waveform_np.reshape(-1), dtype=torch.float32)
             if spec.start_time is not None or spec.end_time is not None:
+                waveform = _fit_waveform_to_task_duration(
+                    waveform,
+                    sample_rate=sample_rate,
+                    duration_seconds=getattr(self, "clip_duration_seconds", 10),
+                    short_policy=getattr(
+                        self, "short_waveform_policy", "zero_pad_to_task_duration"
+                    ),
+                    long_policy=getattr(
+                        self, "long_waveform_policy", "truncate_to_task_duration"
+                    ),
+                )
                 start_time = float(spec.start_time or 0.0)
                 end_time = float(spec.end_time) if spec.end_time is not None else waveform.numel() / sample_rate
                 start = max(int(round(start_time * sample_rate)), 0)

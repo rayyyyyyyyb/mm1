@@ -13,6 +13,8 @@ config_bindings:
     value: .jpg
   - path: data.num_segments
     value: 10
+  - path: data.visual_preprocessing.jpgs_per_segment
+    value: 1
 reference:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
@@ -86,6 +88,9 @@ audio:
   save_as_jpeg: false
   second_imagenet_normalization: false
   beats_source: raw_16khz_waveform
+  beats_task_window_seconds: 10
+  beats_short_waveform_policy: zero_pad_to_task_duration
+  beats_long_waveform_policy: truncate_to_task_duration
 internvideo2:
   declared_model_class: "InternVideo2-Base / CLIP-B14"
   repo_root: "external/teachers/InternVideo/InternVideo2/multi_modality"
@@ -104,14 +109,8 @@ internvideo2:
   missing_keyframe_policy: block
   raw_video_diagnostic:
     enabled: false
-    source: official_raw_video
-    video_duration_seconds: 10
-    intervals: 10
-    decode: deterministic_timestamps
-    temporal_sampling_fps: 16
-    frame_sampling: uniform_within_each_one_second_interval
-    short_clip_policy: error
-    missing_video_policy: block_when_enabled
+    executed: false
+    note: "Not part of the approved canonical runtime; no raw-video decode or 16-fps path is executed."
   align_dim: 512
   checkpoint_identity_included: true
 legacy:

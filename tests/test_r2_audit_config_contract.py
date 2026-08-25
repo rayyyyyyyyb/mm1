@@ -1,12 +1,29 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from scripts.audit_mm26_reproduction import audit_reproduction
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_audit_cli_resolves_project_imports_outside_repository(tmp_path: Path) -> None:
+    completed = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "scripts" / "audit_mm26_reproduction.py"), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
 
 
 def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:

@@ -1,16 +1,496 @@
 {
   "schema_version": 1,
-  "status": "not_executed_cache_gate_blocked",
-  "real_data": null,
-  "optimizer_steps": 0,
-  "batch_count": 0,
-  "forward_completed": false,
-  "backward_completed": false,
-  "checkpoint_resume_completed": false,
-  "peak_cuda_memory_bytes": null,
-  "losses_finite": null,
+  "status": "passed",
+  "preflight_only": true,
+  "paper_result": false,
+  "real_data": true,
   "formal_metrics_emitted": false,
-  "invocation_count_this_stage": 0,
-  "temporal_shape_receipt": null,
-  "blocked_by": "full 24,800-record teacher cache export and full artifact audit are pending"
+  "invocation_count_this_stage": 1,
+  "optimizer_steps": 1,
+  "runtime_protocol": {
+    "task_segments": 10,
+    "max_position_segments": 16,
+    "student_frames_per_segment": 1,
+    "teacher_frames_per_segment": 8,
+    "teacher_frame_sampling": "repeat_segment_keyframe",
+    "teacher_frame_expansion": "repeat_last_to_num_frames",
+    "test_views": 1,
+    "test_view_aggregation": "none",
+    "temporal_resampling": false
+  },
+  "invocation_marker": "E:\\OV-OrthKD-R3\\r5-readiness-clean\\reports\\runtime\\r4_real_preflight.invocation.json",
+  "batch_count": 1,
+  "forward_completed": true,
+  "backward_completed": true,
+  "checkpoint_resume_completed": true,
+  "losses_finite": true,
+  "device": "cuda",
+  "use_amp": true,
+  "mock_only": false,
+  "implementation_mode": "camera_ready_explicit_paths",
+  "manifest_summary": {
+    "train": {
+      "task": "ov_avel",
+      "manifest_stage": "exported",
+      "num_records": 13182,
+      "avg_segments": 10.0,
+      "top_domains": [
+        [
+          "ov_avebench",
+          13182
+        ]
+      ],
+      "top_queries": [
+        [
+          "race car",
+          400
+        ],
+        [
+          "motorboat",
+          400
+        ],
+        [
+          "playing banjo",
+          397
+        ],
+        [
+          "engine accelerating",
+          396
+        ],
+        [
+          "playing acoustic guitar",
+          393
+        ],
+        [
+          "playing violin",
+          392
+        ],
+        [
+          "playing bass guitar",
+          392
+        ],
+        [
+          "fireworks banging",
+          392
+        ],
+        [
+          "people crowd",
+          385
+        ],
+        [
+          "female speech",
+          384
+        ]
+      ],
+      "missing_frames": 0,
+      "missing_spectrograms": 0,
+      "missing_audio_sources": 0,
+      "missing_raw_videos": 13182,
+      "missing_strong_teacher_features": 0,
+      "missing_strong_teacher_logits": 0,
+      "missing_weak_teacher_features": 0,
+      "missing_text_embeddings": 0,
+      "manifest_path": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\train.jsonl"
+    },
+    "val": {
+      "task": "ov_avel",
+      "manifest_stage": "exported",
+      "num_records": 5798,
+      "avg_segments": 10.0,
+      "top_domains": [
+        [
+          "ov_avebench",
+          5798
+        ]
+      ],
+      "top_queries": [
+        [
+          "driving buses",
+          250
+        ],
+        [
+          "helicopter",
+          247
+        ],
+        [
+          "playing electric guitar",
+          245
+        ],
+        [
+          "playing drum kit",
+          245
+        ],
+        [
+          "playing piano",
+          245
+        ],
+        [
+          "female singing",
+          236
+        ],
+        [
+          "chainsawing trees",
+          235
+        ],
+        [
+          "bird chirping",
+          234
+        ],
+        [
+          "playing saxophone",
+          225
+        ],
+        [
+          "playing bassoon",
+          215
+        ]
+      ],
+      "missing_frames": 0,
+      "missing_spectrograms": 0,
+      "missing_audio_sources": 0,
+      "missing_raw_videos": 5798,
+      "missing_strong_teacher_features": 0,
+      "missing_strong_teacher_logits": 0,
+      "missing_weak_teacher_features": 0,
+      "missing_text_embeddings": 0,
+      "manifest_path": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\val.jsonl"
+    },
+    "test": {
+      "task": "ov_avel",
+      "manifest_stage": "exported",
+      "num_records": 5820,
+      "avg_segments": 10.0,
+      "top_domains": [
+        [
+          "ov_avebench",
+          5820
+        ]
+      ],
+      "top_queries": [
+        [
+          "driving buses",
+          251
+        ],
+        [
+          "helicopter",
+          248
+        ],
+        [
+          "playing electric guitar",
+          246
+        ],
+        [
+          "playing drum kit",
+          245
+        ],
+        [
+          "playing piano",
+          245
+        ],
+        [
+          "female singing",
+          236
+        ],
+        [
+          "chainsawing trees",
+          235
+        ],
+        [
+          "bird chirping",
+          235
+        ],
+        [
+          "playing saxophone",
+          225
+        ],
+        [
+          "playing bassoon",
+          216
+        ]
+      ],
+      "missing_frames": 0,
+      "missing_spectrograms": 0,
+      "missing_audio_sources": 0,
+      "missing_raw_videos": 5820,
+      "missing_strong_teacher_features": 0,
+      "missing_strong_teacher_logits": 0,
+      "missing_weak_teacher_features": 0,
+      "missing_text_embeddings": 0,
+      "manifest_path": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\test.jsonl"
+    }
+  },
+  "dataset_probe": {
+    "train": {
+      "samples_probed": 8,
+      "observed_task_segments": 10,
+      "strong_teacher_feature_dim": 512,
+      "weak_teacher_feature_dim": 768,
+      "text_dim": 1024
+    },
+    "val": {
+      "samples_probed": 8,
+      "observed_task_segments": 10,
+      "strong_teacher_feature_dim": 512,
+      "weak_teacher_feature_dim": 768,
+      "text_dim": 1024
+    }
+  },
+  "train_probe": {
+    "batch_size": 4,
+    "padded_segments": 10,
+    "loss": 1.5765931606292725,
+    "loss_breakdown": {
+      "bce": 0.6852886080741882,
+      "strong_logit": 0.0,
+      "weak_logit": 0.0,
+      "strong_feat": 0.6163662075996399,
+      "weak_feat": 0.9794578552246094,
+      "text_align": 0.6803364753723145,
+      "orth": 0.005086206831037998,
+      "total": 1.5765931606292725
+    },
+    "losses_finite": true,
+    "forward_completed": true,
+    "backward_completed": true,
+    "optimizer_step_completed": true,
+    "scheduler_interval": "epoch",
+    "temporal_shape_receipt": {
+      "schema_version": 1,
+      "protocol": "official_ov_avebench_t10",
+      "task_segments": 10,
+      "shapes": {
+        "visual_input": [
+          4,
+          10,
+          3,
+          224,
+          224
+        ],
+        "audio_input": [
+          4,
+          10,
+          3,
+          224,
+          224
+        ],
+        "visual_teacher_features": [
+          4,
+          10,
+          512
+        ],
+        "audio_teacher_features": [
+          4,
+          10,
+          768
+        ],
+        "label": [
+          4,
+          10
+        ],
+        "student_logits": [
+          4,
+          10
+        ],
+        "sequence_mask": [
+          4,
+          10
+        ],
+        "metric_labels": [
+          40
+        ],
+        "metric_probabilities": [
+          40
+        ]
+      },
+      "alignment_valid": true,
+      "temporal_resampling_performed": false
+    },
+    "input_shapes": {
+      "frame": [
+        4,
+        10,
+        3,
+        224,
+        224
+      ],
+      "spectrogram": [
+        4,
+        10,
+        3,
+        224,
+        224
+      ],
+      "text_embedding": [
+        4,
+        1024
+      ],
+      "sequence_mask": [
+        4,
+        10
+      ]
+    },
+    "teacher_artifact_shapes": {
+      "strong_teacher_logits": [
+        4,
+        10,
+        1
+      ],
+      "strong_teacher_features": [
+        4,
+        10,
+        512
+      ],
+      "weak_teacher_features": [
+        4,
+        10,
+        768
+      ],
+      "text_embedding": [
+        4,
+        1024
+      ]
+    },
+    "split_types": [
+      "seen",
+      "seen",
+      "seen",
+      "seen"
+    ],
+    "split_types_normalized": true,
+    "gradient_check": {
+      "trainable_parameter_count": 613,
+      "parameters_with_gradients": 613,
+      "parameters_without_gradients": [],
+      "nonfinite_gradients": [],
+      "all_received_gradients_finite": true
+    },
+    "disabled_logit_losses_exact_zero": {
+      "strong_logit": true,
+      "weak_logit": true
+    }
+  },
+  "temporal_shape_receipt": {
+    "schema_version": 1,
+    "protocol": "official_ov_avebench_t10",
+    "task_segments": 10,
+    "shapes": {
+      "visual_input": [
+        4,
+        10,
+        3,
+        224,
+        224
+      ],
+      "audio_input": [
+        4,
+        10,
+        3,
+        224,
+        224
+      ],
+      "visual_teacher_features": [
+        4,
+        10,
+        512
+      ],
+      "audio_teacher_features": [
+        4,
+        10,
+        768
+      ],
+      "label": [
+        4,
+        10
+      ],
+      "student_logits": [
+        4,
+        10
+      ],
+      "sequence_mask": [
+        4,
+        10
+      ],
+      "metric_labels": [
+        40
+      ],
+      "metric_probabilities": [
+        40
+      ]
+    },
+    "alignment_valid": true,
+    "temporal_resampling_performed": false
+  },
+  "expected_temporal_length_from_data_lock": 10,
+  "val_metrics": null,
+  "test_metrics": null,
+  "resume_probe": {
+    "checkpoint_path": "E:\\OV-OrthKD-R3\\r5-readiness-clean\\outputs\\r5_real_preflight\\preflight_resume.pt",
+    "resume_epoch": 1,
+    "resume_best_metric": 0.0,
+    "resume_global_step": 1,
+    "resume_early_stop_counter": 0,
+    "reproduction_fingerprint_sha256": "3f089e963eeaf8804d38119dcd924e33e318a647f04ec3573b2fd0035904a838",
+    "forward_after_resume": {
+      "passed": true,
+      "finite": true,
+      "output_shapes": {
+        "segment_logits": [
+          4,
+          10
+        ],
+        "shared_features": [
+          4,
+          10,
+          384
+        ],
+        "decision_features": [
+          4,
+          10,
+          256
+        ],
+        "audio_aux_features": [
+          4,
+          10,
+          256
+        ],
+        "query_features": [
+          4,
+          10,
+          256
+        ],
+        "segment_features": [
+          4,
+          10,
+          384
+        ],
+        "visual_tokens": [
+          4,
+          10,
+          384
+        ],
+        "audio_tokens": [
+          4,
+          10,
+          384
+        ],
+        "text_tokens": [
+          4,
+          10,
+          384
+        ],
+        "gate_logits": [
+          4,
+          10,
+          2
+        ],
+        "gate_weights": [
+          4,
+          10,
+          2
+        ]
+      }
+    }
+  },
+  "cuda_max_memory_mb": 6136.74365234375,
+  "peak_cuda_memory_bytes": 6434842112
 }

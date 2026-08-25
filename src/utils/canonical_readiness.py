@@ -11,6 +11,8 @@ from typing import Any
 import yaml
 
 from src.utils.reproduction_fingerprint import sha256_file
+from src.utils.reproduction_locks import teacher_identity_sha256
+from src.utils.temporal_protocol import validate_final_runtime_protocol
 
 
 CODE_ROOT = Path(__file__).resolve().parents[2]
@@ -106,6 +108,7 @@ REQUIRED_ARCHIVAL_CONFIG_PATHS = {
     "temporal_protocol": {
         "data.num_segments",
         "data.temporal_resampling",
+        "data.visual_preprocessing.jpgs_per_segment",
         "student.max_position_segments",
         "task.label_mode",
     },
@@ -130,11 +133,14 @@ REQUIRED_ARCHIVAL_CONFIG_PATHS = {
         "teacher_export.internvideo2.frame_sampling",
         "teacher_export.internvideo2.frame_expansion",
         "teacher_export.internvideo2.raw_video_diagnostic.enabled",
+        "teacher_export.internvideo2.raw_video_diagnostic.executed",
     },
     "student_audio_preprocessing": {"data.audio_preprocessing"},
     "evaluator_mapping": {
         "evaluation.paper_f1_at_0_5_mapping",
         "evaluation.validation_calibrated_f1_mapping",
+        "evaluation.test_views",
+        "evaluation.view_aggregation",
     },
 }
 REQUIRED_PREPROCESSING_CONFIG_PATHS = {
@@ -142,7 +148,52 @@ REQUIRED_PREPROCESSING_CONFIG_PATHS = {
     "data.frame_policy",
     "data.canonical_visual_extension",
     "data.num_segments",
+    "data.visual_preprocessing.jpgs_per_segment",
 }
+
+
+def validate_audio_task_window_audit(
+    report: Mapping[str, Any], config: Mapping[str, Any]
+) -> list[str]:
+    data = config.get("data", {})
+    audio = data.get("audio_preprocessing", {}) if isinstance(data, Mapping) else {}
+    export = config.get("teacher_export", {})
+    beats = export.get("beats", {}) if isinstance(export, Mapping) else {}
+    fit_counts = report.get("waveform_fit_counts", {})
+    fit_total = (
+        sum(int(value) for value in fit_counts.values())
+        if isinstance(fit_counts, Mapping)
+        else -1
+    )
+    passed = (
+        report.get("schema_version") == 1
+        and _status(report) == "passed"
+        and report.get("record_count") == 24800
+        and report.get("split_counts") == OFFICIAL_SPLIT_COUNTS
+        and report.get("task_segments") == 10
+        and report.get("task_duration_seconds") == 10
+        and report.get("required_sample_rate") == 16000
+        and report.get("short_waveform_policy") == "zero_pad_to_task_duration"
+        and report.get("long_waveform_policy") == "truncate_to_task_duration"
+        and report.get("temporal_resampling_performed") is False
+        and report.get("errors") == []
+        and fit_total == 24800
+        and isinstance(audio, Mapping)
+        and audio.get("beats_task_window_seconds") == 10
+        and audio.get("beats_short_waveform_policy")
+        == "zero_pad_to_task_duration"
+        and audio.get("beats_long_waveform_policy") == "truncate_to_task_duration"
+        and isinstance(beats, Mapping)
+        and beats.get("sample_rate") == 16000
+        and beats.get("task_segments") == 10
+        and beats.get("segment_seconds") == 1
+        and beats.get("clip_duration_seconds") == 10
+        and beats.get("short_waveform_policy") == "zero_pad_to_task_duration"
+        and beats.get("long_waveform_policy") == "truncate_to_task_duration"
+    )
+    return [] if passed else [
+        "audio_task_window_audit: report does not prove the locked 16 kHz/T=10 task-window policy"
+    ]
 
 
 def _valid_t10_temporal_shape_receipt(value: Any) -> bool:
@@ -195,6 +246,27 @@ _PATH_ONLY_CONFIG_KEYS = {
     "val_manifest",
     "test_manifest",
 }
+
+
+def validate_exported_audit_identity(
+    audit: Mapping[str, Any], teacher_lock: Mapping[str, Any]
+) -> list[str]:
+    errors: list[str] = []
+    try:
+        expected = teacher_identity_sha256(teacher_lock)
+    except ValueError as exc:
+        return [f"teacher_lock: invalid teacher identity binding: {exc}"]
+    if audit.get("teacher_identity_sha256") != expected:
+        errors.append("exported_audit: teacher identity SHA256 mismatch")
+    if (
+        audit.get("artifact_scan") == "full"
+        and audit.get("record_count") == 24800
+        and audit.get("receipt_bindings_checked") != 24800
+    ):
+        errors.append(
+            "exported_audit: all 24800 per-record teacher identity bindings must pass"
+        )
+    return errors
 
 
 def _resolve(root: Path, value: str | Path) -> Path:
@@ -573,6 +645,41 @@ def _validate_config_bindings(
     return errors
 
 
+def validate_evaluator_test_protocol(
+    evaluator_lock: Mapping[str, Any], config: Mapping[str, Any]
+) -> list[str]:
+    protocol = evaluator_lock.get("test_protocol")
+    if not isinstance(protocol, Mapping) or not (
+        _status(protocol) == "resolved"
+        and protocol.get("views") == 1
+        and protocol.get("aggregation") == "none"
+        and protocol.get("deterministic_single_forward") is True
+    ):
+        return [
+            "evaluator_lock: test protocol must be one deterministic unaggregated view"
+        ]
+    return _validate_config_bindings(
+        "evaluator_lock: test_protocol",
+        protocol.get("config_bindings"),
+        config,
+        required_paths={"evaluation.test_views", "evaluation.view_aggregation"},
+    )
+
+
+def validate_real_preflight_protocol(
+    preflight: Mapping[str, Any], config: Mapping[str, Any]
+) -> list[str]:
+    try:
+        expected = validate_final_runtime_protocol(config)
+    except (TypeError, ValueError) as exc:
+        return [f"runtime_protocol: {exc}"]
+    if preflight.get("runtime_protocol") != expected:
+        return [
+            "real_preflight: runtime protocol receipt does not match canonical config"
+        ]
+    return []
+
+
 def _actual_git_dirty(root: Path) -> bool:
     if not (root / ".git").exists():
         raise RuntimeError(f"Cannot inspect canonical Git state: repository metadata missing at {root}")
@@ -663,6 +770,10 @@ def validate_canonical_readiness(
     errors: list[str] = []
     if project_root_error:
         errors.append(project_root_error)
+    try:
+        validate_final_runtime_protocol(config)
+    except (TypeError, ValueError) as exc:
+        errors.append(f"runtime_protocol: {exc}")
 
     for name, document in documents.items():
         expected_version = REQUIRED_SCHEMA_VERSIONS[name]
@@ -792,6 +903,39 @@ def validate_canonical_readiness(
             errors.append(f"source manifest SHA256 mismatch for {split}")
         if source_bytes.get(split) != manifest_path.stat().st_size:
             errors.append(f"source manifest byte count mismatch for {split}")
+
+    audio_audit_entry = data_lock.get("audio_task_window_audit", {})
+    if not isinstance(audio_audit_entry, Mapping):
+        errors.append("data_lock: audio_task_window_audit must be a mapping")
+    else:
+        audio_audit_value = audio_audit_entry.get("path")
+        audio_audit_path = (
+            _resolve(project_root, str(audio_audit_value))
+            if audio_audit_value
+            else None
+        )
+        if audio_audit_path is None or not audio_audit_path.is_file():
+            errors.append(
+                f"data_lock: audio task-window audit is missing: {audio_audit_path}"
+            )
+        else:
+            audio_audit_report = _load_mapping(audio_audit_path)
+            errors.extend(validate_audio_task_window_audit(audio_audit_report, config))
+            if (
+                _status(audio_audit_entry) != "passed"
+                or audio_audit_entry.get("sha256") != sha256_file(audio_audit_path)
+                or audio_audit_entry.get("record_count")
+                != audio_audit_report.get("record_count")
+                or audio_audit_entry.get("short_waveform_policy")
+                != audio_audit_report.get("short_waveform_policy")
+                or audio_audit_entry.get("long_waveform_policy")
+                != audio_audit_report.get("long_waveform_policy")
+                or audio_audit_entry.get("temporal_resampling_performed")
+                != audio_audit_report.get("temporal_resampling_performed")
+            ):
+                errors.append(
+                    "data_lock: audio task-window audit binding does not match report bytes/semantics"
+                )
 
     archival_lock = documents["archival_lock"]
     expected_config_sha256 = canonical_experiment_config_sha256(config)
@@ -975,6 +1119,7 @@ def validate_canonical_readiness(
                 f"evaluator_lock: {field} config binding mismatch at {expected_path}: "
                 f"locked {mapping.get('value')!r}, runtime {observed}"
             )
+    errors.extend(validate_evaluator_test_protocol(evaluator_lock, config))
 
     audit = documents["exported_audit"]
     if (
@@ -987,6 +1132,7 @@ def validate_canonical_readiness(
         or audit.get("split_seen_unseen_counts") != OFFICIAL_SPLIT_SEEN_UNSEEN_COUNTS
     ):
         errors.append("exported_audit: full exact official audit with zero issues is required")
+    errors.extend(validate_exported_audit_identity(audit, teacher_lock))
     if audit.get("cache_root_sha256") != cache_root_sha256:
         errors.append("exported_audit: cache root SHA256 does not match teacher lock")
     exported_hashes = audit.get("exported_manifest_sha256", {})
@@ -1013,6 +1159,7 @@ def validate_canonical_readiness(
 
     if require_real_preflight:
         preflight = documents["real_preflight"]
+        errors.extend(validate_real_preflight_protocol(preflight, config))
         if not (
             preflight.get("real_data") is True
             and preflight.get("optimizer_steps") == 1

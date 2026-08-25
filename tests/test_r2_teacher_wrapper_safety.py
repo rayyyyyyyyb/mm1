@@ -13,6 +13,7 @@ from src.teachers.internvideo2_visual import (
     InternVideo2ClipB14Teacher,
     _compose_internvideo_checkpoint,
 )
+from src.teachers import beats_audio
 
 try:
     from src.teachers.beats_audio import _load_waveform_array
@@ -43,6 +44,24 @@ def test_beats_numpy_waveforms_disable_pickle_and_require_exact_npz_key(tmp_path
     np.save(tmp_path / "nonfinite.npy", np.asarray([0.0, np.nan], dtype=np.float32))
     with pytest.raises(ValueError, match="non-empty and finite"):
         _load_waveform_array(tmp_path / "nonfinite.npy")
+
+
+def test_beats_zero_pads_short_official_wav_to_the_ten_second_task_window(
+) -> None:
+    normalize = getattr(beats_audio, "_fit_waveform_to_task_duration", None)
+    assert callable(normalize), "BEATs task-window padding helper is missing"
+
+    fitted = normalize(
+        torch.ones(9 * 16_000),
+        sample_rate=16_000,
+        duration_seconds=10,
+        short_policy="zero_pad_to_task_duration",
+        long_policy="truncate_to_task_duration",
+    )
+
+    assert list(fitted.shape) == [10 * 16_000]
+    assert torch.count_nonzero(fitted[: 9 * 16_000]).item() == 9 * 16_000
+    assert torch.count_nonzero(fitted[9 * 16_000 :]).item() == 0
 
 
 def test_checkpoint_hash_is_verified_before_any_deserialization(tmp_path: Path) -> None:

@@ -9,6 +9,7 @@ import pytest
 import torch
 import yaml
 
+
 from scripts.export_teacher_artifacts import build_teachers
 from src.teachers import TeacherExportBundle
 from src.teachers.internvideo2_visual import (
@@ -19,7 +20,34 @@ from src.teachers.internvideo2_visual import (
 from src.teachers.pipeline import export_manifest_records
 
 
-def test_deterministic_timestamp_plan_uses_official_middle_sampling_on_16fps_grid() -> None:
+def test_official_keyframe_is_decoded_and_transformed_once_before_eight_repeats(
+    tmp_path: Path,
+) -> None:
+    image_path = tmp_path / "00000001.jpg"
+    Image.fromarray(np.full((4, 5, 3), 127, dtype=np.uint8)).save(image_path)
+
+    class DeterministicModel:
+        def __init__(self) -> None:
+            self.transform_calls = 0
+
+        def transform(self, tensor: torch.Tensor) -> torch.Tensor:
+            self.transform_calls += 1
+            return tensor.float() / 255.0
+
+    teacher = InternVideo2ClipB14Teacher.__new__(InternVideo2ClipB14Teacher)
+    teacher.input_mode = "official_segment_keyframes"
+    teacher.frame_expansion = "repeat_last_to_num_frames"
+    teacher.num_frames = 8
+    teacher.model = DeterministicModel()
+
+    frames = teacher._load_segment_tensor([str(image_path)])
+
+    assert teacher.model.transform_calls == 1
+    assert list(frames.shape) == [8, 3, 4, 5]
+    assert all(torch.equal(frames[0], frames[index]) for index in range(1, 8))
+
+
+def test_raw_diagnostic_timestamp_plan_uses_middle_sampling_on_16fps_grid() -> None:
     timestamps = deterministic_video_timestamps(
         duration_seconds=10,
         intervals=10,
@@ -134,7 +162,7 @@ def test_teacher_pipeline_routes_explicit_raw_diagnostic_mode_to_raw_video(tmp_p
         output_manifest=tmp_path / "exported.jsonl",
         teachers=TeacherExportBundle(strong_visual=teacher),
         source_manifest_sha256="1" * 64,
-        teacher_lock_sha256="2" * 64,
+        teacher_identity_sha256="2" * 64,
         split="train",
     )
 
@@ -177,7 +205,7 @@ def test_teacher_pipeline_routes_canonical_mode_to_ten_official_keyframes(tmp_pa
         output_manifest=tmp_path / "exported.jsonl",
         teachers=TeacherExportBundle(strong_visual=teacher),
         source_manifest_sha256="1" * 64,
-        teacher_lock_sha256="2" * 64,
+        teacher_identity_sha256="2" * 64,
         split="train",
     )
 
@@ -198,7 +226,7 @@ def test_teacher_pipeline_blocks_when_raw_video_field_is_missing(tmp_path) -> No
             output_manifest=tmp_path / "exported.jsonl",
             teachers=TeacherExportBundle(strong_visual=_RawVideoTeacher()),
             source_manifest_sha256="1" * 64,
-            teacher_lock_sha256="2" * 64,
+            teacher_identity_sha256="2" * 64,
             split="train",
         )
 

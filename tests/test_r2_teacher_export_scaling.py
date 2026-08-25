@@ -72,7 +72,7 @@ def test_export_writes_each_receipt_once_and_shares_query_embedding(
         teachers=TeacherExportBundle(text_teacher=teacher),
         receipt_jsonl=aggregate_receipt,
         source_manifest_sha256="source-a",
-        teacher_lock_sha256="lock-a",
+        teacher_identity_sha256="lock-a",
         split="train",
         progress_path=tmp_path / "progress/train.json",
     )
@@ -108,7 +108,7 @@ def test_resume_scans_per_record_receipts_without_aggregate_jsonl(tmp_path: Path
         teachers=TeacherExportBundle(text_teacher=first_teacher),
         receipt_jsonl=aggregate_receipt,
         source_manifest_sha256="source-a",
-        teacher_lock_sha256="lock-a",
+        teacher_identity_sha256="lock-a",
         split="train",
     )
     aggregate_receipt.unlink()
@@ -121,7 +121,7 @@ def test_resume_scans_per_record_receipts_without_aggregate_jsonl(tmp_path: Path
         teachers=TeacherExportBundle(text_teacher=should_not_run),
         receipt_jsonl=aggregate_receipt,
         source_manifest_sha256="source-a",
-        teacher_lock_sha256="lock-a",
+        teacher_identity_sha256="lock-a",
         split="train",
         resume=True,
     )

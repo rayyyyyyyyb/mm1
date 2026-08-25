@@ -1,5 +1,7 @@
 # R4 T=10 Temporal Protocol Correction Report
 
+> Superseded for current execution by `reports/archival/R5_USER_APPROVED_FINAL_RUNTIME_PROTOCOL.md`. R4 remains historical evidence. The final runtime statement is `T_task=10, T_max=16, K_student=1, K_teacher=8, V_test=1`; canonical execution performs no raw-video/16-fps decode and no test-time view ensemble.
+
 Date: 2026-08-24
 Branch: `repro/r4-keyframe-readiness-and-experiment-prep`
 Base: `eae79f1c07b037cc7e6a7080402988b60d314dd1`

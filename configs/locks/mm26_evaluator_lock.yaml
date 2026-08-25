@@ -27,6 +27,16 @@ validation_calibrated_f1_mapping:
   status: resolved
   value: "ovavel_segment_f1_at_validation_selected_threshold"
   config_path: "evaluation.validation_calibrated_f1_mapping"
+test_protocol:
+  status: resolved
+  views: 1
+  aggregation: none
+  deterministic_single_forward: true
+  config_bindings:
+    - path: evaluation.test_views
+      value: 1
+    - path: evaluation.view_aggregation
+      value: none
 event_f1_policy: "supplemental_only_not_paper_f1"
 local_metric_fields:
   - "binary_micro_f1_at_0_5"

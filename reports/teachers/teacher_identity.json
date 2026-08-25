@@ -602,7 +602,17 @@
         ]
       },
       "feature_dimension": 768,
-      "finetuned_model": false
+      "finetuned_model": false,
+      "preprocessing": {
+        "source": "raw_waveform",
+        "sample_rate": 16000,
+        "channels": "mono",
+        "task_segments": 10,
+        "segment_seconds": 1,
+        "clip_duration_seconds": 10,
+        "short_waveform_policy": "zero_pad_to_task_duration",
+        "long_waveform_policy": "truncate_to_task_duration"
+      }
     },
     "clap": {
       "wrapper_class": "ClapTextTeacher",
@@ -711,14 +721,14 @@
     },
     "timings_ms": [
       {
-        "internvideo2": 1071.2783000199124,
-        "beats": 457.16660004109144,
-        "clap": 51.58650001976639
+        "internvideo2": 904.6212999382988,
+        "beats": 463.05499994196,
+        "clap": 51.00120010320097
       },
       {
-        "internvideo2": 504.5261000050232,
-        "beats": 84.68780003022403,
-        "clap": 15.293699922040105
+        "internvideo2": 278.5284999990836,
+        "beats": 113.37170004844666,
+        "clap": 15.13900002464652
       }
     ],
     "gpu_memory": {

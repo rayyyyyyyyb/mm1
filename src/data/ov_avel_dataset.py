@@ -214,7 +214,29 @@ class QueryConditionedOVAvelDataset(Dataset):
             raise ValueError(f"Expected 0 or {target_len} frame groups, but received {len(groups)}.")
 
         normalized: List[str | None] = []
-        for item in groups[:target_len]:
+        canonical_exact_keyframes = (
+            self.preprocessing_mode == "canonical_official_jpg_wav"
+            and not self.allow_missing_modalities
+        )
+        for segment_index, item in enumerate(groups[:target_len]):
+            if canonical_exact_keyframes:
+                candidates = (
+                    [str(path) for path in item if path]
+                    if isinstance(item, list)
+                    else ([str(item)] if item else [])
+                )
+                if len(candidates) != 1:
+                    raise ValueError(
+                        "Canonical OV-AVEBench requires exactly one official JPG "
+                        f"for task segment {segment_index}, got {len(candidates)} candidates"
+                    )
+                if Path(candidates[0]).suffix.lower() != ".jpg":
+                    raise ValueError(
+                        "Canonical OV-AVEBench task-segment keyframes must use the "
+                        f"official .jpg extension: {candidates[0]}"
+                    )
+                normalized.append(candidates[0])
+                continue
             if isinstance(item, list):
                 candidates = [str(path) for path in item if path]
                 if not candidates:

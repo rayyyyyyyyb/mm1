@@ -12,6 +12,7 @@ import yaml
 import src.utils.canonical_readiness as readiness_module
 from scripts.train_ov_orthkd import validate_repro_config
 from src.utils.reproduction_fingerprint import build_reproduction_fingerprint
+from src.utils.reproduction_locks import teacher_identity_sha256
 
 try:
     from src.utils.canonical_readiness import (
@@ -69,6 +70,7 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         "temporal_protocol": (
             "data.num_segments",
             "data.temporal_resampling",
+            "data.visual_preprocessing.jpgs_per_segment",
             "student.max_position_segments",
             "task.label_mode",
         ),
@@ -93,16 +95,20 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "teacher_export.internvideo2.frame_sampling",
             "teacher_export.internvideo2.frame_expansion",
             "teacher_export.internvideo2.raw_video_diagnostic.enabled",
+            "teacher_export.internvideo2.raw_video_diagnostic.executed",
         ),
         "student_audio_preprocessing": ("data.audio_preprocessing",),
         "evaluator_mapping": (
             "evaluation.paper_f1_at_0_5_mapping",
             "evaluation.validation_calibrated_f1_mapping",
+            "evaluation.test_views",
+            "evaluation.view_aggregation",
         ),
     }
     locked_values = {
         "data.num_segments": 10,
         "data.temporal_resampling": False,
+        "data.visual_preprocessing.jpgs_per_segment": 1,
         "student.max_position_segments": 16,
         "task.label_mode": "query_conditioned_binary",
         "teacher_export.strong_visual_backend": "internvideo2_clip_b14",
@@ -122,9 +128,18 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         "teacher_export.internvideo2.frame_sampling": "repeat_segment_keyframe",
         "teacher_export.internvideo2.frame_expansion": "repeat_last_to_num_frames",
         "teacher_export.internvideo2.raw_video_diagnostic.enabled": False,
-        "data.audio_preprocessing": {"sample_rate": 16000, "representation": "waveform"},
+        "teacher_export.internvideo2.raw_video_diagnostic.executed": False,
+        "data.audio_preprocessing": {
+            "sample_rate": 16000,
+            "representation": "waveform",
+            "beats_task_window_seconds": 10,
+            "beats_short_waveform_policy": "zero_pad_to_task_duration",
+            "beats_long_waveform_policy": "truncate_to_task_duration",
+        },
         "evaluation.paper_f1_at_0_5_mapping": "segment",
         "evaluation.validation_calibrated_f1_mapping": "binary",
+        "evaluation.test_views": 1,
+        "evaluation.view_aggregation": "none",
     }
     facts = {}
     for name in archival_paths:
@@ -160,6 +175,8 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
                 {
                     "role": role,
                     "source_url_or_archive": "https://example.invalid/checkpoint",
+                    "source_url": "https://example.invalid/checkpoint",
+                    "path": checkpoint["path"],
                     "filename": checkpoint_path.name,
                     "bytes": checkpoint_path.stat().st_size,
                     "sha256": checkpoint["sha256"],
@@ -174,17 +191,38 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "working_tree_clean": True,
             "module": f"{name}.module",
             "imported_class": class_name,
-            "preprocessing": "locked preprocessing",
+            "preprocessing": {"mode": "locked"},
             "output_dim": {"internvideo2": 512, "beats": 768, "clap": 1024}[name],
             "determinism_tolerance": 0.0,
             "checkpoint_files": checkpoint_files,
         }
+        if name == "internvideo2":
+            teachers[name]["declared_variant"] = "fixture-internvideo2"
+        elif name == "beats":
+            teachers[name]["variant"] = "fixture-beats"
+        else:
+            teachers[name]["version"] = "fixture-clap"
+            teachers[name]["normalize"] = False
     cache_root_sha256 = "a" * 64
     teacher_lock = {
         "schema_version": 1,
         "status": "ready",
         "teachers": teachers,
-        "real_smoke": {"status": "passed"},
+        "real_smoke": {
+            "status": "passed",
+            "records": 1,
+            "repeat": 2,
+            "input_mode": "official_segment_keyframes",
+            "task_segments": 10,
+            "output_shapes": {
+                "internvideo2_features": [10, 512],
+                "internvideo2_logits": [10],
+                "beats_features": [10, 768],
+                "clap_text_features": [1024],
+            },
+            "all_finite": True,
+            "bitwise_repeatable": True,
+        },
         "full_export": {
             "status": "passed",
             "records": 24800,
@@ -209,6 +247,7 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             {"path": "data.frame_policy", "value": "natural_sorted_no_repeat"},
             {"path": "data.canonical_visual_extension", "value": ".jpg"},
             {"path": "data.num_segments", "value": 10},
+            {"path": "data.visual_preprocessing.jpgs_per_segment", "value": 1},
         ],
     }
     evaluator_source = _file_evidence(root, "eval_metrics.py", "official evaluator")
@@ -237,6 +276,16 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "value": "binary",
             "config_path": "evaluation.validation_calibrated_f1_mapping",
         },
+        "test_protocol": {
+            "status": "resolved",
+            "views": 1,
+            "aggregation": "none",
+            "deterministic_single_forward": True,
+            "config_bindings": [
+                {"path": "evaluation.test_views", "value": 1},
+                {"path": "evaluation.view_aggregation", "value": "none"},
+            ],
+        },
     }
 
     paths = {
@@ -252,6 +301,7 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         "smoke_repeatability": root / "reports" / "repeatability.json",
         "exported_audit": root / "reports" / "exported_audit.json",
         "real_preflight": root / "reports" / "real_preflight.json",
+        "audio_task_window_audit": root / "reports" / "audio_task_window_audit.json",
     }
     source_audit = {
         "schema_version": 1,
@@ -272,12 +322,42 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
         "path": paths["source_audit"].relative_to(root).as_posix(),
         "sha256": _sha256(paths["source_audit"]),
     }
+    audio_task_window_audit = {
+        "schema_version": 1,
+        "status": "passed",
+        "record_count": 24800,
+        "split_counts": OFFICIAL_COUNTS,
+        "task_segments": 10,
+        "task_duration_seconds": 10,
+        "required_sample_rate": 16000,
+        "short_waveform_policy": "zero_pad_to_task_duration",
+        "long_waveform_policy": "truncate_to_task_duration",
+        "temporal_resampling_performed": False,
+        "waveform_fit_counts": {
+            "zero_pad_to_task_duration": 1,
+            "unchanged": 24798,
+            "truncate_to_task_duration": 1,
+        },
+        "errors": [],
+    }
+    paths["audio_task_window_audit"].write_text(
+        json.dumps(audio_task_window_audit), encoding="utf-8"
+    )
     data_lock = {
         "schema_version": 2,
         "status": "ready",
         "official_archive": archive,
         "source_manifests": {"status": "passed", **manifests},
         "source_audit": {"status": "passed", **source_audit_evidence},
+        "audio_task_window_audit": {
+            "status": "passed",
+            "path": paths["audio_task_window_audit"].relative_to(root).as_posix(),
+            "sha256": _sha256(paths["audio_task_window_audit"]),
+            "record_count": 24800,
+            "short_waveform_policy": "zero_pad_to_task_duration",
+            "long_waveform_policy": "truncate_to_task_duration",
+            "temporal_resampling_performed": False,
+        },
     }
     for key, value in (
         ("data_lock", data_lock),
@@ -349,6 +429,8 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
                 },
                 "cache_root_sha256": cache_root_sha256,
                 "teacher_checkpoint_sha256": sorted(checkpoint_hashes),
+                "teacher_identity_sha256": teacher_identity_sha256(teacher_lock),
+                "receipt_bindings_checked": 24800,
             }
         ),
         encoding="utf-8",
@@ -366,6 +448,17 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
                 "backward_completed": True,
                 "checkpoint_resume_completed": True,
                 "losses_finite": True,
+                "runtime_protocol": {
+                    "task_segments": 10,
+                    "max_position_segments": 16,
+                    "student_frames_per_segment": 1,
+                    "teacher_frames_per_segment": 8,
+                    "teacher_frame_sampling": "repeat_segment_keyframe",
+                    "teacher_frame_expansion": "repeat_last_to_num_frames",
+                    "test_views": 1,
+                    "test_view_aggregation": "none",
+                    "temporal_resampling": False,
+                },
                 "temporal_shape_receipt": {
                     "schema_version": 1,
                     "protocol": "official_ov_avebench_t10",
@@ -406,6 +499,7 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "preprocessing_mode": "canonical_official_jpg_wav",
             "frame_policy": "natural_sorted_no_repeat",
             "canonical_visual_extension": ".jpg",
+            "visual_preprocessing": {"jpgs_per_segment": 1},
             **{f"{split}_manifest": value["path"] for split, value in manifests.items()},
         },
         "task": {"label_mode": locked_values["task.label_mode"]},
@@ -425,6 +519,8 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "max_optimizer_steps": None,
         },
         "evaluation": {
+            "test_views": locked_values["evaluation.test_views"],
+            "view_aggregation": locked_values["evaluation.view_aggregation"],
             "paper_f1_at_0_5_mapping": locked_values["evaluation.paper_f1_at_0_5_mapping"],
             "validation_calibrated_f1_mapping": locked_values[
                 "evaluation.validation_calibrated_f1_mapping"
@@ -451,7 +547,10 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
                 "raw_video_diagnostic": {
                     "enabled": locked_values[
                         "teacher_export.internvideo2.raw_video_diagnostic.enabled"
-                    ]
+                    ],
+                    "executed": locked_values[
+                        "teacher_export.internvideo2.raw_video_diagnostic.executed"
+                    ],
                 },
                 "vision_ckpt_path": str(checkpoint_paths[("internvideo2", "vision")]),
                 "vision_ckpt_sha256": teachers["internvideo2"]["checkpoint_files"][0]["sha256"],
@@ -463,6 +562,12 @@ def _resolved_fixture(root: Path) -> tuple[dict[str, Any], dict[str, Path]]:
             "beats": {
                 "checkpoint_path": str(checkpoint_paths[("beats", "encoder")]),
                 "checkpoint_sha256": teachers["beats"]["checkpoint_files"][0]["sha256"],
+                "sample_rate": 16_000,
+                "task_segments": 10,
+                "segment_seconds": 1,
+                "clip_duration_seconds": 10,
+                "short_waveform_policy": "zero_pad_to_task_duration",
+                "long_waveform_policy": "truncate_to_task_duration",
             },
             "clap": {
                 "checkpoint_path": str(checkpoint_paths[("clap", "text_encoder")]),
@@ -633,6 +738,28 @@ def test_gate_detects_evidence_tampering_after_lock_creation(tmp_path: Path) -> 
     (tmp_path / "evidence" / "internvideo2_vision.pt").write_text("tampered", encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="SHA256 mismatch"):
+        validate_canonical_readiness(config)
+
+
+def test_audio_task_window_audit_semantics_cannot_be_relocked_to_a_bad_policy(
+    tmp_path: Path,
+) -> None:
+    config, paths = _resolved_fixture(tmp_path)
+    audit = json.loads(paths["audio_task_window_audit"].read_text(encoding="utf-8"))
+    audit["short_waveform_policy"] = "repeat_last_sample"
+    paths["audio_task_window_audit"].write_text(json.dumps(audit), encoding="utf-8")
+    data_lock = yaml.safe_load(paths["data_lock"].read_text(encoding="utf-8"))
+    data_lock["audio_task_window_audit"]["sha256"] = _sha256(
+        paths["audio_task_window_audit"]
+    )
+    _write_yaml(paths["data_lock"], data_lock)
+    subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "commit", "-q", "-m", "bad audio policy"],
+        check=True,
+    )
+
+    with pytest.raises(RuntimeError, match="audio_task_window_audit"):
         validate_canonical_readiness(config)
 
 
@@ -874,7 +1001,7 @@ def test_fingerprint_binds_locks_audit_git_mode_and_variant(tmp_path: Path) -> N
     assert first["components"]["evidence"]["exported_audit"]["exists"] is True
 
 
-def test_committed_blocked_receipts_fail_closed_without_internal_type_error(
+def test_committed_ready_receipts_pass_complete_canonical_gate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     project_root = Path(__file__).resolve().parents[1]
@@ -883,5 +1010,11 @@ def test_committed_blocked_receipts_fail_closed_without_internal_type_error(
         (project_root / "configs" / "ov_orthkd_mm26_repro.yaml").read_text(encoding="utf-8")
     )
 
-    with pytest.raises(RuntimeError, match="Canonical readiness gate failed"):
-        validate_canonical_readiness(config)
+    receipt = validate_canonical_readiness(config)
+
+    assert receipt["status"] == "ready"
+    assert receipt["errors"] == []
+    assert receipt["git_dirty"] is False
+    assert receipt["cache_root_sha256"] == (
+        "6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244"
+    )

@@ -66,6 +66,29 @@ def test_formal_loader_requires_exact_t10_labels_even_with_t16_position_capacity
         )[0]
 
 
+@pytest.mark.parametrize(
+    ("frame_group", "message"),
+    [
+        (["00000001.jpg", "00000002.jpg"], "exactly one official JPG"),
+        (["00000001.png"], "official .jpg"),
+    ],
+)
+def test_canonical_loader_rejects_nonexact_segment_keyframe_candidates(
+    frame_group: list[str],
+    message: str,
+) -> None:
+    dataset = QueryConditionedOVAvelDataset.__new__(QueryConditionedOVAvelDataset)
+    dataset.strict_alignment = True
+    dataset.preprocessing_mode = "canonical_official_jpg_wav"
+    dataset.allow_missing_modalities = False
+
+    with pytest.raises(ValueError, match=message):
+        dataset._normalize_segment_frame_paths(
+            [frame_group, ["00000002.jpg"]],
+            target_len=2,
+        )
+
+
 def test_explicit_uniform_overflow_is_unique_monotone_and_noncanonical(tmp_path: Path) -> None:
     manifest = tmp_path / "data.jsonl"
     _write_manifest(manifest, _record([0.0, 1.0, 0.0, 1.0, 0.0]))

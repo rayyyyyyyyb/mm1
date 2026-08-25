@@ -11,6 +11,7 @@ import scripts.export_teacher_artifacts as export_script
 import src.utils.atomic_artifacts as atomic_module
 from src.teachers import TeacherExportBundle, export_manifest_file
 from src.teachers.common import load_records
+from src.teachers.mock import MockStrongVisualTeacher, MockWeakAudioTeacher
 from src.utils.atomic_artifacts import atomic_save_array, canonical_tree_hash
 
 
@@ -25,6 +26,12 @@ class _TextTeacher:
             raise RuntimeError("intentional teacher interruption")
         value = float(sum(ord(char) for char in queries[0]) % 17)
         return np.asarray([[value, value + 1.0, value + 2.0]], dtype=np.float32)
+
+
+class _FailingWeakTeacher:
+    def export_segments(self, audio_segments: list[Any]) -> np.ndarray:
+        del audio_segments
+        raise RuntimeError("intentional weak-teacher interruption")
 
 
 def _write_source(path: Path, ids: tuple[str, ...] = ("clip_0", "clip_1")) -> None:
@@ -45,7 +52,7 @@ def _export(
     tmp_path: Path,
     teacher: _TextTeacher,
     *,
-    teacher_lock_sha256: str = "lock-a",
+    teacher_identity_sha256: str = "lock-a",
     resume: bool = False,
 ) -> dict[str, Any]:
     return export_manifest_file(
@@ -55,7 +62,7 @@ def _export(
         teachers=TeacherExportBundle(text_teacher=teacher),
         receipt_jsonl=tmp_path / "train_receipt.jsonl",
         error_jsonl=tmp_path / "export_errors.jsonl",
-        teacher_lock_sha256=teacher_lock_sha256,
+        teacher_identity_sha256=teacher_identity_sha256,
         split="train",
         resume=resume,
     )
@@ -132,13 +139,13 @@ def test_successful_export_publishes_manifest_receipts_and_stable_root_hash(tmp_
     assert len(receipts) == 2
     assert not final.with_name(final.name + ".partial").exists()
     assert all(receipt["split"] == "train" for receipt in receipts)
-    assert all(receipt["teacher_lock_sha256"] == "lock-a" for receipt in receipts)
+    assert all(receipt["teacher_identity_sha256"] == "lock-a" for receipt in receipts)
     assert all(receipt["source_manifest_sha256"] == summary["source_manifest_sha256"] for receipt in receipts)
     assert all(receipt["artifacts"]["text_embedding"]["shape"] == [3] for receipt in receipts)
     assert summary["cache_root_sha256"] == canonical_tree_hash(tmp_path / "cache")["sha256"]
 
 
-def test_resume_skips_only_matching_receipts_and_rejects_changed_teacher_lock(tmp_path: Path) -> None:
+def test_resume_skips_only_matching_receipts_and_rejects_changed_teacher_identity(tmp_path: Path) -> None:
     _write_source(tmp_path / "source.jsonl")
     _export(tmp_path, _TextTeacher())
     should_not_run = _TextTeacher(fail_on_call=1)
@@ -147,8 +154,50 @@ def test_resume_skips_only_matching_receipts_and_rejects_changed_teacher_lock(tm
 
     assert resumed["records_resumed"] == 2
     assert should_not_run.calls == 0
-    with pytest.raises(RuntimeError, match=r"stale.*teacher lock"):
-        _export(tmp_path, _TextTeacher(), teacher_lock_sha256="lock-b", resume=True)
+    with pytest.raises(RuntimeError, match=r"stale.*teacher identity"):
+        _export(tmp_path, _TextTeacher(), teacher_identity_sha256="lock-b", resume=True)
+
+
+def test_resume_recomputes_orphan_record_artifacts_and_clears_stale_errors(
+    tmp_path: Path,
+) -> None:
+    _write_source(tmp_path / "source.jsonl", ids=("clip_0",))
+    common = {
+        "source_manifest": tmp_path / "source.jsonl",
+        "artifact_dir": tmp_path / "cache",
+        "output_manifest": tmp_path / "train.jsonl",
+        "receipt_jsonl": tmp_path / "train_receipt.jsonl",
+        "error_jsonl": tmp_path / "export_errors.jsonl",
+        "teacher_identity_sha256": "lock-a",
+        "split": "train",
+    }
+
+    with pytest.raises(RuntimeError, match="intentional weak-teacher interruption"):
+        export_manifest_file(
+            **common,
+            teachers=TeacherExportBundle(
+                strong_visual=MockStrongVisualTeacher(feature_dim=3),
+                weak_audio=_FailingWeakTeacher(),
+            ),
+        )
+
+    record_dir = tmp_path / "cache" / "train" / "clip_0"
+    assert (record_dir / "strong_teacher_features.npy").is_file()
+    assert not (tmp_path / "cache" / "receipts" / "train" / "clip_0.json").exists()
+
+    summary = export_manifest_file(
+        **common,
+        teachers=TeacherExportBundle(
+            strong_visual=MockStrongVisualTeacher(feature_dim=3),
+            weak_audio=MockWeakAudioTeacher(feature_dim=4),
+        ),
+        resume=True,
+    )
+
+    assert summary["records_exported"] == 1
+    assert (tmp_path / "cache" / "receipts" / "train" / "clip_0.json").is_file()
+    assert not (tmp_path / "cache" / "errors" / "train" / "clip_0.json").exists()
+    assert load_records(tmp_path / "export_errors.jsonl") == []
 
 
 def test_sanitized_record_id_collision_fails_before_overwrite(tmp_path: Path) -> None:

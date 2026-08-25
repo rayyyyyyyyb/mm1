@@ -39,6 +39,8 @@ data:
   strong_teacher_logit_dim: 1
   text_dim: 1024
   train_augment: true
+  visual_preprocessing:
+    jpgs_per_segment: 1
 
 student:
   max_position_segments: 16
@@ -87,15 +89,28 @@ teacher_export:
     num_frames: 8
     frame_sampling: "repeat_segment_keyframe"
     frame_expansion: "repeat_last_to_num_frames"
+    raw_video_diagnostic:
+      enabled: false
+      executed: false
     align_dim: 512
   beats:
     repo_root: "external/teachers/unilm/beats"
     checkpoint_path: "weights/beats/BEATs_iter3_plus_AS2M.pt"
+    sample_rate: 16000
+    task_segments: 10
+    segment_seconds: 1
+    clip_duration_seconds: 10
+    short_waveform_policy: "zero_pad_to_task_duration"
+    long_waveform_policy: "truncate_to_task_duration"
   clap:
     repo_root: "external/teachers/microsoft-clap"
     checkpoint_path: "weights/clap/CLAP_weights_2023.pth"
     version: "2023"
     normalize: false
+
+evaluation:
+  test_views: 1
+  view_aggregation: "none"
 
 logging:
   log_dir: "outputs/ov_orthkd_weak_feat_only"

@@ -11,20 +11,20 @@ each ten-second video. Labels, temporal teacher features, student logits, and
 F1/AP/AUROC inputs remain on this T=10 timeline. The implementation does not
 interpolate, repeat, resample, or relabel a T=10 target into T=16.
 
-The value 16 has two distinct non-task meanings in the audited code:
+The final runtime quantities are `T_task=10`, `T_max=16`, `K_student=1`,
+`K_teacher=8`, and `V_test=1`. They respectively denote task segments,
+student positional capacity, student frames per segment, repeated visual-
+teacher frames per segment, and test views. The only active meaning of 16 is
+`student.max_position_segments=16`; it is not a frame rate or observed time
+axis. The canonical run explicitly records the raw-video diagnostic as both
+disabled and unexecuted.
 
-- `student.max_position_segments=16` is positional-embedding capacity; the
-  student slices this table to the actual sequence length, which is T=10 for
-  the official task.
-- `temporal_sampling_fps=16` belongs only to the explicitly disabled raw-video
-  diagnostic decoder and is not used by the canonical JPG/WAV data path.
-
-The pinned InternVideo2 wrapper consumes `num_frames=8` per teacher call. In
-the current canonical reconstruction, each of the ten official one-second
-keyframes is deterministically repeated to satisfy that eight-frame wrapper
-input. This describes the released reconstruction path; it does not establish
-that the original experiment decoded eight or sixteen distinct frames per
-second.
+The official release contains exactly ten JPG observations per video, one per
+task segment. The student therefore performs a fixed read; training applies
+only horizontal flip and ColorJitter to that image. The pinned InternVideo2
+wrapper consumes `num_frames=8` per teacher call by repeating the same official
+keyframe eight times. It does not decode eight or sixteen distinct frames.
+Validation and test use one fixed forward without crop/clip/view averaging.
 
 ## Exact replacement language
 
@@ -78,9 +78,8 @@ For efficiency results, use:
   segments.”
 - Replace “per-16-seg clip” with “per ten-segment OV-AVEBench clip” when the
   text refers to task evaluation.
-- Remove an unqualified “16 fps” from task-protocol descriptions. If retained
-  for a decoder diagnostic, label it as a raw-video diagnostic sampling grid
-  that is disabled in the canonical reconstruction.
+- Remove “16 fps” from the reproduction runtime description. No raw-video
+  diagnostic or 16-fps decode is executed in the canonical reconstruction.
 - Keep `num_segments`, `num_frames`, `clip_len`, `fps`, and `sampling_rate` as
   separate terms; never use one as a synonym for another.
 
@@ -89,5 +88,5 @@ For efficiency results, use:
 The clarified wording does not authorize changing the original training
 logic, metric formulas, or table values. Results may remain unchanged once the
 real preflight receipt confirms student labels and logits are both `[B,10]`.
-That real student forward has not yet been executed because the audited full
-teacher cache is still pending; it must not be claimed from configuration alone.
+That real student forward must be established by the single gated preflight;
+it must not be claimed from configuration alone.

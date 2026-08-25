@@ -1,7 +1,6 @@
 schema_version: 1
-status: smoke_passed_export_pending
-blocked_by:
-  - "The 24,800-record teacher cache, full artifact audit, and cache root SHA256 are not yet complete"
+status: ready
+teacher_identity_sha256: "c15bc96f00d6e391083bd8d00a31443a356870592a3afa809df528bf973ed90c"
 teachers:
   internvideo2:
     status: resolved
@@ -21,6 +20,7 @@ teachers:
       frame_expansion: repeat_last_to_num_frames
       temporal_resampling: false
       raw_video_diagnostic_enabled: false
+      raw_video_diagnostic_executed: false
     output_dim: 512
     determinism_tolerance: 0.0
     strict_load:
@@ -72,7 +72,11 @@ teachers:
       source: raw_waveform
       sample_rate: 16000
       channels: mono
+      task_segments: 10
       segment_seconds: 1
+      clip_duration_seconds: 10
+      short_waveform_policy: zero_pad_to_task_duration
+      long_waveform_policy: truncate_to_task_duration
     output_dim: 768
     determinism_tolerance: 0.0
     strict_load:
@@ -133,7 +137,7 @@ real_smoke:
   records: 1
   repeat: 2
   report: "reports/teachers/teacher_identity.json"
-  report_sha256: "80211d53295e5c70dcf7baefd6d9c0bc796b44d53bc255152f363fc9c070f9e1"
+  report_sha256: "2894263aaed63f26ec2c02db825cc94815e328a0bd17bda4fbeaec8b35dfd74f"
   repeatability: "reports/teachers/smoke_repeatability.json"
   repeatability_sha256: "e44026094c33c5b1b7e1095b7a239b394659cb0c2d8339e97044e706e2e60818"
   input_mode: official_segment_keyframes
@@ -147,13 +151,10 @@ real_smoke:
   bitwise_repeatable: true
   max_abs_diff: 0.0
 full_export:
-  status: pending
-  records: 0
-  errors: null
-  cache_root_sha256: null
-  train_manifest_sha256: null
-  val_manifest_sha256: null
-  test_manifest_sha256: null
-blockers:
-  - "Run the resumable 24,800-record full export from the passed source manifests."
-  - "Run the full exported-artifact audit and lock the cache root SHA256 before the one-step preflight."
+  status: passed
+  records: 24800
+  errors: 0
+  cache_root_sha256: "6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244"
+  train_manifest_sha256: "cb30035c533d56d44469d063ba11720ae3660266535ede670db6b6f53bdc7666"
+  val_manifest_sha256: "df2e8979c3fa05dcadaeb5ff7ef9726263fae7950b7478d30cb709aefbc97160"
+  test_manifest_sha256: "ae8bd54c74d7e1c522c7d41cce9c2b8b2e96556ba80480ab6c1382d481ab2ea3"

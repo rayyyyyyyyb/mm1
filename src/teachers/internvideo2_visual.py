@@ -31,16 +31,17 @@ def deterministic_video_timestamps(
     sampling_fps: int,
     frames_per_interval: int,
 ) -> np.ndarray:
+    """Build timestamps for the legacy noncanonical raw-video diagnostic only."""
     if duration_seconds <= 0 or intervals <= 0 or sampling_fps <= 0 or frames_per_interval <= 0:
         raise ValueError("video timestamp geometry must be positive")
     if duration_seconds != intervals:
-        raise ValueError("conference teacher requires one-second intervals")
+        raise ValueError("raw-video diagnostic requires one-second intervals")
     candidates_per_interval = sampling_fps
     if frames_per_interval > candidates_per_interval:
         raise ValueError("cannot select more frames than the 16-fps sampling grid provides")
 
-    # This is the fixed upstream InternVideo2 `sample='middle'` rule applied
-    # independently to each one-second, 16-frame interval.
+    # Historical diagnostic only; the canonical keyframe path never calls this.
+    # This applies the upstream `sample='middle'` rule to an explicit grid.
     boundaries = np.linspace(
         start=0,
         stop=candidates_per_interval,
@@ -302,8 +303,8 @@ class InternVideo2ClipB14Teacher:
             or self.sampling_fps != 16
         ):
             raise ValueError(
-                "raw multiframe diagnostic mode must be explicitly enabled with 10 seconds, "
-                "ten intervals and a 16-fps diagnostic timestamp grid"
+                "legacy noncanonical raw multiframe diagnostic mode must be explicitly "
+                "enabled with 10 seconds, ten intervals and its explicit timestamp grid"
             )
         self._decode_video = decoder or decode_video_with_decord
         self.feature_dim = int(align_dim)
@@ -440,8 +441,9 @@ class InternVideo2ClipB14Teacher:
         return [items[min(index, len(items) - 1)] for index in range(self.num_frames)]
 
     def _load_segment_tensor(self, frame_group: Sequence[str]) -> torch.Tensor:
-        frames: list[torch.Tensor] = []
-        for path_string in self._select_frame_paths(frame_group):
+        selected_paths = self._select_frame_paths(frame_group)
+
+        def load_and_transform(path_string: str) -> torch.Tensor:
             path = Path(path_string).expanduser().resolve()
             if not path.is_file():
                 raise FileNotFoundError(
@@ -450,8 +452,19 @@ class InternVideo2ClipB14Teacher:
             with Image.open(path) as image:
                 array = np.asarray(image.convert("RGB"), dtype=np.uint8).copy()
             tensor = torch.from_numpy(array).permute(2, 0, 1)
-            frames.append(self.model.transform(tensor))
-        return torch.stack(frames, dim=0)
+            return self.model.transform(tensor)
+
+        if self.input_mode == "official_segment_keyframes":
+            # The approved K_teacher=8 path repeats one deterministic official
+            # keyframe tensor; decoding or transforming it eight times is both
+            # redundant and less explicit about the identity of the inputs.
+            keyframe = load_and_transform(selected_paths[0])
+            return keyframe.unsqueeze(0).repeat(self.num_frames, 1, 1, 1)
+
+        return torch.stack(
+            [load_and_transform(path_string) for path_string in selected_paths],
+            dim=0,
+        )
 
     def export_video(self, video_path: str | Path, query: str) -> tuple[np.ndarray, np.ndarray]:
         if self.input_mode != "raw_multiframe_diagnostic":

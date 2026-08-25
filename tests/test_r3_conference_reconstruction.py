@@ -82,6 +82,9 @@ def test_taskbook_audio_and_visual_teacher_preprocessing_are_exact() -> None:
         "save_as_jpeg": False,
         "second_imagenet_normalization": False,
         "beats_source": "raw_16khz_waveform",
+        "beats_task_window_seconds": 10,
+        "beats_short_waveform_policy": "zero_pad_to_task_duration",
+        "beats_long_waveform_policy": "truncate_to_task_duration",
     }
     assert internvideo["source"] == "official_segment_keyframes"
     assert internvideo["input_mode"] == "official_segment_keyframes"
@@ -92,14 +95,11 @@ def test_taskbook_audio_and_visual_teacher_preprocessing_are_exact() -> None:
     assert internvideo["missing_keyframe_policy"] == "block"
     assert internvideo["raw_video_diagnostic"] == {
         "enabled": False,
-        "source": "official_raw_video",
-        "video_duration_seconds": 10,
-        "intervals": 10,
-        "decode": "deterministic_timestamps",
-        "temporal_sampling_fps": 16,
-        "frame_sampling": "uniform_within_each_one_second_interval",
-        "short_clip_policy": "error",
-        "missing_video_policy": "block_when_enabled",
+        "executed": False,
+        "note": (
+            "Not part of the approved canonical runtime; no raw-video decode or "
+            "16-fps path is executed."
+        ),
     }
     assert internvideo["repo_root"] == (
         "external/teachers/InternVideo/InternVideo2/multi_modality"
@@ -124,6 +124,12 @@ def test_taskbook_audio_and_visual_teacher_preprocessing_are_exact() -> None:
         "repo_root": "external/teachers/unilm/beats",
         "checkpoint_path": "weights/beats/BEATs_iter3_plus_AS2M.pt",
         "checkpoint_sha256": "d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34",
+        "sample_rate": 16000,
+        "task_segments": 10,
+        "segment_seconds": 1,
+        "clip_duration_seconds": 10,
+        "short_waveform_policy": "zero_pad_to_task_duration",
+        "long_waveform_policy": "truncate_to_task_duration",
     }
     assert config["teacher_export"]["clap"] == {
         "repo_root": "external/teachers/microsoft-clap",
@@ -178,16 +184,18 @@ def test_taskbook_training_loss_and_evaluator_values_are_exact() -> None:
         "visual_l2_reduction": "mean_feature_then_masked_mean_segments",
     }
     assert config["evaluation"] == {
+        "test_views": 1,
+        "view_aggregation": "none",
         "paper_f1_at_0_5_mapping": "ovavel_segment_f1_at_0_5",
         "validation_calibrated_f1_mapping": "ovavel_segment_f1_at_validation_selected_threshold",
     }
 
 
-def test_taskbook_source_manifests_and_download_lock_are_bound() -> None:
+def test_taskbook_exported_manifests_and_download_lock_are_bound() -> None:
     config = _config()
     readiness = config["reproduction"]["readiness"]
 
     assert readiness["download_lock"] == "configs/locks/mm26_download_lock.yaml"
-    assert config["data"]["train_manifest"] == "data/ov_ave/source/train.jsonl"
-    assert config["data"]["val_manifest"] == "data/ov_ave/source/val.jsonl"
-    assert config["data"]["test_manifest"] == "data/ov_ave/source/test.jsonl"
+    assert config["data"]["train_manifest"] == "data/ov_ave/exported/train.jsonl"
+    assert config["data"]["val_manifest"] == "data/ov_ave/exported/val.jsonl"
+    assert config["data"]["test_manifest"] == "data/ov_ave/exported/test.jsonl"

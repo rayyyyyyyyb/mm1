@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -12,8 +13,15 @@ from typing import Any, Iterable, Mapping
 import numpy as np
 import yaml
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.data.split_types import split_type_from_record
+from src.teachers.common import safe_record_id
+from src.teachers.pipeline import _validate_receipt
 from src.utils.atomic_artifacts import canonical_tree_hash
+from src.utils.reproduction_locks import teacher_identity_sha256
 
 
 CANONICAL_COUNTS = {"train": 13182, "val": 5798, "test": 5820}
@@ -193,6 +201,37 @@ def _record_resampling_evidence(record: Mapping[str, Any]) -> bool | None:
     return fallback if isinstance(fallback, bool) else None
 
 
+def _validate_export_receipt_binding(
+    receipt_path: Path,
+    *,
+    record_id: str,
+    split: str,
+    teacher_identity_sha256: str,
+    source_manifest_sha256: str,
+) -> str | None:
+    if not receipt_path.is_file():
+        return "missing per-record receipt"
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return f"invalid per-record receipt: {exc}"
+    if not isinstance(receipt, Mapping):
+        return "per-record receipt must be a mapping"
+    if receipt.get("schema_version") != 3:
+        return "receipt schema mismatch"
+    if receipt.get("record_id") != record_id:
+        return "record id mismatch"
+    if receipt.get("split") != split:
+        return "split mismatch"
+    if receipt.get("teacher_identity_sha256") != teacher_identity_sha256:
+        return "teacher identity hash mismatch"
+    if receipt.get("source_manifest_sha256") != source_manifest_sha256:
+        return "source manifest hash mismatch"
+    if not isinstance(receipt.get("artifacts"), Mapping):
+        return "missing artifact metadata"
+    return None
+
+
 def audit_reproduction(
     *,
     train_manifest: str | Path,
@@ -257,6 +296,36 @@ def audit_reproduction(
     split_records = {split: _load_manifest(path) for split, path in manifest_paths.items()}
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
+    teacher_identity_digest: str | None = None
+    artifact_root: Path | None = None
+    source_manifest_hashes: dict[str, str] = {}
+    if stage == "exported" and artifact_scan == "full" and teacher_lock_document:
+        try:
+            teacher_identity_digest = teacher_identity_sha256(teacher_lock_document)
+        except ValueError as exc:
+            errors.append(_issue("teacher_identity_binding", "all", None, str(exc)))
+        artifact_dir = config_document.get("teacher_export", {}).get("artifact_dir")
+        if artifact_dir:
+            artifact_root = _resolve(root, artifact_dir)
+        for split, key in (
+            ("train", "train_manifest"),
+            ("val", "val_manifest"),
+            ("test", "test_manifest"),
+        ):
+            source_value = data_cfg.get(key)
+            if source_value:
+                source_path = _resolve(root, source_value)
+                if source_path.is_file():
+                    source_manifest_hashes[split] = _sha256(source_path)
+                else:
+                    errors.append(
+                        _issue(
+                            "source_manifest_binding",
+                            split,
+                            None,
+                            f"Configured source manifest is missing: {source_path}",
+                        )
+                    )
     segment_histogram: Counter[int] = Counter()
     label_histogram: Counter[int] = Counter()
     frame_count_histogram: Counter[int] = Counter()
@@ -275,6 +344,7 @@ def audit_reproduction(
     ids_by_split: dict[str, set[str]] = {}
     duplicate_ids: dict[str, list[str]] = {}
     scanned_artifacts = 0
+    receipt_bindings_checked = 0
 
     for split, records in split_records.items():
         seen_ids: set[str] = set()
@@ -418,6 +488,54 @@ def audit_reproduction(
 
             if stage != "exported":
                 continue
+            if (
+                artifact_scan == "full"
+                and artifact_root is not None
+                and teacher_identity_digest is not None
+                and split in source_manifest_hashes
+            ):
+                receipt_path = (
+                    artifact_root
+                    / "receipts"
+                    / split
+                    / f"{safe_record_id(record_id)}.json"
+                )
+                binding_error = _validate_export_receipt_binding(
+                    receipt_path,
+                    record_id=record_id,
+                    split=split,
+                    teacher_identity_sha256=teacher_identity_digest,
+                    source_manifest_sha256=source_manifest_hashes[split],
+                )
+                if binding_error is not None:
+                    errors.append(
+                        _issue(
+                            "teacher_identity_binding",
+                            split,
+                            record_id,
+                            binding_error,
+                        )
+                    )
+                else:
+                    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+                    valid, reason = _validate_receipt(
+                        receipt,
+                        artifact_root=artifact_root,
+                        source_manifest_sha256=source_manifest_hashes[split],
+                        teacher_identity_sha256=teacher_identity_digest,
+                        split=split,
+                    )
+                    if not valid:
+                        errors.append(
+                            _issue(
+                                "teacher_identity_binding",
+                                split,
+                                record_id,
+                                reason,
+                            )
+                        )
+                    else:
+                        receipt_bindings_checked += 1
             should_scan = artifact_scan == "full" or (
                 artifact_scan == "sample" and scanned_artifacts < max(0, int(sample_count))
             )
@@ -580,6 +698,8 @@ def audit_reproduction(
         "resampling_evidence": resampling_counts,
         "preprocessing_lock_status": preprocessing_lock_document.get("status"),
         "teacher_lock_status": teacher_lock_document.get("status"),
+        "teacher_identity_sha256": teacher_identity_digest,
+        "receipt_bindings_checked": receipt_bindings_checked,
         "teacher_checkpoint_sha256": teacher_checkpoint_sha256,
         "cache_root_sha256": cache_root_sha256,
         "cache_tree": cache_tree,

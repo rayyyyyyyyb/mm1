@@ -1,7 +1,9 @@
 * text=auto
+.gitattributes text eol=lf
 *.sh text eol=lf
 reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md text eol=lf
 reports/archival/R4_USER_APPROVED_TEMPORAL_PROTOCOL.md text eol=lf
+reports/archival/R5_USER_APPROVED_FINAL_RUNTIME_PROTOCOL.md text eol=lf
 reports/R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md text eol=lf
 docs/MM26_TEMPORAL_PROTOCOL_TEXT_CORRECTIONS.md text eol=lf
 reports/data/official_preprocessed_download_receipt.json text eol=lf

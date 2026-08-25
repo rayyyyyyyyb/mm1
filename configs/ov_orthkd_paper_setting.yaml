@@ -39,6 +39,8 @@ data:
   strong_teacher_logit_dim: 1
   text_dim: 1024
   train_augment: true
+  visual_preprocessing:
+    jpgs_per_segment: 1
 
 student:
   max_position_segments: 16
@@ -69,6 +71,46 @@ training:
   weight_decay: 0.0001
   grad_clip: 1.0
   mixed_precision: true
+
+teacher_export:
+  artifact_dir: "data/teacher_cache/ov_ave"
+  device: "cuda"
+  strong_visual_backend: "internvideo2_clip_b14"
+  weak_audio_backend: "beats"
+  text_backend: "clap"
+  internvideo2:
+    repo_root: "external/teachers/InternVideo/InternVideo2/multi_modality"
+    vision_ckpt_path: "weights/internvideo2/B14_dist_1B_stage2.pth"
+    text_ckpt_path: "weights/internvideo2/mobileclip_blt.pt"
+    extra_ckpt_path: "weights/internvideo2/InternVideo2_CLIP_B14.pth"
+    source: "official_segment_keyframes"
+    input_mode: "official_segment_keyframes"
+    task_segments: 10
+    num_frames: 8
+    frame_sampling: "repeat_segment_keyframe"
+    frame_expansion: "repeat_last_to_num_frames"
+    raw_video_diagnostic:
+      enabled: false
+      executed: false
+    align_dim: 512
+  beats:
+    repo_root: "external/teachers/unilm/beats"
+    checkpoint_path: "weights/beats/BEATs_iter3_plus_AS2M.pt"
+    sample_rate: 16000
+    task_segments: 10
+    segment_seconds: 1
+    clip_duration_seconds: 10
+    short_waveform_policy: "zero_pad_to_task_duration"
+    long_waveform_policy: "truncate_to_task_duration"
+  clap:
+    repo_root: "external/teachers/microsoft-clap"
+    checkpoint_path: "weights/clap/CLAP_weights_2023.pth"
+    version: "2023"
+    normalize: false
+
+evaluation:
+  test_views: 1
+  view_aggregation: "none"
 
 logging:
   log_dir: "outputs/ov_orthkd_paper_setting"

@@ -1,5 +1,7 @@
 # OV-AVEBench official raw-video correction request
 
+> Optional diagnostic correspondence only. The final user-approved canonical reconstruction uses the official ten JPG keyframes plus WAV and does not execute raw-video decoding. No author response is required before canonical reproduction; do not treat the draft message below as a readiness blocker.
+
 Recommended contact route: open an issue in the official `jasongief/OV-AVEL` GitHub repository, or send the same text through an author contact channel already known to the user. This repository does not send the message automatically.
 
 ## Ready-to-send message

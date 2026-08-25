@@ -1,6 +1,5 @@
 schema_version: 2
-status: source_ready_teacher_export_pending
-blocked_by: "Canonical source data passed; the 24,800-record teacher export, full artifact audit, and one-step preflight remain pending"
+status: ready
 upstream:
   repository: "https://github.com/jasongief/OV-AVEL.git"
   commit: "b5fe1d685d0c6d0d6fd80312b5ccde79f9b73ea6"
@@ -102,11 +101,43 @@ source_audit:
   temporal_segments: 10
   temporal_resampling_performed: false
   partial_outputs_published: true
-blockers:
-  - "Run the resumable 24,800-record teacher export from the audited official keyframe/WAV manifests."
-  - "Run a full exported-artifact audit and record the cache root SHA256."
-  - "Only after the full cache audit passes, run the single permitted real-data one-step preflight."
+audio_task_window_audit:
+  status: passed
+  path: "reports/data/official_audio_task_window_audit.json"
+  sha256: "b8d779aa5e748d10ffdeef8663901306f0c25ceb74cb17adedfc2d6599e306e7"
+  record_count: 24800
+  split_counts: {train: 13182, val: 5798, test: 5820}
+  sample_rate: 16000
+  task_segments: 10
+  task_duration_seconds: 10
+  waveform_fit_counts:
+    zero_pad_to_task_duration: 954
+    unchanged: 23844
+    truncate_to_task_duration: 2
+  zero_padding_samples: 11249600
+  truncated_samples: 7040
+  shortest_waveform: {split: val, record_id: "JsxLvhJ4P6w", duration_seconds: 2.0}
+  longest_waveform: {split: val, record_id: "2_9UtSV9F9I", duration_seconds: 10.33}
+  short_waveform_policy: zero_pad_to_task_duration
+  long_waveform_policy: truncate_to_task_duration
+  temporal_resampling_performed: false
+exported_artifacts:
+  status: passed
+  audit: "reports/mm26_exported_artifact_audit.json"
+  audit_sha256: "f284c166428cb8957a354d3209ccfe8a4f2f34cd7c712ea397cc9c1b37d1d9fc"
+  record_count: 24800
+  split_counts: {train: 13182, val: 5798, test: 5820}
+  receipt_bindings_checked: 24800
+  artifacts_scanned: 24800
+  errors: 0
+  warnings: 0
+  cache_files: 99334
+  cache_bytes: 1310102478
+  cache_root_sha256: "6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244"
+  train_manifest_sha256: "cb30035c533d56d44469d063ba11720ae3660266535ede670db6b6f53bdc7666"
+  val_manifest_sha256: "df2e8979c3fa05dcadaeb5ff7ef9726263fae7950b7478d30cb709aefbc97160"
+  test_manifest_sha256: "ae8bd54c74d7e1c522c7d41cce9c2b8b2e96556ba80480ab6c1382d481ab2ea3"
 diagnostics:
   - "The optional raw archive retains 13 zero-byte MP4s and 1,019 non-empty streams shorter than ten seconds."
   - "These facts remain recorded for raw-video diagnostics but do not block the canonical official JPG/WAV path under the user-approved T=10 protocol."
-final_status: BLOCKED_BEFORE_CONFERENCE_REPRO
+final_status: READY_FOR_PREFLIGHT

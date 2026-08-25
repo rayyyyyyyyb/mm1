@@ -53,7 +53,10 @@ from scripts.train_ov_orthkd import (
 )
 from src.data import create_ov_avel_data_loaders
 from src.utils.reproduction_fingerprint import build_reproduction_fingerprint
-from src.utils.temporal_protocol import build_temporal_shape_receipt
+from src.utils.temporal_protocol import (
+    build_temporal_shape_receipt,
+    validate_final_runtime_protocol,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -285,12 +288,12 @@ def _claim_real_preflight_invocation(
     config: Dict[str, Any], *, optimizer_steps: int
 ) -> Path:
     if int(optimizer_steps) != 1:
-        raise ValueError("R3 real preflight requires exactly 1 optimizer step")
+        raise ValueError("The real preflight requires exactly 1 optimizer step")
     report_path = _real_preflight_report_path(config)
     marker_path = report_path.with_name(report_path.stem + ".invocation.json")
     if report_path.exists() or marker_path.exists():
         raise RuntimeError(
-            "The single R3 real preflight invocation has already been claimed; "
+            "The single real preflight invocation has already been claimed; "
             f"report={report_path.exists()} marker={marker_path.exists()}"
         )
     marker_path.parent.mkdir(parents=True, exist_ok=True)
@@ -307,7 +310,7 @@ def _claim_real_preflight_invocation(
             json.dump(payload, handle, indent=2, ensure_ascii=False)
             handle.write("\n")
     except FileExistsError as exc:
-        raise RuntimeError("The single R3 real preflight invocation has already been claimed") from exc
+        raise RuntimeError("The single real preflight invocation has already been claimed") from exc
     return marker_path
 
 
@@ -344,7 +347,7 @@ def run_preflight(
     optimizer_steps: int = 1,
 ) -> Dict[str, Any]:
     if int(optimizer_steps) != 1:
-        raise ValueError("R2 bounded preflight requires exactly 1 optimizer step")
+        raise ValueError("The bounded preflight requires exactly 1 optimizer step")
     reproduction = config.get("reproduction", {})
     mock_only = bool(reproduction.get("mock_only", False))
     claim_level = str(reproduction.get("claim_level", "")).lower()
@@ -362,6 +365,11 @@ def run_preflight(
         preflight=True,
         output_dir=output_dir,
         require_canonical_readiness=real_data,
+    )
+    runtime_protocol = (
+        validate_final_runtime_protocol(config)
+        if claim_level in {"archival_exact", "paper_specified_reconstruction"}
+        else None
     )
     invocation_marker = (
         _claim_real_preflight_invocation(config, optimizer_steps=optimizer_steps)
@@ -503,6 +511,7 @@ def run_preflight(
         "formal_metrics_emitted": False,
         "invocation_count_this_stage": 1 if real_data else 0,
         "optimizer_steps": int(optimizer_steps),
+        "runtime_protocol": runtime_protocol,
         "invocation_marker": str(invocation_marker) if invocation_marker else None,
         "batch_count": 1,
         "forward_completed": True,
@@ -518,6 +527,7 @@ def run_preflight(
         "manifest_summary": summaries,
         "dataset_probe": dataset_probe,
         "train_probe": train_probe,
+        "temporal_shape_receipt": train_probe["temporal_shape_receipt"],
         "expected_temporal_length_from_data_lock": expected_temporal_length,
         "val_metrics": val_metrics,
         "test_metrics": test_metrics,

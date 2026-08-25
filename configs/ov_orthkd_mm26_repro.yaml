@@ -76,6 +76,9 @@ data:
     save_as_jpeg: false
     second_imagenet_normalization: false
     beats_source: "raw_16khz_waveform"
+    beats_task_window_seconds: 10
+    beats_short_waveform_policy: "zero_pad_to_task_duration"
+    beats_long_waveform_policy: "truncate_to_task_duration"
   visual_preprocessing:
     train:
       resize: [224, 224]
@@ -92,9 +95,9 @@ data:
       to_tensor: true
       normalization: "imagenet_mean_std"
     jpgs_per_segment: 1
-  train_manifest: "data/ov_ave/source/train.jsonl"
-  val_manifest: "data/ov_ave/source/val.jsonl"
-  test_manifest: "data/ov_ave/source/test.jsonl"
+  train_manifest: "data/ov_ave/exported/train.jsonl"
+  val_manifest: "data/ov_ave/exported/val.jsonl"
+  test_manifest: "data/ov_ave/exported/test.jsonl"
   image_size: 224
   batch_size: 4
   num_workers: 4
@@ -189,19 +192,19 @@ teacher_export:
     missing_keyframe_policy: "block"
     raw_video_diagnostic:
       enabled: false
-      source: "official_raw_video"
-      video_duration_seconds: 10
-      intervals: 10
-      decode: "deterministic_timestamps"
-      temporal_sampling_fps: 16
-      frame_sampling: "uniform_within_each_one_second_interval"
-      short_clip_policy: "error"
-      missing_video_policy: "block_when_enabled"
+      executed: false
+      note: "Not part of the approved canonical runtime; no raw-video decode or 16-fps path is executed."
     align_dim: 512
   beats:
     repo_root: "external/teachers/unilm/beats"
     checkpoint_path: "weights/beats/BEATs_iter3_plus_AS2M.pt"
     checkpoint_sha256: "d43cbfad4d7b56381c061d7a24774f908d4d94c72961f6eb1d9090ff18cd8d34"
+    sample_rate: 16000
+    task_segments: 10
+    segment_seconds: 1
+    clip_duration_seconds: 10
+    short_waveform_policy: "zero_pad_to_task_duration"
+    long_waveform_policy: "truncate_to_task_duration"
   clap:
     repo_root: "external/teachers/microsoft-clap"
     checkpoint_path: "weights/clap/CLAP_weights_2023.pth"
@@ -219,5 +222,7 @@ logging:
   save_environment: true
 
 evaluation:
+  test_views: 1
+  view_aggregation: "none"
   paper_f1_at_0_5_mapping: "ovavel_segment_f1_at_0_5"
   validation_calibrated_f1_mapping: "ovavel_segment_f1_at_validation_selected_threshold"

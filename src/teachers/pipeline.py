@@ -106,13 +106,15 @@ def _validate_receipt(
     *,
     artifact_root: Path,
     source_manifest_sha256: str,
-    teacher_lock_sha256: str,
+    teacher_identity_sha256: str,
     split: str,
 ) -> tuple[bool, str]:
     if receipt.get("split") != split:
         return False, "split mismatch"
-    if receipt.get("teacher_lock_sha256") != teacher_lock_sha256:
-        return False, "teacher lock hash mismatch"
+    if receipt.get("schema_version") != 3:
+        return False, "receipt schema mismatch"
+    if receipt.get("teacher_identity_sha256") != teacher_identity_sha256:
+        return False, "teacher identity hash mismatch"
     if receipt.get("source_manifest_sha256") != source_manifest_sha256:
         return False, "source manifest hash mismatch"
     artifacts = receipt.get("artifacts")
@@ -145,6 +147,24 @@ def _record_receipt_path(artifact_root: Path, split: str, record_name: str) -> P
 
 def _error_receipt_path(artifact_root: Path, split: str, record_name: str) -> Path:
     return artifact_root / "errors" / split / f"{safe_record_id(record_name)}.json"
+
+
+def _remove_orphan_record_artifacts(
+    *,
+    artifact_root: Path,
+    split: str,
+    record_name: str,
+    teachers: TeacherExportBundle,
+) -> None:
+    """Discard unreceipted per-record outputs before a resumable recomputation."""
+
+    paths: list[Path] = []
+    if teachers.strong_visual is not None:
+        paths.extend(strong_teacher_artifact_paths(artifact_root, record_name, split=split))
+    if teachers.weak_audio is not None:
+        paths.append(weak_teacher_artifact_path(artifact_root, record_name, split=split))
+    for path in paths:
+        path.resolve().unlink(missing_ok=True)
 
 
 def _receipt_map(receipt_dir: Path) -> Dict[str, Dict[str, Any]]:
@@ -180,7 +200,7 @@ def _shared_text_artifact(
     artifact_root: Path,
     query: str,
     teacher: Any,
-    teacher_lock_sha256: str,
+    teacher_identity_sha256: str,
     overwrite: bool,
 ) -> tuple[Path, Dict[str, Any], bool]:
     query_hash = query_sha256(query)
@@ -191,7 +211,7 @@ def _shared_text_artifact(
         if (
             binding.get("query") != query
             or binding.get("query_sha256") != query_hash
-            or binding.get("teacher_lock_sha256") != teacher_lock_sha256
+            or binding.get("teacher_identity_sha256") != teacher_identity_sha256
         ):
             raise RuntimeError(f"stale shared text artifact binding: {artifact_path}")
         actual = artifact_metadata(artifact_path, relative_to=artifact_root)
@@ -207,10 +227,10 @@ def _shared_text_artifact(
     _atomic_write_json(
         binding_path,
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "query": query,
             "query_sha256": query_hash,
-            "teacher_lock_sha256": teacher_lock_sha256,
+            "teacher_identity_sha256": teacher_identity_sha256,
             "artifact": metadata,
         },
     )
@@ -228,7 +248,7 @@ def export_manifest_records(
     receipt_jsonl: str | Path | None = None,
     error_jsonl: str | Path | None = None,
     source_manifest_sha256: str = "UNSPECIFIED",
-    teacher_lock_sha256: str = "UNSPECIFIED",
+    teacher_identity_sha256: str = "UNSPECIFIED",
     split: str = "unknown",
     resume: bool = False,
     progress_path: str | Path | None = None,
@@ -289,12 +309,15 @@ def export_manifest_records(
                     existing_receipt,
                     artifact_root=artifact_root,
                     source_manifest_sha256=source_manifest_sha256,
-                    teacher_lock_sha256=teacher_lock_sha256,
+                    teacher_identity_sha256=teacher_identity_sha256,
                     split=canonical_split,
                 )
                 if not valid:
                     raise RuntimeError(f"stale artifact receipt for {record_name}: {reason}")
                 _apply_receipt_paths(record, existing_receipt, artifact_root)
+                _error_receipt_path(
+                    artifact_root, canonical_split, record_name
+                ).unlink(missing_ok=True)
                 updated_records.append(record)
                 published_receipts.append(existing_receipt)
                 records_resumed += 1
@@ -302,6 +325,13 @@ def export_manifest_records(
                 continue
             if existing_receipt is not None and not overwrite:
                 raise RuntimeError(f"artifact receipt exists but resume is disabled: {record_name}")
+            if resume and existing_receipt is None:
+                _remove_orphan_record_artifacts(
+                    artifact_root=artifact_root,
+                    split=canonical_split,
+                    record_name=record_name,
+                    teachers=teachers,
+                )
 
             expected_len = segment_count(record)
             query = resolve_query(record) if (teachers.text_teacher is not None or teachers.strong_visual is not None) else None
@@ -315,7 +345,7 @@ def export_manifest_records(
                         artifact_root=artifact_root,
                         query=query,
                         teacher=teachers.text_teacher,
-                        teacher_lock_sha256=teacher_lock_sha256,
+                        teacher_identity_sha256=teacher_identity_sha256,
                         overwrite=overwrite,
                     )
                     cached = (artifact_path, metadata)
@@ -368,16 +398,19 @@ def export_manifest_records(
                 artifacts["weak_teacher_features"] = metadata
 
             receipt = {
-                "schema_version": 2,
+                "schema_version": 3,
                 "record_id": record_name,
                 "split": canonical_split,
                 "query": query,
                 "query_sha256": query_sha256(query) if query is not None else None,
                 "source_manifest_sha256": source_manifest_sha256,
-                "teacher_lock_sha256": teacher_lock_sha256,
+                "teacher_identity_sha256": teacher_identity_sha256,
                 "artifacts": artifacts,
             }
             _atomic_write_json(_record_receipt_path(artifact_root, canonical_split, record_name), receipt)
+            _error_receipt_path(
+                artifact_root, canonical_split, record_name
+            ).unlink(missing_ok=True)
             updated_records.append(record)
             published_receipts.append(receipt)
             records_written += 1
@@ -408,6 +441,8 @@ def export_manifest_records(
     os.replace(partial_path, output_path)
     if aggregate_receipt_path is not None:
         atomic_write_jsonl(aggregate_receipt_path, published_receipts)
+    if aggregate_error_path is not None:
+        atomic_write_jsonl(aggregate_error_path, [])
     write_progress(status="completed", current_record_id=None, current_index=None)
     tree_hash = canonical_tree_hash(artifact_root)
     return {
@@ -418,7 +453,7 @@ def export_manifest_records(
         "output_manifest": str(output_path.resolve()),
         "artifact_dir": str(artifact_root),
         "source_manifest_sha256": source_manifest_sha256,
-        "teacher_lock_sha256": teacher_lock_sha256,
+        "teacher_identity_sha256": teacher_identity_sha256,
         "receipt_dir": str(receipt_dir.resolve()),
         "receipt_jsonl": str(aggregate_receipt_path.resolve()) if aggregate_receipt_path is not None else None,
         "cache_root_sha256": tree_hash["sha256"],
@@ -442,7 +477,7 @@ def export_manifest_file(
     copy_unprocessed_records: bool = False,
     receipt_jsonl: str | Path | None = None,
     error_jsonl: str | Path | None = None,
-    teacher_lock_sha256: str = "UNSPECIFIED",
+    teacher_identity_sha256: str = "UNSPECIFIED",
     split: str = "unknown",
     resume: bool = False,
     progress_path: str | Path | None = None,
@@ -460,7 +495,7 @@ def export_manifest_file(
         receipt_jsonl=receipt_jsonl,
         error_jsonl=error_jsonl,
         source_manifest_sha256=sha256_file(source_path),
-        teacher_lock_sha256=teacher_lock_sha256,
+        teacher_identity_sha256=teacher_identity_sha256,
         split=split,
         resume=resume,
         progress_path=progress_path,

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "started_at": "2026-08-25T09:08:41.702690+00:00",
+  "invocation_count_this_stage": 1,
+  "optimizer_steps_planned": 1,
+  "report_path": "E:\\OV-OrthKD-R3\\r5-readiness-clean\\reports\\runtime\\r4_real_preflight.json",
+  "completed_at": "2026-08-25T09:10:45.885536+00:00",
+  "optimizer_steps_completed": 1,
+  "report_sha256": "09a70816a2828eb1f3db95a976a47ee2e6b35f94ec50413be0da2c597c2f083a"
+}

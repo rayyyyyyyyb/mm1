@@ -125,6 +125,8 @@ def test_real_smoke_uses_explicit_visual_dispatch_all_ten_audio_segments_and_exa
     assert '"internvideo2_features": [10, 512]' in source
     assert '"beats_features": [10, 768]' in source
     assert '"clap_text_features": [1024]' in source
+    assert '"zero_pad_to_task_duration"' in source
+    assert '"truncate_to_task_duration"' in source
     assert "torch.cuda.synchronize" in source
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
@@ -32,6 +33,20 @@ def _fsync_parent(path: Path) -> None:
         os.close(descriptor)
 
 
+def _replace_with_retry(source: Path, destination: Path) -> None:
+    """Tolerate a short-lived Windows reader sharing the destination path."""
+
+    attempts = 8
+    for attempt in range(attempts):
+        try:
+            os.replace(source, destination)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(min(0.01 * (2**attempt), 0.25))
+
+
 def atomic_write_bytes(path_str: str | Path, content: bytes) -> None:
     path = Path(path_str)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -41,7 +56,7 @@ def atomic_write_bytes(path_str: str | Path, content: bytes) -> None:
             handle.write(content)
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary, path)
+        _replace_with_retry(temporary, path)
         _fsync_parent(path)
     finally:
         if temporary.exists():
@@ -111,7 +126,7 @@ def atomic_save_array(
                 raise ValueError("Artifact must contain only finite values")
         finally:
             del loaded
-        os.replace(temporary, path)
+        _replace_with_retry(temporary, path)
         _fsync_parent(path)
     finally:
         if temporary.exists():

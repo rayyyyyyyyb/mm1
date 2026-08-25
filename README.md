@@ -4,9 +4,13 @@ This package contains the core implementation of OV-OrthKD for research collabor
 
 Paper: *If You Hear It, Help Find It: Orthogonal Knowledge Distillation for Open-Vocabulary Audio-Visual Event Localization* (ACM Multimedia 2026).
 
-> **Current reproduction status (2026-08-24):** `BLOCKED_BEFORE_CONFERENCE_REPRO`. Official T=10 source manifests and a real repeat-2 InternVideo2/BEATs/CLAP smoke now pass on the RTX 5090. Formal reproduction remains blocked until the 24,800-record teacher cache, full artifact audit, cache root SHA256, single real-data preflight, and human readiness review are complete. Read [CURRENT_STATUS.md](CURRENT_STATUS.md) before reviewing or running the reproduction workflow.
+> **Current reproduction status (2026-08-25):** `READY_FOR_CONFERENCE_REPRO`. Official T=10 data, the 24,800-record teacher cache, exhaustive artifact audit, exact cache/manifest locks, one real-data structural preflight and the clean canonical evidence chain have passed on the RTX 5090. No formal student training, main-table run, ablation or paper metric reproduction has started; execution stops here until explicit user instruction. Read [CURRENT_STATUS.md](CURRENT_STATUS.md) before running the reproduction workflow.
 
-The canonical task protocol is ten one-second temporal segments. `student.max_position_segments=16` is model capacity, while InternVideo2 `num_frames=8` is the teacher input-frame count. No label, logit, teacher-feature, or metric path converts T=10 to T=16.
+The current stage report is [reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md](reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md).
+
+The canonical runtime contract is `T_task=10, T_max=16, K_student=1, K_teacher=8, V_test=1`. The official data supplies one fixed JPG per one-second task segment; the student reads it once, InternVideo2 receives eight repeats of that same keyframe, and test uses one deterministic forward with no view averaging. `student.max_position_segments=16` is capacity only. No label, logit, teacher-feature, or metric path converts T=10 to T=16, and no 16-fps raw-video decode is executed.
+
+Official WAVs are fitted deterministically to the same ten-second task window before their ten one-second slices are formed: shorter files are zero-padded and longer files are truncated. There is no temporal interpolation, resampling, last-sample repetition, or label transformation. The committed full audit records 23,844 unchanged, 954 zero-padded, and 2 truncated files with zero errors.
 
 ## Included
 
@@ -110,7 +114,7 @@ python scripts/inspect_teacher_identity.py \
 python scripts/export_teacher_artifacts.py --help
 ```
 
-The mock backend is only for pipeline validation. The exact Base/B14 composition, pinned `InternVideo2_CLIP_small` upstream class, five checkpoint files, canonical keyframe input mode and output shapes are locked by `configs/locks/mm26_teacher_lock.yaml`. Run full export only from the passed official source manifests.
+The mock backend is only for pipeline validation. The exact Base/B14 composition, pinned `InternVideo2_CLIP_small` upstream class, five checkpoint files, canonical keyframe input mode and output shapes are locked by `configs/locks/mm26_teacher_lock.yaml`. Real exports bind every schema-3 per-record receipt to an immutable `teacher_identity_sha256`; mutable progress/final-audit fields cannot invalidate a completed record, while any checkpoint or preprocessing change does. Run full export only from the passed official source manifests.
 
 ## Reproduction modes
 

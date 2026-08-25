@@ -68,14 +68,16 @@ def test_resolved_teacher_lock_fails_closed_on_class_and_variant_ambiguity() -> 
     assert any("clap.normalize" in error for error in result["errors"])
 
 
-def test_committed_r4_lock_records_passed_smoke_but_keeps_full_export_pending() -> None:
+def test_committed_r5_lock_records_passed_smoke_and_full_export() -> None:
     lock_path = Path(__file__).resolve().parents[1] / "configs" / "locks" / "mm26_teacher_lock.yaml"
     lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
 
     result = validate_teacher_lock(lock)
 
-    assert result["ready"] is False
+    assert result["ready"] is True
     assert result["errors"] == []
     assert result["unresolved"] == []
     assert lock["real_smoke"]["status"] == "passed"
-    assert lock["full_export"]["status"] == "pending"
+    assert lock["full_export"]["status"] == "passed"
+    assert lock["full_export"]["records"] == 24800
+    assert lock["full_export"]["errors"] == 0

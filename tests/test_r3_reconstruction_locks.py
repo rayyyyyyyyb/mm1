@@ -47,6 +47,7 @@ def test_nine_archival_facts_are_user_approved_and_exactly_bound_to_config() -> 
     assert lock["facts"]["temporal_protocol"]["selected_value"] == {
         "data.num_segments": 10,
         "data.temporal_resampling": False,
+        "data.visual_preprocessing.jpgs_per_segment": 1,
         "student.max_position_segments": 16,
         "task.label_mode": "query_conditioned_binary",
     }
@@ -58,6 +59,7 @@ def test_nine_archival_facts_are_user_approved_and_exactly_bound_to_config() -> 
         "teacher_export.internvideo2.frame_sampling": "repeat_segment_keyframe",
         "teacher_export.internvideo2.frame_expansion": "repeat_last_to_num_frames",
         "teacher_export.internvideo2.raw_video_diagnostic.enabled": False,
+        "teacher_export.internvideo2.raw_video_diagnostic.executed": False,
     }
 
 
