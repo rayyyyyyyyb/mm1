@@ -59,7 +59,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data import create_ov_avel_data_loaders
 from src.data.split_types import normalize_split_type, split_type_from_record
-from src.evaluation.ovavel_metrics import binary_f1, compute_ovavel_metrics
+from src.evaluation.ovavel_metrics import (
+    binary_f1,
+    compute_ovavel_metrics,
+    compute_thresholded_ovavel_metrics,
+)
 from src.losses import OVOrthKDLoss, OVOrthKDLegacyLoss
 from src.models import OVOrthKDStudent
 from src.utils.atomic_artifacts import canonical_tree_hash
@@ -73,6 +77,10 @@ from src.utils.reproduction_fingerprint import (
     build_reproduction_fingerprint,
     capture_rng_state,
     restore_rng_state,
+)
+from src.utils.training_diagnostics import (
+    collect_training_diagnostic,
+    diagnostic_parameter_snapshots,
 )
 
 
@@ -715,6 +723,9 @@ def compute_grouped_metrics(
                 "ovavel_segment_f1_at_0_5": 0.0,
                 "ovavel_event_f1_at_0_5": 0.0,
                 "binary_micro_f1_at_threshold": 0.0,
+                "query_fg_f1_macro_at_threshold": 0.0,
+                "ovavel_segment_f1_at_threshold": 0.0,
+                "ovavel_event_f1_at_threshold": 0.0,
                 "binary_precision_at_threshold": 0.0,
                 "binary_recall_at_threshold": 0.0,
                 "ap": 0.0,
@@ -734,8 +745,15 @@ def compute_grouped_metrics(
         else:
             ap = 0.0
         fixed_metrics = compute_ovavel_metrics(labels, probabilities, group_offsets, threshold=0.5)
+        thresholded_metrics = compute_thresholded_ovavel_metrics(
+            labels,
+            probabilities,
+            group_offsets,
+            threshold=threshold,
+        )
         results[group_name] = {
             **fixed_metrics,
+            **thresholded_metrics,
             "threshold": float(threshold),
             "accuracy": float(accuracy_score(labels, predicted)),
             "binary_micro_f1_at_threshold": binary_f1(predicted, labels),
@@ -1377,6 +1395,25 @@ def main() -> None:
             "--max-train-steps is deprecated; interpreting it as max batches per epoch."
         )
     stop_training = False
+    diagnostic_cfg = config.get("logging", {}).get("training_diagnostics", {})
+    diagnostics_enabled = bool(diagnostic_cfg.get("enabled", False))
+    diagnostic_max_epochs = int(diagnostic_cfg.get("max_epochs", 0))
+    diagnostic_batches_per_epoch = int(diagnostic_cfg.get("batches_per_epoch", 0))
+    if diagnostics_enabled and (
+        diagnostic_max_epochs <= 0 or diagnostic_batches_per_epoch <= 0
+    ):
+        raise ValueError(
+            "logging.training_diagnostics max_epochs and batches_per_epoch must be "
+            "positive when enabled"
+        )
+    diagnostic_path = output_dir / str(
+        diagnostic_cfg.get("output_file", "training_diagnostics.jsonl")
+    )
+    initial_diagnostic_parameters = (
+        diagnostic_parameter_snapshots(student, loss_module)
+        if diagnostics_enabled
+        else {}
+    )
 
     for epoch in range(start_epoch, epochs):
         if max_optimizer_steps is not None and global_step >= max_optimizer_steps:
@@ -1418,9 +1455,30 @@ def main() -> None:
 
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
+            diagnostic_record = None
+            if (
+                diagnostics_enabled
+                and epoch < diagnostic_max_epochs
+                and batch_idx < diagnostic_batches_per_epoch
+            ):
+                diagnostic_record = collect_training_diagnostic(
+                    student=student,
+                    loss_module=loss_module,
+                    outputs=outputs,
+                    batch=batch,
+                    initial_parameters=initial_diagnostic_parameters,
+                    epoch=epoch,
+                    batch_index=batch_idx,
+                    global_step=global_step,
+                )
             torch.nn.utils.clip_grad_norm_(parameters, grad_clip)
             scaler.step(optimizer)
             scaler.update()
+            if diagnostic_record is not None:
+                with diagnostic_path.open("a", encoding="utf-8") as handle:
+                    handle.write(
+                        json.dumps(diagnostic_record, ensure_ascii=False) + "\n"
+                    )
             if scheduler_interval == "optimizer_step":
                 scheduler.step()
 

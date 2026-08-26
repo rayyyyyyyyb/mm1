@@ -8,6 +8,7 @@ import yaml
 from scripts.create_mm26_smoke_fixture import create_mm26_smoke_fixture
 from scripts.train_ov_orthkd import apply_cli_config_overrides
 from src.teachers.common import load_records
+from src.utils.canonical_readiness import canonical_experiment_config_sha256
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +17,101 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 def _load(name: str) -> dict:
     with (PROJECT_ROOT / "configs" / name).open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle)
+
+
+def _flatten_leaves(value: object, prefix: str = "") -> dict[str, object]:
+    if isinstance(value, dict):
+        leaves: dict[str, object] = {}
+        for key, child in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            leaves.update(_flatten_leaves(child, path))
+        return leaves
+    return {prefix: value}
+
+
+def _load_resolved_seed42() -> dict:
+    path = (
+        PROJECT_ROOT
+        / "reports"
+        / "formal_reproduction"
+        / "canonical_seed42"
+        / "canonical_seed42"
+        / "resolved_config.yaml"
+    )
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def _load_diagnostic(name: str) -> dict:
+    path = PROJECT_ROOT / "configs" / "diagnostics" / name
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def _changed_leaf_paths(base: dict, control: dict) -> set[str]:
+    base_leaves = _flatten_leaves(base)
+    control_leaves = _flatten_leaves(control)
+    return {
+        key
+        for key in set(base_leaves) | set(control_leaves)
+        if base_leaves.get(key) != control_leaves.get(key)
+    }
+
+
+def test_seed42_diagnostic_controls_change_only_the_intended_loss_route() -> None:
+    base = _load_resolved_seed42()
+    student_only = _load_diagnostic("ov_orthkd_mm26_student_only_seed42.yaml")
+    visual_only = _load_diagnostic("ov_orthkd_mm26_visual_only_seed42.yaml")
+
+    assert _changed_leaf_paths(base, student_only) == {
+        "reproduction.variant",
+        "reproduction.readiness.archival_lock",
+        "logging.log_dir",
+        "logging.training_diagnostics.enabled",
+        "logging.training_diagnostics.max_epochs",
+        "logging.training_diagnostics.batches_per_epoch",
+        "logging.training_diagnostics.output_file",
+        "loss.alpha_strong_feat",
+        "loss.alpha_weak_feat",
+        "loss.alpha_text_align",
+        "loss.alpha_orth",
+    }
+    assert _changed_leaf_paths(base, visual_only) == {
+        "reproduction.variant",
+        "reproduction.readiness.archival_lock",
+        "logging.log_dir",
+        "logging.training_diagnostics.enabled",
+        "logging.training_diagnostics.max_epochs",
+        "logging.training_diagnostics.batches_per_epoch",
+        "logging.training_diagnostics.output_file",
+        "loss.alpha_weak_feat",
+        "loss.alpha_orth",
+    }
+    assert all(
+        student_only["loss"][name] == 0.0
+        for name in (
+            "alpha_strong_logit",
+            "alpha_weak_logit",
+            "alpha_strong_feat",
+            "alpha_weak_feat",
+            "alpha_text_align",
+            "alpha_orth",
+        )
+    )
+    assert visual_only["loss"]["alpha_strong_feat"] == 0.4
+    assert visual_only["loss"]["alpha_text_align"] == 0.8
+    assert visual_only["loss"]["alpha_weak_feat"] == 0.0
+    assert visual_only["loss"]["alpha_orth"] == 0.0
+    for config in (student_only, visual_only):
+        assert config["logging"]["training_diagnostics"] == {
+            "enabled": True,
+            "max_epochs": 3,
+            "batches_per_epoch": 1,
+            "output_file": "training_diagnostics.jsonl",
+        }
+        lock_path = PROJECT_ROOT / config["reproduction"]["readiness"]["archival_lock"]
+        lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+        assert lock["canonical_experiment_config_sha256"] == (
+            canonical_experiment_config_sha256(config)
+        )
 
 
 def test_canonical_mm26_config_is_strict_and_uses_approved_reconstruction_locks() -> None:

@@ -2384,3 +2384,61 @@
 - `git push -u origin repro/canonical-seed42-results` exit 0，新远端分支创建成功且已设置 upstream；没有 force push、没有修改既有 R5 分支或 main。
 - 通过公开网页未登录回读 branch tree、`reports/formal_reproduction/README.md` 和 raw `final_metrics.json`：repo 显示 Public、新分支可见，landing page 正常渲染；raw metrics 返回实际 126 行 JSON 并包含 AP `0.7419461390325246` 等正式指标，不是 LFS pointer 或占位文件。
 - 新增 `reports/formal_reproduction/PUBLISH_RECEIPT.md` 固化父代码、evidence commit、完整验证退出码、网页入口和大文件排除边界；该发布收据与本条 `all.md` 记录将作为仅文档 follow-up commit 推送，最终远端 HEAD 以 follow-up commit 为准。
+
+### 607. 2026-08-26：接收网页端根因诊断并启动证据核验
+
+- 完整读取用户附件 `pasted-text.txt`：37,105 bytes、768 行。附件判断当前 seed42 Full 不是普通随机波动，建议按 Zhou 官方输出重评分、Table 2 教师诊断、同源 Student-only、同源 Visual-only 四道门定位 evaluator、teacher、公共 student 和 Full 蒸馏层，并指出 additive fusion、文本语义锚点、可训练 teacher projector、随机初始化、`step400` 解释、loss reduction 和增强不同步等候选偏差。
+- 按任务适用性读取并执行 code-review 接收、系统化调试、TDD、计划执行、Git worktree 与完成前验证流程。检测确认 `OV-OrthKD-R2` 已是 Git linked worktree：Git dir 位于父仓库 `.git/worktrees/OV-OrthKD-R2`、common dir 为父仓库 `.git`，当前分支 `repro/canonical-seed42-results`、HEAD/远端均为 `44b88fc8a011436e33b6ff91e65d220511c7ecd4`、worktree clean，无需创建嵌套 worktree。
+- 初步技术判断：附件的“先做无训练诊断，再跑同管线控制，不先扫 loss/seed”的因果顺序合理；全正退化、训练曝光、projector 联合优化和现有基线缺失均有当前产物/代码支持。但 additive 公式、共享文本投影、冻结 projector 与 `step400` 候选语义仍只是需 A/B 验证的 reconstruction hypotheses，不能直接改写成已恢复的会议历史事实，也不能用论文目标数值反向选择实现。
+- 比较扩刊外初始源码与当前 R5 代码，确认外部源码是本项目早期基线而非遗失的会议 archival code；它能证明后续实现血缘变化，但不能独立裁决会议时 fusion、projector 或 scheduler 的精确语义。下一步按 TDD 先实现只读诊断与严格同源控制配置，再在 5090 运行低成本诊断门。
+
+### 608. 2026-08-26：官方源码入口、Gate 1 资产边界与诊断分支
+
+- 论文正文脚注给出官方项目仓库 `https://github.com/ScottBlizzard/OV-OrthKD`。公开回读确认仓库当前只有 1 个 README commit，并明确写明训练/评测代码、配置和 checkpoint 尚在整理，因此不能用它恢复会议 fusion、scheduler 或 projector 事实。
+- 从 clean `44b88fc8...` 创建本地 `repro/root-cause-diagnostics`。首次组合 SSH 命令因 Windows 远端参数解析把分号传给 `whoami` 而 exit 1，未改远端；改用 PowerShell `-EncodedCommand` 后连接成功，RTX 5090 为空闲状态。首次远端 diagnostic worktree 直接引用 `44b88fc8...` 因远端 repo 尚未 fetch 而 exit 128；随后 fetch `origin/repro/canonical-seed42-results`、核对 FETCH_HEAD 精确为 `44b88fc8...`，再成功创建 detached scratch worktree。
+- 锁定官方 OV-AVEL checkout 为 `external/OV-AVEL`、commit `b5fe1d685...`。全文件盘点确认它有 baseline 源码和标注，但没有 fine-tuning checkpoint 或 prediction；`.checkpoints/readme.txt` 仅 62 bytes，5090 weights 也只有 InternVideo2/BEATs/CLAP。因此 Zhou official output re-score 标为 `BLOCKED_MISSING_UPSTREAM_OUTPUT`，不得拿本模型预测代替。
+- 新建执行计划 `docs/superpowers/plans/2026-08-26-root-cause-diagnostics.md` 与 review `reports/formal_reproduction/root_cause_diagnostics/00_REVIEW_ASSESSMENT.md`：先无训练诊断，再 Student-only/Visual-only，最后才允许单因素结构/配方 A/B；任何候选不得因为接近论文目标值而被提升为 canonical。
+
+### 609. 2026-08-26：prediction/evaluator 诊断 TDD 与 calibrated segment F1 修复
+
+- 新增测试首先因 `scripts.diagnose_formal_predictions` 不存在而 collection RED/exit 1；实现 thresholded OV-AVEL helper、prediction audit 与 teacher direct-logit audit 后，测试暴露两处人工期望值算错（segment macro 应为 `2/9`、AUROC 应为 `0.75`），逐对复算后只修测试期望，最终 6 passed；与官方 parity 合跑 10 passed、compileall exit 0、diff-check exit 0。
+- 保持 `compute_ovavel_metrics(..., threshold=0.5)` 的固定协议与既有 key 不变，新增独立 `compute_thresholded_ovavel_metrics`；production grouped metrics 现在同时输出 `ovavel_segment_f1_at_threshold`，不会再用 binary micro F1 冒充 validation-calibrated segment F1。
+- 首次本地 CLI 审计因脚本未把 project root 加入 `sys.path` 而 exit 1；补同仓库脚本一致的入口后重跑 PASS。两份 NPZ 第一次连续 scp 在 validation 完成后整体 64 秒 timeout，test 尚未复制；单独续传 test 后 exit 0，本地/远端 SHA 分别精确为 validation `17bc66...bfc0`、test `e78338...e2d5`。NPZ 只留在 `扩刊/复现/root_cause_diagnostics/source_predictions`，不进 Git。
+- prediction audit PASS：validation-selected threshold `0.6659861520`；test micro AP `0.7419461390`、per-sample macro AP `0.6794507428`、per-query macro AP `0.6386305847`；真正 thresholded segment F1 `0.5449392616`，predicted-positive rate `0.9872508591`。test 每样本 T=10 logit std 平均仅 `0.00108546`、中位数约 `0.00007204`，机械证明主要退化是段内时间对比几乎消失。
+
+### 610. 2026-08-26：教师 Table 2 Gate 全量诊断
+
+- 首次串行读取 train/val/test direct logits 在 124 秒工具时限内未完成；未写任何输出。改为 32-thread 小文件只读后，val/test 32.4 秒完成：全部 11,618 arrays 存在、shape `[10]`；validation AP/AUROC `0.771934530/0.707681250`，test `0.780220386/0.716227041`，与论文 visual direct logits `0.767/0.707`、`0.776/0.716` 高度一致。
+- 为论文未公开优化细节的 “light linear probe” 先写测试，因 `fit_linear_probe` 不存在得到 RED；实现 train-only StandardScaler + deterministic SGD logistic、L2 alpha `1e-4`、seed42、无 class weight/early stop、完整 receipt 后 7 passed；5090 focused evaluator/config/diagnostic 合跑 24 passed。
+- visual probe 93.4 秒 exit 0：131,820 train、57,980 val、58,200 test segments，所有 `[10,512]`；test AP/AUROC `0.815682413/0.735033704`。audio probe 112.7 秒 exit 0，所有 `[10,768]`；test `0.790812241/0.732781004`。这些不是 archival-exact Table 2 值，但与 direct logits 一起证明锁定教师 cache 含有充足边界信号，首因转向 student/transfer。
+- 小型 JSON 全部回收到 `扩刊/复现/root_cause_diagnostics` 并 byte-identical 镜像进 repo：prediction audit SHA `1ea4cc...dfa2`、direct logits `f7eccd...8964`、visual probe `e11c60...20fc`、audio probe `23fd82...593b`；未上传 features/cache/checkpoint/NPZ。
+
+### 611. 2026-08-26：严格同源控制配置与首次 full-suite 环境失败
+
+- 从实际 seed42 `resolved_config.yaml` 机械复制生成 Student-only 与 Visual-only 控制。leaf-diff 精确：Student-only 只改 variant、output、strong/weak feature、text、orth六项；Visual-only 只改 variant、output、weak feature、orth，并保留 paper Table 3 的 text `0.8`。为 canonical config hash 绑定分别派生 archival lock，仅更新 experiment SHA 为 `4664f9...6959` 与 `053cfc...ed0c`，九项 fact/evidence 不变。
+- 一次未编码的远端 `New-Item ... | Out-Null` 被 Windows 默认 cmd 错析而打印 `Out-Null` 不是命令；该调用没有创建/覆盖数据，随后 scp 已确认两个配置实际存在。后续统一使用 EncodedCommand。
+- 在 scp 注入未提交代码的 detached scratch worktree 运行完整 pytest：`395 passed, 1 failed in 291.42s`、exit 1。唯一失败 `test_committed_ready_receipts_pass_complete_canonical_gate` 明确列出 scratch worktree 未挂载 data/weights/external 且 Git dirty；这是测试环境不满足 canonical 条件，不是全测通过。必须在 commit 后建立完整 junction 的 clean worktree 从头重跑 396 项，exit 0 前禁止启动 Student-only。
+- 新增 `01_GATE_RESULTS.md` 并更新 `CURRENT_STATUS.md`：教师信号 Gate 通过、calibrated segment F1 已正确补算但仍低、公共 student 控制待运行；尚未修改默认 fusion/pretrained/scheduler/loss 配方，也未启动训练。
+
+### 612. 2026-08-26：冻结提交前复核与正式资产 junction 模板恢复
+
+- 重新检查诊断分支 status/diff/diff-check：工作树只含本轮 evaluator、teacher audit、控制配置、报告与测试改动；`git diff --check` exit 0，仅显示 Windows 行尾提示。逐项回读 review、Gate 报告、计划、状态文件及关键实现，没有把 additive fusion、共享文本投影、冻结 projector 或训练配方候选误写成已恢复历史事实。
+- 通过 5090 上已通过 canonical 全测的 `formal-canonical-31b86c0` worktree 机械盘点 reparse points，恢复 clean 验证 worktree 必需的 9 个 junction 模板：根目录 `external`、`proposed_method`、`weights`，以及 `data/official`、`data/teacher_cache`、`data/downloads/{hf_cache,incoming}`、`data/ov_ave/{exported,source}`；所有 target 均指向锁定 `E:\OV-OrthKD-R3\repo` 资产或锁定 OV-AVEL proposed_method。
+
+### 613. 2026-08-26：前 3 epoch 观察型数值诊断 TDD
+
+- 为网页建议的训练早期诊断先新增失败测试；首次 focused collection 因 `src.utils.training_diagnostics` 尚不存在而 RED/exit 1。随后新增纯观察工具，覆盖有效 segment 的 logit/probability/正负分布、样本内时间标准差、路径 norm/方差/有效秩、门控熵/饱和度、模块 pre-clip gradient norm、参数快照与相对漂移；focused tests `9 passed`、exit 0。
+- 将观察器接入训练器：只在显式 `logging.training_diagnostics.enabled=true` 时运行，Student-only/Visual-only 都只采样 epoch 1--3 的首 batch。记录写入独立 JSONL，不进入 forward 输出、loss、梯度、optimizer、scheduler、validation、best checkpoint 或 evaluator；默认正式配置完全不启用。
+- 配置 leaf-diff 测试同步把四个只读 observability 字段加入两份控制的共同 allowlist。由于 canonical experiment hash 排除 logging 观测字段，两份派生 archival hash 复算后仍精确为 Student-only `4664f9...6959`、Visual-only `053cfc...ed0c`。本地 compileall 与 diff-check exit 0。
+- 一次本地合跑诊断+config 测试在 collection 阶段因本机 Anaconda 缺少 `timm` 而 exit 1；这是已知本地环境缺口，不记为通过，后续必须在锁定 5090 venv 重跑 focused 与完整 suite。
+
+### 614. 2026-08-26：观察器集成复核与冻结前结构门禁
+
+- 向 5090 detached scratch worktree 同步最新观察器/训练器/测试/控制配置后，首次 focused run 得到 `17 passed, 1 failed`、exit 1；唯一失败不是实现回归，而是本次同步清单漏传两份新派生 archival lock，测试按设计 fail-closed 报 `FileNotFoundError`。补传锁后从头重跑同一 18 项，`18 passed in 10.30s`、exit 0。
+- 再补一项端到端纯单元测试：构造最小 student/loss/batch，验证完整 diagnostic record 可 JSON 序列化、保留 T=10-like mask 语义、包含 teacher-target geometry 与 head 梯度，并逐 tensor 证明观察调用前后 student/loss state 不变；本地 focused 更新为 `10 passed`、exit 0。
+- 冻结前机械门禁通过：4 个 JSON 与 4 个 YAML 全部可解析；两份 config SHA 与派生 lock 精确匹配；移除 canonical config SHA 后，两份派生 lock 与 R5 基锁的完整其余结构逐对象相等；禁止扩展名与 15 MiB 大文件扫描为 0；`git diff --check` exit 0。
+
+### 615. 2026-08-26：staged 发布候选审计
+
+- 将本轮 22 个代码、配置、锁、测试、报告与 ledger 文件加入 index；staged stat 为 `3,189 insertions, 14 deletions`。没有 checkpoint、prediction NPZ、dataset、teacher cache 或下载归档进入 index，15 MiB staged 大文件为 0。
+- 首次 staged whitespace 回读准确列出计划/报告中的 Markdown hard-break 尾空格和两个 EOF 额外空行；用空行分段替换 hard-break 并移除额外 EOF 空行后重新 stage，`git diff --cached --check` 无输出、exit 0。对 staged 新增行执行 token/key/Authorization/password-value 高风险模式扫描，匹配 0。

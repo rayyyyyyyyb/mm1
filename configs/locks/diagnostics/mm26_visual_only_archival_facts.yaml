@@ -1,0 +1,208 @@
+schema_version: 2
+status: resolved
+claim_level: paper_specified_reconstruction
+canonical_experiment_config_sha256: "053cfc863beaecb4113470a65449b78e8ee81d089b41dcf1c94e500af8f3ed0c"
+resolution_rule: "R5 final 10/16/1/8/1 runtime facts supersede earlier temporal/frame wording; all other facts retain the R3 approved reconstruction assumptions."
+approval_documents:
+  - path: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
+    sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
+  - path: "reports/archival/R4_USER_APPROVED_TEMPORAL_PROTOCOL.md"
+    sha256: "4307242c389022bf48da3080c8e8d5c92158fd75bc9f50233c31b065fc5e3ed0"
+  - path: "reports/archival/R5_USER_APPROVED_FINAL_RUNTIME_PROTOCOL.md"
+    sha256: "c8a6796ce85dc7e3c596aa444edd36300419e223540e29951a953f0132febb63"
+facts:
+  temporal_protocol:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      data.num_segments: 10
+      data.temporal_resampling: false
+      data.visual_preprocessing.jpgs_per_segment: 1
+      student.max_position_segments: 16
+      task.label_mode: query_conditioned_binary
+    evidence: &r5_temporal_approval
+      - kind: user_approval
+        approved_by: user
+        path: "reports/archival/R5_USER_APPROVED_FINAL_RUNTIME_PROTOCOL.md"
+        sha256: "c8a6796ce85dc7e3c596aa444edd36300419e223540e29951a953f0132febb63"
+    required_config_paths: ["data.num_segments", "data.temporal_resampling", "data.visual_preprocessing.jpgs_per_segment", "student.max_position_segments", "task.label_mode"]
+    config_bindings:
+      - path: "data.num_segments"
+        value: 10
+      - path: "data.temporal_resampling"
+        value: false
+      - path: "data.visual_preprocessing.jpgs_per_segment"
+        value: 1
+      - path: "student.max_position_segments"
+        value: 16
+      - path: "task.label_mode"
+        value: query_conditioned_binary
+  internvideo_identity:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      teacher_export.strong_visual_backend: internvideo2_clip_b14
+      teacher_export.internvideo2.declared_model_class: "InternVideo2-Base / CLIP-B14"
+    evidence: &r3_user_approval
+      - kind: user_approval
+        approved_by: user
+        path: "reports/archival/R3_USER_APPROVED_RECONSTRUCTION.md"
+        sha256: "8da204b6f86c22469a86371d7a544c2f60dd3bd7f8e57a554c3b9291f7fc9f18"
+    required_config_paths: ["teacher_export.strong_visual_backend", "teacher_export.internvideo2.declared_model_class"]
+    config_bindings:
+      - path: "teacher_export.strong_visual_backend"
+        value: internvideo2_clip_b14
+      - path: "teacher_export.internvideo2.declared_model_class"
+        value: "InternVideo2-Base / CLIP-B14"
+  scheduler_and_early_stop:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      training.epochs: 30
+      training.scheduler:
+        type: CosineAnnealingLR
+        T_max: 30
+        interval: epoch
+      training.early_stop_patience: null
+      training.early_stop_min_delta: 0.0
+    evidence: *r3_user_approval
+    required_config_paths: ["training.epochs", "training.scheduler", "training.early_stop_patience", "training.early_stop_min_delta"]
+    config_bindings:
+      - path: "training.epochs"
+        value: 30
+      - path: "training.scheduler"
+        value:
+          type: CosineAnnealingLR
+          T_max: 30
+          interval: epoch
+      - path: "training.early_stop_patience"
+        value: null
+      - path: "training.early_stop_min_delta"
+        value: 0.0
+  student_initialization_and_augmentation:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      student.pretrained: false
+      data.train_augment: true
+    evidence: *r3_user_approval
+    required_config_paths: ["student.pretrained", "data.train_augment"]
+    config_bindings:
+      - path: "student.pretrained"
+        value: false
+      - path: "data.train_augment"
+        value: true
+  visual_l2_reduction:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      loss.visual_l2_reduction: mean_feature_then_masked_mean_segments
+    evidence: *r3_user_approval
+    required_config_paths: ["loss.visual_l2_reduction"]
+    config_bindings:
+      - path: "loss.visual_l2_reduction"
+        value: mean_feature_then_masked_mean_segments
+  query_aware_fusion:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      student.fusion_mode: concat_mlp_query_conditioned
+    evidence: *r3_user_approval
+    required_config_paths: ["student.fusion_mode"]
+    config_bindings:
+      - path: "student.fusion_mode"
+        value: concat_mlp_query_conditioned
+  frame_sampling:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      teacher_export.internvideo2.source: official_segment_keyframes
+      teacher_export.internvideo2.input_mode: official_segment_keyframes
+      teacher_export.internvideo2.task_segments: 10
+      teacher_export.internvideo2.num_frames: 8
+      teacher_export.internvideo2.frame_sampling: repeat_segment_keyframe
+      teacher_export.internvideo2.frame_expansion: repeat_last_to_num_frames
+      teacher_export.internvideo2.raw_video_diagnostic.enabled: false
+      teacher_export.internvideo2.raw_video_diagnostic.executed: false
+    evidence: *r5_temporal_approval
+    required_config_paths: ["teacher_export.internvideo2.source", "teacher_export.internvideo2.input_mode", "teacher_export.internvideo2.task_segments", "teacher_export.internvideo2.num_frames", "teacher_export.internvideo2.frame_sampling", "teacher_export.internvideo2.frame_expansion", "teacher_export.internvideo2.raw_video_diagnostic.enabled", "teacher_export.internvideo2.raw_video_diagnostic.executed"]
+    config_bindings:
+      - path: "teacher_export.internvideo2.source"
+        value: official_segment_keyframes
+      - path: "teacher_export.internvideo2.input_mode"
+        value: official_segment_keyframes
+      - path: "teacher_export.internvideo2.task_segments"
+        value: 10
+      - path: "teacher_export.internvideo2.num_frames"
+        value: 8
+      - path: "teacher_export.internvideo2.frame_sampling"
+        value: repeat_segment_keyframe
+      - path: "teacher_export.internvideo2.frame_expansion"
+        value: repeat_last_to_num_frames
+      - path: "teacher_export.internvideo2.raw_video_diagnostic.enabled"
+        value: false
+      - path: "teacher_export.internvideo2.raw_video_diagnostic.executed"
+        value: false
+  student_audio_preprocessing:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      data.audio_preprocessing: &audio_preprocessing
+        source: official_wav
+        reference: fixed_commit_ov_avel_imagebind_data_py
+        sample_rate: 16000
+        duration_seconds: 10
+        segments: 10
+        segment_seconds: 1
+        repeat_waveform_to_seconds: 2
+        representation: kaldi_fbank
+        num_mel_bins: 128
+        frame_length_ms: 25
+        frame_shift_ms: 10
+        target_length: 204
+        mean: -4.268
+        std: 9.138
+        student_channels: 3
+        student_resize: [224, 224]
+        save_as_jpeg: false
+        second_imagenet_normalization: false
+        beats_source: raw_16khz_waveform
+        beats_task_window_seconds: 10
+        beats_short_waveform_policy: zero_pad_to_task_duration
+        beats_long_waveform_policy: truncate_to_task_duration
+    evidence: *r3_user_approval
+    required_config_paths: ["data.audio_preprocessing"]
+    config_bindings:
+      - path: "data.audio_preprocessing"
+        value: *audio_preprocessing
+  evaluator_mapping:
+    status: approved_reconstruction_assumption
+    approved_by: user
+    selected_value:
+      evaluation.paper_f1_at_0_5_mapping: ovavel_segment_f1_at_0_5
+      evaluation.validation_calibrated_f1_mapping: ovavel_segment_f1_at_validation_selected_threshold
+      evaluation.test_views: 1
+      evaluation.view_aggregation: none
+    evidence: *r5_temporal_approval
+    required_config_paths: ["evaluation.paper_f1_at_0_5_mapping", "evaluation.validation_calibrated_f1_mapping", "evaluation.test_views", "evaluation.view_aggregation"]
+    config_bindings:
+      - path: "evaluation.paper_f1_at_0_5_mapping"
+        value: ovavel_segment_f1_at_0_5
+      - path: "evaluation.validation_calibrated_f1_mapping"
+        value: ovavel_segment_f1_at_validation_selected_threshold
+      - path: "evaluation.test_views"
+        value: 1
+      - path: "evaluation.view_aggregation"
+        value: none
+search_receipt: "reports/archival/mm26_archival_evidence.json"
+recovery_report: "reports/archival/MM26_ARCHIVAL_FACT_RECOVERY.md"
+approved_reconstruction_assumptions:
+  - temporal_protocol
+  - internvideo_identity
+  - scheduler_and_early_stop
+  - student_initialization_and_augmentation
+  - visual_l2_reduction
+  - query_aware_fusion
+  - frame_sampling
+  - student_audio_preprocessing
+  - evaluator_mapping

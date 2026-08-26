@@ -109,6 +109,52 @@ def _validated_offsets(offsets: Sequence[int] | np.ndarray, segment_count: int) 
     return values
 
 
+def compute_thresholded_ovavel_metrics(
+    labels: Sequence[float] | np.ndarray,
+    probabilities: Sequence[float] | np.ndarray,
+    sample_offsets: Sequence[int] | np.ndarray,
+    *,
+    threshold: float,
+) -> dict[str, Any]:
+    """Apply official per-sample F1 definitions at an explicit frozen threshold.
+
+    This is separate from ``compute_ovavel_metrics``, whose names and contract
+    are fixed to the protocol comparison threshold of 0.5.
+    """
+
+    threshold_value = float(threshold)
+    if not np.isfinite(threshold_value) or not 0.0 <= threshold_value <= 1.0:
+        raise ValueError("threshold must be finite and within [0, 1]")
+    labels_array = _binary_mask(np.asarray(labels, dtype=np.int64), "labels")
+    probabilities_array = np.asarray(probabilities, dtype=np.float64).reshape(-1)
+    if probabilities_array.shape != labels_array.shape:
+        raise ValueError("labels and probabilities must have identical shapes")
+    if not np.isfinite(probabilities_array).all():
+        raise ValueError("probabilities contain NaN/Inf")
+    if np.any((probabilities_array < 0.0) | (probabilities_array > 1.0)):
+        raise ValueError("probabilities must lie within [0, 1]")
+    offsets = _validated_offsets(sample_offsets, int(labels_array.size))
+    predictions = (probabilities_array >= threshold_value).astype(np.int64)
+
+    foreground_scores: list[float] = []
+    segment_scores: list[float] = []
+    event_scores: list[float] = []
+    for start, end in zip(offsets[:-1], offsets[1:]):
+        sample_pred = predictions[int(start) : int(end)]
+        sample_gt = labels_array[int(start) : int(end)]
+        foreground_scores.append(binary_f1(sample_pred, sample_gt))
+        segment_scores.append(ovavel_segment_f1_query_background(sample_pred, sample_gt))
+        event_scores.append(ovavel_event_f1(sample_pred, sample_gt))
+
+    return {
+        "threshold": threshold_value,
+        "binary_micro_f1_at_threshold": binary_f1(predictions, labels_array),
+        "query_fg_f1_macro_at_threshold": float(np.mean(foreground_scores)),
+        "ovavel_segment_f1_at_threshold": float(np.mean(segment_scores)),
+        "ovavel_event_f1_at_threshold": float(np.mean(event_scores)),
+    }
+
+
 def compute_ovavel_metrics(
     labels: Sequence[float] | np.ndarray,
     probabilities: Sequence[float] | np.ndarray,
@@ -124,18 +170,12 @@ def compute_ovavel_metrics(
         raise ValueError("labels and probabilities must have identical shapes")
     if not np.isfinite(probabilities_array).all():
         raise ValueError("probabilities contain NaN/Inf")
-    offsets = _validated_offsets(sample_offsets, int(labels_array.size))
-    predictions = (probabilities_array >= threshold).astype(np.int64)
-
-    foreground_scores: list[float] = []
-    segment_scores: list[float] = []
-    event_scores: list[float] = []
-    for start, end in zip(offsets[:-1], offsets[1:]):
-        sample_pred = predictions[int(start) : int(end)]
-        sample_gt = labels_array[int(start) : int(end)]
-        foreground_scores.append(binary_f1(sample_pred, sample_gt))
-        segment_scores.append(ovavel_segment_f1_query_background(sample_pred, sample_gt))
-        event_scores.append(ovavel_event_f1(sample_pred, sample_gt))
+    thresholded = compute_thresholded_ovavel_metrics(
+        labels_array,
+        probabilities_array,
+        sample_offsets,
+        threshold=0.5,
+    )
 
     has_both_classes = np.unique(labels_array).size == 2
     auroc = float(roc_auc_score(labels_array, probabilities_array)) if has_both_classes else None
@@ -148,8 +188,8 @@ def compute_ovavel_metrics(
         "threshold": 0.5,
         "ap": ap,
         "auroc": auroc,
-        "binary_micro_f1_at_0_5": binary_f1(predictions, labels_array),
-        "query_fg_f1_macro_at_0_5": float(np.mean(foreground_scores)),
-        "ovavel_segment_f1_at_0_5": float(np.mean(segment_scores)),
-        "ovavel_event_f1_at_0_5": float(np.mean(event_scores)),
+        "binary_micro_f1_at_0_5": thresholded["binary_micro_f1_at_threshold"],
+        "query_fg_f1_macro_at_0_5": thresholded["query_fg_f1_macro_at_threshold"],
+        "ovavel_segment_f1_at_0_5": thresholded["ovavel_segment_f1_at_threshold"],
+        "ovavel_event_f1_at_0_5": thresholded["ovavel_event_f1_at_threshold"],
     }

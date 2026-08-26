@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "metric_semantics": "global_micro_over_official_task_segments",
+  "direct_logits": {
+    "validation": {
+      "manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\val.jsonl",
+      "samples": 5798,
+      "segments": 57980,
+      "expected_segments_per_sample": 10,
+      "array_shapes": {
+        "[10]": 5798
+      },
+      "label_positive_rate": 0.6153328734046223,
+      "logit_mean": 12.252438737396389,
+      "logit_std": 3.8601539963419467,
+      "logit_min": -3.82139253616333,
+      "logit_max": 23.328054428100586,
+      "ap": 0.7719345297083051,
+      "auroc": 0.7076812499293158,
+      "per_sample_ap_macro_all_negative_zero": 0.6733021507186038
+    },
+    "test": {
+      "manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\test.jsonl",
+      "samples": 5820,
+      "segments": 58200,
+      "expected_segments_per_sample": 10,
+      "array_shapes": {
+        "[10]": 5820
+      },
+      "label_positive_rate": 0.6154639175257732,
+      "logit_mean": 12.20652175809116,
+      "logit_std": 3.8551525810001235,
+      "logit_min": -2.6324262619018555,
+      "logit_max": 21.806190490722656,
+      "ap": 0.7802203864495727,
+      "auroc": 0.7162270405248365,
+      "per_sample_ap_macro_all_negative_zero": 0.6720201843767288
+    }
+  }
+}

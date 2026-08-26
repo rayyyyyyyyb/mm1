@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "metric_semantics": "global_micro_over_official_task_segments",
+  "direct_logits": {
+    "validation": {
+      "manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\val.jsonl",
+      "samples": 5798,
+      "segments": 57980,
+      "expected_segments_per_sample": 10,
+      "array_shapes": {
+        "[10]": 5798
+      },
+      "label_positive_rate": 0.6153328734046223,
+      "logit_mean": 12.252438737396389,
+      "logit_std": 3.8601539963419467,
+      "logit_min": -3.82139253616333,
+      "logit_max": 23.328054428100586,
+      "ap": 0.7719345297083051,
+      "auroc": 0.7076812499293158,
+      "per_sample_ap_macro_all_negative_zero": 0.6733021507186038
+    },
+    "test": {
+      "manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\test.jsonl",
+      "samples": 5820,
+      "segments": 58200,
+      "expected_segments_per_sample": 10,
+      "array_shapes": {
+        "[10]": 5820
+      },
+      "label_positive_rate": 0.6154639175257732,
+      "logit_mean": 12.20652175809116,
+      "logit_std": 3.8551525810001235,
+      "logit_min": -2.6324262619018555,
+      "logit_max": 21.806190490722656,
+      "ap": 0.7802203864495727,
+      "auroc": 0.7162270405248365,
+      "per_sample_ap_macro_all_negative_zero": 0.6720201843767288
+    }
+  },
+  "feature_probes": {
+    "weak": {
+      "data": {
+        "train": {
+          "manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\train.jsonl",
+          "field": "weak_teacher_features_path",
+          "samples": 13182,
+          "segments": 131820,
+          "feature_dim": 768,
+          "array_shapes": {
+            "[10,768]": 13182
+          },
+          "feature_dtype": "float32",
+          "feature_mean": -0.0005545785534195602,
+          "feature_std": 0.2736492455005646,
+          "label_positive_rate": 0.621347291761493
+        },
+        "evaluation": {
+          "validation": {
+            "manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\val.jsonl",
+            "field": "weak_teacher_features_path",
+            "samples": 5798,
+            "segments": 57980,
+            "feature_dim": 768,
+            "array_shapes": {
+              "[10,768]": 5798
+            },
+            "feature_dtype": "float32",
+            "feature_mean": -0.0004997377400286496,
+            "feature_std": 0.27348592877388,
+            "label_positive_rate": 0.6153328734046223
+          },
+          "test": {
+            "manifest": "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported\\test.jsonl",
+            "field": "weak_teacher_features_path",
+            "samples": 5820,
+            "segments": 58200,
+            "feature_dim": 768,
+            "array_shapes": {
+              "[10,768]": 5820
+            },
+            "feature_dtype": "float32",
+            "feature_mean": -0.0004795965796802193,
+            "feature_std": 0.2736508548259735,
+            "label_positive_rate": 0.6154639175257732
+          }
+        }
+      },
+      "probe": {
+        "claim": "transparent_reconstruction_probe_not_archival_exact",
+        "protocol": {
+          "model": "sklearn.linear_model.SGDClassifier",
+          "loss": "log_loss",
+          "penalty": "l2",
+          "alpha": 0.0001,
+          "feature_standardization": "train_split_standard_scaler",
+          "max_iter": 2000,
+          "tol": 1e-05,
+          "shuffle": true,
+          "random_state": 42,
+          "learning_rate": "optimal",
+          "early_stopping": false,
+          "average_parameters": true,
+          "class_weight": null,
+          "aggregation": "global_micro_over_official_task_segments"
+        },
+        "fit": {
+          "train_segments": 131820,
+          "feature_dim": 768,
+          "iterations": 163,
+          "coefficient_l2_norm": 2.301971197128296,
+          "intercept": [
+            1.2732659578323364
+          ]
+        },
+        "evaluation": {
+          "validation": {
+            "segments": 57980,
+            "positive_rate": 0.6153328734046223,
+            "ap": 0.7898775010361809,
+            "auroc": 0.7308175411496011,
+            "score_mean": 1.1593846082687378,
+            "score_std": 2.575921058654785
+          },
+          "test": {
+            "segments": 58200,
+            "positive_rate": 0.6154639175257732,
+            "ap": 0.790812240711806,
+            "auroc": 0.7327810036180307,
+            "score_mean": 1.158408761024475,
+            "score_std": 2.5808961391448975
+          }
+        }
+      }
+    }
+  }
+}

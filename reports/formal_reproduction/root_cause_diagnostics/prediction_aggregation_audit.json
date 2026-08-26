@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "metric_claim": "diagnostic_aggregations_not_archival_evaluator_recovery",
+  "validation_selected_threshold": 0.6659861520031973,
+  "sources": {
+    "validation": {
+      "filename": "validation_predictions.npz",
+      "sha256": "17bc66fd7d8fc5a1445d5b35e32acca9f65d5d00afbd8547d02788ea9246bfc0"
+    },
+    "test": {
+      "filename": "test_predictions.npz",
+      "sha256": "e78338c52577fd44a2fe07cd9150b2a2a32721cc0996f68a9dfbb37d0c95e2d5"
+    }
+  },
+  "validation": {
+    "threshold": 0.6659861520031973,
+    "aggregation": {
+      "global_segment_micro": {
+        "definition": "all valid segments pooled once",
+        "ap": 0.7302036939345478,
+        "auroc": 0.6260831081446276
+      },
+      "per_sample_macro": {
+        "definition": "mean per-sample segment AP; all-negative samples contribute zero",
+        "sample_count": 5798,
+        "positive_sample_count": 4396,
+        "ap": 0.6799461464012099,
+        "ap_positive_samples_only": 0.8967988527830335
+      },
+      "per_query_macro": {
+        "definition": "mean AP across query/category groups; segments pooled within query",
+        "query_count": 67,
+        "ap": 0.6317737375580231
+      }
+    },
+    "groups": {
+      "total": {
+        "sample_count": 5798,
+        "segment_count": 57980,
+        "global_segment_micro_ap": 0.7302036939345478,
+        "global_segment_micro_auroc": 0.6260831081446276,
+        "per_query_macro_ap": 0.6317737375580231,
+        "threshold": 0.6659861520031973,
+        "binary_micro_f1_at_threshold": 0.7628617536309844,
+        "query_fg_f1_macro_at_threshold": 0.6541375921826718,
+        "ovavel_segment_f1_at_threshold": 0.5410321604434258,
+        "ovavel_event_f1_at_threshold": 0.5780671495918133,
+        "predicted_positive_rate_at_threshold": 0.9878061400482925
+      },
+      "seen": {
+        "sample_count": 1651,
+        "segment_count": 16510,
+        "global_segment_micro_ap": 0.7665156911715264,
+        "global_segment_micro_auroc": 0.707766108812077,
+        "per_query_macro_ap": 0.6258676966895674,
+        "threshold": 0.6659861520031973,
+        "binary_micro_f1_at_threshold": 0.7521088228588798,
+        "query_fg_f1_macro_at_threshold": 0.6422588473090748,
+        "ovavel_segment_f1_at_threshold": 0.5353490404332093,
+        "ovavel_event_f1_at_threshold": 0.570058550373511,
+        "predicted_positive_rate_at_threshold": 0.9923682616596002
+      },
+      "unseen": {
+        "sample_count": 4147,
+        "segment_count": 41470,
+        "global_segment_micro_ap": 0.7172699634196513,
+        "global_segment_micro_auroc": 0.596181036691333,
+        "per_query_macro_ap": 0.6447107794603547,
+        "threshold": 0.6659861520031973,
+        "binary_micro_f1_at_threshold": 0.7671088966262456,
+        "query_fg_f1_macro_at_threshold": 0.6588667476652638,
+        "ovavel_segment_f1_at_threshold": 0.5432947191935749,
+        "ovavel_event_f1_at_threshold": 0.5812555260831122,
+        "predicted_positive_rate_at_threshold": 0.9859898721967687
+      }
+    },
+    "thresholded_metrics": {
+      "threshold": 0.6659861520031973,
+      "binary_micro_f1_at_threshold": 0.7628617536309844,
+      "query_fg_f1_macro_at_threshold": 0.6541375921826718,
+      "ovavel_segment_f1_at_threshold": 0.5410321604434258,
+      "ovavel_event_f1_at_threshold": 0.5780671495918133
+    },
+    "logit_distribution": {
+      "all": {
+        "count": 57980,
+        "mean": 0.8800836274740242,
+        "std": 0.34161463825912053,
+        "quantiles": {
+          "0.0": 0.6890664100646973,
+          "0.01": 0.6899599969387055,
+          "0.05": 0.6908255726099014,
+          "0.25": 0.6927774995565414,
+          "0.5": 0.6955480575561523,
+          "0.75": 0.7295899242162704,
+          "0.95": 1.535339093208313,
+          "0.99": 1.5376483261585236,
+          "1.0": 1.53840970993042
+        }
+      },
+      "positive_label": {
+        "count": 35677,
+        "mean": 0.9355555168966289,
+        "std": 0.37288532287418713,
+        "quantiles": {
+          "0.0": 0.6890865564346313,
+          "0.01": 0.6902553009986877,
+          "0.05": 0.6910022377967835,
+          "0.25": 0.6931480169296265,
+          "0.5": 0.6968860626220703,
+          "0.75": 1.5150846242904663,
+          "0.95": 1.5362604856491089,
+          "0.99": 1.53772216796875,
+          "1.0": 1.53840970993042
+        }
+      },
+      "negative_label": {
+        "count": 22303,
+        "mean": 0.7913480045116307,
+        "std": 0.2610811882795314,
+        "quantiles": {
+          "0.0": 0.6890664100646973,
+          "0.01": 0.6896039772033692,
+          "0.05": 0.6905625283718109,
+          "0.25": 0.6922392547130585,
+          "0.5": 0.6942045092582703,
+          "0.75": 0.6981698870658875,
+          "0.95": 1.5317208051681517,
+          "0.99": 1.5370897579193115,
+          "1.0": 1.5383350849151611
+        }
+      },
+      "within_sample_std": {
+        "count": 5798,
+        "mean": 0.0011536892302377207,
+        "std": 0.008989947521223049,
+        "quantiles": {
+          "0.0": 6.571665502709255e-07,
+          "0.01": 2.455425898168529e-06,
+          "0.05": 7.620853176121037e-06,
+          "0.25": 3.48976087553208e-05,
+          "0.5": 7.359775288496174e-05,
+          "0.75": 0.0001723678220559908,
+          "0.95": 0.0016701902508817785,
+          "0.99": 0.024936992528252613,
+          "1.0": 0.23601041310544257
+        }
+      }
+    }
+  },
+  "test": {
+    "threshold": 0.6659861520031973,
+    "aggregation": {
+      "global_segment_micro": {
+        "definition": "all valid segments pooled once",
+        "ap": 0.7419461390325246,
+        "auroc": 0.6338748098301057
+      },
+      "per_sample_macro": {
+        "definition": "mean per-sample segment AP; all-negative samples contribute zero",
+        "sample_count": 5820,
+        "positive_sample_count": 4414,
+        "ap": 0.6794507427732452,
+        "ap_positive_samples_only": 0.8958775085954435
+      },
+      "per_query_macro": {
+        "definition": "mean AP across query/category groups; segments pooled within query",
+        "query_count": 67,
+        "ap": 0.6386305846905872
+      }
+    },
+    "groups": {
+      "total": {
+        "sample_count": 5820,
+        "segment_count": 58200,
+        "global_segment_micro_ap": 0.7419461390325246,
+        "global_segment_micro_auroc": 0.6338748098301057,
+        "per_query_macro_ap": 0.6386305846905872,
+        "threshold": 0.6659861520031973,
+        "binary_micro_f1_at_threshold": 0.7635884131306417,
+        "query_fg_f1_macro_at_threshold": 0.6545553381556861,
+        "ovavel_segment_f1_at_threshold": 0.544939261628184,
+        "ovavel_event_f1_at_threshold": 0.5803493699885452,
+        "predicted_positive_rate_at_threshold": 0.9872508591065292
+      },
+      "seen": {
+        "sample_count": 1664,
+        "segment_count": 16640,
+        "global_segment_micro_ap": 0.7892745152007632,
+        "global_segment_micro_auroc": 0.7202613965013418,
+        "per_query_macro_ap": 0.6321462595338856,
+        "threshold": 0.6659861520031973,
+        "binary_micro_f1_at_threshold": 0.757600780722168,
+        "query_fg_f1_macro_at_threshold": 0.648267925899598,
+        "ovavel_segment_f1_at_threshold": 0.5438993130000754,
+        "ovavel_event_f1_at_threshold": 0.5764222756410257,
+        "predicted_positive_rate_at_threshold": 0.9933894230769231
+      },
+      "unseen": {
+        "sample_count": 4156,
+        "segment_count": 41560,
+        "global_segment_micro_ap": 0.7223984508490624,
+        "global_segment_micro_auroc": 0.6018936857329866,
+        "per_query_macro_ap": 0.6528343445576477,
+        "threshold": 0.6659861520031973,
+        "binary_micro_f1_at_threshold": 0.7659823518818657,
+        "query_fg_f1_macro_at_threshold": 0.6570727236210688,
+        "ovavel_segment_f1_at_threshold": 0.5453556414446354,
+        "ovavel_event_f1_at_threshold": 0.5819217196021818,
+        "predicted_positive_rate_at_threshold": 0.9847930702598653
+      }
+    },
+    "thresholded_metrics": {
+      "threshold": 0.6659861520031973,
+      "binary_micro_f1_at_threshold": 0.7635884131306417,
+      "query_fg_f1_macro_at_threshold": 0.6545553381556861,
+      "ovavel_segment_f1_at_threshold": 0.544939261628184,
+      "ovavel_event_f1_at_threshold": 0.5803493699885452
+    },
+    "logit_distribution": {
+      "all": {
+        "count": 58200,
+        "mean": 0.8805638104339236,
+        "std": 0.34198581654520643,
+        "quantiles": {
+          "0.0": 0.6889677047729492,
+          "0.01": 0.6899437856674194,
+          "0.05": 0.6908076971769332,
+          "0.25": 0.6927769780158997,
+          "0.5": 0.6955256164073944,
+          "0.75": 0.7333903759717941,
+          "0.95": 1.5354305028915405,
+          "0.99": 1.5376318764686585,
+          "1.0": 1.538296103477478
+        }
+      },
+      "positive_label": {
+        "count": 35820,
+        "mean": 0.9413869595807202,
+        "std": 0.37557919181504024,
+        "quantiles": {
+          "0.0": 0.6890770196914673,
+          "0.01": 0.6903553968667984,
+          "0.05": 0.6910540938377381,
+          "0.25": 0.6931773126125336,
+          "0.5": 0.6968443989753723,
+          "0.75": 1.5190217792987823,
+          "0.95": 1.5363092243671417,
+          "0.99": 1.5377224004268646,
+          "1.0": 1.538296103477478
+        }
+      },
+      "negative_label": {
+        "count": 22380,
+        "mean": 0.7832141588504449,
+        "std": 0.2509474398016379,
+        "quantiles": {
+          "0.0": 0.6889677047729492,
+          "0.01": 0.6896743273735046,
+          "0.05": 0.690534821152687,
+          "0.25": 0.6921326369047165,
+          "0.5": 0.6942119002342224,
+          "0.75": 0.697887122631073,
+          "0.95": 1.531395924091339,
+          "0.99": 1.5369065642356872,
+          "1.0": 1.538191795349121
+        }
+      },
+      "within_sample_std": {
+        "count": 5820,
+        "mean": 0.0010854638122072414,
+        "std": 0.0081458201093121,
+        "quantiles": {
+          "0.0": 7.008046367978605e-07,
+          "0.01": 2.6329728892729016e-06,
+          "0.05": 7.66388217682137e-06,
+          "0.25": 3.5464967617643005e-05,
+          "0.5": 7.204134025680991e-05,
+          "0.75": 0.0001693978504986967,
+          "0.95": 0.001616719927806874,
+          "0.99": 0.02477635649256279,
+          "1.0": 0.22730602268863648
+        }
+      }
+    }
+  }
+}

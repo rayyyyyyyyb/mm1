@@ -4,6 +4,8 @@
 
 结果发布分支：`repro/canonical-seed42-results`
 
+当前诊断分支：`repro/root-cause-diagnostics`
+
 正式运行代码起点：`31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`
 
 正式配置：`configs/ov_orthkd_mm26_repro_ready.yaml`
@@ -12,8 +14,8 @@
 
 - 运行与产物：`CANONICAL_RUN_COMPLETED_AND_ARTIFACT_AUDIT_PASSED`
 - 论文数值：`PAPER_NUMERICAL_REPRODUCTION_NOT_ACHIEVED`
-- evaluator 覆盖：`CALIBRATED_SEGMENT_F1_MISSING`
-- 消融与第二 seed：未启动
+- evaluator 覆盖：原运行缺失；post-hoc 官方 segment 公式已补算，未来输出代码已修复
+- 同管线控制：Student-only / Visual-only 配置已机械锁定，尚未启动
 
 canonical OV-OrthKD seed42 已在 RTX 5090 上完成 30/30 epochs、12,000 optimizer steps，worker exit code 0；最终 artifact audit 为 `PASS`、errors=0。数据、教师缓存、T=10 shape、Git、evaluator、checkpoint 元数据和正式小型文件均通过机械审计。
 
@@ -48,7 +50,16 @@ canonical OV-OrthKD seed42 已在 RTX 5090 上完成 30/30 epochs、12,000 optim
 
 test 标签正类率为 `0.6154639175`。全正预测的 binary micro F1 为 `2p/(1+p)=0.7619655392`，与本次 `binary_micro_f1_at_0_5=0.7619655392` 逐位相同。30 个 validation epoch 中 29 个预测正类率精确为 1.0，另一个为 0.999828；validation 选择阈值后，test 仍有 98.7251% segment 被预测为正类。
 
-因此 binary micro F1 的表面高值不能证明时间定位成功。生产 evaluator 也没有输出锁定名称 `ovavel_segment_f1_at_validation_selected_threshold`，不得把当前 calibrated binary F1 冒充论文 calibrated segment F1 `0.781`。
+因此 binary micro F1 的表面高值不能证明时间定位成功。对保存预测应用 validation 冻结阈值和官方 query/background segment 公式后，test calibrated segment F1 仅为 `0.544939`，不是论文 `0.781`；该补算修复了报告缺口，但没有解释主性能差距。
+
+## 根因诊断进度
+
+- Visual direct logits 已覆盖全部 validation/test T=10 cache：test AP `0.780220`、AUROC `0.716227`，接近论文 Table 2 的 `0.776/0.716`。
+- 透明 reconstruction linear probe（论文未公开 probe 优化细节）得到 visual test `0.815682/0.735034`、audio test `0.790812/0.732781` AP/AUROC。它们不是 archival-exact Table 2 数值，但证明当前教师特征包含充足可分边界信号。
+- test global-micro AP 为 `0.741946`，per-query macro AP 为 `0.638631`，说明聚合语义会显著影响 AP；现有会议 AP mapping 仍是 reconstruction assumption。
+- test 每个样本 10 个 logits 的平均段内标准差仅 `0.001085`，中位数约 `0.000072`。当前 student 主要产生近似样本级常数分数，没有学到可靠的 10 段内部时间边界。
+- Student-only / Visual-only 均已配置相同的只读前期数值诊断：只采样 epoch 1--3 的首 batch，记录 logits、门控、路径/teacher-target 方差与有效秩、pre-clip 梯度和 projector 漂移；它不修改 forward、loss、optimizer、best selection 或 evaluator。
+- Zhou 官方输出重评分 Gate 暂时无法执行：锁定 OV-AVEL 上游仓库没有发布 fine-tuning checkpoint 或 prediction，`.checkpoints/readme.txt` 只有 62 bytes。不得用本模型预测替代。
 
 ## 正式运行协议与身份
 
@@ -71,6 +82,10 @@ test 标签正类率为 `0.6154639175`。全正预测的 binary micro F1 为 `2p
 7. [实际 resolved config](reports/formal_reproduction/canonical_seed42/canonical_seed42/resolved_config.yaml)
 8. [正式 ready config](configs/ov_orthkd_mm26_repro_ready.yaml)
 9. [全部正式 locks](configs/locks)
+10. [根因诊断 review 与 Gate 结果](reports/formal_reproduction/root_cause_diagnostics/01_GATE_RESULTS.md)
+11. [prediction aggregation audit](reports/formal_reproduction/root_cause_diagnostics/prediction_aggregation_audit.json)
+12. [teacher visual probe receipt](reports/formal_reproduction/root_cause_diagnostics/teacher_visual_probe.json)
+13. [teacher audio probe receipt](reports/formal_reproduction/root_cause_diagnostics/teacher_audio_probe.json)
 
 ## 数据与仓库边界
 
@@ -87,4 +102,4 @@ GitHub 包含完整代码、配置、locks、测试以及本次运行的小型�
 
 ## 下一步边界
 
-在继续正式实验前，先审计 evaluator/AP 聚合语义、logit/概率分布和标签对齐，并设计同一代码管线下的 Student-only 与 Visual-feature-only 控制实验。根因未明确前，不通过改 LR、阈值或 loss 权重碰运气，也不启动大规模消融。
+下一道门是先运行严格同源 Student-only，再运行保留 text 的 Visual-feature-only。根因未明确前，不改默认 fusion、预训练、scheduler 或 loss 权重，不启动第二 seed 或大规模消融。

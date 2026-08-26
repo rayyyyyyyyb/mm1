@@ -210,6 +210,7 @@ def test_test_metrics_use_validation_threshold_without_recalibration() -> None:
     assert "best_binary_f1" in report["validation_calibration"]
     assert "best_f1" not in report["validation_calibration"]
     assert "binary_micro_f1_at_threshold" in report["test"]["metrics"]["total"]
+    assert "ovavel_segment_f1_at_threshold" in report["test"]["metrics"]["total"]
 
 
 def test_formal_threshold_evaluation_rejects_flattened_non_t10_samples() -> None:
