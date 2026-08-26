@@ -1,0 +1,20 @@
+{
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "torch": "2.10.0+cu128",
+  "cuda_compiled": "12.8",
+  "cuda_available": true,
+  "cudnn": 91002,
+  "device_count": 1,
+  "devices": [
+    {
+      "index": 0,
+      "name": "NVIDIA GeForce RTX 5090",
+      "capability": [
+        12,
+        0
+      ]
+    }
+  ],
+  "cublas_workspace_config": ":4096:8"
+}

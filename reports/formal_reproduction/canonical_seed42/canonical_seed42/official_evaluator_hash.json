@@ -1,0 +1,8 @@
+{
+  "lock_path": "E:\\OV-OrthKD-R3\\formal-canonical-31b86c0\\configs\\locks\\mm26_evaluator_lock.yaml",
+  "source_path": "E:\\OV-OrthKD-R3\\repo\\external\\OV-AVEL\\proposed_method\\ImageBind-main\\utils\\eval_metrics.py",
+  "expected_sha256": "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19",
+  "actual_sha256": "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19",
+  "source_exists": true,
+  "matches_lock": true
+}

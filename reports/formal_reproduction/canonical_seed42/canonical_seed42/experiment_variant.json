@@ -1,0 +1,7 @@
+{
+  "variant": "conference_baseline",
+  "declared_claim_level": "paper_specified_reconstruction",
+  "effective_claim_level": "paper_specified_reconstruction",
+  "git_dirty": false,
+  "diagnostic_override": false
+}

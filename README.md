@@ -4,9 +4,9 @@ This package contains the core implementation of OV-OrthKD for research collabor
 
 Paper: *If You Hear It, Help Find It: Orthogonal Knowledge Distillation for Open-Vocabulary Audio-Visual Event Localization* (ACM Multimedia 2026).
 
-> **Current reproduction status (2026-08-25):** `READY_FOR_CONFERENCE_REPRO`. Official T=10 data, the 24,800-record teacher cache, exhaustive artifact audit, exact cache/manifest locks, one real-data structural preflight and the clean canonical evidence chain have passed on the RTX 5090. No formal student training, main-table run, ablation or paper metric reproduction has started; execution stops here until explicit user instruction. Read [CURRENT_STATUS.md](CURRENT_STATUS.md) before running the reproduction workflow.
+> **Current reproduction status (2026-08-26):** the canonical OV-OrthKD seed42 run completed on the RTX 5090 for 30 epochs / 12,000 optimizer steps and its full artifact audit passed with zero errors. The paper's numerical result was **not** reproduced: test AP/AUROC/OV-AVEL segment F1@0.5 are `0.741946 / 0.633875 / 0.540393`, versus `0.816 / 0.750 / 0.596` in the paper. No ablation or second seed has been started. Read [CURRENT_STATUS.md](CURRENT_STATUS.md) and the [formal-reproduction evidence package](reports/formal_reproduction/README.md) before diagnosing or launching more runs.
 
-The current stage report is [reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md](reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md).
+The preparation-stage report is [reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md](reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md). The completed-run report and numerical diagnosis are under [reports/formal_reproduction/canonical_seed42](reports/formal_reproduction/canonical_seed42).
 
 The canonical runtime contract is `T_task=10, T_max=16, K_student=1, K_teacher=8, V_test=1`. The official data supplies one fixed JPG per one-second task segment; the student reads it once, InternVideo2 receives eight repeats of that same keyframe, and test uses one deterministic forward with no view averaging. `student.max_position_segments=16` is capacity only. No label, logit, teacher-feature, or metric path converts T=10 to T=16, and no 16-fps raw-video decode is executed.
 
@@ -25,7 +25,7 @@ Official WAVs are fitted deterministically to the same ten-second task window be
 
 ## Not included
 
-Datasets, pretrained weights, cached teacher features, experiment outputs, and third-party repositories are not redistributed. Obtain them from their official sources and review their licenses before use.
+Datasets, pretrained weights, checkpoints, cached teacher features, prediction arrays, full progress logs, and third-party repositories are not redistributed. The repository includes only the small formal-run metrics, history, resolved config, environment/provenance receipts and artifact audit needed for diagnosis. Obtain large assets from their official sources and review their licenses before use.
 
 ## Environment
 

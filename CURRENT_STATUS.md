@@ -1,68 +1,90 @@
-# OV-OrthKD 当前状态与复现接续指南
+# OV-OrthKD 当前正式复现状态
 
-更新日期：2026-08-25
-分支：`repro/r5-final-runtime-protocol-and-readiness`
-最终状态：`READY_FOR_CONFERENCE_REPRO`
+更新日期：2026-08-26
 
-## 一句话结论
+结果发布分支：`repro/canonical-seed42-results`
 
-复现前准备已完成：官方数据/教师 checkpoint、T=10 协议、24,800 条 source/WAV/teacher artifact 全量审计、三教师真实 smoke、唯一一次真实一步 preflight 和 clean canonical readiness 全部通过。状态已达到可正式开始会议复现，但正式学生训练、主表和消融均尚未启动，当前停下等待用户指令。
+正式运行代码起点：`31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`
 
-## 已锁定的 temporal 协议
+正式配置：`configs/ov_orthkd_mm26_repro_ready.yaml`
 
-- 唯一运行口径为 `T_task=10, T_max=16, K_student=1, K_teacher=8, V_test=1`；五个量分别表示任务时间轴、模型容量、学生输入帧数、教师重复帧数和测试视图数，禁止互相替代。
-- 官方 OV-AVEBench task timeline 固定为 10 个一秒 temporal segments。
-- 真实 label、student logits、visual/audio teacher temporal features 和 metric 输入均为 T=10；禁止 10→16 插值、复制、重采样或重新标注。
-- `student.max_position_segments=16` 只是 positional capacity，不是任务长度。
-- 每个视频的官方视觉观测严格为 10 张 JPG；学生每段固定读取唯一关键帧，训练只做水平翻转和 ColorJitter 空间增强。
-- InternVideo2 `num_frames=8` 表示把每个一秒 segment 的同一张官方 keyframe 重复 8 次，不是 8 张独立帧。
-- validation/test 固定单次前向：`V_test=1`，无 multi-crop、multi-clip、multi-view 或视图平均。
-- canonical 运行中 raw-video diagnostic 明确 `enabled=false, executed=false`；不存在实际 16-fps 解码过程。
-- 论文中的 “16 fps / 16 temporal segments / per-16-seg clip” 作为写作与术语混淆处理，不改变官方 T=10 实验协议。
+## 最终判定
 
-## 已完成并可复核
+- 运行与产物：`CANONICAL_RUN_COMPLETED_AND_ARTIFACT_AUDIT_PASSED`
+- 论文数值：`PAPER_NUMERICAL_REPRODUCTION_NOT_ACHIEVED`
+- evaluator 覆盖：`CALIBRATED_SEGMENT_F1_MISSING`
+- 消融与第二 seed：未启动
 
-- 两个官方 archive 和五个教师 checkpoint 均已下载到 5090、锁定 bytes/SHA256，并通过 archive/checkpoint 验证。
-- 官方 preprocessed 数据全量布局：24,800 samples、248,000 JPG、24,800 WAV，split 13,182/5,798/5,820，全部 label/frame count 为 10。
-- canonical source manifests 已生成并全量审计通过：0 errors、0 warnings、0 duplicate、0 split overlap、0 temporal resampling。
-- 24,800 条官方 WAV 已逐文件审计：23,844 条恰为 10 秒、954 条按官方学生路径语义尾部补零到 10 秒、2 条截断到 10 秒；全部 16 kHz，0 errors，且不做时间插值、重采样或末样本复制。学生与 BEATs 教师都在同一个固定 10 秒任务窗口上处理十个一秒段。
-- source manifest SHA256：
-  - train `296e087bee10c2ef40ac647fa6d19ae355296366f4f281bca3b58dfd1663d9a0`
-  - val `deebdc384b6d12d9794b923b4c4387205bc33c819aac06cc92bb1c0febb5fa16`
-  - test `d2d7ec2a7b45651fb620d826edcef3d18c8eac861732f12af538bbb4a794a814`
-- 真实 train 样本 `EpxQKLhAP0s` 上三教师 repeat-2 smoke 通过：InternVideo2 `[10,512]` + logits `[10]`、BEATs `[10,768]`、CLAP `[1024]`；全部 finite、逐位一致、最大绝对差 0。
-- RTX 5090 canonical T=10 student efficiency receipt：29.631 ms/clip、33.748 clips/s。T=16 收据已明确改标为 synthetic positional-capacity analysis，不是论文任务协议。
-- raw archive 的 13 个零字节 MP4 和 1,019 个短流仍完整记录，但仅属于 optional diagnostic；canonical JPG/WAV 主线不读取、填充或替换它们。
+canonical OV-OrthKD seed42 已在 RTX 5090 上完成 30/30 epochs、12,000 optimizer steps，worker exit code 0；最终 artifact audit 为 `PASS`、errors=0。数据、教师缓存、T=10 shape、Git、evaluator、checkpoint 元数据和正式小型文件均通过机械审计。
 
-## 最终封板证据
+但本次不是论文主数值的成功复现，也不是普通 seed 波动。
 
-1. teacher cache 已完成 `24,800/24,800`；main/val/test supervisors 均 attempt 1、exit 0。
-2. full artifact audit 扫描 24,800 条 artifact 和 24,800 条 receipt，0 errors、0 warnings；cache tree 为 99,334 files / 1,310,102,478 bytes / `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`。
-3. 唯一真实 preflight 已运行恰好一次且通过：1 optimizer step、forward/backward/checkpoint-resume 全通过、无正式指标输出；所有 task 维度均为 T=10。
-4. canonical readiness receipt 为 `READY_FOR_CONFERENCE_REPRO`、blockers=[]、git_dirty=false；`configs/ov_orthkd_mm26_repro_ready.yaml` 已生成且只解除 full-run guard。
-5. 正式学生训练仍为 0；准备阶段到此停止。
+## 核心结果
 
-## 等待用户指令后的下一阶段
+| Group | Metric | Paper | Reproduction | Delta |
+|---|---|---:|---:|---:|
+| Total | AP | 0.816 | 0.741946 | -0.074054 |
+| Total | AUROC | 0.750 | 0.633875 | -0.116125 |
+| Total | OV-AVEL segment F1@0.5 | 0.596 | 0.540393 | -0.055607 |
+| Total | Accuracy | 0.705 | 0.621100 | -0.083900 |
+| Unseen | AP | 0.584 | 0.722398 | +0.138398 |
+| Unseen | OV-AVEL segment F1@0.5 | 0.584 | 0.540544 | -0.043456 |
+| Seen | OV-AVEL segment F1@0.5 | 0.625 | 0.540018 | -0.084982 |
 
-1. 当前不要再次运行真实 preflight，也不要修改已锁定的 data/teacher/cache 身份。
-2. 用户明确下达正式复现指令后，才使用 ready config 启动学生训练。
-3. 正式运行继续严格保持 T=10、单测试视图和当前 evaluator mapping，并记录所有 checkpoint、日志和指标收据。
+论文 Fig. 4 报告的五-seed AP 标准差约为 `±0.003`；当前 Full AP 缺口 `0.074054` 约为该波动尺度的 24.7 倍，不能用随机种子或浮点差异解释。
 
-## Web 审阅入口
+## 与关键基线的关系
 
-- 本阶段总报告：[`reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md`](reports/R5_FINAL_RUNTIME_PROTOCOL_AND_READINESS_REPORT.md)
-- R4 历史修正报告：[`reports/R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md`](reports/R4_T10_TEMPORAL_PROTOCOL_CORRECTION_REPORT.md)
-- source audit：[`reports/mm26_source_manifest_audit.json`](reports/mm26_source_manifest_audit.json)
-- official WAV task-window audit：[`reports/data/official_audio_task_window_audit.json`](reports/data/official_audio_task_window_audit.json)
-- teacher identity：[`reports/teachers/teacher_identity.json`](reports/teachers/teacher_identity.json)
-- repeatability：[`reports/teachers/smoke_repeatability.json`](reports/teachers/smoke_repeatability.json)
-- data/download/teacher/archival/preprocessing locks：[`configs/locks`](configs/locks)
-- 最终 readiness：[`reports/mm26_conference_readiness.json`](reports/mm26_conference_readiness.json)
-- 稿件精确替换文字：[`docs/MM26_TEMPORAL_PROTOCOL_TEXT_CORRECTIONS.md`](docs/MM26_TEMPORAL_PROTOCOL_TEXT_CORRECTIONS.md)
-- 最终用户批准证据：[`reports/archival/R5_USER_APPROVED_FINAL_RUNTIME_PROTOCOL.md`](reports/archival/R5_USER_APPROVED_FINAL_RUNTIME_PROTOCOL.md)
+| Reference | AP | AUROC | Segment F1@0.5 | 当前相对差值 |
+|---|---:|---:|---:|---|
+| Student-only | 0.714 | 0.612 | 0.523 | `+0.027946 / +0.021875 / +0.017393` |
+| Visual feature only | 0.778 | 0.701 | 0.568 | `-0.036054 / -0.067125 / -0.027607` |
+| Zhou official fine-tuning | 0.745 | 0.650 | 0.569 | `-0.003054 / -0.016125 / -0.028607` |
+| OV-OrthKD Full | 0.816 | 0.750 | 0.596 | `-0.074054 / -0.116125 / -0.055607` |
+
+当前比 Student-only 稍好，但低于更简单的 Visual feature only；只在 AP 上接近 Zhou official baseline，核心 segment F1 低于它。这说明完整蒸馏机制的论文增益没有出现。
+
+## 已确认的阈值退化
+
+test 标签正类率为 `0.6154639175`。全正预测的 binary micro F1 为 `2p/(1+p)=0.7619655392`，与本次 `binary_micro_f1_at_0_5=0.7619655392` 逐位相同。30 个 validation epoch 中 29 个预测正类率精确为 1.0，另一个为 0.999828；validation 选择阈值后，test 仍有 98.7251% segment 被预测为正类。
+
+因此 binary micro F1 的表面高值不能证明时间定位成功。生产 evaluator 也没有输出锁定名称 `ovavel_segment_f1_at_validation_selected_threshold`，不得把当前 calibrated binary F1 冒充论文 calibrated segment F1 `0.781`。
+
+## 正式运行协议与身份
+
+- `T_task=10, T_max=16, K_student=1, K_teacher=8, V_test=1`
+- no 10→16 label/logit/feature/metric conversion
+- seed 42、batch size 4、30 epochs、400 train batches/epoch
+- AdamW、LR `2e-4`、CosineAnnealingLR `T_max=30`
+- best checkpoint 由 validation AP 选择；best epoch 为第 1 epoch（内部 epoch 0）
+- teacher cache：99,334 files、1,310,102,478 bytes、SHA256 `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`
+- 正式运行没有使用 incompatible resume、截断参数、early stop、第二次 preflight 或消融
+
+## Web 诊断入口
+
+1. [正式复现结果包说明](reports/formal_reproduction/README.md)
+2. [完整正式运行报告](reports/formal_reproduction/canonical_seed42/CANONICAL_SEED42_REPRODUCTION_REPORT.md)
+3. [数值与基线诊断](reports/formal_reproduction/canonical_seed42/CANONICAL_SEED42_RESULT_DIAGNOSIS.md)
+4. [final metrics](reports/formal_reproduction/canonical_seed42/canonical_seed42/final_metrics.json)
+5. [30-epoch history](reports/formal_reproduction/canonical_seed42/canonical_seed42/history.jsonl)
+6. [最终 artifact audit](reports/formal_reproduction/canonical_seed42/canonical_seed42/final_artifact_audit.json)
+7. [实际 resolved config](reports/formal_reproduction/canonical_seed42/canonical_seed42/resolved_config.yaml)
+8. [正式 ready config](configs/ov_orthkd_mm26_repro_ready.yaml)
+9. [全部正式 locks](configs/locks)
 
 ## 数据与仓库边界
 
-GitHub 只上传代码、配置、测试和小型审计收据。`data/` 中的正式数据、source/export manifests、下载断点，`weights/`、teacher cache、outputs/logs/runs、Cookie/HAR/token/signed URL 都留在 5090，不上传。
+GitHub 包含完整代码、配置、locks、测试以及本次运行的小型诊断证据。以下大型或受授权约束的内容只保留在 5090，不上传：
 
-5090 工作路径：`E:/OV-OrthKD-R3/repo`。
+- OV-AVEBench 数据和 source/export manifests；
+- InternVideo2、BEATs、CLAP checkpoints；
+- 99,334-file teacher cache；
+- `best.pt`、`last.pt`；
+- validation/test prediction NPZ；
+- 完整训练 stderr 进度流。
+
+这些未上传文件的 bytes、SHA256、shape、数量与审计状态均记录在 result package 的小型 receipts 中。
+
+## 下一步边界
+
+在继续正式实验前，先审计 evaluator/AP 聚合语义、logit/概率分布和标签对齐，并设计同一代码管线下的 Student-only 与 Visual-feature-only 控制实验。根因未明确前，不通过改 LR、阈值或 loss 权重碰运气，也不启动大规模消融。

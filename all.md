@@ -1986,7 +1986,6 @@
 - 在包含换行可移植性修复的第二个 clean worktree 上，以正确 MinGit PATH 运行最终完整 pytest；退出码 0，`338 passed in 533.15s (0:08:53)`。
 - 该 clean worktree 的实现与测试代码逐字节对应最终候选；最终本地 commit 相比它仅增加 clean readiness 收据与 activity ledger，不改变被测实现。
 - 将 R4 总报告中的最终全量测试证据更新为本次 clean checkout 结果；随后只做最终 amend、Git 静态核验、推送与远端 SHA 复核，不再修改实现。
-
 ### 549. 2026-08-24：最终 push、5090 部署与临时资源清理
 
 - 最终单一 commit 为 `82901e4e24caec768525ded84c865e0d39acaccb`；普通非强制 push 到 `origin/repro/r4-keyframe-readiness-and-experiment-prep` 成功，GitHub `ls-remote` 返回同一 SHA；本地分支与 upstream 同步且工作树干净。
@@ -2210,3 +2209,171 @@
 
 - 报告和日志首次 amend 后的候选 SHA 为 `bb7c18f437d9f03ac38a5d5e693a493212f7cd3e`，相对 R4 仍只有一个 commit。本次不只检查 worktree，而是对完整 `82901e4..HEAD` diff 执行 `git diff --check`，发现 6 处 R5 新文件格式问题：报告头 3 个 Markdown 硬换行尾空格，以及 plan/spec/supervisor 各一个 EOF 多余空行；命令因此 exit 1。
 - 仅机械移除这些空白：报告头字段改用空行分隔，三文件删除 EOF 多余空行；不改变协议、实现、锁、哈希、测试或运行证据。将再次对完整 R4→R5 diff 运行 whitespace 检查后才允许最终提交。
+
+### 581. 2026-08-25：最终 SHA 的独立全量复验
+
+- 机械空白修正、完整 R4→R5 `git diff --check` 和 PowerShell parser 均 exit 0；最终单一提交冻结为 `31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`，相对 R4 精确 1 commit，67 files changed / 4,531 insertions / 355 deletions，本地 status 为空。
+- 第一次安全扫描命令把 PowerShell 变量与 `..HEAD` 直接相邻，导致 Git range 解析失败并打印 usage；流水线末端还把前段错误掩盖为 `NO_MATCHES` 和 commit count 0，因此该次结果明确作废。改用显式 range 变量重跑后 exit 0：无 >5 MiB tracked 文件；敏感词唯一命中是 R5 报告中“credentials/cookies/tokens/signed URLs 不上传”的安全说明，没有实际秘密、签名 URL、SharePoint 链接或数据资产。
+- 生成并验证 1,317,818-byte 最终 bundle，传到 5090；将既有 clean 验证树从 `4dab1a4...` 精确切换到 `31b86c0...`，切换前后 Git status 都为 0 行，8 个已验证资产 junction 保持不变。
+- 在最终 SHA 上重新运行完整 pytest：`388 passed in 332.43s`，pytest exit 0，外层 334.63 秒。结束后再次确认远端 HEAD 精确匹配、status 0 行、readiness=`READY_FOR_CONFERENCE_REPRO`、ready=true、blockers=0、git_dirty=false、full_run_started=false；preflight status=passed、invocation_count=1、optimizer_steps=1、marker=completed。
+- 本地最终只读核对同样确认 HEAD 精确匹配、1 个提交、完整 diff-check exit 0；GitHub 目标分支尚不存在，下一步仅执行普通首次 push 并用 `git ls-remote` 核对远端 SHA。没有再修改仓库，没有执行 ready config、正式训练、主表、消融或正式指标。
+
+### 582. 2026-08-25：GitHub 推送、远端 SHA 与最终锁摘要
+
+- 对新分支执行普通 `git push -u origin repro/r5-final-runtime-protocol-and-readiness`，未使用 force，exit 0。GitHub 创建分支成功；随后 `git ls-remote` 返回 `31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`，与本地和 5090 exact-test HEAD 三方完全一致，本地 status 仍为空。
+- 现有独立 code-review agent 已完成冻结复核，结论 `Ready to merge: Yes`：先前 claim/status、Git `commit:path` 字节证据和三类绕过均已闭合，没有剩余代码 blocker。
+- 最终只读锁摘要：data lock schema 2/status ready；archival lock schema 2/status resolved/claim level `paper_specified_reconstruction`；teacher lock schema 1/status ready、smoke passed、full_export passed，teacher identity `c15bc96f00d6e391083bd8d00a31443a356870592a3afa809df528bf973ed90c`，cache root `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`。
+- 独立复算 compact handoff hashes：readiness `6aa11a2e3db214f8611cd538a637d704f08bbefe11fb26cc58733503f72a365c`；ready config `ccbceb83f2ca20a15d353057217515fa501e8fa9678727fe99080cc3dc3190a7`；唯一 preflight report `09a70816a2828eb1f3db95a976a47ee2e6b35f94ec50413be0da2c597c2f083a`；marker `033634ce57c713681ef59bc5a754341698cf8f550aabd051bbe0cb176eb2caf7`。最终状态保持 `READY_FOR_CONFERENCE_REPRO`，到此停止并等待用户正式复现指令。
+
+### 583. 2026-08-26：读取正式复现指导并建立“复现”归档
+
+- 定位到用户新加入的 `OV_OrthKD_MM26_FORMAL_REPRODUCTION_PLAN_20260825.md`（45,132 bytes、1,765 行），按 UTF-8 分七个连续区间完整读取，没有截断。指导以 `31b86c0d60c4bf2ed028edf1385ed5d2c9e89153` 为唯一代码起点，判定 canonical OV-OrthKD seed42 为 GO；controlled ablation、Decision KD、Symmetric transfer、alternative teachers、corruption 和 UnAV-100 均不在当前立即执行范围。
+- 复核本地 repo：分支 `repro/r5-final-runtime-protocol-and-readiness`，HEAD 与 origin 都精确为 `31b86c0...`，工作树 clean。指导中 PDF 文件名写为 `mfp2306_final(10).pdf`，本地现有文件名为 `mfp2306_final.pdf`；本轮执行依赖的是已冻结代码/config/locks，不因文件名差异修改协议。
+- 按任务适用性完整读取 `using-superpowers`、Codex 工具适配、`brainstorming`、`writing-plans`、`executing-plans` 和 `using-git-worktrees` 指令。用户已明确“直接开始”，故把新增指导视作已批准设计，不再设置提问门；选择 inline executing-plans，且遵守不派生新 agent 的当前协作约束。
+- 新建 `扩刊/复现`，创建 `README.md`、`00_CANONICAL_SEED42_EXECUTION_PLAN.md`、`CURRENT_STATUS.md` 和 fail-closed `run_canonical_seed42.ps1`。计划只覆盖 Phase 0–4 canonical；控制器只提供 Validate/Start/Resume/Status，固定 exact SHA/config/output，禁止覆盖首次结果，Resume 只接受同 output 的 `last.pt`，不包含任何 incompatible、截断、early-stop 或参数覆盖。
+
+### 584. 2026-08-26：建立 canonical seed42 专用正式 worktree
+
+- 本地 `run_canonical_seed42.ps1` 经 PowerShell AST parser 检查为 0 errors；执行计划对 `TBD/TODO/implement later/fill in` 等占位符扫描通过。`扩刊/复现` 当前四个文件大小依次为 plan 7,510 bytes、status 554 bytes、README 967 bytes、controller 7,407 bytes。
+- 5090 只读检查确认目标 `E:\OV-OrthKD-R3\formal-canonical-31b86c0` 不存在，主 repo 可精确解析 `31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`；随后用 MinGit 创建 detached worktree，未改动主 repo 分支。
+- 为新 worktree 创建 8 个 junction：external、weights、official、teacher_cache、downloads/hf_cache、downloads/incoming、ov_ave/source、ov_ave/exported。最终 HEAD 精确匹配、Git status 0 行、junction 8/8、指向主 repo 以外的异常 target 0；正式训练仍未启动，optimizer steps 仍为 0。
+
+### 585. 2026-08-26：正式发车前 cold gate 全部通过
+
+- 在专用 `formal-canonical-31b86c0` worktree 设置 locked Python、MinGit PATH 和 HF/Transformers offline 环境后，按指导顺序运行 Phase 1；没有调用真实 preflight、下载、教师导出或 cache 重建。
+- `python -m pip check` 输出 `No broken requirements found`、exit 0；CUDA 验证 exit 0，Python 3.11.9、Torch `2.10.0+cu128`、CUDA 12.8、RTX 5090 capability 12.0、cuDNN 91002，FP16 2048 方阵乘 finite=true。
+- 精确 worktree 完整 pytest 为 `388 passed in 329.83s`、exit 0；`git diff --check` exit 0，HEAD=`31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`，最终 Git status 0 行。cold gate 总耗时 345.341 秒；正式训练仍未启动、optimizer steps=0。
+
+### 586. 2026-08-26：正式控制器部署与发车授权
+
+- 创建 worktree 外的 `E:\OV-OrthKD-R3\formal_control` 并上传本地控制器；远端 SHA256=`338f5db4b53f8e9b55e4eb710f93819e12b401c95ae01aaa12bad7379d73ed90`，PowerShell parser errors=0。首次直接调用因 Windows 默认 ExecutionPolicy 禁止脚本而 exit 1、控制器未执行；改用仓库既有标准 `powershell.exe -ExecutionPolicy Bypass -File` 后运行成功，没有修改系统策略或脚本逻辑。
+- `Validate` 返回 status=validated、exact HEAD、Git clean、locked Python、ready config 和唯一 output dir；首次 `Status` 返回 not_started、process_alive=false、epoch_records=0、global_step=0、best/last/final metrics/incompatible marker 均不存在。
+- 发车前容量检查：RTX 5090 32,607 MiB 中仅 622 MiB 已用、GPU utilization 0%，compute-app 列表没有 Python 训练进程；E 盘可用 6,006,289,100,800 bytes。至此冷门禁、控制器门禁和资源门禁全部满足，授权只启动 canonical OV-OrthKD seed42。
+
+### 587. 2026-08-26：唯一 canonical OV-OrthKD seed42 正式发车
+
+- 调用外置控制器 `Start`，exit 0；控制器在启动前再次确认 HEAD=`31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`、Git clean，并确认同一 run 不存在存活进程、final metrics 或非空 output。
+- 唯一 child PID=25688，UTC 启动时间 `2026-08-25T16:35:27.6676065Z`，mode=start。精确命令为 `E:\OV-OrthKD-R0\env\.venv\Scripts\python.exe scripts\train_ov_orthkd.py --config configs\ov_orthkd_mm26_repro_ready.yaml --output-dir outputs\formal\mm26_canonical_seed42`；没有任何 epochs/steps/batches/eval/early-stop/blocked/incompatible override。
+- 三秒启动检查后 process_alive=true、Git status 0 行、epoch_records=0、global_step=0、best/last/final metrics/incompatible marker 均不存在。正式训练已开始；这是本项目第一份 canonical reproduction evidence，后续不换 seed、不覆盖 output、不启动任何消融。
+
+### 588. 2026-08-26：首次启动封装在 Python 入口前退出并完成根因定位
+
+- 启动后第一次 fail-fast 状态发现 PID 25688 已不存在，controller=`interrupted_or_failed`；GPU 回到 622 MiB/0%，output 目录 0 文件，stdout/stderr/train.log 均为空，epoch/history/checkpoint/final metrics/incompatible marker 全部不存在。因此该次没有进入训练入口、没有 optimizer step，也没有产生可被覆盖的正式结果。
+- 按 systematic-debugging 流程停止自动重启。最小诊断用 `Start-Process` 启动 60 秒 harmless PowerShell sleep：在同一 SSH session 内 PID 18896 存活，SSH 返回后立即消失；诊断 PID 文件随后精确删除，若进程仍在则测试会精确停止它。该结果确认根因是 Windows OpenSSH job 对 `Start-Process` child 的会话结束清理，不是 Python 参数、ready config、CUDA 或 canonical gate。
+- 完整对照现有 `run_r5_remote_stage.ps1` 的持久导出实现，确认其使用 `Invoke-CimMethod Win32_Process.Create` 脱离 SSH job。按 TDD 新建 `扩刊/复现/tests/Test-PersistentProcess.ps1`：测试要求持久 PowerShell worker 返回成功 PID、跨函数返回写出 marker 并保持存活，finally 精确停止测试 PID 和删除唯一临时目录；下一步先在缺少生产 module 时取得预期 RED，再实现单一持久启动修复。
+
+### 589. 2026-08-26：持久化启动封装 TDD 修复完成
+
+- test/production 四文件本地 parser 均为 0 errors。远端确认 `PersistentProcess.psm1` 不存在后运行行为测试，得到预期 RED exit 1，唯一失败原因为 `Import-Module` 找不到生产 module。
+- 新增 `PersistentProcess.psm1`，用 `Win32_Process.Create` 启动隐藏 PowerShell worker；新增 `run_canonical_seed42_worker.ps1`，固定 exact SHA/config/output/offline 环境，worker 内直接等待正式 Python、记录 running/completed/failed 与 exit code。控制器仅把 `Start-Process` 替换为该模块，正式 Python 参数没有改变。
+- 在覆盖旧 launch state 前，将其复制保存为 `launch_state.start_process_failure.json`；再次确认正式 output 文件数=0。上传后的 SHA：module `03024236...d39e`、worker `40d3390b...abe`、controller `2e7c58ca...c8c7e`、test `1e86e523...3a01`，四者远端 parser errors 均为 0。
+- GREEN 行为测试 exit 0、PID 28600，finally 已精确停止并清理。第一次跨 SSH 诊断命令因本地嵌套 here-string parser error 而 exit 1、远端未创建；第二次在远端创建临时目录后因外层默认 ExecutionPolicy 拒绝 module import 而 exit 1，未创建 PID，随后精确删除该目录。
+- 使用 `-ExecutionPolicy Bypass -EncodedCommand` 重跑相同跨会话测试：Win32 Create return 0、PID 4412 在第一条 SSH 结束后仍存活、marker 存在；第二条 SSH 精确停止 PID 并删除唯一诊断目录，cleanup=PASS。根因修复已获得直接行为证据，正式训练仍为 0 steps。
+
+### 590. 2026-08-26：修复后 canonical mode=start 跨 SSH 持久运行
+
+- 修复后再次 Validate=validated/HEAD exact/Git clean；旧 controller status 的 interrupted_or_failed 仅对应已保存的 PID 25688 wrapper 失败。正式 output 再次确认 0 文件，诊断进程 0，因此允许在同一首次结果命名空间以 mode=start 发车，而不是 resume。
+- 新 worker PID=28212、UTC launch=`2026-08-25T16:44:09.7207135Z`，worker_state=running；第二条独立 SSH session 确认 worker 仍存活，并看到精确 Python 父子 PID 28404/27068，命令只含 train script、ready config 和 canonical output dir。
+- 第二条 SSH 状态仍为 running、Git clean、epoch/global_step=0、incompatible marker=false；GPU 暂为 622 MiB/0%、output 0 文件，符合 trainer 在 logger/data loader 前先执行完整 canonical readiness 字节复算的预期。正式训练进程现已真正脱离 SSH session 持久运行，未启动任何其他 run 或消融。
+
+### 591. 2026-08-26：canonical readiness 全量教师缓存树复算持续进行
+
+- 约 225.6 秒后首次出现 10 个静态运行 evidence：`runtime.json`、两份 resolved config、`git_state.json`、`requirements_freeze.txt`、claim/variant、manifest/lock hashes 和空 `train.log`。运行记录的 claim level 为 `paper_specified_reconstruction`，runtime 再次记录 RTX 5090、seed 42、deterministic=true；此时尚未出现 `teacher_cache_hash.json`、history、checkpoint 或 metrics。
+- 对训练实现的只读调用顺序确认：静态 evidence 写入过程中会对 99,334 个教师缓存文件（锁定总字节 1,310,102,478）执行 `canonical_tree_hash`，完成后才写 `teacher_cache_hash.json`、官方 evaluator hash 和 CUDA evidence，再由 logger 写首行；因此当前 `train.log` 为 0 bytes 与实现顺序一致。
+- 17:01:26 UTC 独立 SSH 复查：worker PID 28212、venv launcher PID 28404、实际 Python PID 27068 全部存活，命令未变化，Git clean，stderr 为空。17:01:45--17:02:15 UTC 的 30 秒活性窗口内，实际 Python CPU 增加 2.625 秒、working set 增加 1,290,240 bytes；结合此前 30 秒窗口的 8,550 次读取、49,042,800 bytes 读取增量，判定为仍在活动扫描而非挂起。未重启、未 resume、未运行额外 preflight 或其他实验。
+
+### 592. 2026-08-26：第一条正常 INFO 暴露 PowerShell native stderr 包装缺陷
+
+- 17:05 UTC 教师缓存树复算完成，receipt 精确为 99,334 files、1,310,102,478 bytes、SHA256 `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`；随后 `train.log` 写出唯一一行 `Using device: cuda`，但 worker 以 exit 1 结束。现场为 history/checkpoint/final metrics/incompatible marker 全无，stdout/stderr 两文件均 0 bytes，Git clean。
+- 结合 worker state 的 `System.Management.Automation.RemoteException: ... INFO: Using device: cuda` 和训练入口顺序，定位为 Windows PowerShell 5.1 在 `$ErrorActionPreference=Stop` 下将 native stderr 的正常 logger INFO 转成终止异常。该行位于 data loader、student/loss、optimizer 构建之前；真实训练循环的 `scaler.step(optimizer)` 更在后续，因此本次 optimizer steps 精确为 0，不是模型/数据/CUDA 失败。
+- 按 TDD 新建 `Test-NativeRedirect.ps1`：生产函数不存在时远端 RED exit 1；新增 `Invoke-NativeProcessWithRedirect`，以独立 OS stdout/stderr redirect 和 wait 获取真实 exit code。实现后本地及 5090 都得到 `NATIVE_REDIRECT_TEST=PASS` / exit 0，证明正常 stderr 被保存但不会杀死 exit-0 child。
+- 批量上传、哈希与三测试命令的外层在 64 秒超时且未返回结果，该批结果作废；拆为三条远端命令后，native redirect、pre-training recovery guard、persistent process 三项均明确 PASS/exit 0。
+
+### 593. 2026-08-26：修复 evaluator evidence 运行时路径并受控恢复同一 canonical run
+
+- 完成 output 机械审计时发现 `official_evaluator_hash.json` 为 `source_exists=false/matches_lock=false`。根因是 R5 static evidence writer 读取上游身份字段 `source_file=proposed_method/...` 作为项目相对路径；canonical validator 实际锁定并验证的是 `source.path=external/OV-AVEL/proposed_method/...`。正式 external checkout 中源文件存在且 SHA256 精确为 `013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19`。
+- 不修改 exact commit；在正式 worktree 创建只读兼容 junction `proposed_method -> external/OV-AVEL/proposed_method`，并在 Git info exclude 中加入锚定 `/proposed_method/`，原 exclude 已保存到 `E:\OV-OrthKD-R3\formal_control\git_info_exclude.before_runtime_evaluator_alias.txt`。junction 后 runtime source 哈希精确匹配、`git status --porcelain --untracked-files=all` 仍 0 行。
+- 对恢复条件新增 fail-closed guard，并按 TDD 先得缺少函数的 RED exit 1，再实现：只接受 worker 特征异常、空 wrapper stdout/stderr、无子目录、恰好 13 个静态 evidence 文件、唯一 `Using device` 日志行，以及完整 cache receipt；任何 history/checkpoint/额外文件都会失败。本地与远端 guard 测试均 PASS/exit 0，实际现场验证返回 `validated_pretraining_wrapper_failure`、file_count=13、optimizer_steps=0、formal Python count=0。
+- 恢复前 controller Validate 再次确认 exact HEAD、Git clean、locked Python/config 和 evaluator SHA；将第一次失败的 13 个 output 文件与四个 control 文件逐字节复制到外置 `pretraining_wrapper_failure_20260825T170502Z`，manifest 记录 17 个原始文件的 bytes/SHA256 和 optimizer_steps=0，目录含 manifest 共 18 files。
+- 以专用 `RecoverPreTraining` 动作恢复同一个 `start` 命令，不是 resume、没有参数变化。新 worker PID 11940、launcher PID 16640、实际 Python PID 6352，UTC launch `2026-08-25T17:17:23.4681267Z`；第二条 SSH session 确认三进程存活、Git status 0、stdout/stderr 0 bytes、history/checkpoint/final metrics 仍无。未启动额外 run、preflight 或消融。
+
+### 594. 2026-08-26：正式 canonical 通过运行时证据门并开始 epoch 1
+
+- 恢复运行在 `2026-08-25T17:21:20.8095843Z` 重写 runtime evidence，`17:22:53.2340729Z` 完成第二次 cache receipt。新 cache 仍精确为 99,334 files、1,310,102,478 bytes、SHA256 `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`。
+- 新 `official_evaluator_hash.json` 已闭合：source resolve 到锁定的主 repo external checkout，`source_exists=true`、`matches_lock=true`，expected/actual SHA256 均为 `013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19`。第二条 `Using device: cuda` 同时写入 train.log 和安全重定向 stderr，Python 继续存活，说明真实入口中的 native redirect 修复有效。
+- 正式训练进入 epoch 1/30。17:24:19 UTC 实时进度为 batch 111/3296；配置内 `max_batches_per_epoch=400` 会在 batch index 400 前按 canonical 协议停止本 epoch，因此预期每 epoch 400 optimizer steps、30 epochs 最多 12,000 steps。实时约 3.43 it/s、loss 0.5764、orth 0.000456；RTX 5090 为 8,354/32,607 MiB、27% utilization、207.42 W、56°C。无 NaN/Inf/OOM，history/last checkpoint 将在 epoch 结束后首次落盘。
+- 新建 `扩刊/复现/01_PRETRAINING_WRAPPER_INCIDENT.md` 并更新 README。第一次合并补丁因 README 上下文与实际文字不完全一致而被 apply_patch 整体拒绝，确认无半写；按实际上下文重做后成功。
+
+### 595. 2026-08-26：epoch 1 完整落盘并修复单记录状态读取
+
+- epoch 1 的训练部分在 batch 400 精确结束，没有跑完整 loader 的 3,296 batches；随后按协议全量处理 5,798 个 validation 样本（57,980 个 T=10 segment）。四个 DataLoader worker 的 30 秒 CPU 增量约 18.6--20.4 秒、主进程约 10.9 秒，证明无 tqdm 的 validation 期间仍持续活动。
+- `2026-08-25T17:33:10Z` epoch 1 完成：global_step=400、elapsed 616.2736 s、peak GPU memory 6,566.866 MiB、LR 0.0001994522；train total loss 1.18426545。validation AP=0.730203694、AUROC=0.626083108、OV-AVEL segment F1@0.5=0.537757481、accuracy=0.615332873；sample_count=5,798、segment_count=57,980。新 best 与 last checkpoint 均成功写出，各 565,912,209 bytes。
+- 首条 JSONL 出现后发现外置 controller 的 PowerShell 单元素数组会被解包，旧状态读取可能将末字符 `}` 当作记录；正式 trainer/history 内容正确且不受影响。新增 `Test-JsonLinesReader.ps1`，先得函数缺失 RED exit 1，再实现逐行解析并强制调用侧数组包装；本地四项控制测试全部 PASS/exit 0，远端 JSONL 测试 PASS/exit 0。
+- 上传更新后的 control module/controller 后，真实 `Status` 正确返回 running、epoch_records=1、last_epoch=0、global_step=400、best/last=true、final=false、incompatible=false、Git clean。17:36:31 UTC epoch 2 已完成 400 个训练 batch并进入全量 validation；GPU 8,354 MiB、45%、166.73 W、57°C。
+
+### 596. 2026-08-26：epoch 2 完整落盘并确认重复周期稳定
+
+- 17:40:48 UTC 第二条 history 与新 `last.pt` 原子落盘；controller/直接 JSONL 解析均得到 epoch_records=2、epoch=1（人类编号 2）、global_step=800。Python 和 worker 持续存活，Git clean、incompatible marker=false。
+- epoch 2 elapsed 456.3967 s、peak GPU memory 6,566.866 MiB、LR 0.00019781476；train total loss 从 epoch 1 的 1.18426545 降至 1.07744086。validation AP=0.716226131、AUROC=0.601198195、segment F1@0.5=0.537757481；本 epoch `saved_best=false`，因此 `last.pt` 时间戳更新而 `best.pt` 正确保留 epoch 1，符合按 validation AP 选 best 的协议。
+- 两个完整 epoch 已证明固定 400 train batches、全量 5,798-sample validation、history/checkpoint 写入和 best-selection 周期重复稳定；epoch 3 已自动开始。没有修改参数、切换 seed、重启、resume、运行 preflight 或启动任何消融。
+
+### 597. 2026-08-26：当前交付前 fresh verification
+
+- 按 `verification-before-completion` 规则重新运行全部本地控制层验证：7 个 PowerShell 文件 parser errors 总计 0；`Test-JsonLinesReader`、`Test-NativeRedirect`、`Test-PersistentProcess`、`Test-PreTrainingRecoveryGuard` 全部明确 PASS/exit 0。嵌套正式 repo HEAD 仍为 `31b86c0...`、status 0 行；`扩刊/复现` 已包含计划、状态、事故报告、README、三份控制实现和四项行为测试。
+- 同轮在 5090 重新运行四项行为测试，全部 PASS/exit 0；随后 controller `Status` 明确返回 running、epoch_records=2、last_epoch=1、global_step=800、best/last=true、final=false、incompatible=false、Git clean。
+- 17:42:40 UTC 再独立复核：实际 Python PID 6352 存活，exact HEAD 与 Git status 0；cache receipt 仍精确匹配 99,334/1,310,102,478/`670790...0244`；evaluator source exists/matches_lock 且 expected=actual=`013949...ed19`；final metrics 尚未生成。epoch 3 实时 batch 268、loss 1.0444、orth 0.000012，GPU 8,397/32,607 MiB、201.86 W、57°C。
+
+### 598. 2026-08-26：canonical seed42 正式完成
+
+- controller fresh status 返回 `completed`：worker exit code 0、30 epoch records、last_epoch=29、global_step=12,000、best/last/final metrics 全部存在、incompatible marker=false、process_alive=false、Git clean。worker 完成时间 `2026-08-25T21:37:15.2900977Z`，相对受控启动 wall time 4:19:51.822。
+- 21 个正式顶层文件全部存在，没有 output 子目录；指导要求的 16 项核心文件缺失 0。best epoch 为 1（zero-based 0）、best validation AP=0.730203694；30 epochs 累计 elapsed 14,424.447 秒、max peak GPU memory 6,566.866 MiB、final LR=0.0。
+- 最终 test：Total AP 0.741946139、AUROC 0.633874810、OV-AVEL segment F1@0.5 0.540393413、accuracy 0.621099656；Unseen AP 0.722398451、accuracy 0.624783446、segment F1 0.540543787；Seen AP 0.789274515、accuracy 0.611899038、segment F1 0.540017839。与论文主 AP 0.816 相差 -0.074053861，因此数值复现未达成。
+
+### 599. 2026-08-26：最终 full artifact audit 与 evaluator 报告缺口
+
+- 新增 `扩刊/复现/audit_canonical_seed42.py`。首次远端审计因子进程 PATH 找不到 `git` 而 exit 1，停在任何全文件验收 receipt 生成前且未修改 formal output；新增显式 `--git` 参数并传入锁定 MinGit 后重跑。
+- 完整审计 exit 0、status `PASS`、errors=[]：30 条 history epoch/global-step 顺序精确，所有 loss/metrics finite；best checkpoint epoch0/step400、last epoch29/step12000，fingerprint 均为 `a9298aa...faa9`；validation 5,798×10、test 5,820×10，每样本 segment indices 精确 0…9，概率范围合法，best/final validation predictions SHA 完全相同；cache/evaluator/Git/protocol/claim 和全部正式文件 SHA 均通过。
+- 发现一个必须独立记录的报告覆盖缺口：config/archival lock 将 calibrated F1 映射为 `ovavel_segment_f1_at_validation_selected_threshold`，但 production evaluator 只输出 `binary_micro_f1_at_threshold=0.763588413`，且官方 OV-AVEL helper 明确拒绝 threshold≠0.5。不得用 binary micro F1 冒充论文 calibrated segment F1；该论文表格单元保持“未输出/不可比较”。
+
+### 600. 2026-08-26：小型证据回收与最终报告
+
+- 新建 `扩刊/复现/canonical_seed42`，只从 5090 回收 final metrics、30 条 history、claim/variant/Git/cache/manifest/evaluator/config/runtime/lock/requirements/CUDA、worker state 和 full artifact audit；未复制两个 565,912,209-byte checkpoint、三个 prediction NPZ、数据、教师 checkpoint/cache 或完整 stderr 进度流。
+- 本地逐项复算所有已同步正式文件 SHA，全部与远端 audit manifest 相同；所有 JSON 解析通过，history 恰好 30 records，本地 audit status=PASS、verify errors=0。额外核对 audit receipt 本地/远端 SHA 同为 `8d6880516bfeef9fcd489f90b3d23ec875b253df2af076866b73fee7b3d11633`，worker state 本地/远端 SHA 同为 `5d48df4e...d3ef7`。
+- 生成 `扩刊/复现/CANONICAL_SEED42_REPRODUCTION_REPORT.md` 并将 `CURRENT_STATUS.md` 更新为完成态。结论为：运行与 artifact audit 完成通过；论文数值复现未达成；calibrated segment F1 缺失；消融保持 0，停在 canonical review gate。
+
+### 601. 2026-08-26：最终报告 fresh verification
+
+- `audit_canonical_seed42.py` fresh compile exit 0；本地 audit JSON status=PASS、errors=0、epoch_records=30、global_step=12000，与 final metrics AP/segment F1 和 Markdown 判定逐项一致。`扩刊/复现` 的 Markdown/Python 占位符扫描匹配 0。
+- `canonical_seed42` 本地目录共 17 个小型文件，未出现 checkpoint、prediction、dataset 或 cache；远端 fresh controller 状态仍为 completed、worker exit 0、Git clean、30 epochs/12,000 steps、best/last/final metrics=true、incompatible=false。
+- 正式复现阶段到此停止，没有启动任何消融或第二个 seed。最终交付结论保持：canonical 执行完成且 artifact audit 通过，但论文主数值未复现，calibrated segment F1 生产输出缺失。
+
+### 602. 2026-08-26：canonical seed42 数值范围与基线诊断
+
+- 按 PDF 审阅流程对 `mfp2306_final.pdf` 执行 `pdfinfo`、UTF-8 layout 文本抽取，并把第 5、6、7 页以 150/180 DPI 渲染为 PNG 后逐页目视核对；确认论文 Table 3/4/5 与 Fig. 4 的原始行值，包括 Student-only、Visual feature only、Zhou official baseline、OV-OrthKD Full、seen/unseen F1 和五 seed `±0.003 AP` 波动说明。
+- 对本地 `final_metrics.json` 与 30 条 `history.jsonl` 重新解析。当前 Full test AP/AUROC/segment F1 为 `0.741946/0.633875/0.540393`；相对论文 Full 分别低 `0.074054/0.116125/0.055607`，AP 差距约为论文所报 seed 波动尺度的 24.7 倍，判定不是普通随机或浮点差异。
+- 基线差值复算：当前相对 Student-only 为 AP `+0.027946`、AUROC `+0.021875`、F1 `+0.017393`；相对 Visual feature only 为 `-0.036054/-0.067125/-0.027607`；相对 Zhou official fine-tuning 为 `-0.003054/-0.016125/-0.028607`。当前仅在 AP 上接近 Zhou baseline，核心 segment F1 已低于官方 baseline 和更简单的 Visual feature only。
+- 发现阈值退化的机械证据：test 正类率 `p=0.6154639175` 时，全正预测的 binary micro F1 `2p/(1+p)=0.7619655392`，与本次 `binary_micro_f1_at_0_5` 逐位相同；30 个 validation epoch 中 29 个预测正类率精确为 1.0，另一个为 0.999828。故 binary F1 的表面高分不可作为定位成功证据。
+- 训练曲线最佳点在第 1 epoch，后续 29 epoch 均未刷新，且完整 Full 结果低于 Visual feature only；结论为运行/产物健康但论文数值已明显偏离正常复现范围，核心蒸馏收益缺失。新建 `复现/CANONICAL_SEED42_RESULT_DIAGNOSIS.md` 保存完整基线表、推导、seen/unseen 异常说明与停止条件；没有改代码、参数、checkpoint，也没有启动消融或第二 seed。
+
+### 603. 2026-08-26：建立 GitHub canonical seed42 诊断发布分支与小型证据包
+
+- 用户要求把当前结果、相应代码、实际配置和所有可能影响结果的可公开小型证据上传到对应 GitHub 仓库，供 ChatGPT Pro 网页端独立诊断；明确继续排除数据集、教师 cache/checkpoint、student checkpoint、prediction NPZ 和完整训练进度流。
+- 按任务适用性读取 `using-superpowers`、`brainstorming`、`writing-plans`、`using-git-worktrees`、`finishing-a-development-branch` 和 `verification-before-completion`。检测确认 `OV-OrthKD-R2` 已是 Git linked worktree，父 HEAD 精确为 `31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`、status clean；无需再创建嵌套 worktree，从该起点新建 `repro/canonical-seed42-results`。
+- 对 `all.md` 新增区域与 `复现` 结果包执行敏感信息扫描，没有发现密码、token、cookie、Authorization、SharePoint 签名 URL 或实际下载链接；repo 远端仍为 `https://github.com/rayyyyyyyyb/mm1.git`。将扩刊 `all.md` 精确同步进 repo，SHA256 `f9005aa192a782bafe36cb467565fd0d6222432d1de4f9eddd1d0a1233738e03`、457,023 bytes。
+- 第一次小型证据复制命令因 PowerShell 将 `Join-Path` 与 `+$_.Name` 错误绑定而 exit 1，只在新目标目录复制了部分计划/报告文件；未覆盖任何既有 tracked 文件。修正为显式 `$target` 后完整重跑并逐文件比较 source/destination SHA256：31/31 个非 pyc 文件完全一致，目标为 `reports/formal_reproduction/canonical_seed42`。
+- 结果包包括 final metrics、30 条 history、实际 resolved config、CUDA/runtime/requirements freeze、Git/manifest/lock/cache/evaluator hashes、worker state、最终 artifact audit、运行报告、数值诊断、启动控制器、wrapper 事故说明、独立审计脚本和四项控制层行为测试。新增 `reports/formal_reproduction/README.md` 作为 Pro 推荐阅读入口，并更新根 `README.md`、`CURRENT_STATUS.md` 与包内 README，消除“正式训练尚未启动”的过期状态。
+- 当前只完成本地发布候选整理，尚未声称验证、commit 或 push 成功；下一步将 fresh 验证结构化文件、证据 SHA、敏感信息、大文件边界、完整测试和 Git diff，再提交并推送新分支。
+
+### 604. 2026-08-26：发布候选 fresh 验证与环境性失败闭环
+
+- 第一轮并行发布检查中，结构化解析已通过 75 个 tracked JSON/YAML，但 `git diff --check` 准确发现新 `CURRENT_STATUS.md` 头部三处 Markdown 硬换行尾空格并令该检查 exit 1；其他并行结果因 orchestrator 在首个 rejected promise 后提前结束，不作为证据。仅把三处硬换行改为空行分隔后完整重跑。
+- 重跑结果：17/17 个回收正式 evidence 与扩刊源文件 SHA256 完全一致；`final_artifact_audit` 为 PASS/errors=0；history 恰好 30 条、最终 global step 12,000；AP 精确为 `0.7419461390325246`；按正类率复算的全正 binary F1 与产出均为 `0.761965539246969`。compileall exit 0、75 个 JSON/YAML 全部解析、7 个 PowerShell 脚本/module parser errors=0、`git diff --check` exit 0、9 个网页入口存在、敏感信息匹配 0、>5 MiB tracked 文件 0、被禁大资产扩展名 0。
+- 本地完整 pytest 在 collection 阶段因本机 Anaconda 缺少 `timm` 以 exit 1 停止，产生 16 个 import errors；这是本地环境不完整，不能当作代码回归通过。改到正式训练相同的 5090 locked venv 和 exact worktree fresh 执行。
+- 5090 第一轮完整 pytest 因启动命令遗漏锁定 MinGit PATH，以 exit 1 得到 `352 passed, 36 failed in 353.81s`；失败全部集中在依赖子进程 `git` 的 canonical readiness/repository/teacher identity 测试，首因是 `FileNotFoundError [WinError 2]`。没有修改实现，也没有只挑失败项重跑。
+- 将锁定 `E:\OV-OrthKD-R3\tools\mingit-2.55.0.5\root\cmd` 前置到 PATH 后，从头 fresh 重跑完整 suite；`git version 2.55.0.windows.5`、pytest exit 0，最终 `388 passed in 387.04s (0:06:27)`。测试没有启动训练、preflight、teacher export 或消融，也没有改动 formal output。
+
+### 605. 2026-08-26：保留正式 evidence 原始字节并完成 staged diff 审阅
+
+- 首次 staged 审阅得到 35 个发布文件、3,336 insertions/68 deletions，`src/scripts/configs/tests` 代码路径改动 0，最大新增文件为 461,213-byte `all.md`，>5 MiB 文件 0；但逐 blob 比较发现根 `.gitattributes` 的 `* text=auto` 会把 16 个 Windows CRLF 正式 evidence 在 Git index 中规范化为 LF，导致 GitHub raw bytes 与原始 audit SHA 不一致。
+- 为 immutable 原始 evidence 目录新增精确属性 `reports/formal_reproduction/canonical_seed42/canonical_seed42/** -text whitespace=cr-at-eol`，不改变代码、报告或其他仓库文本规则。普通 `git add` 后 index 仍保留先前规范化 blob，因此第一次 17/17 byte gate 仅 1/17 通过并 exit 1；执行针对该目录的 `git add --renormalize` 后再次比较，17/17 worktree/index Git blob 完全相同。
+- `whitespace=cr-at-eol` 只告诉 Git 原始 CRLF 是合法行尾，使 exact byte evidence 在普通 `git diff --cached --check` 下仍为 exit 0；文件保持 JSON/YAML/TXT 原扩展名并可在网页阅读，没有改成占位摘要或隐藏大资产。发布分支仍未提交/推送，下一步进行最后 staged 安全审计后创建 commit。

@@ -1,0 +1,645 @@
+{
+  "cache": {
+    "bytes": 1310102478,
+    "exists": true,
+    "files": 99334,
+    "path": "E:\\OV-OrthKD-R3\\repo\\data\\teacher_cache\\mm26",
+    "schema_version": 1,
+    "sha256": "6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244"
+  },
+  "checkpoints": {
+    "best.pt": {
+      "best_metric": 0.7302036939345478,
+      "bytes": 565912209,
+      "epoch": 0,
+      "fingerprint": {
+        "components": {
+          "config_sha256": "c28d482ff264536f69e006d5407aed0ac49dd8f1fd5c6ec2546dbaf212a0b57b",
+          "evidence": {
+            "exported_audit": {
+              "bytes": 5430,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/reports/mm26_exported_artifact_audit.json",
+              "sha256": "f284c166428cb8957a354d3209ccfe8a4f2f34cd7c712ea397cc9c1b37d1d9fc"
+            },
+            "readiness_receipt": {
+              "bytes": 3096,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/reports/mm26_conference_readiness.json",
+              "sha256": "faec2eddb2beaad90724b6e32fa4e24f2e0e852aada4a4a157cd08ea19d422e2"
+            }
+          },
+          "git_state": {
+            "commit": "31b86c0d60c4bf2ed028edf1385ed5d2c9e89153",
+            "dirty": false
+          },
+          "locks": {
+            "archival_lock": {
+              "bytes": 9207,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_archival_facts.yaml",
+              "sha256": "e3da98eb245a831e19d9309a0c58c9a338a73b05d291e868dd9c037e8adda0ad"
+            },
+            "data_lock": {
+              "bytes": 6379,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_data_lock.yaml",
+              "sha256": "d45eeb120c1793cdda9ffa69021fe9b9055c5528d91a4ce0cc6230ca673aba57"
+            },
+            "download_lock": {
+              "bytes": 6575,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_download_lock.yaml",
+              "sha256": "5ca0109b931b55c1fb1fb4c9e723996f36040b3392c20713bb7257e88062cc2a"
+            },
+            "evaluator_lock": {
+              "bytes": 1822,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_evaluator_lock.yaml",
+              "sha256": "e2b67bae839c81ba16721236172d698be100695313be6b3a8a38fd70e558928d"
+            },
+            "preprocessing_lock": {
+              "bytes": 4132,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_preprocessing_lock.yaml",
+              "sha256": "6eaa7aee15135a740af8deec58c90e37858c300243cad13b144d89f6a3b5c9e7"
+            },
+            "teacher_lock": {
+              "bytes": 7595,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_teacher_lock.yaml",
+              "sha256": "1dd082bfca7e045ee493b35578697fda7c678056c33765437d5a59fbda84d337"
+            }
+          },
+          "manifests": {
+            "test": {
+              "bytes": 16597404,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/repo/data/ov_ave/exported/test.jsonl",
+              "sha256": "ae8bd54c74d7e1c522c7d41cce9c2b8b2e96556ba80480ab6c1382d481ab2ea3"
+            },
+            "train": {
+              "bytes": 37677446,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/repo/data/ov_ave/exported/train.jsonl",
+              "sha256": "cb30035c533d56d44469d063ba11720ae3660266535ede670db6b6f53bdc7666"
+            },
+            "val": {
+              "bytes": 16447628,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/repo/data/ov_ave/exported/val.jsonl",
+              "sha256": "df2e8979c3fa05dcadaeb5ff7ef9726263fae7950b7478d30cb709aefbc97160"
+            }
+          },
+          "run_mode": "conference_experiment",
+          "variant": "conference_baseline"
+        },
+        "schema_version": 2,
+        "sha256": "a9298aa8e02c4423894894ce79caca46a9a8605336134b63170a5a55f411faa9"
+      },
+      "global_step": 400,
+      "keys": [
+        "best_metric",
+        "config",
+        "epoch",
+        "epochs_without_improvement",
+        "global_step",
+        "implementation_mode",
+        "loss_state_dict",
+        "optimizer_state_dict",
+        "reproduction_fingerprint",
+        "rng_state",
+        "scaler_state_dict",
+        "scheduler_state_dict",
+        "student_state_dict"
+      ],
+      "sha256": "01cdb036ec11768ced94331742490d62c1f62bf842b2b2ee03134101dba1f392"
+    },
+    "last.pt": {
+      "best_metric": 0.7302036939345478,
+      "bytes": 565912209,
+      "epoch": 29,
+      "fingerprint": {
+        "components": {
+          "config_sha256": "c28d482ff264536f69e006d5407aed0ac49dd8f1fd5c6ec2546dbaf212a0b57b",
+          "evidence": {
+            "exported_audit": {
+              "bytes": 5430,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/reports/mm26_exported_artifact_audit.json",
+              "sha256": "f284c166428cb8957a354d3209ccfe8a4f2f34cd7c712ea397cc9c1b37d1d9fc"
+            },
+            "readiness_receipt": {
+              "bytes": 3096,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/reports/mm26_conference_readiness.json",
+              "sha256": "faec2eddb2beaad90724b6e32fa4e24f2e0e852aada4a4a157cd08ea19d422e2"
+            }
+          },
+          "git_state": {
+            "commit": "31b86c0d60c4bf2ed028edf1385ed5d2c9e89153",
+            "dirty": false
+          },
+          "locks": {
+            "archival_lock": {
+              "bytes": 9207,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_archival_facts.yaml",
+              "sha256": "e3da98eb245a831e19d9309a0c58c9a338a73b05d291e868dd9c037e8adda0ad"
+            },
+            "data_lock": {
+              "bytes": 6379,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_data_lock.yaml",
+              "sha256": "d45eeb120c1793cdda9ffa69021fe9b9055c5528d91a4ce0cc6230ca673aba57"
+            },
+            "download_lock": {
+              "bytes": 6575,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_download_lock.yaml",
+              "sha256": "5ca0109b931b55c1fb1fb4c9e723996f36040b3392c20713bb7257e88062cc2a"
+            },
+            "evaluator_lock": {
+              "bytes": 1822,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_evaluator_lock.yaml",
+              "sha256": "e2b67bae839c81ba16721236172d698be100695313be6b3a8a38fd70e558928d"
+            },
+            "preprocessing_lock": {
+              "bytes": 4132,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_preprocessing_lock.yaml",
+              "sha256": "6eaa7aee15135a740af8deec58c90e37858c300243cad13b144d89f6a3b5c9e7"
+            },
+            "teacher_lock": {
+              "bytes": 7595,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/formal-canonical-31b86c0/configs/locks/mm26_teacher_lock.yaml",
+              "sha256": "1dd082bfca7e045ee493b35578697fda7c678056c33765437d5a59fbda84d337"
+            }
+          },
+          "manifests": {
+            "test": {
+              "bytes": 16597404,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/repo/data/ov_ave/exported/test.jsonl",
+              "sha256": "ae8bd54c74d7e1c522c7d41cce9c2b8b2e96556ba80480ab6c1382d481ab2ea3"
+            },
+            "train": {
+              "bytes": 37677446,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/repo/data/ov_ave/exported/train.jsonl",
+              "sha256": "cb30035c533d56d44469d063ba11720ae3660266535ede670db6b6f53bdc7666"
+            },
+            "val": {
+              "bytes": 16447628,
+              "exists": true,
+              "path": "E:/OV-OrthKD-R3/repo/data/ov_ave/exported/val.jsonl",
+              "sha256": "df2e8979c3fa05dcadaeb5ff7ef9726263fae7950b7478d30cb709aefbc97160"
+            }
+          },
+          "run_mode": "conference_experiment",
+          "variant": "conference_baseline"
+        },
+        "schema_version": 2,
+        "sha256": "a9298aa8e02c4423894894ce79caca46a9a8605336134b63170a5a55f411faa9"
+      },
+      "global_step": 12000,
+      "keys": [
+        "best_metric",
+        "config",
+        "epoch",
+        "epochs_without_improvement",
+        "global_step",
+        "implementation_mode",
+        "loss_state_dict",
+        "optimizer_state_dict",
+        "reproduction_fingerprint",
+        "rng_state",
+        "scaler_state_dict",
+        "scheduler_state_dict",
+        "student_state_dict"
+      ],
+      "sha256": "5d021135744364b006bb6d8060499901846cb0c695ebf1f6935c0f2ba627d4ca"
+    }
+  },
+  "claim_level": "paper_specified_reconstruction",
+  "errors": [],
+  "evaluator": {
+    "actual_sha256": "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19",
+    "expected_sha256": "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19",
+    "lock_path": "E:\\OV-OrthKD-R3\\formal-canonical-31b86c0\\configs\\locks\\mm26_evaluator_lock.yaml",
+    "matches_lock": true,
+    "source_exists": true,
+    "source_path": "E:\\OV-OrthKD-R3\\repo\\external\\OV-AVEL\\proposed_method\\ImageBind-main\\utils\\eval_metrics.py"
+  },
+  "file_manifest": {
+    "claim_level.txt": {
+      "bytes": 32,
+      "sha256": "69515b3a5e14a982b8ddbc0b8c0322d1b104a407921850a0141e3051d406b992"
+    },
+    "config_resolved.yaml": {
+      "bytes": 7623,
+      "sha256": "9d7ed87ac27303596f70463f56bba95a0bee687bc328f2ec0f14930dc2e66dc7"
+    },
+    "cuda_environment.json": {
+      "bytes": 464,
+      "sha256": "e8907309fdfc29f2df68f1f21445f3632890620bb8a96e281614f71ba4541964"
+    },
+    "experiment_variant.json": {
+      "bytes": 221,
+      "sha256": "0811719c23f9df7149acc45eff01f7e6e125cbb4575367e09f0ff27af7af0c8a"
+    },
+    "final_metrics.json": {
+      "bytes": 5128,
+      "sha256": "ebd0a4fc886813b2dd4820a1b3f5bf041baade29b96ec1cafa5f97ea88b1c2df"
+    },
+    "git_state.json": {
+      "bytes": 666,
+      "sha256": "7bce980d551018ffab21120bd7735efab2f6866f6221b5054fcadc7d80b6447e"
+    },
+    "history.jsonl": {
+      "bytes": 30317,
+      "sha256": "f9ec5f29d81b0c0fc64da2cc5bdea2c5773384dba3c96a32f79cf10c89273c9b"
+    },
+    "lock_hashes.json": {
+      "bytes": 1394,
+      "sha256": "683de0ad8bf9a9edbacd0abcdf8fe7200c6eaac86c4ff3d2dd0a421ae2c99b41"
+    },
+    "manifest_hashes.json": {
+      "bytes": 596,
+      "sha256": "89e6c26b399f79cd680f8fb571828259b6110aa817b5d1489d8735c5925b448b"
+    },
+    "official_evaluator_hash.json": {
+      "bytes": 458,
+      "sha256": "006590c19a19e6bc267709cc0770e5cbaf0961d2106d5029c6f3515b876b40ad"
+    },
+    "requirements_freeze.txt": {
+      "bytes": 1105,
+      "sha256": "c3e83e5e7944135d58588610632eb665d53c42bee665f1ebb248c6504017104c"
+    },
+    "resolved_config.yaml": {
+      "bytes": 7623,
+      "sha256": "9d7ed87ac27303596f70463f56bba95a0bee687bc328f2ec0f14930dc2e66dc7"
+    },
+    "runtime.json": {
+      "bytes": 429,
+      "sha256": "91c236fbc87818e87c41b6e175b3c613d4464cc405c8d82d072883697b9e3cb6"
+    },
+    "teacher_cache_hash.json": {
+      "bytes": 236,
+      "sha256": "a91a4421cb8b723107558a6b0915f6f45d452cb7335d49a32e563303fc57c03f"
+    },
+    "train.log": {
+      "bytes": 30786,
+      "sha256": "01ce62758912187b2b9cc8767bb9330e6a792e7b1442c160165d20d712aeb752"
+    },
+    "validation_pr_curve.npz": {
+      "bytes": 785677,
+      "sha256": "a90bd4f6a590257a7f7ff82cddad54139b405cd9b274ae0d60b3149a5075de14"
+    }
+  },
+  "final_metrics": {
+    "test": {
+      "metrics": {
+        "seen": {
+          "accuracy": 0.6118990384615385,
+          "ap": 0.7892745152007632,
+          "auroc": 0.7202613965013418,
+          "auroc_available": true,
+          "binary_micro_f1_at_0_5": 0.7559808612440191,
+          "binary_micro_f1_at_threshold": 0.757600780722168,
+          "binary_precision_at_threshold": 0.6105263157894737,
+          "binary_recall_at_threshold": 0.9980221518987342,
+          "ovavel_event_f1_at_0_5": 0.573417467948718,
+          "ovavel_segment_f1_at_0_5": 0.5400178386894439,
+          "positive_rate": 0.6076923076923076,
+          "predicted_positive_rate": 0.9933894230769231,
+          "query_fg_f1_macro_at_0_5": 0.6455404850711955,
+          "sample_count": 1664,
+          "segment_count": 16640,
+          "threshold": 0.6659861520031973
+        },
+        "total": {
+          "accuracy": 0.6210996563573883,
+          "ap": 0.7419461390325246,
+          "auroc": 0.6338748098301057,
+          "auroc_available": true,
+          "binary_micro_f1_at_0_5": 0.7619655392469687,
+          "binary_micro_f1_at_threshold": 0.7635884131306417,
+          "binary_precision_at_threshold": 0.6198092519753559,
+          "binary_recall_at_threshold": 0.9942211055276382,
+          "ovavel_event_f1_at_0_5": 0.5774341351660939,
+          "ovavel_segment_f1_at_0_5": 0.5403934127616343,
+          "positive_rate": 0.6154639175257732,
+          "predicted_positive_rate": 0.9872508591065292,
+          "query_fg_f1_macro_at_0_5": 0.6558727361761897,
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.6659861520031973
+        },
+        "unseen": {
+          "accuracy": 0.6247834456207892,
+          "ap": 0.7223984508490624,
+          "auroc": 0.6018936857329866,
+          "auroc_available": true,
+          "binary_micro_f1_at_0_5": 0.764345602663971,
+          "binary_micro_f1_at_threshold": 0.7659823518818657,
+          "binary_precision_at_threshold": 0.6235584440969507,
+          "binary_recall_at_threshold": 0.9927259996888128,
+          "ovavel_event_f1_at_0_5": 0.5790423484119346,
+          "ovavel_segment_f1_at_0_5": 0.5405437869811062,
+          "positive_rate": 0.6185755534167469,
+          "predicted_positive_rate": 0.9847930702598653,
+          "query_fg_f1_macro_at_0_5": 0.6600096143856965,
+          "sample_count": 4156,
+          "segment_count": 41560,
+          "threshold": 0.6659861520031973
+        }
+      },
+      "threshold": 0.6659861520031973
+    },
+    "validation": {
+      "metrics": {
+        "seen": {
+          "accuracy": 0.6048455481526348,
+          "ap": 0.7665156911715264,
+          "auroc": 0.707766108812077,
+          "auroc_available": true,
+          "binary_micro_f1_at_0_5": 0.7513235516563304,
+          "binary_micro_f1_at_threshold": 0.7521088228588798,
+          "binary_precision_at_threshold": 0.60406494140625,
+          "binary_recall_at_threshold": 0.9962754177571975,
+          "ovavel_event_f1_at_0_5": 0.5676357762971936,
+          "ovavel_segment_f1_at_0_5": 0.5324876192647016,
+          "positive_rate": 0.6016959418534221,
+          "predicted_positive_rate": 0.9923682616596002,
+          "query_fg_f1_macro_at_0_5": 0.6403840816547816,
+          "sample_count": 1651,
+          "segment_count": 16510,
+          "threshold": 0.6659861520031973
+        },
+        "total": {
+          "accuracy": 0.619834425664022,
+          "ap": 0.7302036939345478,
+          "auroc": 0.6260831081446276,
+          "auroc_available": true,
+          "binary_micro_f1_at_0_5": 0.7618651035160212,
+          "binary_micro_f1_at_threshold": 0.7628617536309844,
+          "binary_precision_at_threshold": 0.6190351474516788,
+          "binary_recall_at_threshold": 0.9937494744513272,
+          "ovavel_event_f1_at_0_5": 0.5770955501897206,
+          "ovavel_segment_f1_at_0_5": 0.5377574807678815,
+          "positive_rate": 0.6153328734046223,
+          "predicted_positive_rate": 0.9878061400482925,
+          "query_fg_f1_macro_at_0_5": 0.656577396858288,
+          "sample_count": 5798,
+          "segment_count": 57980,
+          "threshold": 0.6659861520031973
+        },
+        "unseen": {
+          "accuracy": 0.625801784422474,
+          "ap": 0.7172699634196513,
+          "auroc": 0.596181036691333,
+          "auroc_available": true,
+          "binary_micro_f1_at_0_5": 0.7660125273384613,
+          "binary_micro_f1_at_threshold": 0.7671088966262456,
+          "binary_precision_at_threshold": 0.6250336276260119,
+          "binary_recall_at_threshold": 0.9927747348793847,
+          "ovavel_event_f1_at_0_5": 0.5808616670685636,
+          "ovavel_segment_f1_at_0_5": 0.5398555134039437,
+          "positive_rate": 0.6207619966240656,
+          "predicted_positive_rate": 0.9859898721967687,
+          "query_fg_f1_macro_at_0_5": 0.6630242652935399,
+          "sample_count": 4147,
+          "segment_count": 41470,
+          "threshold": 0.6659861520031973
+        }
+      },
+      "threshold": 0.6659861520031973
+    },
+    "validation_calibration": {
+      "best_binary_f1": 0.7628617536309844,
+      "best_threshold": 0.6659861520031973,
+      "binary_precision_at_best_f1": 0.6190351474516788,
+      "binary_recall_at_best_f1": 0.9937494744513272
+    }
+  },
+  "git_clean": true,
+  "git_commit": "31b86c0d60c4bf2ed028edf1385ed5d2c9e89153",
+  "history": {
+    "best_epoch_one_based": 1,
+    "best_epoch_zero_based": 0,
+    "best_validation_ap": 0.7302036939345478,
+    "epoch_records": 30,
+    "final_global_step": 12000,
+    "final_learning_rate": 0.0,
+    "max_peak_memory_mb": 6566.8662109375,
+    "total_elapsed_seconds": 14424.447171500186
+  },
+  "predictions": {
+    "best_validation_predictions.npz": {
+      "arrays": {
+        "ids": {
+          "dtype": "<U11",
+          "shape": [
+            5798
+          ]
+        },
+        "labels": {
+          "dtype": "float64",
+          "shape": [
+            57980
+          ]
+        },
+        "logits": {
+          "dtype": "float64",
+          "shape": [
+            57980
+          ]
+        },
+        "probabilities": {
+          "dtype": "float64",
+          "shape": [
+            57980
+          ]
+        },
+        "queries": {
+          "dtype": "<U30",
+          "shape": [
+            5798
+          ]
+        },
+        "sample_offsets": {
+          "dtype": "int64",
+          "shape": [
+            5799
+          ]
+        },
+        "segment_indices": {
+          "dtype": "int64",
+          "shape": [
+            57980
+          ]
+        },
+        "split_types": {
+          "dtype": "<U6",
+          "shape": [
+            5798
+          ]
+        }
+      },
+      "bytes": 624348,
+      "sample_count": 5798,
+      "segment_count": 57980,
+      "sha256": "17bc66fd7d8fc5a1445d5b35e32acca9f65d5d00afbd8547d02788ea9246bfc0",
+      "split_counts": {
+        "seen": 1651,
+        "unseen": 4147
+      },
+      "task_segments_per_sample": [
+        10
+      ]
+    },
+    "test_predictions.npz": {
+      "arrays": {
+        "ids": {
+          "dtype": "<U11",
+          "shape": [
+            5820
+          ]
+        },
+        "labels": {
+          "dtype": "float64",
+          "shape": [
+            58200
+          ]
+        },
+        "logits": {
+          "dtype": "float64",
+          "shape": [
+            58200
+          ]
+        },
+        "probabilities": {
+          "dtype": "float64",
+          "shape": [
+            58200
+          ]
+        },
+        "queries": {
+          "dtype": "<U30",
+          "shape": [
+            5820
+          ]
+        },
+        "sample_offsets": {
+          "dtype": "int64",
+          "shape": [
+            5821
+          ]
+        },
+        "segment_indices": {
+          "dtype": "int64",
+          "shape": [
+            58200
+          ]
+        },
+        "split_types": {
+          "dtype": "<U6",
+          "shape": [
+            5820
+          ]
+        }
+      },
+      "bytes": 626899,
+      "sample_count": 5820,
+      "segment_count": 58200,
+      "sha256": "e78338c52577fd44a2fe07cd9150b2a2a32721cc0996f68a9dfbb37d0c95e2d5",
+      "split_counts": {
+        "seen": 1664,
+        "unseen": 4156
+      },
+      "task_segments_per_sample": [
+        10
+      ]
+    },
+    "validation_predictions.npz": {
+      "arrays": {
+        "ids": {
+          "dtype": "<U11",
+          "shape": [
+            5798
+          ]
+        },
+        "labels": {
+          "dtype": "float64",
+          "shape": [
+            57980
+          ]
+        },
+        "logits": {
+          "dtype": "float64",
+          "shape": [
+            57980
+          ]
+        },
+        "probabilities": {
+          "dtype": "float64",
+          "shape": [
+            57980
+          ]
+        },
+        "queries": {
+          "dtype": "<U30",
+          "shape": [
+            5798
+          ]
+        },
+        "sample_offsets": {
+          "dtype": "int64",
+          "shape": [
+            5799
+          ]
+        },
+        "segment_indices": {
+          "dtype": "int64",
+          "shape": [
+            57980
+          ]
+        },
+        "split_types": {
+          "dtype": "<U6",
+          "shape": [
+            5798
+          ]
+        }
+      },
+      "bytes": 624348,
+      "sample_count": 5798,
+      "segment_count": 57980,
+      "sha256": "17bc66fd7d8fc5a1445d5b35e32acca9f65d5d00afbd8547d02788ea9246bfc0",
+      "split_counts": {
+        "seen": 1651,
+        "unseen": 4147
+      },
+      "task_segments_per_sample": [
+        10
+      ]
+    }
+  },
+  "protocol": {
+    "epochs": 30,
+    "max_batches_per_epoch": 400,
+    "max_position_segments": 16,
+    "seed": 42,
+    "student_frames_per_segment": 1,
+    "task_segments": 10,
+    "teacher_frames_per_segment": 8,
+    "temporal_resampling": false,
+    "test_views": 1,
+    "view_aggregation": "none"
+  },
+  "schema_version": 1,
+  "status": "PASS"
+}

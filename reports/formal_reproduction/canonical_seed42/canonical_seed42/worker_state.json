@@ -1,0 +1,11 @@
+﻿{
+    "schema_version":  1,
+    "status":  "completed",
+    "mode":  "start",
+    "worker_process_id":  11940,
+    "updated_at_utc":  "2026-08-25T21:37:15.2900977Z",
+    "git_commit":  "31b86c0d60c4bf2ed028edf1385ed5d2c9e89153",
+    "output_dir":  "E:\\OV-OrthKD-R3\\formal-canonical-31b86c0\\outputs\\formal\\mm26_canonical_seed42",
+    "exit_code":  0,
+    "message":  "canonical training and evaluation completed"
+}
