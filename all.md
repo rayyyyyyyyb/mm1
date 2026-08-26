@@ -2377,3 +2377,10 @@
 - 首次 staged 审阅得到 35 个发布文件、3,336 insertions/68 deletions，`src/scripts/configs/tests` 代码路径改动 0，最大新增文件为 461,213-byte `all.md`，>5 MiB 文件 0；但逐 blob 比较发现根 `.gitattributes` 的 `* text=auto` 会把 16 个 Windows CRLF 正式 evidence 在 Git index 中规范化为 LF，导致 GitHub raw bytes 与原始 audit SHA 不一致。
 - 为 immutable 原始 evidence 目录新增精确属性 `reports/formal_reproduction/canonical_seed42/canonical_seed42/** -text whitespace=cr-at-eol`，不改变代码、报告或其他仓库文本规则。普通 `git add` 后 index 仍保留先前规范化 blob，因此第一次 17/17 byte gate 仅 1/17 通过并 exit 1；执行针对该目录的 `git add --renormalize` 后再次比较，17/17 worktree/index Git blob 完全相同。
 - `whitespace=cr-at-eol` 只告诉 Git 原始 CRLF 是合法行尾，使 exact byte evidence 在普通 `git diff --cached --check` 下仍为 exit 0；文件保持 JSON/YAML/TXT 原扩展名并可在网页阅读，没有改成占位摘要或隐藏大资产。发布分支仍未提交/推送，下一步进行最后 staged 安全审计后创建 commit。
+
+### 606. 2026-08-26：证据 commit 首次推送与公开网页回读
+
+- 最终 staged 门禁通过：exact evidence index identity 17/17、代码/config/test 路径改动 0、>5 MiB 文件 0、禁传大资产 0、敏感信息 0、artifact audit PASS/errors=0、`git diff --cached --check` exit 0。创建 commit `28da2c7808f8bf747b13315c73f9e5821a23c38a`，message `repro: publish canonical seed42 diagnostic evidence`，stat 为 36 files changed、3,343 insertions/68 deletions。
+- `git push -u origin repro/canonical-seed42-results` exit 0，新远端分支创建成功且已设置 upstream；没有 force push、没有修改既有 R5 分支或 main。
+- 通过公开网页未登录回读 branch tree、`reports/formal_reproduction/README.md` 和 raw `final_metrics.json`：repo 显示 Public、新分支可见，landing page 正常渲染；raw metrics 返回实际 126 行 JSON 并包含 AP `0.7419461390325246` 等正式指标，不是 LFS pointer 或占位文件。
+- 新增 `reports/formal_reproduction/PUBLISH_RECEIPT.md` 固化父代码、evidence commit、完整验证退出码、网页入口和大文件排除边界；该发布收据与本条 `all.md` 记录将作为仅文档 follow-up commit 推送，最终远端 HEAD 以 follow-up commit 为准。

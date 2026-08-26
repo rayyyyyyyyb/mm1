@@ -16,16 +16,17 @@ canonical OV-OrthKD seed42 已完成 30 epochs / 12,000 optimizer steps，worker
 
 ## 推荐阅读顺序
 
-1. [数值与基线诊断](canonical_seed42/CANONICAL_SEED42_RESULT_DIAGNOSIS.md)
-2. [完整正式运行报告](canonical_seed42/CANONICAL_SEED42_REPRODUCTION_REPORT.md)
-3. [final metrics](canonical_seed42/canonical_seed42/final_metrics.json)
-4. [30-epoch history](canonical_seed42/canonical_seed42/history.jsonl)
-5. [实际 resolved config](canonical_seed42/canonical_seed42/resolved_config.yaml)
-6. [最终 artifact audit](canonical_seed42/canonical_seed42/final_artifact_audit.json)
-7. [运行环境与依赖冻结](canonical_seed42/canonical_seed42/cuda_environment.json)
-8. [代码/manifest/lock/cache/evaluator 身份](canonical_seed42/canonical_seed42/README.md)
-9. [正式 ready config](../../configs/ov_orthkd_mm26_repro_ready.yaml) 与 [全部 locks](../../configs/locks)
-10. [启动控制器与 wrapper 事件说明](canonical_seed42/01_PRETRAINING_WRAPPER_INCIDENT.md)
+1. [发布与验证收据](PUBLISH_RECEIPT.md)
+2. [数值与基线诊断](canonical_seed42/CANONICAL_SEED42_RESULT_DIAGNOSIS.md)
+3. [完整正式运行报告](canonical_seed42/CANONICAL_SEED42_REPRODUCTION_REPORT.md)
+4. [final metrics](canonical_seed42/canonical_seed42/final_metrics.json)
+5. [30-epoch history](canonical_seed42/canonical_seed42/history.jsonl)
+6. [实际 resolved config](canonical_seed42/canonical_seed42/resolved_config.yaml)
+7. [最终 artifact audit](canonical_seed42/canonical_seed42/final_artifact_audit.json)
+8. [运行环境与依赖冻结](canonical_seed42/canonical_seed42/cuda_environment.json)
+9. [代码/manifest/lock/cache/evaluator 身份](canonical_seed42/canonical_seed42/README.md)
+10. [正式 ready config](../../configs/ov_orthkd_mm26_repro_ready.yaml) 与 [全部 locks](../../configs/locks)
+11. [启动控制器与 wrapper 事件说明](canonical_seed42/01_PRETRAINING_WRAPPER_INCIDENT.md)
 
 ## 代码与证据边界
 
