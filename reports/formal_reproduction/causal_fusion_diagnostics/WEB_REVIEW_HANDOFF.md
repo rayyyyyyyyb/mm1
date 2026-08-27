@@ -71,6 +71,7 @@ S1 证明“极端 gate”可以被去掉，但 temporal collapse 仍存在。S2
 ## 验证证据与已公开失败
 
 - exact clean `d5d13c2` 的 fresh compileall exit 0；全量 pytest `428 passed in 323.47s`、exit 0；
+- 完整证据提交 `76dabc67e939012653afa10d1526556e10d6a2d8` 又在 5090 新建的 exact clean worktree 中完成 fresh compileall，并得到全量 pytest `428 passed in 338.65s`；测试后独立复核 HEAD 仍精确为该提交、dirty=0；
 - S0 `training_diagnostics.jsonl` 与旧 Student-only SHA256 精确相同：`254c0a0f...d804`；S0 `final_metrics.json` 同样精确相同：`c223ed77...7488`；
 - worker 最终 `completed`、exit 0、顺序 S0→S1→S2、相关进程 0；
 - 三组 prediction audit 均 exit 0/PASS，validation/test 分别为 `5798×10`/`5820×10`；
@@ -79,7 +80,7 @@ S1 证明“极端 gate”可以被去掉，但 temporal collapse 仍存在。S2
 
 没有隐藏失败：最初把诊断 scheduler `T_max` 错改为 3、fixed gate 少实例化模块、additive fusion 少实例化模块的三批无效运行均在产生最终因果证据前停止、归档并通过 TDD 修复。首次全量 pytest 因验证脚本漏加 MinGit PATH 得到 392 pass/36 fail，补回锁定 MinGit 后同一代码得到 428 pass。首次 prediction wrapper 的三个子任务实际生成相同 PASS JSON，但 PowerShell `Start-Process` 返回空 ExitCode；保留哈希后删除这些小型无收据副本，改为顺序直调，三组明确 exit 0 且输出哈希逐字节相同。
 
-提交前 fresh 本机 compileall exit 0，但本机 Anaconda 在 pytest collection 导入 torch/NumPy 时于 `blas_fpe_check` fatal abort、exit 3，未执行测试断言；因此不把本机结果声称为通过。最终 evidence commit 仍须在5090锁定 venv 的新 clean worktree 上重跑全量测试后才可发布。
+提交前 fresh 本机 compileall exit 0，但本机 Anaconda 在 pytest collection 导入 torch/NumPy 时于 `blas_fpe_check` fatal abort、exit 3，未执行测试断言；因此不把本机结果声称为通过。最终 evidence commit 已在 5090 锁定 R0 venv 与 MinGit PATH 的新 clean worktree 上完成上述全量复验。第一次长时 SSH 等待在 pytest 完成后超时，未执行父脚本末尾的 JSON 回执写入；随后以独立短查询复核完整 pytest 日志 SHA256 `316c7202dddf68e2b81f3b5143f96831decf6fc253d0e5661ec03d2307023b0b`、空 compileall 日志 SHA256 `e3b0c442...b855`、exact HEAD 和 dirty=0。该封装层回执缺失已公开记录，不被伪装成原始回执存在。
 
 ## 下一步建议与请网页端判断的问题
 

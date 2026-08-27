@@ -2803,3 +2803,16 @@
 
 - 按 verification-before-completion 重新运行 `python -m compileall -q scripts src tests`，exit 0；随后本机 `python -m pytest -q` 在收集 `test_causal_diagnostic_configs.py`、导入 torch→NumPy 时于 Anaconda `numpy.__init__.py:blas_fpe_check` 触发 Fatal Python error: Aborted，pytest exit 3。
 - 该进程在 collection 阶段退出，未执行任何测试断言，不能声明本地测试通过；这与此前本机 torch/numpy 导入故障一致。保留失败并将最终唯一测试通过门禁设为：提交后把 exact final commit 传到5090新建 clean worktree，在锁定 R0 venv 与 MinGit PATH 下 fresh compileall + 全量 pytest。
+
+### 675. 2026-08-27：完整证据提交、bundle 修正与 5090 精确复验
+
+- 创建完整证据提交 `76dabc67e939012653afa10d1526556e10d6a2d8`，message `docs: publish causal fusion diagnostics`，stat 为 58 files changed、8,718 insertions；提交后本地工作树 clean。第一次生成 bundle 时把外层 `复现` 相对路径少算一级，`git bundle create` exit 128、verify exit 1 且没有生成文件；改用已核对的正确绝对边界后生成 80,965-byte bundle，SHA256 `5b21323fd34fa9f0d6c3983310a48bfa44442ce422e3af99c72f9d523fd292fc`，本地 bundle verify exit 0。
+- bundle 与验证脚本上传 5090；组合上传/哈希命令因 30 秒本地等待窗口超时，但超时前已打印远端 bundle 相同 SHA，随后独立 `Test-Path` 确认脚本存在。远端 bundle verify/fetch/worktree add 成功，新工作树 `E:/OV-OrthKD-R3/causal-fusion-76dabc6` 的 HEAD 精确为 `76dabc67...`、dirty=0，九个 ignored 资产 junction 均从已审计源工作树复制相同 target。
+- 在锁定 R0 venv 与 MinGit PATH 下 fresh compileall 无输出，日志 0 bytes、SHA256 `e3b0c442...b855`；全量 pytest 日志完整结束为 `428 passed in 338.65s (0:05:38)`，1,040 bytes、SHA256 `316c7202dddf68e2b81f3b5143f96831decf6fc253d0e5661ec03d2307023b0b`。测试后独立短查询再次确认 exact HEAD 不变、dirty=0、bundle SHA 不变。
+- 首个长时 SSH 调用在 pytest 完成后终止了父 PowerShell，故脚本末尾计划写入的 `verification_receipt.json` 不存在；没有伪造该原始回执。改以结构化独立查询和上述不可变哈希补足证据，并新增 `PUBLICATION_RECEIPT.md`、修正网页交接报告中“仍待复验”的过时文字。最终发布提交只允许包含这份回执、报告文字与双份 ledger；不得改变已经通过复验的 source/config/tests/运行证据。
+
+### 676. 2026-08-27：发布文档镜像与独立机械复核
+
+- 将更新后的 `README.md`、`WEB_REVIEW_HANDOFF.md` 和新 `PUBLICATION_RECEIPT.md` 镜像到外层 `复现/causal_fusion_diagnostics/review_package`；仓库包与外层镜像均为 57 files，逐文件 SHA256 mismatch=0、额外文件=0，仓库包总计 393,810 bytes。仓库/外层两份 `all.md` SHA256 均为 `35cc5614ff5fb70051ade2628486682cb1057d1a72e96620c81129b3ad3432b2`。
+- 相对已通过完整测试的 `76dabc6...`，当前待提交改动仅为 `all.md`、诊断目录两份 Markdown 和一份新发布收据；`src/scripts/configs/tests` diff 为空。`git diff --check` exit 0；57 个文件中禁传扩展名 0、超过 2 MiB 文件 0、secret/token 模式命中 0、Markdown 相对链接缺失 0。
+- 首次结构化解析把中文绝对路径经管道传给 Python 后错误定位为空，虽 exit 0 却只报告 0 个文件；明确判为无效检查，不计作通过。改从仓库工作目录使用纯 ASCII 相对路径重跑，实际解析 36 JSON、6 JSONL/18 records、6 YAML，exit 0/PASS。
