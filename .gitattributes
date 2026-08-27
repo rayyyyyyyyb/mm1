@@ -11,4 +11,5 @@ reports/data/preprocessed_layout_discovery.json text eol=lf
 tests/fixtures/official_ovavel_metric_cases.json text eol=lf
 reports/evaluation/mm26_official_evaluator_parity_receipt.json text eol=lf
 reports/formal_reproduction/canonical_seed42/canonical_seed42/** -text whitespace=cr-at-eol
+reports/formal_reproduction/root_cause_diagnostics/control_runs/** -text whitespace=cr-at-eol
 *.pth filter=lfs diff=lfs merge=lfs -text

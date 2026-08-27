@@ -2442,3 +2442,134 @@
 
 - 将本轮 22 个代码、配置、锁、测试、报告与 ledger 文件加入 index；staged stat 为 `3,189 insertions, 14 deletions`。没有 checkpoint、prediction NPZ、dataset、teacher cache 或下载归档进入 index，15 MiB staged 大文件为 0。
 - 首次 staged whitespace 回读准确列出计划/报告中的 Markdown hard-break 尾空格和两个 EOF 额外空行；用空行分段替换 hard-break 并移除额外 EOF 空行后重新 stage，`git diff --cached --check` 无输出、exit 0。对 staged 新增行执行 token/key/Authorization/password-value 高风险模式扫描，匹配 0。
+
+### 616. 2026-08-26：诊断提交、GitHub 推送与 clean 5090 全测
+
+- 创建提交 `c5c50361f549c84cb0a934955ac504137977003d`，message `diagnostics: localize canonical reproduction failure`，stat 为 22 files changed、3,195 insertions、14 deletions；随后 `git push -u origin repro/root-cause-diagnostics` exit 0，新远端分支创建且未 force-push。
+- 5090 首次从 GitHub fetch 新分支因 `Recv failure: Connection was reset` 而 exit 1，worktree 未创建。首次尝试用裸 commit range 生成 bundle 因没有命名 ref 被 Git 拒绝为 empty bundle、exit 128；改用命名分支加 `^44b88fc8...` prerequisite 后成功生成 42,557-byte 增量 bundle，SHA256 `7d9ed78564e180c9a3b89343e9e36919b0592684c859ba1e76a2dbdae439969c`，本地 `git bundle verify` 通过。
+- bundle 经 SSH 传入 5090 后再次校验 SHA/ref/prerequisite，导入精确 `c5c50361...`，新建 detached worktree `E:\OV-OrthKD-R3\diagnostics-root-cause-c5c5036`。按正式模板创建并逐项校验 9 个 junction；HEAD 精确、Git dirty lines=0。
+- 锁定 5090 venv + MinGit PATH 从零运行完整 suite：pretest HEAD `c5c50361...`、dirty=0，最终 `399 passed in 383.74s`、`PYTEST_EXIT=0`。没有启动训练或修改正式 seed42 output。
+
+### 617. 2026-08-26：真实控制 readiness 的超时与系统 commit-memory 根因
+
+- 首次把两份控制 readiness 串行放入单个 300 秒 SSH 命令，因重复全量复算 99,334-file cache 在工具 304 秒上限处 exit 124；没有 receipt，明确不记为通过。改为 Student-only 单独 600 秒后，在 `_validate_file_evidence` 的 1 MiB SHA read 处以 `MemoryError` exit 1；随后最小 `import torch` 又报 WinError 1455 页面文件太小，证明不是配置 mismatch。
+- 系统审计定位两个旧阶段遗留、已失去用途的只读 PowerShell 状态采集进程：PID 19260 是已完成 canonical seed42 状态读取，private commit 约 324 GB；PID 8944 是旧恢复日志读取，约 116 GB。它们不是训练、下载或交互程序。只对这两个精确 PID 执行 Stop-Process；PID 8944 消失，PID 19260 在终止清理中从约 324 GB 降至 5.5 GB 后消失。页文件 current usage 从约 138 GB 降至约 18 GB，可用物理内存恢复至约 180 GB；下载监控和其他进程未终止。
+- 环境恢复后锁定 venv 的 `torch 2.10.0+cu128` import exit 0。同一 Student-only readiness 原样重跑 `status=ready`、config SHA `4664f9...6959`、cache root `670790...0244`、Git clean、errors=[]、exit 0；Visual-only 随后独立得到 `status=ready`、SHA `053cfc...ed0c`、同一 cache root、errors=[]、exit 0。
+
+### 618. 2026-08-26：Student-only 持久任务启动
+
+- 启动前门禁：remote HEAD `c5c50361...`、Git dirty=0、目标 output/control 均不存在、同 config 匹配进程 0；RTX 5090 为 649/32607 MiB、utilization 0%，旧 runaway PID 已完全消失。
+- 用锁定 Python 与精确配置 `configs/diagnostics/ov_orthkd_mm26_student_only_seed42.yaml` 通过 `Start-Process -WindowStyle Hidden` 启动，UTC `2026-08-26T10:14:07.4771877Z`，venv PID 7284、实际 Python PID 29596；stdout/stderr 分离到 `E:\OV-OrthKD-R3\diagnostic_control\student_only_c5c5036`，launch receipt 固化 HEAD、config SHA、命令、输出路径与日志路径。
+- 启动 8 秒后两级 Python 均存活、stderr/stdout 仍为 0 bytes、GPU 仍 649 MiB/0%；此时训练器正在启动时重新执行 canonical readiness，尚未创建 output 属于预期。Visual-only 保持未启动，必须等待 Student-only 完成审计后再顺序执行。
+
+### 619. 2026-08-26：普通 Start-Process 跨 SSH 失效与已验证 WMI 持久控制器修复
+
+- UTC 10:15:31 在新 SSH 会话复查时，首次普通 `Start-Process` 的两级 Python 已消失，output 未创建、stdout/stderr 仍为 0、GPU 未动；训练实际未开始。该证据与独立 launch receipt 全部保留在原 control dir，不覆盖、不把短暂存活误报为运行中。
+- 回读此前 canonical seed42 已通过真实跨会话测试的 `PersistentProcess.psm1`：其外层 worker 由 `Win32_Process.Create` 脱离 SSH job，worker 内才以 `Start-Process -WindowStyle Hidden/-Wait` 托管 native Python。新增双控制白名单 worker `扩刊/复现/root_cause_diagnostics/run_root_cause_control_worker.ps1` 与精确 Student-only launcher；PowerShell parser 均 0 errors。worker SHA `3a7546...005a6`，已验证 module SHA `310538...42e5`，远端/本地逐字节一致。
+- 一次把完整 launcher 塞入 EncodedCommand 因 Windows cmd 命令行过长而在执行前 exit 1，未创建 control/output；改为将经 parser 验证的 launcher 作为 `.ps1` 传到远端再以 `-File` 执行。
+- 修复后 WMI `ReturnValue=0`，UTC `2026-08-26T10:19:08.3236792Z`，persistent worker PID 19708、venv Python 14760、实际 Python 10160；worker state=`running`，HEAD/config SHA/output 精确。第二个独立 SSH session 于 10:19:32 再查三进程仍存活、状态仍 running、日志 0 bytes、GPU 649 MiB/0%，证明已脱离首个 SSH job。Visual-only 未启动。
+
+### 620. 2026-08-26：Student-only 真正进入训练与首条数值诊断
+
+- 持久 worker 先完成约 3.6 分钟启动 readiness，再对 99,334-file cache 执行完整静态 evidence tree hash；期间 worker/Python 一直存活、stderr 为空、Python kernel/user time 与 IO count 单调增加。Windows ReadTransferCount 按每个小文件 1 MiB read 请求累计，远大于实际 1.31 GB payload，不能误读为下载了 222 GB；没有新下载或 cache 写入。
+- UTC 10:39:09 `teacher_cache_hash.json`、official evaluator、CUDA evidence 落盘，`train.log` 首次写入 `Using device: cuda`。10:40:10 模型已占用 7,765 MiB；10:40:56 epoch 1 到 batch 123/400，GPU 8,365 MiB、47%、164.48 W、53°C，loss 有限，orth 按 Student-only 配置为 0；故训练已真正开始且运行正常。
+- 首条 `training_diagnostics.jsonl` 为 epoch0/batch0/global_step0、40 个有效 segment：logit mean/std `0.2251/0.3316`、样本内 logit std mean `0.1214`、visual gate mean `0.4776`、gate entropy `0.6917`；decision/audio/query effective rank `7.50/8.61/8.55`。student head/visual/audio encoder pre-clip grad norm 均非零，三项 teacher projector gradient 和全部初始 drift 均精确为 0，符合 Student-only loss 路由与观测器不改状态的预期；初始随机 batch 不作性能结论。
+
+### 621. 2026-08-26：Student-only 首轮完成、第二轮继续与本地轻量快照
+
+- epoch 1（history 中 `epoch=0`）在 global step 400 完成：train BCE/total `0.6910715277`，validation AP `0.7331593303`、AUROC `0.6223705228`、official segment F1@0.5 `0.5377574808`、event F1 `0.5770955502`、predicted-positive rate `1.0`；保存为当前 best，单轮含启动审计总 elapsed `618.19 s`、peak GPU memory `6554.90 MiB`。这只是首轮验证，不替代 best-checkpoint 的最终 test 结果。
+- UTC 10:52 的独立 SSH 复查仍见 worker state=`running`、venv/native Python PID 14760/10160，命令行只匹配 Student-only，Visual-only 匹配进程为 0。组合状态脚本把单行 `history.jsonl` 当作可索引集合时产生一次 `ConvertFrom-Json` singleton 解析错误；随后一次包含多项 tail 的 SSH 查询达到 34 秒工具上限、exit 124。两次都只读且未改变训练，改用逐文件 `scp` 回收后在本地解析。
+- 最新 `training_diagnostics.jsonl` 已出现 `epoch=1,batch=0,global_step=400`，机械证明第二轮已经开始。该批次 logit mean/std `0.9130/0.04686`、样本内 temporal std mean `0.01090`，visual gate mean `0.75334`、gate entropy `0.21174`、gate saturation rate@0.95 `0.525`；这是值得继续跟踪的早期退化信号，但不能用单个 batch 直接宣判最终根因。
+- 将不含 checkpoint 的首轮审计快照回收到 `扩刊/复现/root_cause_diagnostics/student_only_epoch1_snapshot`：最初 19 个文件、132,721 bytes；补回最新 train/history/diagnostics 三个镜像后为 22 个文件、149,854 bytes，禁止扩展名计数 0，确定性文件哈希清单摘要 `06353d2a5469ab7f9b47907d641697c8737e3cad454536bd91018d86f08d0dc0`。一次尝试用当前 PowerShell/.NET 不支持的静态 `SHA256.HashData` 计算摘要得到 exit 1；改用 `SHA256.Create().ComputeHash` 后 exit 0 并得到上述摘要。
+
+### 622. 2026-08-26：本轮交接前分支与 ledger 状态复核
+
+- 本地诊断分支 HEAD 与 upstream 均精确为 `c5c50361f549c84cb0a934955ac504137977003d`；`git diff --check` exit 0。工作树唯一改动为按持续记录要求新增的仓库内 `all.md` 运行日志，科学代码、配置和报告没有未提交改动。
+- 外层权威 `扩刊/all.md` 与仓库内镜像均已包含第 621 条，但历史内容/行尾使两文件不逐字节相同，故明确不宣称 byte-identical；两者当前 SHA 分别为 `531e76...6da1` 与 `2d5c27...dfcd`（该摘要在追加本条前计算，只用于说明复核对象）。
+
+### 623. 2026-08-26：5090 Student-only 完成状态复查
+
+- 只读查询确认 persistent worker 已于 UTC `14:19:31` 写入 `status=completed`、`exit_code=0`，exact commit `c5c50361...`、config SHA `4664f9...6959` 不变；history 恰好 30 条、最终 global step 12,000，`final_metrics.json` 已生成。最佳 validation AP `0.7331593303` 出现在 epoch 1/global step 400，最终 epoch validation AP/AUROC 已降至 `0.6298038386/0.5539452553`，训练器按最佳 checkpoint 而非最后 checkpoint 做最终评估。
+- 最终 best-checkpoint test AP/AUROC/F1@0.5 为 `0.7487446824/0.6361346662/0.5403934128`；validation 阈值 `0.6857516565` 下 test segment/event F1 为 `0.5450419944/0.5809450172`，predicted-positive rate 仍为 `0.9873711340`。seen AP/AUROC `0.7760393943/0.6866179973`，unseen `0.7394757564/0.6186668786`。
+- 独立进程/GPU 查询匹配 Student-only/Visual-only 进程均为 0；RTX 5090 为 879/32607 MiB、utilization 0%、70.06 W、48°C，证明 Student-only 已真实退出而非仅日志停写，Visual-only 当时尚未启动。
+
+### 624. 2026-08-26：Student-only 产物回收与完整性检查
+
+- 远端 output 共 22 个顶层产物，其中 `best.pt` 与 `last.pt` 各 556,937,401 bytes；SHA256 分别为 `830c600b...d579` 与 `438c11bf...2a0c`，二者不同且均保留在 5090，不进入 Git。`final_metrics.json` SHA256 为 `c223ed77...7488`。
+- 把其余 20 个小产物压缩到 control 目录，ZIP 2,793,513 bytes、SHA256 `5715a193f75617345840a2c93d4fb95b599bbc5f6fa645b56f0f60360fdd77ce`；经 scp 回收到 `扩刊/复现/root_cause_diagnostics` 后复核 SHA 完全一致，解压目录含 20 文件、2,919,655 bytes、PT 0、NPZ 4。
+- 本地首次 inline Python 审计因脚本文本经过 PowerShell 管道后中文路径被转为 `??` 而 exit 1，未改文件；改为直接把 snapshot 设为 cwd 后 exit 0。九个 JSON 全部可解析，history 30 条、diagnostics 3 条；四个 NPZ 均以 `allow_pickle=False` 打开，所有 numeric arrays finite，validation 为 5,798 样本/57,980 段，test 为 5,820/58,200，机械保持 T=10。
+- 一次尝试在 JavaScript orchestration 中用不可用的 Node `Buffer` 并行构造 UTF-16 SSH 命令，在任何 shell/远端调用前即以 `ReferenceError` 结束；随后改回已验证的 PowerShell Base64 编码，所有真实查询均 exit 0。
+
+### 625. 2026-08-26：Student-only 对照结论与早期 gate collapse
+
+- 论文 Student-only 为 `0.714/0.612/0.523`，本次同管线 Student-only 分别高 `+0.034745/+0.024135/+0.017393`；相对当前 Full `0.741946/0.633875/0.540393`，Student-only AP/AUROC 高 `+0.006799/+0.002260`，F1@0.5 在浮点精度内完全相同。故公共数据、学生 forward 和 evaluator 不是整体失效，但 Full 蒸馏未提供论文预期增益。
+- 三条观察记录显示：epoch 1→2→3 首 batch 的样本内 temporal logit std 为 `0.121423→0.010901→0.002377`，gate saturation 为 `0→0.525→1.0`；epoch 3 visual gate mean 仅 `6.84e-11`、entropy `1.51e-9`、visual encoder grad 精确为 0。证据指向 shared student/modality gate 的早期 audio-branch collapse，但在 Visual-only 完成前不把它提升为唯一根因。
+- 新建只读事实报告 `扩刊/复现/root_cause_diagnostics/STUDENT_ONLY_COMPLETION_STATUS.md`；下一步严格按已批准计划运行 exact-current-pipeline Visual-only，不做 seed/loss/结构 sweep。
+
+### 626. 2026-08-26：Visual-only 持久控制启动
+
+- 将启动工作分类为已批准计划内的 bounded 运维改动：复用同一个 generic worker 与 PersistentProcess module，只替换 control/config/output/config SHA。先尝试短 EncodedCommand，但本地安全门检测长度 7,864 超过自定 7,600 阈值而 exit 1；该命令未调用 SSH，远端无任何变化。
+- 用 `apply_patch` 新建 `扩刊/复现/root_cause_diagnostics/launch_visual_only_persistent.ps1`。PowerShell parser errors=0；把 `student_only/visual_only` 与各自 config SHA 归一化后，该脚本与已验证 Student launcher 逐字节完全相同；本地文件 3,817 bytes、SHA256 `6c570a70d614fca6a4a1e604215ed5dee795bbefef26c364413016cf670c55af`。
+- 启动前复核：remote HEAD `c5c50361...`、dirty=0、visual control/output 均不存在、两个诊断命令匹配进程 0、module/worker SHA 精确、GPU 879/32607 MiB 且 0%。一次把 absence-check/scp/run 合并的本地 PowerShell 命令因嵌套引号 parser error 而在任何子命令执行前 exit 1；拆分后远端 absence check 与 scp 均 exit 0。
+- 首次直接 `& launcher.ps1` 时 SHA 校验通过，但 Windows Execution Policy 在脚本正文前以 `PSSecurityException`/exit 1 拒绝；机械确认 visual control/output 仍都不存在。随后以 `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File` 执行同一 SHA 文件，WMI ReturnValue 0，UTC `14:49:24.7820753Z`，worker PID 15056、venv/native Python 27784/8316，state=`running`、config SHA `053cfc...ed0c`。
+- 启动会话结束后第二个独立 SSH 于 UTC `14:49:38` 再查：worker state 仍 running、两级 Python 仍存活、stderr/stdout 均 0 bytes、output 暂无文件、GPU 879 MiB/0%。这与启动阶段重新执行 readiness/evidence tree hash 的预期一致，不误报为训练已进入 CUDA。Student-only 没有再启动。
+
+### 627. 2026-08-26：本轮状态交接前 fresh verification
+
+- UTC `14:50:51` fresh 只读门禁 exit 0：remote worktree HEAD 仍为 `c5c50361...`、dirty=0；Student worker 仍为 completed/exit 0 且 final metrics 存在；Visual worker 仍为 running，PID 27784/8316 的命令行精确指向 Visual-only config，stderr 0 bytes。Visual history 尚未生成、output 文件数 0、GPU 879 MiB/0%，表明处于 readiness/hash 启动期而非训练失败。
+- 本地 `STUDENT_ONLY_COMPLETION_STATUS.md` 存在，外层与仓库内 `all.md` 均机械检出第 626 条；仓库本地唯一未提交改动仍是持续 ledger `all.md`，remote 科学运行树保持 clean。
+
+### 628. 2026-08-27：Visual-only 完成状态与 stderr 鉴别
+
+- UTC `02:49:44` 只读复查确认 Visual worker 已于 UTC `2026-08-26T18:36:06` 写入 completed/exit 0，exact commit `c5c50361...`、config SHA `053cfc...ed0c`；history 恰好 30 条、global step 12,000、final metrics 存在、remote worktree dirty=0。匹配进程 0，RTX 5090 为 695/32607 MiB、utilization 0%、65.07 W、42°C。
+- `python.stderr.log` 为 2,258,358 bytes；完整文本机械搜索 Traceback/RuntimeError/PSSecurityException/Exception:/Error:/NaN/non-finite 全部 0，尾部是最终 test metrics。故大文件来自 tqdm/训练进度输出，不是隐藏异常；stderr SHA256 `34cf0478...3edf`。
+
+### 629. 2026-08-27：Visual-only 最终指标与早期退化轨迹
+
+- 最佳 validation AP `0.7275974546` 出现在 epoch 5/step 2,000。best-checkpoint test AP/AUROC/F1@0.5 为 `0.7253093695/0.6171601329/0.5403934128`；阈值 `0.5897419839` 下 segment/event F1 `0.5487327206/0.5855670103`、predicted-positive rate `0.9908934708`。seen AP/AUROC `0.7608508939/0.7062094341`，unseen `0.7111054221/0.5774936992`。
+- 相对论文 Visual-only `0.778/0.701/0.568`，本次低 `0.052691/0.083840/0.027607`；相对同管线 Student-only，AP/AUROC 低 `0.023435/0.018975`，相对当前 Full 低 `0.016637/0.016715`，三者 F1@0.5 相同。
+- Visual 前三 epoch 首 batch：gate visual mean `0.477567→0.091324→0.999887`、saturation `0→0.75→1.0`；visual/audio encoder grad 到 epoch 3 分别仅 `8.29e-6/2.81e-11`，样本内 logit std `0.121423→0.093889→0.004494`。gate 在两种模态极端之间翻转并切断被排除路径梯度。
+
+### 630. 2026-08-27：Visual-only 产物锁定、回收与预测审计
+
+- 首次远端打包因 PowerShell 把 `-LiteralPath @($small.FullName)+$controlFiles` 的 `+` 解析成位置参数而 exit 1；未生成 ZIP，但脚本未设 Stop 导致随后又打印找不到 ZIP 的连带错误。确认目标仍不存在后，加入 `$ErrorActionPreference='Stop'` 并先构造 `$archiveInputs`，重跑 exit 0。
+- Visual `best.pt/last.pt` 各 562,479,777 bytes，SHA256 `f27cde2b...58d1` 与 `9d17f00d...3259`，只留 5090。其余 20 个 output 与四个 control/log 文件打成 2,169,822-byte ZIP，SHA256 `0e07df03...dcc1`；scp 后本地 SHA 一致，解压为 24 文件/4,363,366 bytes、PT 0、NPZ 4。
+- 本地完整性：11 个 JSON 全部解析、history 30 条/step 12,000、diagnostics 3 条；四个 NPZ 均 `allow_pickle=False`、numeric arrays 全 finite、validation 5,798×10、test 5,820×10。Visual prediction audit 工具在 34 秒前端等待上限处 exit 124，但原子结果文件已完整生成且 status PASS、SHA `0afc8670...f6eb`；其 test 样本内 logit std mean 仅 `3.193e-6`。随后 Student prediction audit 用 120 秒上限完整 exit 0，耗时 49.9 秒、status PASS，Student 对应值 `0.003236`。
+
+### 631. 2026-08-27：两项控制后的根因层定位
+
+- 回读 `src/models/ov_orthkd.py` 确认 learned softmax gate 在 token fusion 前直接乘 visual/audio tokens，饱和会机械压低被排除 encoder 的梯度；`scripts/train_ov_orthkd.py` 则把 `student.parameters()` 与 `loss_module.parameters()` 一起交给 AdamW，三类 teacher projectors 均可训练。
+- Visual 强特征 loss 从 epoch 1 `0.061268` 降到 epoch 30 `0.0000324`，但性能未同步改善。前三批 student decision variance `0.208858→0.003376→0.000375`，projected strong target variance `0.160833→0.005860→0.001864`；strong/text projector relative drift 在 epoch 3 已达 `0.1315/0.1465`。这证明当前目标和学生表示共同进入低方差退化解，feature loss 变小不能视为蒸馏成功。
+- 新建事实报告 `扩刊/复现/root_cause_diagnostics/CONTROL_COMPARISON_STATUS.md`。当前证据定位到 shared learned gate saturation + trainable target projector 的耦合失败机制；不把它冒充会议历史事实，也不启动多变量 sweep。下一最小因果试验应先只把 Student-only learned gate 替换为固定等权/加性融合，其余全部不变；冻结 projector 必须作为后续独立变量。
+
+### 632. 2026-08-27：两项控制交接前 fresh verification
+
+- UTC `02:57:52` fresh remote gate exit 0：HEAD `c5c50361...`、dirty=0、Visual status completed/exit 0、history 30、processes 0、GPU 695/32607 MiB/0%；重新解析 test AP/AUROC/F1 为 `0.7253093695/0.6171601329/0.5403934128`，final metrics SHA 仍为 `39e881c1...cb69`。
+- fresh local gate：comparison report 存在、Visual ZIP SHA 仍 `0e07df03...dcc1`、snapshot 24 文件且 PT 0；Visual/Student prediction audit 均 status PASS，Visual test segment count 58,200；外层与仓库内 ledger 均检出第 631 条。
+
+### 633. 2026-08-27：正式复现与下一步诊断实验的边界决策
+
+- 用户询问下一 fixed-gate 实验属于会议复现还是诊断，以及是否应先交网页端复核。结论：固定等权/加性 gate 在没有 archival code 证据时只能标为 causal diagnostic/reconstruction hypothesis，不能称作会议正式复现，也不得用其结果替换 canonical Full。
+- 当前 Student/Visual/Full 三项控制已形成高信息密度停点；推荐现在暂停任何结构修改与新训练，先把代码、精确 config、history、metrics、prediction audits、两项 completion/comparison 报告和不含大资产的哈希收据提交到诊断分支，再交网页端独立诊断。网页端结论用于选择单变量 A/B，不用于把猜测提升为历史事实。
+
+### 634. 2026-08-27：用户授权发布诊断证据并提出融合实现核对
+
+- 用户要求把相关证据和代码上传当前 GitHub 仓库供网页端独立审查，并询问当前源码是否没有分别计算视觉/音频融合参数。暂停新训练和结构修改，先完成只含小型证据的发布；继续禁止上传数据集、teacher cache、checkpoint、prediction/PR-curve NPZ、ZIP、bundle 和大进度日志。
+- 依据 PDF 技能要求完整定位并渲染检查 `扩刊/mfp2306_final.pdf` 的方法页。论文 Section 3.2 / Eq. 2 明确产生每段视觉、音频两个 softmax 权重；Eq. 3 写成加权视觉、加权音频和查询相加后进入 Transformer。方法页渲染清晰，无需 OCR 猜测。
+
+### 635. 2026-08-27：论文—源码融合差异的精确静态审计
+
+- `src/models/ov_orthkd.py:107-111,179-186` 明确输出两个 gate logits、softmax 后分别乘视觉与音频 token，因此“源码没有分别算视频/音频融合参数”不成立。
+- 真正差异为：论文写 `alpha_v*v + alpha_a*a + q` 后直接进入 Transformer；当前源码在 `:187` 将三项 concat 后经过可学习 `token_fusion`，再于 `:190-193` 加位置编码并进入 temporal Transformer。当前 gate 输入还额外包含两项 validity flag。该差异可能重要，但没有历史源码证据时不能断言哪一个是会议实际代码。
+- 同时复核 `src/losses/ov_orthkd_loss.py:87-89,159,173,188` 与 `scripts/train_ov_orthkd.py:1352-1357`：teacher feature bytes 虽 detach，三个 target projector 仍随整个 loss module 进入 AdamW，和已观测的 moving-target 低方差退化一致。
+
+### 636. 2026-08-27：网页审查包的本地整理
+
+- 向诊断目录新增 `WEB_REVIEW_HANDOFF.md`、`02_CONTROL_RESULTS_AND_FUSION_AUDIT.md`、两项 completion/comparison 报告、Student/Visual prediction audit 和 `control_runs/` 小型证据。每项 control 含实际 resolved config、final metrics、30 行 history、前三 epoch observation-only diagnostics、Git/runtime/CUDA/dependency/manifest/lock/evaluator/cache receipts。
+- `control_runs/` 共复制 28 个文件、151,524 bytes，最大文件为 33,917-byte history；机械扫描 NPZ/PT/PTH 均为 0。`.gitattributes` 对该目录禁用 text conversion，以保持提交 bytes 与运行时 SHA256 一致；未复制任何 checkpoint、原始预测数组、数据集或缓存。
+
+### 637. 2026-08-27：诊断发布候选的提交前机械验证
+
+- `git diff --check` exit 0；24 个 JSON 全部解析；4 个 JSONL 分别为 Student/Visual history 30/30 行、diagnostics 3/3 行且逐行解析；两份 resolved YAML 均由 `yaml.safe_load` 成功解析。
+- 28 个控制证据与外层回收快照逐文件 SHA256 比对 mismatch=0；诊断目录禁传扩展名计数 0、超过 1 MiB 文件 0、最大文件 33,917 bytes、Unicode replacement-character 文件 0、常见 token/password 模式命中 0。
+- 从提交候选重新读取 Student test AP/AUROC/F1=`0.7487446824/0.6361346662/0.5403934128`，Visual=`0.7253093695/0.6171601329/0.5403934128`，与已锁定结果一致。

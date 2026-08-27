@@ -2,7 +2,7 @@
 
 Date: 2026-08-26
 
-Status: `TEACHER_SIGNAL_GATE_PASSED__SHARED_STUDENT_CONTROL_PENDING`
+Status: `CONTROLS_COMPLETED__CAUSAL_DIAGNOSTIC_REVIEW_REQUIRED`
 
 ## Decision
 
@@ -68,10 +68,26 @@ Both additionally enable the same observation-only diagnostic for the first batc
 
 Each control has a derived archival lock whose fact bodies and evidence are byte-identical to the R5 lock except for its canonical experiment-config SHA256.
 
+## Completed control results
+
+Both exact-current-pipeline controls completed 30 epochs / 12,000 optimizer steps with worker exit code 0.
+
+| Run | Paper AP / AUROC / F1 | Reproduction AP / AUROC / F1@0.5 | Best epoch |
+|---|---:|---:|---:|
+| Student-only | 0.714 / 0.612 / 0.523 | 0.748745 / 0.636135 / 0.540393 | 1 |
+| Visual-only | 0.778 / 0.701 / 0.568 | 0.725309 / 0.617160 / 0.540393 | 5 |
+| Full | 0.816 / 0.750 / 0.596 | 0.741946 / 0.633875 / 0.540393 | 1 |
+
+Student-only is slightly better than the current Full run. Visual-only is worse than both despite its feature loss falling almost to zero. All three have effectively the same official F1 at threshold 0.5. The controls therefore do not support a healthy reproduction whose remaining error is ordinary numerical noise.
+
+The first diagnostic batch of epochs 1--3 shows gate saturation and temporal-contrast collapse in both controls. In Visual-only, the trainable projected strong target variance falls with the student decision variance while the target projector drifts. This is evidence for a degenerate optimization path in the current reconstruction, not proof of the unpublished historical implementation.
+
+The complete small-text control evidence is under `control_runs/`; NPZ predictions, checkpoints, caches and datasets are deliberately excluded. See `WEB_REVIEW_HANDOFF.md` and `02_CONTROL_RESULTS_AND_FUSION_AUDIT.md`.
+
 ## Verification state
 
 - Pure local evaluator/diagnostic tests: 10 passed; later probe suite: 7 passed.
 - 5090 focused evaluator/config/diagnostic tests: 24 passed.
 - Observation-only diagnostic unit tests: 9 passed; compileall and diff-check exited 0 locally. The clean 5090 full-suite rerun remains the controlling verification.
 - First 5090 full suite in the temporary injected worktree: 395 passed, 1 failed. The only failure was the canonical ready-receipt test because that temporary worktree intentionally lacked asset junctions and was Git-dirty after scp injection. This is an environment/isolation failure, not a passing full-suite claim.
-- Required next verification: fresh full suite from the clean diagnostic commit with `data`, `weights`, and `external` junctions. Student-only must not start before that exits 0.
+- The clean diagnostic code commit was verified on the 5090 before the controls ran. The final evidence-publication commit is re-verified before publication; its exact command and exit code are recorded in `PUBLICATION_RECEIPT.md`.
