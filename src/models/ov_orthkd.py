@@ -68,6 +68,7 @@ class OVOrthKDStudent(nn.Module):
         pretrained: bool = False,
         fusion_mode: str = "concat_mlp_query_conditioned",
         gate_mode: str = "learned_softmax",
+        query_anchor_mode: str = "independent_loss_projection",
     ) -> None:
         super().__init__()
         if path_mode not in {"explicit_projected", "legacy_shared"}:
@@ -79,6 +80,19 @@ class OVOrthKDStudent(nn.Module):
             raise ValueError(f"Unsupported fusion_mode: {fusion_mode}")
         if gate_mode not in {"learned_softmax", "fixed_equal"}:
             raise ValueError(f"Unsupported gate_mode: {gate_mode}")
+        if query_anchor_mode not in {
+            "independent_loss_projection",
+            "shared_fusion_projection",
+        }:
+            raise ValueError(f"Unsupported query_anchor_mode: {query_anchor_mode}")
+        if (
+            query_anchor_mode == "shared_fusion_projection"
+            and path_mode != "explicit_projected"
+        ):
+            raise ValueError(
+                "shared_fusion_projection query anchor requires "
+                "path_mode explicit_projected"
+            )
 
         self.visual_encoder = SequenceImageEncoder(visual_backbone, pretrained=pretrained)
         self.audio_encoder = SequenceImageEncoder(audio_backbone, pretrained=pretrained)
@@ -90,6 +104,7 @@ class OVOrthKDStudent(nn.Module):
         self.path_mode = path_mode
         self.fusion_mode = fusion_mode
         self.gate_mode = gate_mode
+        self.query_anchor_mode = query_anchor_mode
         if max_segments is not None:
             max_position_segments = int(max_segments)
         self.max_position_segments = int(max_position_segments)
@@ -156,7 +171,12 @@ class OVOrthKDStudent(nn.Module):
         if path_mode == "explicit_projected":
             self.decision_proj = ProjectionHead(fusion_dim, projection_dim)
             self.audio_aux_proj = ProjectionHead(fusion_dim, projection_dim)
-            self.query_proj = ProjectionHead(fusion_dim, projection_dim)
+            query_dim = (
+                fusion_dim
+                if query_anchor_mode == "shared_fusion_projection"
+                else projection_dim
+            )
+            self.query_proj = ProjectionHead(fusion_dim, query_dim)
             self.segment_head = nn.Linear(projection_dim, 1)
         else:
             self.segment_head = nn.Linear(fusion_dim, 1)
@@ -178,7 +198,10 @@ class OVOrthKDStudent(nn.Module):
             )
         visual_tokens = self.visual_proj(self.visual_encoder(frame))
         audio_tokens = self.audio_proj(self.audio_encoder(spectrogram))
-        text_token = self.text_proj(text_embedding).unsqueeze(1).expand(-1, visual_tokens.size(1), -1)
+        projected_text = self.text_proj(text_embedding)
+        text_token = projected_text.unsqueeze(1).expand(
+            -1, visual_tokens.size(1), -1
+        )
 
         if frame_valid is None:
             frame_valid = torch.ones(frame.size(0), frame.size(1), device=frame.device)
@@ -258,4 +281,9 @@ class OVOrthKDStudent(nn.Module):
             "gate_logits": gate_logits,
             "gate_weights": gate_weights,
             "fused_tokens_before_position": fused_tokens_before_position,
+            "text_alignment_target": (
+                projected_text
+                if self.query_anchor_mode == "shared_fusion_projection"
+                else None
+            ),
         }

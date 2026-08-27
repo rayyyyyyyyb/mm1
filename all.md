@@ -2610,3 +2610,9 @@
 - 将新增测试单独同步到 5090 后运行精确筛选：生产代码尚未实现参数时得到 `4 failed, 19 deselected in 4.81s`、逻辑 exit 1；四项均因 `OVOrthKDStudent` 不接受 `fusion_mode`/`gate_mode` 而失败，证明测试确实覆盖缺口。
 - 实现显式 `concat_mlp_query_conditioned`/`paper_additive_query_conditioned` 融合与 `learned_softmax`/`fixed_equal` 门控；兼容模式保留原 concat MLP 与 learned-softmax 行为，additive 模式执行论文式逐元素相加，fixed 模式依据模态有效性产生字面等权权重，未知值 fail closed。
 - 5090 `compileall` exit 0；同一筛选测试变为 `4 passed, 19 deselected in 5.07s`、exit 0；随后独立运行整个 `tests/test_paper_faithfulness.py` 得到 `23 passed in 6.16s`、exit 0。本地 `git diff --check` exit 0，并逐行复查改动未涉及 T=10 标签、logit 或评价协议。
+
+### 644. 2026-08-27：L2、目标投影与 query anchor 的 TDD 红绿验证
+
+- 视觉 L2 与投影冻结测试先在 5090 对旧实现运行：L2 组 `2 failed, 24 deselected`、冻结组 `1 failed, 25 deselected`，两者逻辑 exit 均为 1，失败原因分别是缺少 `visual_l2_reduction` 与 `teacher_target_projector_trainable` 参数。实现后变为 `2 passed` 与 `1 passed`，exit 均为 0；字面算例锁定 feature-mean=2.5、feature-sum=5.0，mask 后的无效 segment 不参与归约。
+- 共享 query 测试同样先运行旧实现：model/非法值组 `3 failed, 27 deselected`、loss 组 `1 failed, 29 deselected`，逻辑 exit 1。实现 `independent_loss_projection`/`shared_fusion_projection` 后，前者变为 `3 passed`、后者 `1 passed`，exit 均为 0；shared 模式的对齐目标是融合实际使用的同一 `text_proj` 输出，loss 不再创建独立 `text_teacher_proj`，并显式处理 fusion_dim 与 projection_dim 不同的边界。
+- 重新运行整个 `tests/test_paper_faithfulness.py` 得到 `30 passed in 6.18s`、exit 0；本地逐行复核和 `git diff --check` exit 0。共享 query 与冻结 projector 仅作为受控后续变量实现，本轮 S0/S1/S2 均不启用，不能据此声称会议历史代码采用这些选项。

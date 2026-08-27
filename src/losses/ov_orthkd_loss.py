@@ -68,6 +68,9 @@ class OVOrthKDLoss(nn.Module):
         text_alignment_mode: str = "paper_probability",
         confidence_weighting: bool = True,
         confidence_scale: float = 2.0,
+        visual_l2_reduction: str = "mean_feature_then_masked_mean_segments",
+        teacher_target_projector_trainable: bool = True,
+        query_anchor_mode: str = "independent_loss_projection",
     ) -> None:
         super().__init__()
         self.temperature = float(temperature)
@@ -83,10 +86,39 @@ class OVOrthKDLoss(nn.Module):
         self.text_alignment_mode = text_alignment_mode
         self.confidence_weighting = bool(confidence_weighting)
         self.confidence_scale = float(confidence_scale)
+        if visual_l2_reduction not in {
+            "mean_feature_then_masked_mean_segments",
+            "sum_feature_then_masked_mean_segments",
+        }:
+            raise ValueError(
+                f"Unsupported visual_l2_reduction: {visual_l2_reduction}"
+            )
+        self.visual_l2_reduction = visual_l2_reduction
+        self.teacher_target_projector_trainable = bool(
+            teacher_target_projector_trainable
+        )
+        if query_anchor_mode not in {
+            "independent_loss_projection",
+            "shared_fusion_projection",
+        }:
+            raise ValueError(f"Unsupported query_anchor_mode: {query_anchor_mode}")
+        self.query_anchor_mode = query_anchor_mode
 
         self.strong_teacher_proj = ProjectionHead(strong_teacher_dim, projection_dim)
         self.weak_teacher_proj = ProjectionHead(weak_teacher_dim, projection_dim)
-        self.text_teacher_proj = ProjectionHead(text_dim, projection_dim)
+        self.text_teacher_proj: nn.Module | None
+        if query_anchor_mode == "independent_loss_projection":
+            self.text_teacher_proj = ProjectionHead(text_dim, projection_dim)
+        else:
+            self.text_teacher_proj = None
+        if not self.teacher_target_projector_trainable:
+            for projector in (
+                self.strong_teacher_proj,
+                self.weak_teacher_proj,
+                self.text_teacher_proj,
+            ):
+                if projector is not None:
+                    projector.requires_grad_(False)
 
     def forward(
         self,
@@ -102,6 +134,7 @@ class OVOrthKDLoss(nn.Module):
         weak_teacher_logits: torch.Tensor | None = None,
         weak_teacher_features: torch.Tensor | None = None,
         text_embeddings: torch.Tensor | None = None,
+        student_text_anchor: torch.Tensor | None = None,
         strong_teacher_logit_mask: torch.Tensor | None = None,
         strong_teacher_feature_mask: torch.Tensor | None = None,
         weak_teacher_logit_mask: torch.Tensor | None = None,
@@ -158,7 +191,14 @@ class OVOrthKDLoss(nn.Module):
             ).to(dtype=student_segment_logits.dtype)
             strong_target = self.strong_teacher_proj(strong_features.detach())
             if self.alpha_strong_feat > 0:
-                strong_terms = (student_decision_features - strong_target).pow(2).mean(dim=-1)
+                squared_error = (student_decision_features - strong_target).pow(2)
+                if (
+                    self.visual_l2_reduction
+                    == "mean_feature_then_masked_mean_segments"
+                ):
+                    strong_terms = squared_error.mean(dim=-1)
+                else:
+                    strong_terms = squared_error.sum(dim=-1)
                 strong_feat_loss = _masked_mean(
                     strong_terms, sequence_mask * strong_mask_for_orth
                 )
@@ -181,11 +221,27 @@ class OVOrthKDLoss(nn.Module):
 
         text_align_loss = _zero(student_segment_logits)
         if self.alpha_text_align > 0:
-            text_embeddings = _require_tensor(text_embeddings, "text_embeddings")
             text_valid = _require_tensor(text_valid, "text_valid").to(
                 dtype=student_segment_logits.dtype
             )
-            text_target = self.text_teacher_proj(text_embeddings.detach())
+            if self.query_anchor_mode == "shared_fusion_projection":
+                text_target = _require_tensor(
+                    student_text_anchor,
+                    "student_text_anchor",
+                )
+            else:
+                text_embeddings = _require_tensor(text_embeddings, "text_embeddings")
+                if self.text_teacher_proj is None:
+                    raise RuntimeError("independent text teacher projector is missing")
+                text_target = self.text_teacher_proj(text_embeddings.detach())
+            if (
+                text_target.shape[0] != student_query_features.shape[0]
+                or text_target.shape[-1] != student_query_features.shape[-1]
+            ):
+                raise ValueError(
+                    "student query/text anchor shape mismatch: "
+                    f"{student_query_features.shape} vs {text_target.shape}"
+                )
             if self.text_alignment_mode == "paper_probability":
                 text_terms = paper_text_alignment_terms(
                     student_query_features=student_query_features,

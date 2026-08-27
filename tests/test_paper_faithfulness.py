@@ -297,6 +297,119 @@ def test_camera_ready_loss_owns_only_teacher_projectors() -> None:
     assert not any(name.startswith("student_") for name in parameter_names)
 
 
+def test_visual_l2_reduction_controls_literal_feature_dimension_scaling() -> None:
+    batch = make_loss_batch()
+    batch["student_decision_features"] = torch.tensor(
+        [[[1.0, 2.0], [100.0, 100.0]]], requires_grad=True
+    )
+    batch["strong_teacher_features"] = torch.zeros(1, 2, 2)
+    batch["strong_teacher_feature_mask"] = torch.tensor([[1.0, 0.0]])
+
+    mean_loss_module = make_camera_ready_loss(
+        alpha_bce=0.0,
+        alpha_strong_feat=1.0,
+        visual_l2_reduction="mean_feature_then_masked_mean_segments",
+    )
+    mean_loss_module.strong_teacher_proj = torch.nn.Identity()
+    sum_loss_module = make_camera_ready_loss(
+        alpha_bce=0.0,
+        alpha_strong_feat=1.0,
+        visual_l2_reduction="sum_feature_then_masked_mean_segments",
+    )
+    sum_loss_module.strong_teacher_proj = torch.nn.Identity()
+
+    mean_loss, mean_stats = mean_loss_module(**batch)
+    sum_loss, sum_stats = sum_loss_module(**batch)
+
+    assert mean_loss.item() == pytest.approx(2.5)
+    assert mean_stats["strong_feat"] == pytest.approx(2.5)
+    assert sum_loss.item() == pytest.approx(5.0)
+    assert sum_stats["strong_feat"] == pytest.approx(5.0)
+
+
+def test_frozen_teacher_target_projectors_require_no_grad() -> None:
+    loss_module = make_camera_ready_loss(teacher_target_projector_trainable=False)
+
+    projector_parameters = {
+        name: parameter.requires_grad
+        for name, parameter in loss_module.named_parameters()
+        if name.startswith(
+            ("strong_teacher_proj", "weak_teacher_proj", "text_teacher_proj")
+        )
+    }
+
+    assert projector_parameters
+    assert not any(projector_parameters.values())
+
+
+def test_loss_rejects_unknown_visual_l2_reduction() -> None:
+    with pytest.raises(
+        ValueError,
+        match="Unsupported visual_l2_reduction: invented",
+    ):
+        make_camera_ready_loss(visual_l2_reduction="invented")
+
+
+def test_shared_fusion_query_anchor_reuses_exact_fusion_text_projection() -> None:
+    model = build_tiny_test_student(
+        path_mode="explicit_projected",
+        query_anchor_mode="shared_fusion_projection",
+    )
+    model.eval()
+
+    with torch.no_grad():
+        outputs = model(**make_tiny_batch())
+
+    assert outputs["query_features"].shape == (1, 2, model.fusion_dim)
+    assert outputs["text_alignment_target"].shape == (1, model.fusion_dim)
+    assert torch.equal(
+        outputs["text_alignment_target"],
+        outputs["text_tokens"][:, 0, :],
+    )
+
+
+def test_shared_query_alignment_uses_student_anchor_without_loss_text_projector() -> None:
+    loss_module = make_camera_ready_loss(
+        alpha_bce=0.0,
+        alpha_text_align=1.0,
+        query_anchor_mode="shared_fusion_projection",
+    )
+    batch = make_loss_batch()
+    batch["student_query_features"] = torch.tensor(
+        [[[1.0, 0.0], [-1.0, 0.0]]], requires_grad=True
+    )
+    batch["student_text_anchor"] = torch.tensor(
+        [[1.0, 0.0]], requires_grad=True
+    )
+    batch["text_embeddings"] = None
+
+    loss, stats = loss_module(**batch)
+    loss.backward()
+
+    assert torch.isfinite(loss)
+    assert stats["text_align"] < 1e-4
+    assert batch["student_text_anchor"].grad is not None
+    assert not any(
+        name.startswith("text_teacher_proj")
+        for name, _ in loss_module.named_parameters()
+    )
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [
+        lambda: build_tiny_test_student(
+            path_mode="explicit_projected",
+            query_anchor_mode="invented",
+        ),
+        lambda: make_camera_ready_loss(query_anchor_mode="invented"),
+    ],
+)
+def test_student_and_loss_reject_unknown_query_anchor_mode(factory: Any) -> None:
+    with pytest.raises(ValueError, match="Unsupported query_anchor_mode: invented"):
+        factory()
+
+
 def test_camera_ready_loss_backward_reaches_each_explicit_student_path() -> None:
     loss_module = make_camera_ready_loss(
         alpha_bce=0.0,
