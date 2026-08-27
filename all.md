@@ -2586,3 +2586,15 @@
 - 文档 receipt 提交为 `83fb387abeb1302b7e24f7277567fbeb826a6099`；其相对完整测试通过的 `59e5f7c...` 仅修改仓库 `all.md` 并新增 `PUBLICATION_RECEIPT.md`，`src/scripts/configs/tests` 差异为 0。提交前工作树 clean、range `git diff --check` exit 0。
 - 执行 `git push origin repro/root-cause-diagnostics` exit 0，输出 `c5c5036..83fb387`，未 force-push。随后本地 HEAD、upstream 与 `git ls-remote` 均精确为 `83fb387...`，dirty=0。
 - 通过未登录网页读取确认仓库为 Public、分支页面可打开、`WEB_REVIEW_HANDOFF.md` 可打开、`83fb387...` commit 页面可打开。网页审查入口为 `https://github.com/rayyyyyyyyb/mm1/blob/repro/root-cause-diagnostics/reports/formal_reproduction/root_cause_diagnostics/WEB_REVIEW_HANDOFF.md`。
+
+### 640. 2026-08-27：接收网页端根因诊断与执行授权
+
+- 完整读取用户附件 `pasted-text.txt`：20,625 bytes，SHA256 `3a5a2ebafb0be02cb3dde2f980b2c0e86a80a06fbd3e941c64a5f024ae91a0eb`。用户要求按诊断直接开始，并要求所有编写代码再做一次独立检验。
+- 按 code-review reception、systematic debugging、brainstorming、writing plans、TDD、worktree isolation 流程执行；附件是外部审查意见，先逐项与仓库事实交叉核验，不直接把建议或候选配方提升为历史事实。
+
+### 641. 2026-08-27：代码事实核验、设计边界与隔离分支
+
+- 静态核验确认：`student.fusion_mode` 未传入模型且 forward 固定 concat+`token_fusion`；`loss.visual_l2_reduction` 未传入 loss 且固定 feature mean；三个 teacher target projectors 与 student 一起进入 AdamW；融合 `text_proj` 与 loss `text_teacher_proj` 独立；训练图像 transform 在十个 segment 循环内独立抽样。
+- 对共享 query 建议增加维度边界：当前融合空间 384、蒸馏空间 256，不能直接声称两者已经是同一张量；设计为显式 compatibility/shared 模式，shared 模式让 query student path 输出 fusion_dim 并直接使用融合 text token。该变量只实现和测试，不混入 S0/S1/S2。
+- 当前路径已是 linked worktree：git-dir 位于父仓库 `.git/worktrees/OV-OrthKD-R2`、common-dir 为父仓库 `.git`、无 superproject；起点 `251b4549aa0fb23c22e2c2740f81c03976f7cf5e` clean。新建分支 `repro/causal-fusion-diagnostics`，不再嵌套 worktree。
+- 新增设计、实施计划与外层 `扩刊/复现/causal_fusion_diagnostics/PLAN.md`。执行固定为 TDD 修 plumbing→完整回归→顺序运行 S0 learned+concat、S1 fixed+concat、S2 learned+additive；均为 noncanonical diagnostic，不启动正式 Full、second seed 或 sweep。
