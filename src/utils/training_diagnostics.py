@@ -192,11 +192,12 @@ def _module_map(student: nn.Module, loss_module: nn.Module) -> dict[str, nn.Modu
     modules = {
         output_name: getattr(student, attribute)
         for output_name, attribute in names.items()
-        if hasattr(student, attribute)
+        if isinstance(getattr(student, attribute, None), nn.Module)
     }
     for name in ("strong_teacher_proj", "weak_teacher_proj", "text_teacher_proj"):
-        if hasattr(loss_module, name):
-            modules[f"loss_{name}"] = getattr(loss_module, name)
+        module = getattr(loss_module, name, None)
+        if isinstance(module, nn.Module):
+            modules[f"loss_{name}"] = module
     return modules
 
 
@@ -241,26 +242,34 @@ def collect_training_diagnostic(
     }
     teacher_targets: dict[str, Any] = {}
     with torch.no_grad():
-        if hasattr(loss_module, "strong_teacher_proj"):
-            strong = loss_module.strong_teacher_proj(
+        strong_teacher_proj = getattr(loss_module, "strong_teacher_proj", None)
+        if isinstance(strong_teacher_proj, nn.Module):
+            strong = strong_teacher_proj(
                 batch["strong_teacher_features"].to(device)
             )
             teacher_targets["strong"] = summarize_tensor_geometry(
                 strong,
                 sequence_mask * batch["strong_teacher_feature_mask"].to(device),
             )
-        if hasattr(loss_module, "weak_teacher_proj"):
-            weak = loss_module.weak_teacher_proj(batch["weak_teacher_features"].to(device))
+        weak_teacher_proj = getattr(loss_module, "weak_teacher_proj", None)
+        if isinstance(weak_teacher_proj, nn.Module):
+            weak = weak_teacher_proj(batch["weak_teacher_features"].to(device))
             teacher_targets["weak"] = summarize_tensor_geometry(
                 weak,
                 sequence_mask
                 * batch["weak_teacher_feature_mask"].to(device)
                 * batch["audio_valid"].to(device),
             )
-        if hasattr(loss_module, "text_teacher_proj"):
-            text = loss_module.text_teacher_proj(batch["text_embedding"].to(device))
+        text_teacher_proj = getattr(loss_module, "text_teacher_proj", None)
+        if isinstance(text_teacher_proj, nn.Module):
+            text = text_teacher_proj(batch["text_embedding"].to(device))
             teacher_targets["text"] = summarize_tensor_geometry(
                 text,
+                batch["text_valid"].to(device),
+            )
+        elif outputs.get("text_alignment_target") is not None:
+            teacher_targets["text"] = summarize_tensor_geometry(
+                outputs["text_alignment_target"],
                 batch["text_valid"].to(device),
             )
     head = getattr(student, "segment_head", None)

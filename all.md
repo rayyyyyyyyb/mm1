@@ -2616,3 +2616,10 @@
 - 视觉 L2 与投影冻结测试先在 5090 对旧实现运行：L2 组 `2 failed, 24 deselected`、冻结组 `1 failed, 25 deselected`，两者逻辑 exit 均为 1，失败原因分别是缺少 `visual_l2_reduction` 与 `teacher_target_projector_trainable` 参数。实现后变为 `2 passed` 与 `1 passed`，exit 均为 0；字面算例锁定 feature-mean=2.5、feature-sum=5.0，mask 后的无效 segment 不参与归约。
 - 共享 query 测试同样先运行旧实现：model/非法值组 `3 failed, 27 deselected`、loss 组 `1 failed, 29 deselected`，逻辑 exit 1。实现 `independent_loss_projection`/`shared_fusion_projection` 后，前者变为 `3 passed`、后者 `1 passed`，exit 均为 0；shared 模式的对齐目标是融合实际使用的同一 `text_proj` 输出，loss 不再创建独立 `text_teacher_proj`，并显式处理 fusion_dim 与 projection_dim 不同的边界。
 - 重新运行整个 `tests/test_paper_faithfulness.py` 得到 `30 passed in 6.18s`、exit 0；本地逐行复核和 `git diff --check` exit 0。共享 query 与冻结 projector 仅作为受控后续变量实现，本轮 S0/S1/S2 均不启用，不能据此声称会议历史代码采用这些选项。
+
+### 645. 2026-08-27：实际运行通路、收据与优化器过滤
+
+- 对旧 trainer 先运行新测试：非默认 builder `1 failed`、行为/检查点收据 `2 failed`、优化器过滤 `1 failed`、缺失模块诊断 `1 failed`，各组逻辑 exit 均为 1；失败分别证明 YAML 未改变实际模块、收据函数不存在、冻结参数仍无专用过滤器、诊断器会对 `None` 模块调用 `named_parameters()`。
+- 实现五项设置从 YAML 到 model/loss 的显式传递；从实际模块属性、模块存在性和真实可训练参数数目生成 schema-1 `runtime_implementation`，写入 `implementation_behavior.json` 和 resolved config 后再构建 fingerprint；checkpoint 顶层存储重新从模块推导的同一收据；AdamW 只接收 `requires_grad=true` 参数；诊断器忽略不存在的模块并能记录 shared fusion text anchor。
+- 对应绿测依次为 builder `1 passed`、行为/检查点 `2 passed`、优化器 `1 passed`、缺失模块诊断 `1 passed`，exit 均为 0；整个 `test_training_reproducibility.py` 为 `22 passed`。checkpoint/resume/root-diagnostics/paper 交叉回归共 `71 passed in 52.01s`、exit 0。
+- 独立逐行复核发现 checkpoint 若只信任 config 中的收据仍可陈旧；先增加测试得到 `1 failed`、exit 1，再让 checkpoint 重新推导实际行为并在与已指纹化 config 不一致时 fail closed。复测该项 `1 passed`，整个 training 文件更新为 `23 passed in 6.87s`、exit 0。本地 `git diff --check` exit 0。

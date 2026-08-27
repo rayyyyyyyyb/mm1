@@ -367,6 +367,9 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
             f"{expected_path_mode}, got {path_mode}"
         )
     projection_dim = int(student_cfg.get("projection_dim", loss_cfg.get("projection_dim", 256)))
+    query_anchor_mode = str(
+        loss_cfg.get("query_anchor_mode", "independent_loss_projection")
+    )
 
     student = OVOrthKDStudent(
         visual_backbone=student_cfg["visual_backbone"],
@@ -380,6 +383,11 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
         temporal_dropout=float(student_cfg.get("temporal_dropout", 0.1)),
         max_position_segments=max_position_segments_from_config(config),
         pretrained=bool(student_cfg.get("pretrained", False)),
+        fusion_mode=str(
+            student_cfg.get("fusion_mode", "concat_mlp_query_conditioned")
+        ),
+        gate_mode=str(student_cfg.get("gate_mode", "learned_softmax")),
+        query_anchor_mode=query_anchor_mode,
     ).to(device)
 
     common_loss_kwargs = {
@@ -422,6 +430,16 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
         loss_module = OVOrthKDLoss(
             **common_loss_kwargs,
             text_alignment_mode=str(loss_cfg.get("text_alignment_mode", "paper_probability")),
+            visual_l2_reduction=str(
+                loss_cfg.get(
+                    "visual_l2_reduction",
+                    "mean_feature_then_masked_mean_segments",
+                )
+            ),
+            teacher_target_projector_trainable=bool(
+                loss_cfg.get("teacher_target_projector_trainable", True)
+            ),
+            query_anchor_mode=query_anchor_mode,
         ).to(device)
     else:
         loss_module = OVOrthKDLegacyLoss(
@@ -430,6 +448,135 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
             text_temperature=float(loss_cfg.get("text_temperature", 0.07)),
         ).to(device)
     return student, loss_module
+
+
+def _module_parameter_behavior(module: nn.Module | None) -> Dict[str, Any]:
+    if module is None:
+        return {
+            "present": False,
+            "parameters": 0,
+            "trainable_parameters": 0,
+        }
+    parameters = list(module.parameters())
+    return {
+        "present": True,
+        "parameters": int(sum(parameter.numel() for parameter in parameters)),
+        "trainable_parameters": int(
+            sum(parameter.numel() for parameter in parameters if parameter.requires_grad)
+        ),
+    }
+
+
+def runtime_implementation_behavior(
+    student: nn.Module,
+    loss_module: nn.Module,
+) -> Dict[str, Any]:
+    target_projectors = {
+        name: _module_parameter_behavior(
+            getattr(loss_module, name, None)
+            if isinstance(getattr(loss_module, name, None), nn.Module)
+            else None
+        )
+        for name in (
+            "strong_teacher_proj",
+            "weak_teacher_proj",
+            "text_teacher_proj",
+        )
+    }
+    present_projectors = [
+        value for value in target_projectors.values() if value["present"]
+    ]
+    projectors_trainable = (
+        all(
+            value["trainable_parameters"] == value["parameters"]
+            for value in present_projectors
+        )
+        if present_projectors
+        else None
+    )
+    student_parameters = list(student.parameters())
+    loss_parameters = list(loss_module.parameters())
+    return {
+        "schema_version": 1,
+        "student": {
+            "class": type(student).__name__,
+            "path_mode": getattr(student, "path_mode", None),
+            "fusion_mode": getattr(student, "fusion_mode", None),
+            "gate_mode": getattr(student, "gate_mode", None),
+            "query_anchor_mode": getattr(student, "query_anchor_mode", None),
+            "fusion_dim": getattr(student, "fusion_dim", None),
+            "projection_dim": getattr(student, "projection_dim", None),
+            "modality_gate_present": isinstance(
+                getattr(student, "modality_gate", None), nn.Module
+            ),
+            "token_fusion_present": isinstance(
+                getattr(student, "token_fusion", None), nn.Module
+            ),
+        },
+        "loss": {
+            "class": type(loss_module).__name__,
+            "visual_l2_reduction": getattr(
+                loss_module, "visual_l2_reduction", None
+            ),
+            "query_anchor_mode": getattr(loss_module, "query_anchor_mode", None),
+            "teacher_target_projector_trainable": projectors_trainable,
+            "target_projectors": target_projectors,
+        },
+        "parameters": {
+            "student": {
+                "parameters": int(
+                    sum(parameter.numel() for parameter in student_parameters)
+                ),
+                "trainable_parameters": int(
+                    sum(
+                        parameter.numel()
+                        for parameter in student_parameters
+                        if parameter.requires_grad
+                    )
+                ),
+            },
+            "loss": {
+                "parameters": int(
+                    sum(parameter.numel() for parameter in loss_parameters)
+                ),
+                "trainable_parameters": int(
+                    sum(
+                        parameter.numel()
+                        for parameter in loss_parameters
+                        if parameter.requires_grad
+                    )
+                ),
+            },
+        },
+    }
+
+
+def attach_runtime_implementation_behavior(
+    *,
+    config: Dict[str, Any],
+    student: nn.Module,
+    loss_module: nn.Module,
+    output_dir: Path,
+) -> Dict[str, Any]:
+    behavior = runtime_implementation_behavior(student, loss_module)
+    config["runtime_implementation"] = behavior
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "implementation_behavior.json").write_text(
+        json.dumps(behavior, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return behavior
+
+
+def trainable_model_and_loss_parameters(
+    student: nn.Module,
+    loss_module: nn.Module,
+) -> list[nn.Parameter]:
+    return [
+        parameter
+        for parameter in list(student.parameters()) + list(loss_module.parameters())
+        if parameter.requires_grad
+    ]
 
 
 def compute_loss_for_batch(
@@ -473,6 +620,7 @@ def compute_loss_for_batch(
         student_decision_features=outputs["decision_features"],
         student_audio_aux_features=outputs["audio_aux_features"],
         student_query_features=outputs["query_features"],
+        student_text_anchor=outputs.get("text_alignment_target"),
         weak_teacher_logit_mask=weak_teacher_logit_mask,
         weak_teacher_feature_mask=(
             batch["weak_teacher_feature_mask"].to(device) * audio_valid
@@ -1241,6 +1389,13 @@ def checkpoint_payload(
     reproduction_fingerprint: Dict[str, Any],
     loader_generators: Dict[str, torch.Generator],
 ) -> Dict[str, Any]:
+    actual_behavior = runtime_implementation_behavior(student, loss_module)
+    recorded_behavior = config.get("runtime_implementation")
+    if recorded_behavior is not None and recorded_behavior != actual_behavior:
+        raise RuntimeError(
+            "runtime implementation behavior changed after the resolved config "
+            "and fingerprint were recorded"
+        )
     return {
         "epoch": epoch,
         "global_step": global_step,
@@ -1249,6 +1404,7 @@ def checkpoint_payload(
         "implementation_mode": config.get("reproduction", {}).get(
             "implementation_mode", "legacy_collaboration"
         ),
+        "runtime_implementation": actual_behavior,
         "student_state_dict": student.state_dict(),
         "loss_state_dict": loss_module.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
@@ -1283,12 +1439,18 @@ def main() -> None:
         deterministic=bool(config.get("training", {}).get("deterministic", True)),
     )
     logger = setup_logger(str(output_dir))
-    write_runtime_metadata(output_dir, config, device)
-    write_static_run_evidence(output_dir, config)
     logger.info("Using device: %s", device)
 
-    train_loader, val_loader, test_loader = create_ov_avel_data_loaders(config)
     student, loss_module = build_model_and_loss(config, device)
+    attach_runtime_implementation_behavior(
+        config=config,
+        student=student,
+        loss_module=loss_module,
+        output_dir=output_dir,
+    )
+    write_runtime_metadata(output_dir, config, device)
+    write_static_run_evidence(output_dir, config)
+    train_loader, val_loader, test_loader = create_ov_avel_data_loaders(config)
 
     loader_generators = {
         name: loader.generator
@@ -1349,7 +1511,7 @@ def main() -> None:
         return
 
     train_cfg = config["training"]
-    parameters = list(student.parameters()) + list(loss_module.parameters())
+    parameters = trainable_model_and_loss_parameters(student, loss_module)
     optimizer = AdamW(
         parameters,
         lr=float(train_cfg.get("learning_rate", 2e-4)),

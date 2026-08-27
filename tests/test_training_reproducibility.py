@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import random
 from pathlib import Path
@@ -24,6 +25,7 @@ from scripts.train_ov_orthkd import (
     validate_repro_config,
 )
 from src.losses import OVOrthKDLoss, OVOrthKDLegacyLoss
+from src.utils.training_diagnostics import diagnostic_parameter_snapshots
 
 
 def test_epoch_evaluation_returns_predictions_with_its_metrics(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -99,6 +101,155 @@ def test_camera_ready_mode_maps_only_to_explicit_student_and_camera_loss() -> No
     assert student.path_mode == "explicit_projected"
     assert isinstance(loss_module, OVOrthKDLoss)
     assert not isinstance(loss_module, OVOrthKDLegacyLoss)
+
+
+def test_builder_plumbs_nondefault_runtime_modes_into_actual_modules() -> None:
+    config = tiny_config("camera_ready_explicit_paths", "explicit_projected")
+    config["student"].update(
+        {
+            "fusion_mode": "paper_additive_query_conditioned",
+            "gate_mode": "fixed_equal",
+        }
+    )
+    config["loss"].update(
+        {
+            "visual_l2_reduction": "sum_feature_then_masked_mean_segments",
+            "teacher_target_projector_trainable": False,
+            "query_anchor_mode": "shared_fusion_projection",
+        }
+    )
+
+    student, loss_module = build_model_and_loss(config, torch.device("cpu"))
+
+    assert student.fusion_mode == "paper_additive_query_conditioned"
+    assert student.gate_mode == "fixed_equal"
+    assert student.query_anchor_mode == "shared_fusion_projection"
+    assert loss_module.visual_l2_reduction == "sum_feature_then_masked_mean_segments"
+    assert loss_module.query_anchor_mode == "shared_fusion_projection"
+    assert loss_module.teacher_target_projector_trainable is False
+    assert all(
+        not parameter.requires_grad
+        for name, parameter in loss_module.named_parameters()
+        if name.startswith(("strong_teacher_proj", "weak_teacher_proj"))
+    )
+
+
+def test_runtime_behavior_receipt_is_derived_from_modules_and_written(
+    tmp_path: Path,
+) -> None:
+    config = tiny_config("camera_ready_explicit_paths", "explicit_projected")
+    config["student"]["gate_mode"] = "fixed_equal"
+    config["loss"]["teacher_target_projector_trainable"] = False
+    student, loss_module = build_model_and_loss(config, torch.device("cpu"))
+
+    behavior = train_module.attach_runtime_implementation_behavior(
+        config=config,
+        student=student,
+        loss_module=loss_module,
+        output_dir=tmp_path,
+    )
+
+    assert behavior["schema_version"] == 1
+    assert behavior["student"]["fusion_mode"] == "concat_mlp_query_conditioned"
+    assert behavior["student"]["gate_mode"] == "fixed_equal"
+    assert behavior["loss"]["visual_l2_reduction"] == (
+        "mean_feature_then_masked_mean_segments"
+    )
+    assert behavior["loss"]["teacher_target_projector_trainable"] is False
+    assert behavior["loss"]["target_projectors"]["strong_teacher_proj"][
+        "trainable_parameters"
+    ] == 0
+    assert config["runtime_implementation"] == behavior
+    assert json.loads(
+        (tmp_path / "implementation_behavior.json").read_text(encoding="utf-8")
+    ) == behavior
+
+
+def test_optimizer_parameter_filter_excludes_frozen_target_projectors() -> None:
+    config = tiny_config("camera_ready_explicit_paths", "explicit_projected")
+    config["loss"]["teacher_target_projector_trainable"] = False
+    student, loss_module = build_model_and_loss(config, torch.device("cpu"))
+    frozen_ids = {
+        id(parameter)
+        for name, parameter in loss_module.named_parameters()
+        if name.startswith(("strong_teacher_proj", "weak_teacher_proj", "text_teacher_proj"))
+    }
+
+    optimizer_parameters = train_module.trainable_model_and_loss_parameters(
+        student,
+        loss_module,
+    )
+
+    assert optimizer_parameters
+    assert not frozen_ids.intersection(map(id, optimizer_parameters))
+    assert all(parameter.requires_grad for parameter in optimizer_parameters)
+
+
+def test_checkpoint_payload_carries_the_actual_behavior_receipt() -> None:
+    config = tiny_config("camera_ready_explicit_paths", "explicit_projected")
+    student, loss_module = build_model_and_loss(config, torch.device("cpu"))
+    behavior = train_module.runtime_implementation_behavior(student, loss_module)
+    config["runtime_implementation"] = behavior
+    optimizer = AdamW(
+        train_module.trainable_model_and_loss_parameters(student, loss_module),
+        lr=1e-3,
+    )
+    scheduler = StepLR(optimizer, step_size=1)
+
+    payload = train_module.checkpoint_payload(
+        epoch=1,
+        global_step=2,
+        best_metric=0.3,
+        student=student,
+        loss_module=loss_module,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        scaler=None,
+        config=config,
+        reproduction_fingerprint={"sha256": "test"},
+        loader_generators={"train": torch.Generator().manual_seed(1)},
+    )
+
+    assert payload["runtime_implementation"] == behavior
+
+
+def test_checkpoint_rejects_a_stale_config_behavior_receipt() -> None:
+    config = tiny_config("camera_ready_explicit_paths", "explicit_projected")
+    student, loss_module = build_model_and_loss(config, torch.device("cpu"))
+    config["runtime_implementation"] = {"schema_version": 1, "stale": True}
+    optimizer = AdamW(
+        train_module.trainable_model_and_loss_parameters(student, loss_module),
+        lr=1e-3,
+    )
+    scheduler = StepLR(optimizer, step_size=1)
+
+    with pytest.raises(RuntimeError, match="runtime implementation behavior changed"):
+        train_module.checkpoint_payload(
+            epoch=1,
+            global_step=2,
+            best_metric=0.3,
+            student=student,
+            loss_module=loss_module,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            scaler=None,
+            config=config,
+            reproduction_fingerprint={"sha256": "test"},
+            loader_generators={},
+        )
+
+
+def test_diagnostics_ignore_modules_absent_in_selected_runtime_modes() -> None:
+    config = tiny_config("camera_ready_explicit_paths", "explicit_projected")
+    student, loss_module = build_model_and_loss(config, torch.device("cpu"))
+    student.modality_gate = None
+    student.token_fusion = None
+    loss_module.text_teacher_proj = None
+
+    snapshots = diagnostic_parameter_snapshots(student, loss_module)
+
+    assert "loss_text_teacher_proj" not in snapshots
+    assert "student_segment_head" in snapshots
 
 
 def test_legacy_mode_maps_only_to_shared_student_and_legacy_loss() -> None:
