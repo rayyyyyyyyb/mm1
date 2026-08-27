@@ -130,15 +130,14 @@ class OVOrthKDStudent(nn.Module):
             nn.Dropout(temporal_dropout),
         )
 
-        self.modality_gate: nn.Module | None
-        if gate_mode == "learned_softmax":
-            self.modality_gate = nn.Sequential(
-                nn.Linear(fusion_dim * 3 + 2, fusion_dim),
-                nn.GELU(),
-                nn.Linear(fusion_dim, 2),
-            )
-        else:
-            self.modality_gate = None
+        # Keep the learned gate instantiated in fixed-gate diagnostics so the
+        # intervention does not alter RNG consumption or downstream parameter
+        # initialization. The fixed forward branch deliberately ignores it.
+        self.modality_gate: nn.Module = nn.Sequential(
+            nn.Linear(fusion_dim * 3 + 2, fusion_dim),
+            nn.GELU(),
+            nn.Linear(fusion_dim, 2),
+        )
 
         self.token_fusion: nn.Module | None
         if fusion_mode == "concat_mlp_query_conditioned":

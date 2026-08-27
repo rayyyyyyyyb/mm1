@@ -2675,3 +2675,37 @@
 
 - 先在 `tests/test_causal_diagnostic_configs.py` 新增“短程因果运行必须保留原 Student-only optimizer、scheduler、LR、weight decay、grad clip”测试；对旧三配置运行得到预期 RED：`1 failed, 7 deselected`、exit 1，唯一差异为 `T_max 3 != 30`。
 - 随后只把 S0/S1/S2 三份配置的 scheduler `T_max` 从 3 改回 30，仍保留 `epochs=3`/每 epoch 400 batches。focused GREEN 为 `1 passed, 7 deselected`、exit 0；完整 causal config 文件为 `8 passed in 8.05s`、exit 0。
+
+### 654. 2026-08-27：scheduler 修正提交与新 5090 clean worktree
+
+- 独立 diff 确认 S0 相对旧 Student-only 已完整保留 optimizer/scheduler/LR/weight decay/grad clip，只有 noncanonical 标记、显式兼容行为字段与 3-epoch 停止边界不同；S1/S2 仍分别只改 gate/fusion。paper-faithfulness、training-reproducibility、causal-config 交叉回归 `61 passed in 10.46s`、exit 0。
+- 创建 clean commit `b09d5f1f8eab64009ecda1383386cab16357b815`，message `fix: preserve causal diagnostic scheduler`，5 files changed、70 insertions、3 deletions。首次 bundle 命令对裸 SHA range 报 `Refusing to create empty bundle`，因为 bundle 需要命名 ref；没有生成文件或远端变更。改用命名分支并排除 dbf prerequisite 后生成 7,143-byte bundle，SHA256 `c1b223fd6ecc0b899f2c47ea78338ed88d373890398e0cb721b8e581a92a5ac1`，本地/5090 verify 均 exit 0。
+- 新建独立 detached worktree `E:\OV-OrthKD-R3\causal-fusion-b09d5f1`，exact HEAD b09d5f1、dirty=0；挂载 external、weights、proposed_method、official data、teacher cache、HF cache、exported manifests 七个 junction。只读检查旧树时曾按摘要查询根目录 `incoming/source`，两路径实际不存在并各报一次 Get-Item error；它们并不是 receipts 使用的真实路径。
+
+### 655. 2026-08-27：新 worktree 资产路径纠正与完整回归
+
+- 新 worktree 首次 `compileall` exit 0；完整 pytest 得到 `423 passed, 1 failed`，唯一失败 canonical readiness 明确列出 archive 与 source manifest 缺失。根因是实际还需 `data/downloads/incoming` 与 `data/ov_ave/source` 两个 junction，而非根目录路径；测试前后 HEAD b09d5f1、dirty=0。
+- 补挂这两个真实资产目录后 HEAD/dirty 不变。focused committed-ready canonical gate `1 passed in 224.36s`、exit 0；随后 fresh 完整套件 `424 passed in 323.85s (0:05:23)`、exit 0，测试前后 HEAD 均为 b09d5f1、dirty 均为 0。
+- 三份远端 LF config SHA256 依次锁定为 S0 `a249bc8f...a72e`、S1 `6faac6c1...96b`、S2 `44504ef5...b43a`。更新持久 worker 到 exact b09d5f1、新 worktree、新 control root 与这些 LF hashes；本地 worker/launcher PowerShell parser 均 0 errors，worker SHA256 `c09f8bddb45c5f08bc2d905e50a64943814b5d1ee0635ce341ef6c5836f42a56`。
+
+### 656. 2026-08-27：修正后有效 S0→S1→S2 序列启动
+
+- 将 worker 上传为专用 `run_causal_sequence_worker_b09d5f1.ps1`，远端 parser 0 errors、SHA 与本地一致；launcher parser 0 errors，持久模块 SHA 仍为 `31053849...2e5`。启动前确认新 control 不存在、新 S0 output 不存在、匹配训练/worker 进程 0。
+- 持久启动 exit 0：UTC `2026-08-27T08:39:57.2996116Z`，worker PID 16516，Win32_Process return 0，exact commit b09d5f1；state=`running`、current=`s0_learned_concat`、completed=[]，序列固定 S0→S1→S2。启动采样 GPU 1,557/32,607 MiB、0%、67.63 W、44°C，进入预期的静态证据/cache hash 阶段。
+
+### 657. 2026-08-27：有效 S0 的严格前缀复现验收
+
+- 因 OS cache 命中，S0 tree hash 约两分钟完成，累计 313,014 reads / 1,608,743,054 transfer bytes；4 个 DataLoader worker 随后启动。真实 resolved config 明确记录 `epochs=3`、`T_max=30`、learned gate、concat fusion。
+- epoch 1 history：LR `0.0001994521895`、val AP/AUROC `0.7331593303/0.6223705228`、predicted-positive rate 1.0；epoch 2 history：LR `0.0001978147601`、AP/AUROC `0.6562988881/0.5685087853`、predicted-positive rate 1.0。两者恢复旧 30-epoch Student-only 前缀而非失效 T_max3 轨迹。
+- 三个 epoch 首批 diagnostic 均恢复旧值；第三条为 logit std `0.0023770346`、visual gate `6.842747e-11`、saturation 1.0、visual grad 0、audio grad `0.0023745953`。新旧整份 3-line diagnostics 的 SHA256 精确同为 `254c0a0fb96b41ebdb9babd1433f285bfe3f33450fc9dad678a3629fdd30d804`，机械证明 scheduler 混杂已消除且 S0 稳定复现原塌缩。
+
+### 658. 2026-08-27：S0 完成与 fixed-gate RNG 混杂发现
+
+- S0 完成 3 histories/3 diagnostics/step 1200 与全量 final export；final_metrics SHA256 与旧 Student-only 精确同为 `c223ed776f80a65b03b94c3caa13c48edc4dab7a352fad2df94a0aadef467488`。test AP/AUROC/官方 segment F1 为 `0.7487446824/0.6361346662/0.5403934128`，predicted-positive rate `0.9873711340`，worker 门禁通过并进入 S1。
+- S1 首批真实 receipt 显示 fixed equal gate 和 concat fusion 确已执行，但 `modality_gate_present=false`、student 参数比 S0 少 444,290；同 seed 下训练前 logit std 已为 `0.1065758043` 而非 S0 `0.1214227818`。根因是 fixed 模式不构造 gate 模块，改变 RNG 消耗并使后续 fusion/Transformer/head 初始权重不同，因此配置层“只改 gate_mode”并不等于参数初始化层严格单变量。
+- 在确认主 PID 5268 精确指向 S1 后，先终止其 4 个 DataLoader children（1132、25032、6252、26456），再终止主进程；worker 正常收到 exit -1 并写入 failed，completed 仅含 S0，GPU 释放且无孤儿。S1 partial 只有 1 diagnostic/0 history；整个 control 六文件无损移动到 `b09d5f1_sequence_invalid_fixed_gate_rng_20260827T0917Z`，b09 worktree 的 S0/S1 outputs 原位保留为失效序列证据。
+
+### 659. 2026-08-27：fixed gate 严格干预的 TDD 修正
+
+- 先新增两类测试：同一 seed 下 learned/fixed 模型必须拥有逐 tensor 完全相同的 state dict，fixed forward 后 gate 参数 grad 必须保持 None；三份真实 causal config 构建收据均必须显示 gate module present。旧实现 RED 为 `2 failed, 2 passed`、exit 1，失败精确落在 fixed gate module 为 None/S1 receipt present=false。
+- 修改 student 构造：无论 learned/fixed 都按相同顺序实例化 learned gate；fixed forward 仅忽略该模块并使用 validity-aware 0.5/0.5，不改变 RNG 或下游初始化。focused GREEN `4 passed in 8.56s`；paper/causal/training 交叉回归 `62 passed in 10.87s`，exit 0。

@@ -100,6 +100,19 @@ def test_short_causal_runs_preserve_student_only_optimizer_and_scheduler() -> No
         assert config["training"]["grad_clip"] == base["training"]["grad_clip"]
 
 
+def test_s0_s1_real_configs_preserve_identical_parameter_initialization() -> None:
+    torch.manual_seed(42)
+    learned, _ = build_model_and_loss(_load(CONFIG_PATHS["s0"]), torch.device("cpu"))
+    torch.manual_seed(42)
+    fixed, _ = build_model_and_loss(_load(CONFIG_PATHS["s1"]), torch.device("cpu"))
+
+    learned_state = learned.state_dict()
+    fixed_state = fixed.state_dict()
+    assert learned_state.keys() == fixed_state.keys()
+    for name in learned_state:
+        assert torch.equal(learned_state[name], fixed_state[name]), name
+
+
 def test_noncanonical_diagnostic_claim_requires_literal_marker() -> None:
     config = {
         "reproduction": {
@@ -136,6 +149,7 @@ def test_each_causal_config_constructs_its_declared_behavior(
     assert behavior["loss"]["teacher_target_projector_trainable"] is config[
         "loss"
     ]["teacher_target_projector_trainable"]
+    assert behavior["student"]["modality_gate_present"] is True
 
 
 def test_noncanonical_diagnostics_still_enforce_official_metric_t10() -> None:

@@ -178,6 +178,30 @@ def test_fixed_equal_gate_is_literal_and_respects_missing_modalities() -> None:
     assert torch.equal(outputs["gate_weights"], expected)
 
 
+def test_fixed_gate_preserves_counterfactual_initialization_and_ignores_gate() -> None:
+    torch.manual_seed(123)
+    learned = build_tiny_test_student(
+        path_mode="explicit_projected",
+        gate_mode="learned_softmax",
+    )
+    torch.manual_seed(123)
+    fixed = build_tiny_test_student(
+        path_mode="explicit_projected",
+        gate_mode="fixed_equal",
+    )
+
+    assert isinstance(fixed.modality_gate, torch.nn.Module)
+    learned_state = learned.state_dict()
+    fixed_state = fixed.state_dict()
+    assert learned_state.keys() == fixed_state.keys()
+    for name in learned_state:
+        assert torch.equal(learned_state[name], fixed_state[name]), name
+
+    fixed.eval()
+    fixed(**make_tiny_batch())["segment_logits"].sum().backward()
+    assert all(parameter.grad is None for parameter in fixed.modality_gate.parameters())
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
