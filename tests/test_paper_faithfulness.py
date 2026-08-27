@@ -9,20 +9,22 @@ import src.losses.ov_orthkd_loss as camera_ready_loss
 from src.models.ov_orthkd import OVOrthKDStudent
 
 
-def build_tiny_test_student(path_mode: str) -> OVOrthKDStudent:
-    return OVOrthKDStudent(
-        visual_backbone="mobilenetv3_small_100",
-        audio_backbone="mobilenetv3_small_100",
-        text_dim=8,
-        fusion_dim=32,
-        projection_dim=16,
-        path_mode=path_mode,
-        temporal_layers=1,
-        temporal_heads=4,
-        temporal_dropout=0.0,
-        max_segments=2,
-        pretrained=False,
-    )
+def build_tiny_test_student(path_mode: str, **overrides: Any) -> OVOrthKDStudent:
+    kwargs: dict[str, Any] = {
+        "visual_backbone": "mobilenetv3_small_100",
+        "audio_backbone": "mobilenetv3_small_100",
+        "text_dim": 8,
+        "fusion_dim": 32,
+        "projection_dim": 16,
+        "path_mode": path_mode,
+        "temporal_layers": 1,
+        "temporal_heads": 4,
+        "temporal_dropout": 0.0,
+        "max_segments": 2,
+        "pretrained": False,
+    }
+    kwargs.update(overrides)
+    return OVOrthKDStudent(**kwargs)
 
 
 def make_tiny_batch() -> dict[str, torch.Tensor]:
@@ -139,6 +141,56 @@ def test_legacy_mode_keeps_shared_head_and_has_no_projection_parameters() -> Non
 def test_student_rejects_unknown_path_mode() -> None:
     with pytest.raises(ValueError, match="Unsupported path_mode: invented"):
         build_tiny_test_student(path_mode="invented")
+
+
+def test_paper_additive_fusion_is_the_literal_weighted_sum_before_position() -> None:
+    model = build_tiny_test_student(
+        path_mode="explicit_projected",
+        fusion_mode="paper_additive_query_conditioned",
+    )
+    model.eval()
+
+    with torch.no_grad():
+        outputs = model(**make_tiny_batch())
+
+    expected = (
+        outputs["gate_weights"][..., 0:1] * outputs["visual_tokens"]
+        + outputs["gate_weights"][..., 1:2] * outputs["audio_tokens"]
+        + outputs["text_tokens"]
+    )
+    assert torch.equal(outputs["fused_tokens_before_position"], expected)
+
+
+def test_fixed_equal_gate_is_literal_and_respects_missing_modalities() -> None:
+    model = build_tiny_test_student(
+        path_mode="explicit_projected",
+        gate_mode="fixed_equal",
+    )
+    model.eval()
+    batch = make_tiny_batch()
+    batch["frame_valid"] = torch.tensor([[1.0, 1.0]])
+    batch["audio_valid"] = torch.tensor([[1.0, 0.0]])
+
+    with torch.no_grad():
+        outputs = model(**batch)
+
+    expected = torch.tensor([[[0.5, 0.5], [1.0, 0.0]]])
+    assert torch.equal(outputs["gate_weights"], expected)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"fusion_mode": "invented"}, "Unsupported fusion_mode: invented"),
+        ({"gate_mode": "invented"}, "Unsupported gate_mode: invented"),
+    ],
+)
+def test_student_rejects_unknown_fusion_or_gate_mode(
+    overrides: dict[str, str],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        build_tiny_test_student(path_mode="explicit_projected", **overrides)
 
 
 def test_paper_text_alignment_uses_mapped_cosine_probability() -> None:

@@ -66,10 +66,19 @@ class OVOrthKDStudent(nn.Module):
         max_position_segments: int = 16,
         max_segments: int | None = None,
         pretrained: bool = False,
+        fusion_mode: str = "concat_mlp_query_conditioned",
+        gate_mode: str = "learned_softmax",
     ) -> None:
         super().__init__()
         if path_mode not in {"explicit_projected", "legacy_shared"}:
             raise ValueError(f"Unsupported path_mode: {path_mode}")
+        if fusion_mode not in {
+            "concat_mlp_query_conditioned",
+            "paper_additive_query_conditioned",
+        }:
+            raise ValueError(f"Unsupported fusion_mode: {fusion_mode}")
+        if gate_mode not in {"learned_softmax", "fixed_equal"}:
+            raise ValueError(f"Unsupported gate_mode: {gate_mode}")
 
         self.visual_encoder = SequenceImageEncoder(visual_backbone, pretrained=pretrained)
         self.audio_encoder = SequenceImageEncoder(audio_backbone, pretrained=pretrained)
@@ -79,6 +88,8 @@ class OVOrthKDStudent(nn.Module):
         self.fusion_dim = fusion_dim
         self.projection_dim = projection_dim
         self.path_mode = path_mode
+        self.fusion_mode = fusion_mode
+        self.gate_mode = gate_mode
         if max_segments is not None:
             max_position_segments = int(max_segments)
         self.max_position_segments = int(max_position_segments)
@@ -104,17 +115,26 @@ class OVOrthKDStudent(nn.Module):
             nn.Dropout(temporal_dropout),
         )
 
-        self.modality_gate = nn.Sequential(
-            nn.Linear(fusion_dim * 3 + 2, fusion_dim),
-            nn.GELU(),
-            nn.Linear(fusion_dim, 2),
-        )
-        self.token_fusion = nn.Sequential(
-            nn.LayerNorm(fusion_dim * 3),
-            nn.Linear(fusion_dim * 3, fusion_dim),
-            nn.GELU(),
-            nn.Dropout(temporal_dropout),
-        )
+        self.modality_gate: nn.Module | None
+        if gate_mode == "learned_softmax":
+            self.modality_gate = nn.Sequential(
+                nn.Linear(fusion_dim * 3 + 2, fusion_dim),
+                nn.GELU(),
+                nn.Linear(fusion_dim, 2),
+            )
+        else:
+            self.modality_gate = None
+
+        self.token_fusion: nn.Module | None
+        if fusion_mode == "concat_mlp_query_conditioned":
+            self.token_fusion = nn.Sequential(
+                nn.LayerNorm(fusion_dim * 3),
+                nn.Linear(fusion_dim * 3, fusion_dim),
+                nn.GELU(),
+                nn.Dropout(temporal_dropout),
+            )
+        else:
+            self.token_fusion = None
         self.position_embedding = nn.Parameter(
             torch.zeros(1, self.max_position_segments, fusion_dim)
         )
@@ -176,15 +196,36 @@ class OVOrthKDStudent(nn.Module):
             ],
             dim=-1,
         )
-        gate_logits = self.modality_gate(gate_input)
         both_missing = validity.sum(dim=-1, keepdim=True) == 0
-        gate_logits = gate_logits.masked_fill(validity <= 0, -1e4)
-        gate_logits = torch.where(both_missing, torch.zeros_like(gate_logits), gate_logits)
-        gate_weights = torch.softmax(gate_logits, dim=-1)
+        if self.gate_mode == "learned_softmax":
+            if self.modality_gate is None:
+                raise RuntimeError("learned_softmax gate module is missing")
+            gate_logits = self.modality_gate(gate_input)
+            gate_logits = gate_logits.masked_fill(validity <= 0, -1e4)
+            gate_logits = torch.where(both_missing, torch.zeros_like(gate_logits), gate_logits)
+            gate_weights = torch.softmax(gate_logits, dim=-1)
+        else:
+            fixed_validity = validity.to(dtype=visual_tokens.dtype)
+            denominator = fixed_validity.sum(dim=-1, keepdim=True).clamp_min(1.0)
+            gate_weights = fixed_validity / denominator
+            gate_weights = torch.where(
+                both_missing,
+                torch.full_like(gate_weights, 0.5),
+                gate_weights,
+            )
+            gate_logits = torch.log(gate_weights.clamp_min(1e-12))
 
         weighted_visual = visual_tokens * gate_weights[..., 0:1]
         weighted_audio = audio_tokens * gate_weights[..., 1:2]
-        fused_tokens = self.token_fusion(torch.cat([weighted_visual, weighted_audio, text_token], dim=-1))
+        if self.fusion_mode == "concat_mlp_query_conditioned":
+            if self.token_fusion is None:
+                raise RuntimeError("concat fusion module is missing")
+            fused_tokens = self.token_fusion(
+                torch.cat([weighted_visual, weighted_audio, text_token], dim=-1)
+            )
+        else:
+            fused_tokens = weighted_visual + weighted_audio + text_token
+        fused_tokens_before_position = fused_tokens
 
         seq_len = fused_tokens.size(1)
         fused_tokens = fused_tokens + self.position_embedding[:, :seq_len, :]
@@ -216,4 +257,5 @@ class OVOrthKDStudent(nn.Module):
             "text_tokens": text_token,
             "gate_logits": gate_logits,
             "gate_weights": gate_weights,
+            "fused_tokens_before_position": fused_tokens_before_position,
         }

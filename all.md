@@ -2598,3 +2598,15 @@
 - 对共享 query 建议增加维度边界：当前融合空间 384、蒸馏空间 256，不能直接声称两者已经是同一张量；设计为显式 compatibility/shared 模式，shared 模式让 query student path 输出 fusion_dim 并直接使用融合 text token。该变量只实现和测试，不混入 S0/S1/S2。
 - 当前路径已是 linked worktree：git-dir 位于父仓库 `.git/worktrees/OV-OrthKD-R2`、common-dir 为父仓库 `.git`、无 superproject；起点 `251b4549aa0fb23c22e2c2740f81c03976f7cf5e` clean。新建分支 `repro/causal-fusion-diagnostics`，不再嵌套 worktree。
 - 新增设计、实施计划与外层 `扩刊/复现/causal_fusion_diagnostics/PLAN.md`。执行固定为 TDD 修 plumbing→完整回归→顺序运行 S0 learned+concat、S1 fixed+concat、S2 learned+additive；均为 noncanonical diagnostic，不启动正式 Full、second seed 或 sweep。
+
+### 642. 2026-08-27：因果诊断分支修改前完整基线
+
+- 从 `59e5f7c...` prerequisite 生成设计分支增量 bundle，11,348 bytes、SHA256 `9969ad3b152a973d4387ff28d360eac36074907fa9c76e90a87813b9c07766c1`；本地/5090 bundle verify 均 exit 0。5090 工作树精确切换到 `4445091dba837e5d18bdab0cac4d261cd098a66b`，dirty=0。
+- 锁定 Python/MinGit/offline 环境完整基线 `python -m pytest -q`：`399 passed in 334.61s (0:05:34)`、exit 0；测试前后 exact HEAD 不变、dirty 均为 0，没有启动训练。
+- Task 1 开始前先新增真实 forward 行为测试：additive 必须等于两个加权模态与文本 token 的逐元素和；fixed gate 对双有效必须为 0.5/0.5、单有效为 1/0；未知 fusion/gate 值必须 fail closed。尚未修改生产实现。
+
+### 643. 2026-08-27：融合与门控模式的 TDD 红绿验证
+
+- 将新增测试单独同步到 5090 后运行精确筛选：生产代码尚未实现参数时得到 `4 failed, 19 deselected in 4.81s`、逻辑 exit 1；四项均因 `OVOrthKDStudent` 不接受 `fusion_mode`/`gate_mode` 而失败，证明测试确实覆盖缺口。
+- 实现显式 `concat_mlp_query_conditioned`/`paper_additive_query_conditioned` 融合与 `learned_softmax`/`fixed_equal` 门控；兼容模式保留原 concat MLP 与 learned-softmax 行为，additive 模式执行论文式逐元素相加，fixed 模式依据模态有效性产生字面等权权重，未知值 fail closed。
+- 5090 `compileall` exit 0；同一筛选测试变为 `4 passed, 19 deselected in 5.07s`、exit 0；随后独立运行整个 `tests/test_paper_faithfulness.py` 得到 `23 passed in 6.16s`、exit 0。本地 `git diff --check` exit 0，并逐行复查改动未涉及 T=10 标签、logit 或评价协议。
