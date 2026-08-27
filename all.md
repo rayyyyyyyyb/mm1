@@ -2580,3 +2580,9 @@
 - 生成 56,474-byte 增量 bundle，SHA256 `b7d623d9f244d5462f9eae459a7613826ad6fb8b34a076a59ba617db0523d2d8`；本地与 5090 `git bundle verify` 均 exit 0。5090 detached 诊断工作树从 clean `c5c5036...` 精确切换到 `59e5f7c...`，证据文件存在、两份 history 均 30 行、dirty=0。
 - 在锁定 Python、MinGit 与 HF/Transformers offline 环境运行完整 `python -m pytest -q`：`399 passed in 338.65s (0:05:38)`、`PYTEST_EXIT=0`。测试前后 HEAD 均精确为 `59e5f7c...`、dirty 均为 0；没有启动训练、teacher export 或真实数据 preflight。
 - 新增 `PUBLICATION_RECEIPT.md` 固化上述提交、bundle、完整测试和禁传资产边界。该 receipt 与本条 ledger 是测试后的纯文档追加，不改变被测科学源码、配置、测试或控制证据。
+
+### 639. 2026-08-27：GitHub 非强制发布与网页可见性验证
+
+- 文档 receipt 提交为 `83fb387abeb1302b7e24f7277567fbeb826a6099`；其相对完整测试通过的 `59e5f7c...` 仅修改仓库 `all.md` 并新增 `PUBLICATION_RECEIPT.md`，`src/scripts/configs/tests` 差异为 0。提交前工作树 clean、range `git diff --check` exit 0。
+- 执行 `git push origin repro/root-cause-diagnostics` exit 0，输出 `c5c5036..83fb387`，未 force-push。随后本地 HEAD、upstream 与 `git ls-remote` 均精确为 `83fb387...`，dirty=0。
+- 通过未登录网页读取确认仓库为 Public、分支页面可打开、`WEB_REVIEW_HANDOFF.md` 可打开、`83fb387...` commit 页面可打开。网页审查入口为 `https://github.com/rayyyyyyyyb/mm1/blob/repro/root-cause-diagnostics/reports/formal_reproduction/root_cause_diagnostics/WEB_REVIEW_HANDOFF.md`。
