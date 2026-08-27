@@ -170,7 +170,19 @@ def validate_repro_config(
     reproduction = config.get("reproduction", {})
     claim_level = str(reproduction.get("claim_level", "")).strip().lower()
     formal_claims = {"archival_exact", "paper_specified_reconstruction"}
-    if claim_level and claim_level not in formal_claims and not bool(reproduction.get("mock_only", False)):
+    diagnostic_claim = "noncanonical_diagnostic"
+    diagnostic_only = reproduction.get("diagnostic_only") is True
+    if claim_level == diagnostic_claim and not diagnostic_only:
+        raise RuntimeError(
+            "noncanonical_diagnostic claim requires reproduction.diagnostic_only=true"
+        )
+    if claim_level in formal_claims and diagnostic_only:
+        raise RuntimeError("Formal claims forbid diagnostic_only=true")
+    if (
+        claim_level
+        and claim_level not in formal_claims | {diagnostic_claim}
+        and not bool(reproduction.get("mock_only", False))
+    ):
         raise RuntimeError(f"Unsupported formal reproduction claim_level: {claim_level}")
     if max_eval_batches is not None and claim_level in formal_claims:
         raise RuntimeError(
@@ -241,6 +253,21 @@ def validate_repro_config(
         "\n".join(lines) + "\n",
         encoding="utf-8",
     )
+
+
+def expected_metric_task_segments_for_claim(
+    config: Mapping[str, Any],
+) -> int | None:
+    claim_level = str(
+        config.get("reproduction", {}).get("claim_level", "")
+    ).strip().lower()
+    if claim_level in {
+        "archival_exact",
+        "paper_specified_reconstruction",
+        "noncanonical_diagnostic",
+    }:
+        return task_segments_from_config(config)
+    return None
 
 
 def build_scheduler(
@@ -1461,13 +1488,7 @@ def main() -> None:
         }.items()
         if loader is not None and loader.generator is not None
     }
-    reproduction_cfg = config.get("reproduction", {})
-    claim_level = str(reproduction_cfg.get("claim_level", "")).strip().lower()
-    expected_metric_task_segments = (
-        task_segments_from_config(config)
-        if claim_level in {"archival_exact", "paper_specified_reconstruction"}
-        else None
-    )
+    expected_metric_task_segments = expected_metric_task_segments_for_claim(config)
     reproduction_fingerprint = build_runtime_reproduction_fingerprint(config)
 
     if args.eval_only:

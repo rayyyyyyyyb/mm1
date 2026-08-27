@@ -2623,3 +2623,10 @@
 - 实现五项设置从 YAML 到 model/loss 的显式传递；从实际模块属性、模块存在性和真实可训练参数数目生成 schema-1 `runtime_implementation`，写入 `implementation_behavior.json` 和 resolved config 后再构建 fingerprint；checkpoint 顶层存储重新从模块推导的同一收据；AdamW 只接收 `requires_grad=true` 参数；诊断器忽略不存在的模块并能记录 shared fusion text anchor。
 - 对应绿测依次为 builder `1 passed`、行为/检查点 `2 passed`、优化器 `1 passed`、缺失模块诊断 `1 passed`，exit 均为 0；整个 `test_training_reproducibility.py` 为 `22 passed`。checkpoint/resume/root-diagnostics/paper 交叉回归共 `71 passed in 52.01s`、exit 0。
 - 独立逐行复核发现 checkpoint 若只信任 config 中的收据仍可陈旧；先增加测试得到 `1 failed`、exit 1，再让 checkpoint 重新推导实际行为并在与已指纹化 config 不一致时 fail closed。复测该项 `1 passed`，整个 training 文件更新为 `23 passed in 6.87s`、exit 0。本地 `git diff --check` exit 0。
+
+### 646. 2026-08-27：S0/S1/S2 单变量配置与诊断 claim
+
+- 新配置/claim 测试先对旧树运行得到 `3 failed`、逻辑 exit 1：三份配置不存在，`noncanonical_diagnostic` 被旧 validator 拒绝，正式 claim 的 `diagnostic_only` 也未 fail closed。随后新增诊断 claim 配对规则：只有 `claim_level=noncanonical_diagnostic` 且 `diagnostic_only=true` 才接受，正式 claim 明确拒绝该 marker。
+- 从同一 Student-only 配置机械派生三份 3-epoch/400-batch 配置：S0 learned+concat、S1 fixed+concat、S2 learned+additive。三者均 seed 42、T=10、V_test=1、KD 全关、projector 保持 trainable、query anchor 保持 independent；除 variant/log_dir 外，S1 只改 `student.gate_mode`，S2 只改 `student.fusion_mode`。结构测试与实际 module 构造测试共 `6 passed`、exit 0。
+- 首次 guard 交叉回归遗漏 MinGit PATH：25 passed、24 failed，失败均为锁定 Python 找不到 `git.exe`；补回锁定 MinGit 后原样重跑为 48 passed、1 failed，唯一失败明确是当前 scp 测试树 dirty，而该测试正要求 canonical Git clean，证明正式 clean guard 未被放松。待形成 exact clean commit 后必须重跑完整套件。
+- 独立复核又发现 noncanonical diagnostic 的预测/指标入口原本不会设置 expected task segments；先写测试得到 `1 failed`、exit 1，再新增统一 helper，使正式与 noncanonical diagnostic 均强制读取官方 `data.num_segments=10`。最终 causal config 文件 `7 passed in 8.03s`、exit 0。
