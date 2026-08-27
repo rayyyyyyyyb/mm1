@@ -113,6 +113,21 @@ def test_s0_s1_real_configs_preserve_identical_parameter_initialization() -> Non
         assert torch.equal(learned_state[name], fixed_state[name]), name
 
 
+def test_s0_s2_real_configs_preserve_identical_parameter_initialization() -> None:
+    torch.manual_seed(42)
+    concat, _ = build_model_and_loss(_load(CONFIG_PATHS["s0"]), torch.device("cpu"))
+    torch.manual_seed(42)
+    additive, _ = build_model_and_loss(
+        _load(CONFIG_PATHS["s2"]), torch.device("cpu")
+    )
+
+    concat_state = concat.state_dict()
+    additive_state = additive.state_dict()
+    assert concat_state.keys() == additive_state.keys()
+    for name in concat_state:
+        assert torch.equal(concat_state[name], additive_state[name]), name
+
+
 def test_noncanonical_diagnostic_claim_requires_literal_marker() -> None:
     config = {
         "reproduction": {
@@ -150,6 +165,7 @@ def test_each_causal_config_constructs_its_declared_behavior(
         "loss"
     ]["teacher_target_projector_trainable"]
     assert behavior["student"]["modality_gate_present"] is True
+    assert behavior["student"]["token_fusion_present"] is True
 
 
 def test_noncanonical_diagnostics_still_enforce_official_metric_t10() -> None:

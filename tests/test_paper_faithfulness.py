@@ -202,6 +202,32 @@ def test_fixed_gate_preserves_counterfactual_initialization_and_ignores_gate() -
     assert all(parameter.grad is None for parameter in fixed.modality_gate.parameters())
 
 
+def test_additive_fusion_preserves_counterfactual_initialization_and_ignores_mlp() -> None:
+    torch.manual_seed(456)
+    concat = build_tiny_test_student(
+        path_mode="explicit_projected",
+        fusion_mode="concat_mlp_query_conditioned",
+    )
+    torch.manual_seed(456)
+    additive = build_tiny_test_student(
+        path_mode="explicit_projected",
+        fusion_mode="paper_additive_query_conditioned",
+    )
+
+    assert isinstance(additive.token_fusion, torch.nn.Module)
+    concat_state = concat.state_dict()
+    additive_state = additive.state_dict()
+    assert concat_state.keys() == additive_state.keys()
+    for name in concat_state:
+        assert torch.equal(concat_state[name], additive_state[name]), name
+
+    additive.eval()
+    additive(**make_tiny_batch())["segment_logits"].sum().backward()
+    assert all(
+        parameter.grad is None for parameter in additive.token_fusion.parameters()
+    )
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [

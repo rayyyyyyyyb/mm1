@@ -139,16 +139,15 @@ class OVOrthKDStudent(nn.Module):
             nn.Linear(fusion_dim, 2),
         )
 
-        self.token_fusion: nn.Module | None
-        if fusion_mode == "concat_mlp_query_conditioned":
-            self.token_fusion = nn.Sequential(
-                nn.LayerNorm(fusion_dim * 3),
-                nn.Linear(fusion_dim * 3, fusion_dim),
-                nn.GELU(),
-                nn.Dropout(temporal_dropout),
-            )
-        else:
-            self.token_fusion = None
+        # Keep the concat MLP instantiated in additive-fusion diagnostics so
+        # the intervention does not alter RNG consumption or downstream
+        # parameter initialization. The additive forward branch ignores it.
+        self.token_fusion: nn.Module = nn.Sequential(
+            nn.LayerNorm(fusion_dim * 3),
+            nn.Linear(fusion_dim * 3, fusion_dim),
+            nn.GELU(),
+            nn.Dropout(temporal_dropout),
+        )
         self.position_embedding = nn.Parameter(
             torch.zeros(1, self.max_position_segments, fusion_dim)
         )

@@ -2415,7 +2415,7 @@
 
 ### 611. 2026-08-26：严格同源控制配置与首次 full-suite 环境失败
 
-- 从实际 seed42 `resolved_config.yaml` 机械复制生成 Student-only 与 Visual-only 控制。leaf-diff 精确：Student-only 只改 variant、output、strong/weak feature、text、orth六项；Visual-only 只改 variant、output、weak feature、orth，并保留 paper Table 3 的 text `0.8`。为 canonical config hash 绑定分别派生 archival lock，仅更新 experiment SHA 为 `4664f9...6959` 与 `053cfc...ed0c`，九项 fact/evidence 不变。
+- 从实际 seed42 `resolved_config.yaml` 机械复制生成 Student-only 与 Visual-only 控制。leaf-diff 精确：Student-only 只改 variant、output、strong/weak feature、text、orth 六项；Visual-only 只改 variant、output、weak feature、orth，并保留 paper Table 3 的 text `0.8`。为 canonical config hash 绑定分别派生 archival lock，仅更新 experiment SHA 为 `4664f9...6959` 与 `053cfc...ed0c`，九项 fact/evidence 不变。
 - 一次未编码的远端 `New-Item ... | Out-Null` 被 Windows 默认 cmd 错析而打印 `Out-Null` 不是命令；该调用没有创建/覆盖数据，随后 scp 已确认两个配置实际存在。后续统一使用 EncodedCommand。
 - 在 scp 注入未提交代码的 detached scratch worktree 运行完整 pytest：`395 passed, 1 failed in 291.42s`、exit 1。唯一失败 `test_committed_ready_receipts_pass_complete_canonical_gate` 明确列出 scratch worktree 未挂载 data/weights/external 且 Git dirty；这是测试环境不满足 canonical 条件，不是全测通过。必须在 commit 后建立完整 junction 的 clean worktree 从头重跑 396 项，exit 0 前禁止启动 Student-only。
 - 新增 `01_GATE_RESULTS.md` 并更新 `CURRENT_STATUS.md`：教师信号 Gate 通过、calibrated segment F1 已正确补算但仍低、公共 student 控制待运行；尚未修改默认 fusion/pretrained/scheduler/loss 配方，也未启动训练。
@@ -2709,3 +2709,24 @@
 
 - 先新增两类测试：同一 seed 下 learned/fixed 模型必须拥有逐 tensor 完全相同的 state dict，fixed forward 后 gate 参数 grad 必须保持 None；三份真实 causal config 构建收据均必须显示 gate module present。旧实现 RED 为 `2 failed, 2 passed`、exit 1，失败精确落在 fixed gate module 为 None/S1 receipt present=false。
 - 修改 student 构造：无论 learned/fixed 都按相同顺序实例化 learned gate；fixed forward 仅忽略该模块并使用 validity-aware 0.5/0.5，不改变 RNG 或下游初始化。focused GREEN `4 passed in 8.56s`；paper/causal/training 交叉回归 `62 passed in 10.87s`，exit 0。
+
+### 660. 2026-08-27：fixed-gate 修正提交与完整 clean 门禁
+
+- 追加真实 full config 测试：同 seed 构建 S0/S1 后完整 state dict 的 key 与每个 tensor 必须完全相等；结果 `1 passed in 7.37s`、exit 0。独立 diff review 与 `git diff --check` 均通过。
+- 创建 commit `1464dd84f35668cda0b3d5a5501e94a759644731`，message `fix: preserve fixed-gate initialization`，4 files changed、80 insertions、9 deletions。生成 5,351-byte 增量 bundle，SHA256 `989998b8a0156e68a9131431088716cb3cb189bef50fb8f61be418955ca3629f`，两端 verify exit 0。
+- 新建 detached worktree `E:\OV-OrthKD-R3\causal-fusion-1464dd8`，一次性挂载 9 个已验证 junction；HEAD exact 1464dd8、dirty=0。fresh compileall exit 0；完整 pytest `426 passed in 324.48s (0:05:24)`、exit 0，测试前后 HEAD 不变、dirty 均 0。
+- 将持久 worker 更新到 commit 1464dd8、新 worktree、`1464dd8_sequence` control；配置 LF hashes 未变。worker/launcher 本地 parser 0 errors，新 worker SHA256 `5feda32920abf0984523c0bc60f1892f977938a7c8e0d76c1273bfa54703649f`。
+
+### 661. 2026-08-27：1464dd8 序列启动后发现 additive 初始化混杂并停止
+
+- 在 exact clean `1464dd84f35668cda0b3d5a5501e94a759644731` 上启动最终候选 S0→S1→S2：UTC `2026-08-27T09:29:56.9023460Z`，持久 worker PID 29804，current=S0、completed=[]。S0 完成 cache audit 后正常训练；检查时已写 1 条 diagnostic，底层 Python PID 25592，GPU 8,605 MiB、53%、229.56 W、50°C。
+- 独立复核发现 S2 的 `paper_additive_query_conditioned` 构造分支把 `token_fusion` 设为 `None`，相对 S0 concat 少实例化一个随机模块，会改变 position/Transformer/head 等下游参数的 RNG 初值；这与已修复的 fixed-gate 问题同构。因此配置虽然只差 `fusion_mode`，参数初始化层仍不是严格单变量，当前序列不得作为最终因果证据。
+- 新建并上传精确停止脚本 `stop_1464dd8_for_additive_rng_fix.ps1`，本地 SHA256 `9ea275e333619ff29e7ed8478099974de1f6f0c9ddbbdd4eb5d4f8828fa75f09`。脚本从 worker PID 递归解析并按叶到根停止 8 个进程，停止后 captured remaining=0、匹配 S0/S1/S2/worker 进程=0；未触碰其他 Python 任务。
+- control 与停止收据完整归档到 `E:\OV-OrthKD-R3\causal_control\1464dd8_sequence_invalid_additive_fusion_rng_20260827T0929Z`；partial S0 输出原位保留。下一步先以 TDD 要求 concat/additive 同 seed 拥有逐 tensor 相同 state dict，且 additive forward 不给兼容 token_fusion 产生梯度，修复并完整回归后才重新启动三组。
+
+### 662. 2026-08-27：additive 严格单变量融合的 TDD 修正
+
+- 新增 tiny-model 与真实 S0/S2 config 两层测试：同 seed 的 concat/additive 必须拥有相同 state-dict keys 且每个 tensor 逐位相同；additive 模型仍须有兼容 `token_fusion` 模块，但 forward 绕过后该模块全部参数 grad 保持 None；三份真实 causal receipt 均须报告 token-fusion module present。
+- 将测试先同步到旧 1464dd8 实现运行，得到预期 RED：`3 failed, 2 passed, 37 deselected in 12.56s`、exit 1。三项失败分别是 additive `token_fusion=None`、S0/S2 state dict keys 不同、S2 receipt present=false，证明测试准确捕获了初始化混杂而不是无关失败。
+- 生产修复只把 concat MLP 改为无条件、同顺序实例化；concat forward 行为不变，paper-additive forward 仍严格执行 weighted visual + weighted audio + text 并绕过该 MLP。相同 focused GREEN 为 `5 passed, 37 deselected in 9.62s`、exit 0；paper-faithfulness/causal-config/training-reproducibility 交叉回归为 `65 passed in 14.08s`、exit 0。
+- 独立 diff 复核确认未改变 T=10、标签/logit/metric 协议、损失权重或 S0/S1/S2 配置；`git diff --check` exit 0。下一步提交该最小修复，并在新的 exact clean 5090 worktree 上跑完整回归后重启序列。
