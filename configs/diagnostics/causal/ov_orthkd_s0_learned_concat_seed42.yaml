@@ -162,7 +162,7 @@ training:
     type: AdamW
   scheduler:
     type: CosineAnnealingLR
-    T_max: 3
+    T_max: 30
     interval: epoch
   model_selection:
     metric: validation_segment_AP

@@ -19,6 +19,12 @@ from scripts.train_ov_orthkd import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_ROOT = PROJECT_ROOT / "configs" / "diagnostics" / "causal"
+BASE_STUDENT_ONLY_CONFIG = (
+    PROJECT_ROOT
+    / "configs"
+    / "diagnostics"
+    / "ov_orthkd_mm26_student_only_seed42.yaml"
+)
 CONFIG_PATHS = {
     "s0": CONFIG_ROOT / "ov_orthkd_s0_learned_concat_seed42.yaml",
     "s1": CONFIG_ROOT / "ov_orthkd_s1_fixed_concat_seed42.yaml",
@@ -76,6 +82,22 @@ def test_s0_s1_s2_are_strict_single_variable_diagnostics() -> None:
         assert config["loss"]["alpha_orth"] == 0.0
         assert config["loss"]["teacher_target_projector_trainable"] is True
         assert config["loss"]["query_anchor_mode"] == "independent_loss_projection"
+
+
+def test_short_causal_runs_preserve_student_only_optimizer_and_scheduler() -> None:
+    base = _load(BASE_STUDENT_ONLY_CONFIG)
+
+    for config_path in CONFIG_PATHS.values():
+        config = _load(config_path)
+        assert config["training"]["optimizer"] == base["training"]["optimizer"]
+        assert config["training"]["scheduler"] == base["training"]["scheduler"]
+        assert config["training"]["learning_rate"] == base["training"][
+            "learning_rate"
+        ]
+        assert config["training"]["weight_decay"] == base["training"][
+            "weight_decay"
+        ]
+        assert config["training"]["grad_clip"] == base["training"]["grad_clip"]
 
 
 def test_noncanonical_diagnostic_claim_requires_literal_marker() -> None:

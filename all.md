@@ -2630,3 +2630,48 @@
 - 从同一 Student-only 配置机械派生三份 3-epoch/400-batch 配置：S0 learned+concat、S1 fixed+concat、S2 learned+additive。三者均 seed 42、T=10、V_test=1、KD 全关、projector 保持 trainable、query anchor 保持 independent；除 variant/log_dir 外，S1 只改 `student.gate_mode`，S2 只改 `student.fusion_mode`。结构测试与实际 module 构造测试共 `6 passed`、exit 0。
 - 首次 guard 交叉回归遗漏 MinGit PATH：25 passed、24 failed，失败均为锁定 Python 找不到 `git.exe`；补回锁定 MinGit 后原样重跑为 48 passed、1 failed，唯一失败明确是当前 scp 测试树 dirty，而该测试正要求 canonical Git clean，证明正式 clean guard 未被放松。待形成 exact clean commit 后必须重跑完整套件。
 - 独立复核又发现 noncanonical diagnostic 的预测/指标入口原本不会设置 expected task segments；先写测试得到 `1 failed`、exit 1，再新增统一 helper，使正式与 noncanonical diagnostic 均强制读取官方 `data.num_segments=10`。最终 causal config 文件 `7 passed in 8.03s`、exit 0。
+
+### 647. 2026-08-27：精确 clean 验证与三项持久顺序启动
+
+- 从 `4445091...` 到 `dbf82331121020ee37d8fa459eb2b8f941d050e4` 生成 18,026-byte 增量 bundle，SHA256 `c2b5bed29f909a1dfe2d51c4a68ec0ed392fe865d4440e1664ebcc1868918197`，两端 bundle verify 通过。最初误放到 `扩刊/causal_fusion_diagnostics`，核对绝对路径后移动到规定的 `扩刊/复现/causal_fusion_diagnostics` 并删除空误建目录；首次 scp 因远端 bundles 目录不存在失败，创建专用目录后哈希一致。Windows `if ... &&` 写法两次跳过了预期 worktree/junction 后续命令，均经只读检查发现并改为显式分步执行；没有覆盖原 dirty TDD 树。
+- 新建 5090 detached worktree `E:/OV-OrthKD-R3/causal-fusion-dbf8233`，HEAD 精确为 `dbf8233...`、Git clean。第一次完整套件 `422 passed, 1 failed`，唯一失败为新树尚未挂载已有数据/weights/external；首次 junction 命令同样被上述 cmd 条件语义跳过，明确逐项创建九个指向既有资产的 ignored junction 后，单独 canonical receipt 测试 `1 passed in 223.14s`。最终 clean exact commit 上 `compileall` exit 0、`pytest` 为 `423 passed in 321.74s (0:05:21)`、exit 0，测试前后 HEAD 不变且 status 空。
+- 在外层产物目录编写并两次语法解析持久顺序 worker/launcher；worker 只允许 exact clean `dbf8233...`，按 S0→S1→S2 顺序运行，支持 checkpoint resume，逐配置锁哈希，并要求每项 history/diagnostics 各 3 条、最终 step 1,200。第一轮启动在训练前因空 `CompletedControls` 绑定失败；前台复现取得明确错误后增加 `AllowEmptyCollection`。第二轮又在训练前因本地 CRLF 哈希与 5090 clean checkout LF 哈希不同而 fail closed；锁定远端实际三 SHA，并把失败 state 回收到外层，SHA256 `f9ff1c479f2a59cd81e9683cfd1cb4c336f39acef44e19d9910cd1f9ac84a2c0`。两次均无输出、无训练 step。
+- 第三轮持久启动成功：UTC `2026-08-27T07:38:36.3504488Z`，worker PID 26268，module SHA `31053849...2e5`，worker SHA `18b03bfc...c841`，state=`running`、current=`s0_learned_concat`、completed=[]。独立 SSH 看到 worker、两级 Python 进程与 S0 的 11 个静态收据；当时 train.log=0、GPU 1,625/32,607 MiB、0%，符合 teacher-cache/static evidence 哈希阶段，尚未进入训练 batch。
+
+### 648. 2026-08-27：有效因果诊断序列的首次续查
+
+- 首次只读 SSH 查询误用了 Bash 的 `<<<` here-string；本地 PowerShell 在解析阶段以 exit 1 拒绝，远端未执行任何命令、未改变任何文件或进程。随即改为通过标准输入管道发送同一只读脚本，exit 0。
+- 5090 本地时间 `15:44:33` 复查确认第三轮有效任务仍在运行：worker PID 26268、虚拟环境 Python PID 26964、底层 Python PID 29708 均自 `15:38:26` 连续存活，命令行严格指向 S0 配置。GPU 为 1,625/32,607 MiB、0%、67.77 W、43°C；S0 输出仍为 11 个静态收据/23,865 bytes，`history.json` 与 `final_metrics.json` 尚未生成，日志只有 `Using device: cuda`。该状态仍对应启动后的静态证据与缓存全量哈希阶段，尚无异常或训练结果可下结论。
+
+### 649. 2026-08-27：第二遍独立实现审计与哈希进度证据
+
+- 在不改代码的情况下逐条反查 `fusion_mode`、`gate_mode`、`visual_l2_reduction`、`teacher_target_projector_trainable`、`query_anchor_mode` 从 YAML、builder、model/loss forward、优化器过滤、运行收据到 checkpoint 的完整通路；`git diff --check` exit 0。S1 相对 S0 的科学变量只改 gate，S2 只改 fusion；`git diff --no-index` 因存在这些预期差异返回 1，属于该命令的正常“文件不同”退出语义。
+- 源码复核确认固定 gate 对双有效模态为 0.5/0.5、单有效为 1/0，paper additive 为逐元素 `weighted_visual + weighted_audio + text_token`；未知模式 fail closed。冻结开关通过 `requires_grad_(False)` 且 AdamW 只接收 `requires_grad=true` 参数；shared query 使用同一次 forward 产生的 fusion text projection。训练诊断会忽略 fixed/additive 下不存在的模块。
+- 三份配置机械 diff 确认 S0→S1 除 variant/log_dir 外仅 `learned_softmax→fixed_equal`，S0→S2 仅 `concat_mlp_query_conditioned→paper_additive_query_conditioned`。S0 相对原 Student-only 只增加显式兼容行为字段与 noncanonical diagnostic 标记，并将 epochs/scheduler T_max/run-all 从 30/30/true 缩为 3/3/false；batch 4、每 epoch 400 batch、KD 全关及 T=10 均保持。
+- S0 已写出的真实 `implementation_behavior.json` 证明实际构建为 explicit projected、learned gate、concat MLP、independent query，三类 projector 均 present/trainable；resolved config 同时包含 T=10、位置容量 16、3 epochs、每 epoch 400 batch 与无全局 step 截断。底层 Python 的累计读量从约 812 MB 增至 1,063,097,350 bytes，读操作 233,810 次；已知 teacher cache 锁定规模为 99,334 files / 1,310,102,478 bytes，因此当时约完成字节量的 81%，持续 I/O 证明未卡死。
+
+### 650. 2026-08-27：S0 完成证据哈希并进入真实训练
+
+- 后续只读查询看到累计读量依次达到 1,239,992,022、1,332,037,614 bytes；一次监控脚本错误地在字符串拼接括号中直接写 PowerShell `if`，导致查询自身 exit 1，但前半段只读信息有效、训练进程未受影响且无远端写操作。改成 `$()` 子表达式后查询 exit 0。
+- `teacher_cache_hash.json` 于 5090 本地时间 `15:55:36` 落盘，并同时生成 evaluator/CUDA 收据；tree-hash 阶段最终累计 313,013 次读取、约 1.609 GB transfer（包含 99,334 个小文件的目录/文件系统读取开销）。收据出现后 4 个 DataLoader multiprocessing worker 自动启动。
+- S0 随后正式进入真实 GPU batch：显存约 8.6 GB、利用率采样 21%、功耗约 169 W；首个 observation-only diagnostic 已生成。epoch 1/batch 0/step 0 的实际值为 within-sample logit std `0.1214227818`、probability mean `0.5545593262`、visual/audio gate mean `0.4775669582/0.5224330492`、saturation `0.0`、visual/audio encoder grad L2 `5.2794629/7.5336169`、gate/fusion grad L2 `0.10844495/5.76720969`，与此前 Student-only 首批基线精确对应。
+- 本地时间 `15:57:48`，stderr tqdm 显示 epoch 1 已到 batch 265（原 loader 3,296 batches，但配置将在 batch 400 截断），约 3.55 it/s；GPU 8,607 MiB、19%、194.8 W、52°C。当前运行正常。
+
+### 651. 2026-08-27：S0 epoch 1 复现塌缩并开始 epoch 2
+
+- epoch 1 于 `16:05:47` 完成 400 steps；validation AP/AUROC 为 `0.7331593303/0.6223705228`，但 predicted-positive rate 与 recall 均为 `1.0`，0.5 阈值 accuracy 恰等于数据正类率 `0.6153328734`。因此排名值尚在可见范围不能掩盖二值定位已全正塌缩的事实；best checkpoint 正常写出。
+- 一次读取诊断表的只读 PowerShell 语句把 `foreach` 结果直接接到管道而未用数组包裹，远端解析器报 empty pipe element；训练未受影响。修正后得到 epoch 2 首批（step 400）diagnostic：within-sample logit std `0.0109012293`、visual/audio gate mean `0.75333744/0.24666256`、saturation `0.525`、visual/audio encoder grad `0.01006533/0.18560840`，相对 epoch 1 首批的 `0.12142278`、`0.47757/0.52243`、`0.0`、`5.27946/7.53362` 已明显退化；这些值与此前 Student-only 轨迹精确一致。
+- `16:08:14` epoch 2 已到 batch 398/400，GPU 8,607 MiB、23%、176.33 W、55°C；即将进入第二次完整 validation，运行持续正常。
+
+### 652. 2026-08-27：独立检查发现 scheduler 控制缺陷并停止失效序列
+
+- S0 epoch 2 于 `16:12:56` 写出：validation AP/AUROC 降至 `0.6600618662/0.5696297057`，predicted-positive rate 仍为 1.0。epoch 3 首批 diagnostic 为 logit std `0.0021567733`、visual gate `7.718e-5`、saturation `1.0`、visual/audio grad `1.901e-10/2.530e-4`，再次证明 learned-gate/temporal collapse；但其 epoch-3 数值与旧 Student-only 不再逐位一致。
+- 根因追踪确认短程配置把 `training.epochs` 从 30 改为 3 时还把 CosineAnnealingLR `T_max` 从 30 改为 3；指导原文明确要求 S0“当前配置复跑”、S1/S2 相对当前 Student-only 只改 gate/fusion。虽然三组之间仍为单变量，改变 scheduler 会使 S0 不再是旧 30-epoch 配置的严格前三 epoch 前缀，因此当前序列判为无效，不能冒充合格控制。
+- 在精确复核 PID 29708 命令行指向失效 S0 后终止该底层 Python；主进程与 GPU 释放，但 Windows `Start-Process -Wait` 未返回，worker PID 26268 保持旧 running 状态。确认不存在任何 S0/S1/S2 训练进程后精确终止 stale worker，避免其以后误启动 S1。
+- 将 S0 partial output 成功重命名为 `causal_s0_learned_concat_seed42_invalid_scheduler_tmax3_20260827T0814Z`，保留 2 条 history、3 条 diagnostics、checkpoints 与全部收据。首次 control 目录移动因重定向日志句柄仍占用而部分失败：launch/state 已移入归档、两份日志留在源目录，未丢失或覆盖文件。
+- 后续定位到主 Python 退出后仍有 3 个命令行明确为 `multiprocessing.spawn ... parent_pid=29708` 的孤儿 DataLoader worker（30540、22756、28440）；精确终止这三者后日志句柄释放，control 四文件完整归档到 `dbf8233_sequence_invalid_scheduler_tmax3_20260827T0814Z`，空的原 control 目录已移除。没有触碰其他 Python 任务。
+
+### 653. 2026-08-27：保留原 scheduler 的 TDD 修正
+
+- 先在 `tests/test_causal_diagnostic_configs.py` 新增“短程因果运行必须保留原 Student-only optimizer、scheduler、LR、weight decay、grad clip”测试；对旧三配置运行得到预期 RED：`1 failed, 7 deselected`、exit 1，唯一差异为 `T_max 3 != 30`。
+- 随后只把 S0/S1/S2 三份配置的 scheduler `T_max` 从 3 改回 30，仍保留 `epochs=3`/每 epoch 400 batches。focused GREEN 为 `1 passed, 7 deselected`、exit 0；完整 causal config 文件为 `8 passed in 8.05s`、exit 0。
