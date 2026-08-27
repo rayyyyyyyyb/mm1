@@ -2573,3 +2573,10 @@
 - `git diff --check` exit 0；24 个 JSON 全部解析；4 个 JSONL 分别为 Student/Visual history 30/30 行、diagnostics 3/3 行且逐行解析；两份 resolved YAML 均由 `yaml.safe_load` 成功解析。
 - 28 个控制证据与外层回收快照逐文件 SHA256 比对 mismatch=0；诊断目录禁传扩展名计数 0、超过 1 MiB 文件 0、最大文件 33,917 bytes、Unicode replacement-character 文件 0、常见 token/password 模式命中 0。
 - 从提交候选重新读取 Student test AP/AUROC/F1=`0.7487446824/0.6361346662/0.5403934128`，Visual=`0.7253093695/0.6171601329/0.5403934128`，与已锁定结果一致。
+
+### 638. 2026-08-27：精确证据提交与 5090 完整回归
+
+- 创建证据提交 `59e5f7c919b6b8d427a8f68f751cd35b25d160d4`，message `diagnostics: publish completed control evidence`，stat 为 39 files changed、2,291 insertions、2 deletions；本地工作树随后 clean。
+- 生成 56,474-byte 增量 bundle，SHA256 `b7d623d9f244d5462f9eae459a7613826ad6fb8b34a076a59ba617db0523d2d8`；本地与 5090 `git bundle verify` 均 exit 0。5090 detached 诊断工作树从 clean `c5c5036...` 精确切换到 `59e5f7c...`，证据文件存在、两份 history 均 30 行、dirty=0。
+- 在锁定 Python、MinGit 与 HF/Transformers offline 环境运行完整 `python -m pytest -q`：`399 passed in 338.65s (0:05:38)`、`PYTEST_EXIT=0`。测试前后 HEAD 均精确为 `59e5f7c...`、dirty 均为 0；没有启动训练、teacher export 或真实数据 preflight。
+- 新增 `PUBLICATION_RECEIPT.md` 固化上述提交、bundle、完整测试和禁传资产边界。该 receipt 与本条 ledger 是测试后的纯文档追加，不改变被测科学源码、配置、测试或控制证据。
