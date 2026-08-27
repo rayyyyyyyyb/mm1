@@ -2730,3 +2730,76 @@
 - 将测试先同步到旧 1464dd8 实现运行，得到预期 RED：`3 failed, 2 passed, 37 deselected in 12.56s`、exit 1。三项失败分别是 additive `token_fusion=None`、S0/S2 state dict keys 不同、S2 receipt present=false，证明测试准确捕获了初始化混杂而不是无关失败。
 - 生产修复只把 concat MLP 改为无条件、同顺序实例化；concat forward 行为不变，paper-additive forward 仍严格执行 weighted visual + weighted audio + text 并绕过该 MLP。相同 focused GREEN 为 `5 passed, 37 deselected in 9.62s`、exit 0；paper-faithfulness/causal-config/training-reproducibility 交叉回归为 `65 passed in 14.08s`、exit 0。
 - 独立 diff 复核确认未改变 T=10、标签/logit/metric 协议、损失权重或 S0/S1/S2 配置；`git diff --check` exit 0。下一步提交该最小修复，并在新的 exact clean 5090 worktree 上跑完整回归后重启序列。
+
+### 663. 2026-08-27：additive 初始化修复提交与新 clean worktree
+
+- 创建 commit `d5d13c2a9c913d35addbc3b496d76988008bd613`，message `fix: preserve additive-fusion initialization`，4 files changed、73 insertions、11 deletions；提交后本地工作树 clean。生成 3,923-byte 增量 bundle `d5d13c2_additive_rng.bundle`，SHA256 `5d7d5ee07027b44e84f478d3b5e05b6e533a786772703a29f28ca88141dc289a`。
+- 首次远端 `git bundle verify` 未指定仓库而按预期报 `need a repository to verify a bundle`、exit 1；bundle bytes 未改变。改为在既有 1464dd8 工作树上下文验证后 exit 0，ref=`d5d13c2...`、prerequisite=`1464dd8...`，两端 SHA256 一致。
+- 从 bundle fetch 后新建 detached worktree `E:\OV-OrthKD-R3\causal-fusion-d5d13c2`，HEAD exact d5d13c2、dirty=0。逐项复制并复核 9 个 junction 的目标：external、weights、proposed_method、official、teacher_cache、HF cache、incoming、exported、source；所有 LinkType=Junction 且目标与上一棵有效树相同。
+
+### 664. 2026-08-27：d5d13c2 全量门禁的环境故障与成功重跑
+
+- 首次新验证脚本漏将锁定 MinGit 的目录前置到 PATH；compileall 虽 exit 0，但全量 pytest 为 `392 passed, 36 failed in 300.11s`、exit 1。36 项集中在用 `subprocess.run(["git", ...])` 的 canonical readiness、repository locking、teacher identity 测试，首个 traceback 明确为无法启动 `git`，不是生产逻辑断言失败；失败日志/receipt 保留于 `d5d13c2_verification`。
+- 按系统化调试先修验证环境而不改生产代码：PATH 精确前置 `E:\OV-OrthKD-R3\tools\mingit-2.55.0.5\root\cmd`。代表性先前失败用例 `resolved_locks_and_exported_audit_pass_content_validation` 得到 `1 passed, 32 deselected in 6.96s`、exit 0，且 `Get-Command git` 精确解析到锁定 executable。
+- 在独立 retry control 目录从头运行 compileall + 全量 pytest：compileall exit 0；`428 passed in 323.47s (0:05:23)`、pytest exit 0；HEAD before/after 均 exact d5d13c2、dirty before/after 均 0。pytest log SHA256 `b309b7eac7b615ac48596c05479dd8b29be2f32b3279027196360ec48c6d7894`。至此代码与精确环境门禁通过，可以生成 d5d13c2 专用持久 worker。
+
+### 665. 2026-08-27：最终可比 S0→S1→S2 序列启动
+
+- 更新专用 worker/launcher 到 exact d5d13c2、新 worktree 与 `d5d13c2_sequence` control。worker SHA256 `63b714c164f4e6c158687a85437b1daaeedafe1865da8bc4f1db7aff3e9e2915`，launcher SHA256 `5d09ea6cf3cc7a1063ac5a04c3ebbaf6b15d327b81347b47402f315e5a69fbf3`，持久模块 SHA 未变为 `31053849...2e5`；本地/远端 parser errors 均 0。
+- 独立 launch preflight 为 PASS：HEAD exact、dirty=0、control 不存在、三组 output 不存在、匹配进程 0；S0/S1/S2 config SHA 依次仍为 `a249bc8f...a72e`、`6faac6c1...96b`、`44504ef5...b43a`；启动前 GPU 888/32,607 MiB、0%、68.18 W、44°C。
+- 持久启动 exit 0：UTC `2026-08-27T09:58:48.3563314Z`，worker PID 27864，Win32 create return 0；state=running、current=`s0_learned_concat`、completed=[]、git commit exact d5d13c2。启动采样 GPU 1,625 MiB、0%、68.74 W、44°C；当前进入预期 cache-root/hash 阶段，SSH 断开不会中止 worker。
+
+### 666. 2026-08-27：序列查询脚本的只读健壮性修正
+
+- S0 运行期间第一次读取仍在写入的 JSONL，`ConvertFrom-Json` 遇到部分行而失败；随后第一次重写又因 PowerShell 泛型 List 与参数数组的类型绑定不兼容而失败。两次均只影响监控查询，没有修改、暂停或重启训练进程，也没有改变任何实验产物。
+- 将查询实现改为普通数组累计并对瞬时 JSON 解析失败做有限重试；`query_d5d13c2_brief.ps1` 与完整查询随后均 exit 0，可持续报告 worker、每组记录数、最新诊断、最终指标、进程树和 GPU 状态。
+
+### 667. 2026-08-27：S0/S1 完成结果与中间因果判断
+
+- S0 learned-gate + concat-MLP 在 exact clean d5d13c2 上完成 3 epoch/1,200 steps，worker 内部完成门禁通过。最终 test AP `0.7487446823980081`、AUROC `0.6361346662315649`、segment F1@0.5 `0.5403934127616343`、event F1@0.5 `0.5774341351660939`、预测正例率 `0.9873711340206186`；最后诊断 temporal logit std `0.002377034630997293`、visual/audio gate 约 `0/1`、gate saturation `1.0`、visual/audio encoder grad `0/0.0023745953161208606`。其 `training_diagnostics.jsonl` 与 `final_metrics.json` SHA256 分别精确等于旧 Student-only 的 `254c0a0f...d804` 与 `c223ed77...7488`，证明 S0 是原控制的逐字节行为复现。
+- S1 fixed 0.5/0.5 gate + concat-MLP 同样完成 3 epoch/1,200 steps。固定门控使 gate saturation 保持 `0`，首个诊断中 visual/audio encoder grad 均非零（`5.466442554`/`7.238751377`），但最后 temporal logit std 仍降至 `0.001482112306516982`，正/负 logit 均值几乎相同（`0.55923828125`/`0.55927734375`），最终预测正例率 `0.9999656357388316`；test AP `0.6990785588088639`、AUROC `0.5702459266594118`，分别比 S0 低约 `0.049666`/`0.065889`。因此固定门控消除了门控饱和并恢复双路梯度，但没有阻止预测塌缩，门控饱和不是唯一根因。
+- worker 已按预定顺序切换到 S2 learned-gate + paper-additive；行为收据确认两组兼容模块仍在、参数总数/可训练参数数均与 S0/S1 相同（`46,278,129`），当前正常占用 GPU 并运行，尚未据未完成结果下结论。
+
+### 668. 2026-08-27：最终产物 fail-closed 审计器准备
+
+- 通过 `apply_patch` 新增外层只读审计脚本 `复现/causal_fusion_diagnostics/audit_causal_sequence.py`，不接触训练代码或运行状态。脚本要求 worker completed/exit 0/顺序完整、HEAD exact d5d13c2 且 worktree clean，锁定三份 config SHA 与仅允许的单变量差异，检查每组 3 条 history/diagnostic 和 1,200 steps、行为收据和相同参数数、teacher-cache root receipt、所有数值有限，并以 `numpy.load(..., allow_pickle=False)` 验证 validation/test 分别为 `5798×10`/`5820×10`、官方 T=10 offset/segment 顺序、二元标签和有限预测。
+- 审计器还将对每个远端输出文件计算 bytes/SHA256，并强制 S0 诊断与最终指标哈希精确复现旧 Student-only。脚本本地 `py_compile` exit 0、`--help` exit 0；待 S2 完成后才运行正式审计，不预先生成 PASS。
+
+### 669. 2026-08-27：监控/审计代码的独立反向检查与修正
+
+- 本轮恢复监控时第一次误把 5090 的 `E:\...` 路径当成本机路径直接执行，PowerShell 按预期报 script not recognized、exit 1；改为 `ssh LXT@100.119.122.101 powershell -File ...` 后查询 exit 0。该错误只发生在只读查询命令，远端 worker 始终为 PID 27864 且没有中断。
+- 在 S2 仍为 running 时把审计器上传到 5090 并故意执行一次 premature audit：它在 worker 完成条件处按预期 assertion、exit 1，`premature_audit_must_not_exist.json` 的 `Test-Path=False`，证明不会对未完成序列提前出具 PASS。
+- 独立按真实 `implementation_behavior.json` 复核时发现初版审计器误按扁平字段读取，而生产收据实际为 `student.*`、`loss.*`、`parameters.student.*` 的嵌套 schema；在正式审计前用 `apply_patch` 修正，并新增 path/query/loss/三类 projector 的 fail-closed 约束。本地 `py_compile` exit 0、Ruff `All checks passed`；最终审计器本地/5090 SHA256 均为 `08a21c3c6a750d3a1c68bf20a4f0a4f5a0bfbcd10cd4fd9e1fb19984a368bcc8`。
+- 一次静态复核误将已应用的 commit diff 再管道送入 `git apply --check`，因此得到“文件已存在/patch does not apply”和 CRLF 管道导致的 whitespace 噪声；命令没有写入文件。改用正确的 `git diff --check 4445091..HEAD` 后 exit 0，工作树除按要求更新的 `all.md` 外无变化。
+- 新增只读并行预测审计 wrapper `run_prediction_audits.ps1`，固定三组 prediction NPZ、官方 `--expected-segments 10`、每个子进程 exit 0/PASS/`57980` 与 `58200` segments 才生成总收据。PowerShell parser errors=0，上传后两端 SHA256 均为 `41453892e69ccd2096688474c729dcbf187c080e9bdc62253f4938a053663b11`；只在 worker 完整结束后执行。
+
+### 670. 2026-08-27：S2 完成与三组序列正常退出
+
+- S2 paper-additive + learned-gate 完成 3 epochs/1,200 steps；三轮 validation AP/AUROC 依次为 `0.7016629120/0.6015331307`、`0.7045366006/0.6050530408`、`0.7224556875/0.6062971389`，三轮 validation predicted-positive rate 均为 1.0，最后一轮为最佳 checkpoint。
+- 最后 observation-only 诊断中 temporal logit std `0.0057366005396296115`，正/负 logit mean `1.2621484375/1.259375`，visual/audio gate `0.9991501763/0.0008498279`、saturation=1.0，visual/audio encoder grad `4.0014e-5/2.4196e-6`，兼容 `token_fusion_grad=0`。这证明 paper-additive 实际生效但仍塌缩；相对 S0 饱和到音频侧，S2 改为饱和到视觉侧。
+- 最终 test AP `0.7338843847130142`、AUROC `0.6135227422985248`、segment/event F1@0.5 `0.5403934127616343/0.5774341351660939`、validation 校准阈值 `0.5418461576822268`、该阈值下 test predicted-positive rate `0.9714776632302405`。相对 S0，AP/AUROC 分别低 `0.0148602977/0.0226119239`。
+- worker 最终 state=completed、exit 0、completed=[S0,S1,S2]、current 为空字符串；匹配训练/worker 进程 0，GPU 回落到约 861/32,607 MiB、0%。没有启动 S3 或任何正式 Full。
+
+### 671. 2026-08-27：预测审计退出码 wrapper 故障、可重建清理与成功重跑
+
+- 首次并行预测审计的三个 Python 子进程均实际生成 PASS JSON、stderr 均 0 bytes、匹配进程均 0，但 PowerShell 5 的 `Start-Process` 对象在父循环中返回空 `ExitCode`，wrapper 按 fail-closed 规则报 `Prediction audit s0... failed with exit`、exit 1；没有把空退出码视为成功。
+- 精确记录首次三份 JSON/stdout 的 bytes/SHA256：S0 `10,610`/`9de56446...684d`，S1 `10,630`/`8b8e4454...03ea`，S2 `10,703`/`17e1f480...2eea`，三个 stderr 均为空文件哈希。新增边界检查 reset 脚本，只删除这 9 个可重建的小型无收据文件并写 `unreceipted_prediction_audit_reset.json`；训练、checkpoint、NPZ 与其他产物未触碰。
+- 将 wrapper 改为顺序直调锁定 Python 并逐项读取 `$LASTEXITCODE`；parser errors=0。重跑总 exit 0/PASS，三组子 exit 均 0、输出 SHA 与首次逐字节相同；每组 validation/test segment counts 均为 `57,980/58,200`，即 `5798×10/5820×10`。
+
+### 672. 2026-08-27：最终 artifact audit 的 schema 修正与 PASS
+
+- 首次最终审计在 worker completion 检查处 exit 1：审计器要求 `current_control is None`，而实际 PowerShell `[string]` 参数把完成态 `$null` 序列化为 `""`。核对原始 `worker_state.json` 后确认 completed list/exit/commit 均正确；修正审计器只允许完成态为 `None` 或空字符串，仍拒绝任何非空 current control。
+- 修正后本地 `py_compile` exit 0、Ruff PASS；本地/5090 最终脚本 SHA256 均为 `6a8a35c416cfc0cc771a904cfa8b10d2216be4763ea52f0c4da180f908fde0cb`。正式 artifact audit exit 0/PASS，三组 run_count=3，JSON 178,236 bytes、SHA256 `1de5f813dc848eb8f568d88ee54bbbeea98ff0f0cda8882ed8177b1de717edc8`。
+- 审计后再次确认 HEAD exact d5d13c2、dirty=0、匹配进程=0、GPU 861/32,607 MiB；审计包含每个远端输出文件哈希、三份 config 单变量差异、行为/参数收据、S0 旧控制精确哈希、官方 T=10 全量 prediction、有限数值和 teacher-cache root `6707900b...0244`。
+
+### 673. 2026-08-27：小型证据回传、编码路径修正与网页审查报告
+
+- allowlist 回传 54 个小型 JSON/YAML/JSONL/TXT 文件，共 381,721 bytes；collector 拒绝 `.pt/.pth/.npz/.zip/.bundle` 和单文件大于 2 MiB，未回传数据、cache、checkpoint、prediction NPZ 或进度日志。
+- 首次 collector 虽 PASS，但 Windows PowerShell 5 把无 BOM 脚本里的中文绝对路径按 ANSI 解码，在同一 workspace 误建 `鎵╁垔` 目录。先解析并验证 source/target 均严格位于工作区，再用 PowerShell `Move-Item` 把唯一的 `causal_fusion_diagnostics` 证据目录移到正确 `扩刊/OV-OrthKD-R2/reports/formal_reproduction/`；逐层确认旧目录为空后非递归删除。最终正确位置 54 files/381,721 bytes、错误根不存在。
+- collector 改为从 `$PSScriptRoot/../../OV-OrthKD-R2` 推导本地仓库，消除中文源代码字面量；parser errors=0，针对现有非空目标的反向测试按预期拒绝并 exit 1，未覆盖证据。
+- 通过 `apply_patch` 新增 `README.md` 与 `WEB_REVIEW_HANDOFF.md`，写入三组精确结果、因果判断、融合问题的准确答案、代码/测试/证据入口、公开失败和下一步 S3/S4 建议。仓库 review package 共 56 files/390,685 bytes；机械镜像到 `扩刊/复现/causal_fusion_diagnostics/review_package` 后逐文件 SHA256 对比 mismatch=0。
+
+### 674. 2026-08-27：提交前本地 fresh 门禁的环境失败
+
+- 按 verification-before-completion 重新运行 `python -m compileall -q scripts src tests`，exit 0；随后本机 `python -m pytest -q` 在收集 `test_causal_diagnostic_configs.py`、导入 torch→NumPy 时于 Anaconda `numpy.__init__.py:blas_fpe_check` 触发 Fatal Python error: Aborted，pytest exit 3。
+- 该进程在 collection 阶段退出，未执行任何测试断言，不能声明本地测试通过；这与此前本机 torch/numpy 导入故障一致。保留失败并将最终唯一测试通过门禁设为：提交后把 exact final commit 传到5090新建 clean worktree，在锁定 R0 venv 与 MinGit PATH 下 fresh compileall + 全量 pytest。

@@ -2,6 +2,8 @@
 
 本目录是给独立审阅者和诊断对话使用的网页入口。它把正式训练所用的完整代码树，与本次运行的小型结果、实际 resolved config、环境冻结、数据/教师/evaluator 身份哈希和最终审计收据放在同一个 Git commit 中。
 
+最新的固定门控与论文式加性融合单变量实验已经完成，请先读 [causal fusion diagnostics 网页审查入口](causal_fusion_diagnostics/WEB_REVIEW_HANDOFF.md)。两项修改都未恢复健康的时间定位，正式 Full 复跑仍应暂停。
+
 ## 先读结论
 
 canonical OV-OrthKD seed42 已完成 30 epochs / 12,000 optimizer steps，worker exit 0，full artifact audit `PASS`、errors=0；但论文数值没有复现。

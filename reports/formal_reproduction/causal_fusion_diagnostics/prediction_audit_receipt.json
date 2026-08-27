@@ -1,0 +1,31 @@
+﻿{
+    "schema_version":  1,
+    "status":  "PASS",
+    "completed_at_utc":  "2026-08-27T11:57:37.3095217Z",
+    "runs":  [
+                 {
+                     "name":  "s0_learned_concat",
+                     "exit_code":  0,
+                     "output":  "E:\\OV-OrthKD-R3\\causal-fusion-d5d13c2\\outputs\\diagnostic\\causal_s0_learned_concat_seed42\\prediction_audit.json",
+                     "output_sha256":  "9de564467daf5bfa5c47c0099da59485ffa3f3cb2da1945b1b6651f4f53a684d",
+                     "validation_segments":  57980,
+                     "test_segments":  58200
+                 },
+                 {
+                     "name":  "s1_fixed_concat",
+                     "exit_code":  0,
+                     "output":  "E:\\OV-OrthKD-R3\\causal-fusion-d5d13c2\\outputs\\diagnostic\\causal_s1_fixed_concat_seed42\\prediction_audit.json",
+                     "output_sha256":  "8b8e4454d8cfbbbc9ef7358c7c00649bb5244a6d17cf2ae590e3e5420cb403ea",
+                     "validation_segments":  57980,
+                     "test_segments":  58200
+                 },
+                 {
+                     "name":  "s2_learned_additive",
+                     "exit_code":  0,
+                     "output":  "E:\\OV-OrthKD-R3\\causal-fusion-d5d13c2\\outputs\\diagnostic\\causal_s2_learned_additive_seed42\\prediction_audit.json",
+                     "output_sha256":  "17e1f48088d52cf2d21e31d929a3b00c688daa8dad80dfaf516793c3ba102eea",
+                     "validation_segments":  57980,
+                     "test_segments":  58200
+                 }
+             ]
+}

@@ -1,0 +1,7 @@
+{
+  "variant": "causal_s2_learned_additive_seed42",
+  "declared_claim_level": "noncanonical_diagnostic",
+  "effective_claim_level": "noncanonical_diagnostic",
+  "git_dirty": false,
+  "diagnostic_override": false
+}
