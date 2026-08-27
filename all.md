@@ -2816,3 +2816,10 @@
 - 将更新后的 `README.md`、`WEB_REVIEW_HANDOFF.md` 和新 `PUBLICATION_RECEIPT.md` 镜像到外层 `复现/causal_fusion_diagnostics/review_package`；仓库包与外层镜像均为 57 files，逐文件 SHA256 mismatch=0、额外文件=0，仓库包总计 393,810 bytes。仓库/外层两份 `all.md` SHA256 均为 `35cc5614ff5fb70051ade2628486682cb1057d1a72e96620c81129b3ad3432b2`。
 - 相对已通过完整测试的 `76dabc6...`，当前待提交改动仅为 `all.md`、诊断目录两份 Markdown 和一份新发布收据；`src/scripts/configs/tests` diff 为空。`git diff --check` exit 0；57 个文件中禁传扩展名 0、超过 2 MiB 文件 0、secret/token 模式命中 0、Markdown 相对链接缺失 0。
 - 首次结构化解析把中文绝对路径经管道传给 Python 后错误定位为空，虽 exit 0 却只报告 0 个文件；明确判为无效检查，不计作通过。改从仓库工作目录使用纯 ASCII 相对路径重跑，实际解析 36 JSON、6 JSONL/18 records、6 YAML，exit 0/PASS。
+
+### 677. 2026-08-27：精确最终提交复验、回执封装修正与 GitHub 发布
+
+- 收尾文档提交为 `e2791ec6d480cbb478d9cc618e4282073060aa58`，message `docs: finalize causal diagnostic handoff`，4 files changed、48 insertions、1 deletion；相对已通过测试的 `76dabc6...` 只修改 `all.md` 与三份发布 Markdown，`src/scripts/configs/tests` 差异为 0，提交后工作树 clean。生成仅依赖 `76dabc6...` 的 4,763-byte 增量 bundle，SHA256 `5b6b3e20cf04e857b35fa29b4512934dd39000d1c3434acc15a26782bf1d9c5b`，本地/远端哈希相同、bundle verify 通过。
+- 第一次尝试用远端 `Start-Process` 脱离 SSH 启动，PID 8392 在 SSH 会话关闭后退出，stdout/stderr 均 0 bytes，且未创建 worktree/control；明确判定测试未启动。改用可分段等待的前台 SSH 后，新 worktree exact `e2791ec...`、dirty=0，pytest 完整日志为 `428 passed in 337.91s`；但初版回执把 `Get-Content` 行连同 PowerShell 5 文件系统扩展属性递归送入 `ConvertTo-Json`，父脚本在 604 秒等待上限退出、未写回执，因此该轮也不冒充有完整退出码回执。
+- 用 `apply_patch` 新增极简修正版 `verify_e2791ec_rerun.ps1`，将 tail 每行强制转换成纯字符串；本地 parser errors=0，本地/远端脚本 SHA256 均为 `c4072293811a38c132680aa745575df17b9ec128e9a8fd4a4817ca676eba42c0`。在同一 exact clean worktree 上从不存在的 `*_rerun` 输出重新执行，前台命令 376.3 秒后明确 exit 0/PASS；最终 JSON 记录 compileall exit 0、pytest exit 0、`428 passed in 366.58s`、pytest 日志 1,040 bytes/SHA256 `93ef0fc39bcd913f23f3ad6416f9015cecb6a9772b12c8a81a2e8177cb1faaa1`，测试前后 HEAD 均 exact `e2791ec...`、dirty 均 0。
+- 执行非强制 `git push -u origin repro/causal-fusion-diagnostics` 成功；本地 HEAD、upstream、`git ls-remote` 均精确为 `e2791ec...`。未登录网页复核确认仓库 Public、分支页、`WEB_REVIEW_HANDOFF.md` 与 commit 页均可打开。本条记录之后仅创建并推送 ledger-only 收尾提交，不改变已精确复验的代码、配置、测试、报告或实验小型证据。
