@@ -2979,3 +2979,8 @@
 - 结构化证据独立解析为 19 JSON、2 JSONL/6 records、2 YAML，全部 PASS；17 项数值/身份断言从 `history/final_metrics/prediction_shortcut/checkpoint_modality` 和两份 audit 原始 JSON 重新计算，覆盖三轮 step、AP/AUROC/F1、四种 ablation、all-positive、path std 与两份 audit SHA，17/17 通过。S4 outer evidence 与 repo evidence 均为 25 files，missing/mismatch/extra 均为 0；staging 后对 25 份 evidence 加 17 份 S4 runtime 共 42 个 Git index blob 与工作树 raw SHA256 逐个比较，mismatch=0。
 - 第一次为复核 diagnostics 临时写的 PowerShell 再次把 `foreach` 结果直接接到管道，触发 `empty pipe element`、exit 1；改为先保存 `$res` 后读取真实数据并通过。随后 staged 汇总又把 Git 命令与 `$LASTEXITCODE` 放进同一个 hash-literal value 而 parser exit 1，拆为先执行、再赋值后通过；两次均未修改证据或代码。报告包检查 9 Markdown/33 relative links，missing=0；103 个 package files 中禁传扩展名 0、超过 2 MiB 文件 0、`PENDING/TODO/TBD` 0、secret pattern 0；`git diff --check` exit 0。S4 canonical-LF config SHA 再算为 `5b81218b...99b33`，双 ledger SHA 相同。
 - 将仓库 `student_shortcut_recovery` 完整小型报告树机械镜像到外层 `复现/student_shortcut_recovery/review_package`；源目标均先解析为授权绝对路径，不删除任何目录，103 files 逐文件 SHA256 mismatch=0。发布 staging 共 50 files/4,648 insertions/42 deletions，范围只含根 README、双 ledger 中的仓库副本、S4 报告/证据/runtime；staged forbidden large-asset extensions=0、scope 外文件=0、`git diff --cached --check` exit 0。
+
+### 698. 2026-08-31：S4 报告证据提交与 GitHub 发布
+
+- 创建提交 `512fe4ecd7d78e47343633d0750f9a350e1e9116`（`docs: publish S4 augmentation control evidence`），精确为 50 files/4,648 insertions/42 deletions；包含 S4 报告、25 份小型 evidence、17 份 runtime/audit 文件和更新后的交接入口，不含 checkpoint、NPZ、dataset、cache、bundle、archive 或完整日志。提交后工作树 clean。
+- 非强制 push `repro/student-shortcut-recovery` 成功；local HEAD、upstream 与 `git ls-remote origin refs/heads/repro/student-shortcut-recovery` 三者均精确为 `512fe4ecd7d78e47343633d0750f9a350e1e9116`。本条双 ledger 是只记录该发布动作的收尾更新，不改变科学配置、代码、测试或实验结论。
