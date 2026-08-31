@@ -22,6 +22,13 @@ S3_PATH = (
     / "recovery"
     / "ov_orthkd_s3_pretrained_seed42.yaml"
 )
+S4_PATH = (
+    PROJECT_ROOT
+    / "configs"
+    / "diagnostics"
+    / "recovery"
+    / "ov_orthkd_s4_no_augment_seed42.yaml"
+)
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -66,6 +73,44 @@ def test_s3_remains_short_noncanonical_t10_control_with_original_schedule() -> N
     assert config["data"]["num_segments"] == 10
     assert config["student"]["max_position_segments"] == 16
     assert config["data"]["train_augment"] is True
+    assert config["training"]["epochs"] == 3
+    assert config["training"]["max_batches_per_epoch"] == 400
+    assert config["training"]["max_optimizer_steps"] is None
+    assert config["training"]["scheduler"]["T_max"] == 30
+    assert config["evaluation"]["test_views"] == 1
+    assert config["training"]["model_selection"]["run_all_30_epochs"] is False
+    assert all(
+        config["loss"][name] == 0.0
+        for name in (
+            "alpha_strong_logit",
+            "alpha_weak_logit",
+            "alpha_strong_feat",
+            "alpha_weak_feat",
+            "alpha_text_align",
+            "alpha_orth",
+        )
+    )
+
+
+def test_s4_changes_only_train_augment_after_identity_output_normalization() -> None:
+    s0 = _normalized(_load(S0_PATH))
+    s4 = _normalized(_load(S4_PATH))
+
+    assert _different_paths(s0, s4) == {"data.train_augment"}
+    assert s0["data"]["train_augment"] is True
+    assert s4["data"]["train_augment"] is False
+
+
+def test_s4_remains_short_noncanonical_t10_random_init_control() -> None:
+    config = _load(S4_PATH)
+
+    assert config["seed"] == 42
+    assert config["reproduction"]["claim_level"] == "noncanonical_diagnostic"
+    assert config["reproduction"]["diagnostic_only"] is True
+    assert config["data"]["num_segments"] == 10
+    assert config["student"]["max_position_segments"] == 16
+    assert config["student"]["pretrained"] is False
+    assert config["data"]["train_augment"] is False
     assert config["training"]["epochs"] == 3
     assert config["training"]["max_batches_per_epoch"] == 400
     assert config["training"]["max_optimizer_steps"] is None
