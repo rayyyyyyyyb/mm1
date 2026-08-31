@@ -1,0 +1,7 @@
+{
+  "variant": "recovery_s4_no_augment_seed42",
+  "declared_claim_level": "noncanonical_diagnostic",
+  "effective_claim_level": "noncanonical_diagnostic",
+  "git_dirty": false,
+  "diagnostic_override": false
+}

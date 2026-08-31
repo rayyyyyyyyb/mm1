@@ -6,7 +6,9 @@ Scientific A0 runtime commit: `f739399463c082cd670dff56e43c710d4fa6f283`
 
 Scientific S3 runtime commit: `a0aa4d7ad4b98455e26a2fe6ff2537a321293233`
 
-Scope: observation-only A0 diagnostics plus the S3 pretrained-student single-variable control. This package does not authorize or run formal Full training.
+Scientific S4 runtime commit: `74d211d34ace74ce3b74ea082a7dfd0379b251fb`
+
+Scope: observation-only A0 diagnostics plus the S3 pretrained-student and S4 no-augmentation single-variable controls. This package does not authorize or run formal Full training.
 
 ## Independent source review
 
@@ -20,6 +22,8 @@ The complete range from the accepted diagnosis baseline `0b2bf7eea8e09a103643277
 There is no change under `src/`, no edit to the trainer, model, loss, evaluator, teacher cache, formal configuration or canonical guard. `git diff --check 0b2bf7e..f739399` returned exit 0.
 
 The only source difference from the A0 commit to the S3 runtime commit is a one-line audit serialization fix plus its regression test: scalar integer state buffers are flattened before byte reinterpretation. This is required for EfficientNet BatchNorm `num_batches_tracked` buffers and does not change any model or training computation.
+
+The S4 candidate adds one diagnostic YAML and focused regression coverage; it does not change `src/`, trainer, model, loss, evaluator, teacher cache, canonical configurations, or the canonical full-run guard. After run-name/output normalization, the exact scientific difference from S0 is `{data.train_augment}`.
 
 ## A0 semantics reviewed
 
@@ -46,11 +50,19 @@ The runtime receipt constructs each exact backbone first with `pretrained=True`,
 
 The two files are first locked from the exact official URLs in the installed timm 1.0.28 metadata. The cache receipt binds URL, byte count and full SHA256; the audio file additionally verifies the official filename SHA prefix. The receipt and training both run with Hugging Face/Transformers offline and `TIMM_USE_OLD_CACHE=1`, so construction must use those receipted files. A fresh run rejects an existing control directory or nonempty output. Resume is explicit and requires `last.pt`. Completion requires exactly three history records, three first-batch diagnostic records, global step 1200, finite full validation/test predictions and the official `T=10` ordering.
 
+## S4 single-variable review
+
+`data.train_augment` is read once by `create_ov_avel_data_loaders` and is passed only to the training dataset. With the switch enabled, the frame transform is `Resize -> RandomHorizontalFlip(0.5) -> ColorJitter -> ToTensor -> ImageNet normalization`; with it disabled, the transform is `Resize -> ToTensor -> ImageNet normalization`. Validation and test use the deterministic transform in both configurations. The switch does not affect audio, labels, teacher cache, segment ordering, metrics, or the number of official keyframes.
+
+Focused tests require the S4/S0 normalized difference set to be exactly `{data.train_augment}` and dynamically inspect all three loader transforms. They also lock seed 42, `student.pretrained=false`, three epochs, 400 batches per epoch, scheduler `T_max=30`, all KD weights zero, `T_task=10`, and `T_max=16`. The YAML's canonical-LF SHA256 is `5b81218b55907a5dfb0419e62eff2128f0d08ce9301c97c081237f8c8f599b33`; runtime guards normalize only checkout CRLF to canonical LF before comparison and still require exact commit plus a clean worktree.
+
 ## Artifact audit design
 
 - A0 is accepted only when all Student, Visual, Full and S0 JSONs are PASS, source checkpoint/NPZ hashes match the locked values, exact Git is clean, and saved versus checkpoint-rerun AP agrees within `1e-12`.
 - S3 training is accepted only when the config is the exact single-variable control, both pretrained receipts pass, all required outputs exist, histories/diagnostics are complete, prediction arrays have the exact schema/order and all key files are hashed.
 - S3 posthoc is accepted only when it is bound back to the audited S3 checkpoint and NPZ hashes and training AP, saved prediction AP and checkpoint-rerun AP agree within `1e-12`.
+- S4 training is accepted only when the candidate-verification receipt passes, the resolved configuration has the exact single scientific difference, the three history/diagnostic records end at steps 400/800/1200, and full validation/test arrays pass the same official ten-segment schema checks.
+- S4 posthoc is accepted only when it binds back to the audited S4 checkpoint and NPZ hashes, strict state loading has no missing or unexpected keys, all four content modes are present, and training, saved-NPZ and checkpoint-rerun AP agree within `1e-12`.
 - Checkpoints, NPZ files, datasets, caches, archives, bundles and progress logs remain on the 5090. Git receives only source, configuration and small review evidence.
 
 ## Verification evidence
@@ -77,6 +89,10 @@ The resumed posthoc worker completed with exit 0 and empty stderr. Its independe
 
 The posthoc result does not support Student-only recovery. Test AP is `0.7456886647`, while 100 within-sample temporal shuffles average `0.7420317690`; removing visual content changes AP by only `+0.0000001263`, removing audio content lowers it by `0.0093849558`, and removing both modalities still leaves `0.7361561796` (98.72% of the original AP). All four content modes predict every segment positive at threshold 0.5. The best checkpoint has 22.23 times the S0 within-sample logit standard deviation, but visual projected-token temporal standard deviation is only `3.09e-5`; zeroing audio collapses logit temporal standard deviation to `1.60e-6`. These facts establish an audio-dominated transient variation together with a large query/sample/position shortcut, not healthy audiovisual temporal localization.
 
-All active PowerShell workers, launchers, resumptions, queries, preflights and artifact-audit wrappers were parsed locally and on the 5090 with zero parser errors. The three Python artifact auditors passed `py_compile`; their exact uploaded hashes were bound into the remote wrappers. The locked 5090 environment does not include Ruff, so Ruff was run locally against those exact hashes and recorded separately rather than claimed as a remote result.
+The exact clean S4 candidate was independently verified in `E:\OV-OrthKD-R3\student-shortcut-s4-74d211d`: focused tests returned `5 passed`, compileall exit 0, and the full suite returned `461 passed in 335.90s`. The verification receipt SHA256 is `f5cba2ea8d7504717ca3bdf458eb633c178ba34f956f5162d5759f284665fcf3`. The three-epoch worker then completed at step 1200 with exit 0. Its training audit passed with SHA256 `6f28df765bd436cf38db8fe0a38a239ce3d967518a934d214ebeee5416faa962`; its separate posthoc audit passed with SHA256 `1a9751cbafe3f8504105063150f33cc09214abafb7768e88a1ba4f5c765dfe80`.
+
+S4 test AP/AUROC/F1@0.5 is `0.7034703980/0.5960085404/0.5403934128`, a change of `-0.0452742844/-0.0401261259/0` from S0. Query+position prior AP (`0.7193241998`) exceeds the student; mean-centered AP is `0.5810092411`; 100 temporal shuffles increase rather than reduce mean AP to `0.7046448804`. Visual-zero AP is effectively unchanged (`0.7032248832`), while audio-zero and both-zero AP rise to `0.7504406649/0.7494988965`. The original test logit temporal standard deviation is only `2.48e-5`; the visual/audio token temporal standard deviations of `0.058241/0.579760` are compressed to shared/decision values `0.000874/0.000106`. These independently audited facts reject augmentation removal as a recovery and show a stronger content-independent collapse.
+
+All active PowerShell workers, launchers, resumptions, queries, preflights and artifact-audit wrappers were parsed locally and on the 5090 with zero parser errors. The Python artifact auditors passed compilation checks; their exact uploaded hashes were bound into the remote wrappers. The locked 5090 environment does not include Ruff, so Ruff was run locally against those exact hashes and recorded separately rather than claimed as a remote result.
 
 The final evidence commit additionally hardens `.gitignore` for common checkpoint, array and archive formats. This is a publication-safety change only and is outside the scientific runtime commit.

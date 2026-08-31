@@ -1,0 +1,21 @@
+﻿{
+    "schema_version":  1,
+    "status":  "running",
+    "launch_method":  "Win32_Process.Create_via_verified_PersistentProcess_module",
+    "utc":  "2026-08-31T08:22:41.5953985Z",
+    "worker_process_id":  28092,
+    "return_value":  0,
+    "module_sha256":  "3105384926f66900f57b767984fd029aec968792564420f0bd665cf011bf42e5",
+    "worker_sha256":  "757710ca129c153b02d6c30c36658f84c53990c0fe27f032303a79a7edee26dd",
+    "git_head":  "74d211d34ace74ce3b74ea082a7dfd0379b251fb",
+    "config_sha256":  "5b81218b55907a5dfb0419e62eff2128f0d08ce9301c97c081237f8c8f599b33",
+    "candidate_verification_sha256":  "f5cba2ea8d7504717ca3bdf458eb633c178ba34f956f5162d5759f284665fcf3",
+    "s3_training_audit_sha256":  "5058f78a8a9dfef354158d956205987550e0a745b3fe3f8f3cb79d8de7edbf71",
+    "s3_posthoc_audit_sha256":  "6dc432dfccf142ed80902328755402cd140170894be3a44c7130b8b93b69ee44",
+    "a0_audit_sha256":  "396311d0b0031695c4e80e1cda00eb8100cdfec03fd860b0bd7cba064a59db6b",
+    "sole_scientific_change_from_s0":  "data.train_augment_true_to_false",
+    "sequence":  [
+                     "s4_training"
+                 ],
+    "worker_state":  "E:\\OV-OrthKD-R3\\student_shortcut_control\\s4_74d211d\\worker_state.json"
+}

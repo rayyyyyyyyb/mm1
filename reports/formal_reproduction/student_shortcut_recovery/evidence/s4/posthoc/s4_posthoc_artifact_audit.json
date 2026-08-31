@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "noncanonical_s4_posthoc_artifact_audit",
+  "git_commit": "74d211d34ace74ce3b74ea082a7dfd0379b251fb",
+  "task_segments": 10,
+  "training_audit": {
+    "bytes": 7745,
+    "sha256": "6f28df765bd436cf38db8fe0a38a239ce3d967518a934d214ebeee5416faa962"
+  },
+  "launch": {
+    "bytes": 621,
+    "sha256": "c2fb7452280ecb2dcc139619e8e850c59d592aa31f5c09dc69b0306d6cb15f90"
+  },
+  "prediction": {
+    "bytes": 22581,
+    "sha256": "204fdafcc70f01334a6c4bde63c03d9b3c8fb895bd2061cf1e8dd7944ceddbfd"
+  },
+  "modality": {
+    "bytes": 20115,
+    "sha256": "d4d11a827454f3aa4cb1ac5b85e916c7b50392943b9748d5c394874c59173f7b"
+  },
+  "test": {
+    "original_ap": 0.7034703980138963,
+    "query_only_prior_ap": 0.6939849428273384,
+    "query_position_prior_ap": 0.71932419983999,
+    "mean_centered_ap": 0.5810092410555183,
+    "shuffle_mean_ap": 0.7046448803660268,
+    "original_within_sample_std": 2.4815219528536045e-05,
+    "visual_zero_ap": 0.7032248832357164,
+    "audio_zero_ap": 0.7504406649299935,
+    "both_zero_ap": 0.7494988965008398
+  }
+}

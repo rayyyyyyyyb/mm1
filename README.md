@@ -1,6 +1,6 @@
 # OV-OrthKD Collaboration Base
 
-> Current diagnostic status (2026-08-31): A0 shortcut diagnostics and the S3 pretrained-only Student control are complete and independently audited. S3 did not recover healthy temporal localization; formal Full training remains paused. Start with the [student shortcut recovery web handoff](reports/formal_reproduction/student_shortcut_recovery/WEB_REVIEW_HANDOFF.md).
+> Current diagnostic status (2026-08-31): A0 shortcut diagnostics plus the S3 pretrained-only and S4 no-augmentation Student controls are complete and independently audited. Neither control recovered healthy temporal localization; S4 worsened AP/AUROC and accelerated audio-gate/content-independent collapse. Formal Full training remains paused. Start with the [student shortcut recovery web handoff](reports/formal_reproduction/student_shortcut_recovery/WEB_REVIEW_HANDOFF.md).
 
 This package contains the core implementation of OV-OrthKD for research collaboration and method extension. The R2 branch adds a fail-closed conference-reproduction evidence chain while keeping the historical collaboration path separately labelled.
 

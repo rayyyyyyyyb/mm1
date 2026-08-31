@@ -1,0 +1,32 @@
+{
+  "archival_lock": {
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-s4-74d211d\\configs\\locks\\diagnostics\\mm26_student_only_archival_facts.yaml",
+    "exists": true,
+    "sha256": "bcc7a5056e964a613aca13dd9fc513f49cc1f41101dc2848346f64966b873562"
+  },
+  "data_lock": {
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-s4-74d211d\\configs\\locks\\mm26_data_lock.yaml",
+    "exists": true,
+    "sha256": "d45eeb120c1793cdda9ffa69021fe9b9055c5528d91a4ce0cc6230ca673aba57"
+  },
+  "download_lock": {
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-s4-74d211d\\configs\\locks\\mm26_download_lock.yaml",
+    "exists": true,
+    "sha256": "5ca0109b931b55c1fb1fb4c9e723996f36040b3392c20713bb7257e88062cc2a"
+  },
+  "evaluator_lock": {
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-s4-74d211d\\configs\\locks\\mm26_evaluator_lock.yaml",
+    "exists": true,
+    "sha256": "e2b67bae839c81ba16721236172d698be100695313be6b3a8a38fd70e558928d"
+  },
+  "preprocessing_lock": {
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-s4-74d211d\\configs\\locks\\mm26_preprocessing_lock.yaml",
+    "exists": true,
+    "sha256": "6eaa7aee15135a740af8deec58c90e37858c300243cad13b144d89f6a3b5c9e7"
+  },
+  "teacher_lock": {
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-s4-74d211d\\configs\\locks\\mm26_teacher_lock.yaml",
+    "exists": true,
+    "sha256": "1dd082bfca7e045ee493b35578697fda7c678056c33765437d5a59fbda84d337"
+  }
+}

@@ -12,5 +12,8 @@ This directory contains only small review artifacts (JSON, JSONL and YAML) suita
 - `baseline_s0`: the small three-epoch S0 history, diagnostics, final metrics, resolved config and implementation behavior used for the strict S3 comparison.
 - `s3`: the audited three-epoch pretrained-only metrics, history, first-batch diagnostics, resolved config, behavior receipt and worker/training audit state.
 - `s3/posthoc`: independently audited prediction-shortcut, content-ablation and forward-path-scale results, plus the retained failed-launch/resume state.
+- `s4/training`: the audited three-epoch no-augmentation control metrics, history, first-batch diagnostics, resolved config, runtime/lock receipts and environment identity.
+- `s4/control`: candidate verification, launch/worker state and the independent S4 training artifact audit.
+- `s4/posthoc`: independently audited prediction-shortcut, content-ablation and forward-path-scale results plus launch/worker state.
 
-The corresponding datasets, teacher cache, timm weight files, student checkpoints, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3 posthoc JSONs were copied here only after their independent artifact audit passed.
+The corresponding datasets, teacher cache, timm weight files, student checkpoints, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3 and S4 posthoc JSONs were copied here only after their independent artifact audits passed.
