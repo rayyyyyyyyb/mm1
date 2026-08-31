@@ -1,0 +1,85 @@
+from __future__ import annotations
+
+import copy
+from pathlib import Path
+from typing import Any, Mapping
+
+import yaml
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+S0_PATH = (
+    PROJECT_ROOT
+    / "configs"
+    / "diagnostics"
+    / "causal"
+    / "ov_orthkd_s0_learned_concat_seed42.yaml"
+)
+S3_PATH = (
+    PROJECT_ROOT
+    / "configs"
+    / "diagnostics"
+    / "recovery"
+    / "ov_orthkd_s3_pretrained_seed42.yaml"
+)
+
+
+def _load(path: Path) -> dict[str, Any]:
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def _normalized(config: dict[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(config)
+    result["reproduction"]["variant"] = "NORMALIZED"
+    result["logging"]["log_dir"] = "NORMALIZED"
+    return result
+
+
+def _different_paths(left: Any, right: Any, prefix: str = "") -> set[str]:
+    if isinstance(left, Mapping) and isinstance(right, Mapping):
+        paths: set[str] = set()
+        for key in set(left) | set(right):
+            path = f"{prefix}.{key}" if prefix else str(key)
+            if key not in left or key not in right:
+                paths.add(path)
+            else:
+                paths.update(_different_paths(left[key], right[key], path))
+        return paths
+    return set() if left == right else {prefix}
+
+
+def test_s3_changes_only_pretrained_after_identity_output_normalization() -> None:
+    s0 = _normalized(_load(S0_PATH))
+    s3 = _normalized(_load(S3_PATH))
+
+    assert _different_paths(s0, s3) == {"student.pretrained"}
+    assert s0["student"]["pretrained"] is False
+    assert s3["student"]["pretrained"] is True
+
+
+def test_s3_remains_short_noncanonical_t10_control_with_original_schedule() -> None:
+    config = _load(S3_PATH)
+
+    assert config["seed"] == 42
+    assert config["reproduction"]["claim_level"] == "noncanonical_diagnostic"
+    assert config["reproduction"]["diagnostic_only"] is True
+    assert config["data"]["num_segments"] == 10
+    assert config["student"]["max_position_segments"] == 16
+    assert config["data"]["train_augment"] is True
+    assert config["training"]["epochs"] == 3
+    assert config["training"]["max_batches_per_epoch"] == 400
+    assert config["training"]["max_optimizer_steps"] is None
+    assert config["training"]["scheduler"]["T_max"] == 30
+    assert config["evaluation"]["test_views"] == 1
+    assert config["training"]["model_selection"]["run_all_30_epochs"] is False
+    assert all(
+        config["loss"][name] == 0.0
+        for name in (
+            "alpha_strong_logit",
+            "alpha_weak_logit",
+            "alpha_strong_feat",
+            "alpha_weak_feat",
+            "alpha_text_align",
+            "alpha_orth",
+        )
+    )
