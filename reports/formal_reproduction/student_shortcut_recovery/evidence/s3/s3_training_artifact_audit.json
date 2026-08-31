@@ -1,0 +1,429 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "noncanonical_s3_training_artifact_audit",
+  "git_commit": "a0aa4d7ad4b98455e26a2fe6ff2537a321293233",
+  "task_segments": 10,
+  "max_position_segments": 16,
+  "sole_scientific_change_from_s0": "student.pretrained_false_to_true",
+  "worker_state": {
+    "schema_version": 1,
+    "status": "completed",
+    "worker_process_id": 12680,
+    "updated_at_utc": "2026-08-31T07:04:25.0333481Z",
+    "git_commit": "a0aa4d7ad4b98455e26a2fe6ff2537a321293233",
+    "config_sha256": "96b98047f0ae8404a1e1fb99d0cc4934e1ed87c858766d05a2d502eb362b39e5",
+    "current_phase": "",
+    "completed_phases": [
+      "pretrained_receipt",
+      "s3_training"
+    ],
+    "exit_code": 0,
+    "message": "pretrained receipt and S3 diagnostic completed"
+  },
+  "pretrained_receipt": {
+    "bytes": 6110,
+    "sha256": "6ea7e92d9cbde235f903828eecc1d45923ab2ec6376110bf5b14d63cfa927119",
+    "backbones": {
+      "visual": {
+        "status": "PASS",
+        "model_name": "convnextv2_tiny.fcmae_ft_in22k_in1k",
+        "seed": 42,
+        "pretrained_requested": true,
+        "random_reference_requested": false,
+        "pretrained_state_sha256": "de6d242dd8f75a0a4b4f43fa63c6c26255d11ccd90e8c0d7ec650d5d66233beb",
+        "random_state_sha256": "eab66a82329af840c6429f34b104387c2dc31fb15e2eb6c245345f3cc33b4b5d",
+        "state_hashes_differ": true,
+        "parameter_count": 27866496,
+        "feature_dim": 768,
+        "resolved_pretrained_cfg": {
+          "architecture": "convnextv2_tiny",
+          "classifier": "head.fc",
+          "crop_mode": "center",
+          "crop_pct": 0.875,
+          "custom_load": false,
+          "first_conv": "stem.0",
+          "fixed_input_size": false,
+          "hf_hub_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k",
+          "input_size": [
+            3,
+            224,
+            224
+          ],
+          "interpolation": "bicubic",
+          "license": "cc-by-nc-4.0",
+          "mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "num_classes": 1000,
+          "origin_url": "https://github.com/facebookresearch/ConvNeXt-V2",
+          "paper_ids": "arXiv:2301.00808",
+          "paper_name": "ConvNeXt-V2: Co-designing and Scaling ConvNets with Masked Autoencoders",
+          "pool_size": [
+            7,
+            7
+          ],
+          "std": [
+            0.229,
+            0.224,
+            0.225
+          ],
+          "tag": "fcmae_ft_in22k_in1k",
+          "test_crop_pct": 1.0,
+          "test_input_size": [
+            3,
+            288,
+            288
+          ],
+          "url": "https://dl.fbaipublicfiles.com/convnext/convnextv2/im22k/convnextv2_tiny_22k_224_ema.pt"
+        },
+        "random_reference_pretrained_cfg": {
+          "architecture": "convnextv2_tiny",
+          "classifier": "head.fc",
+          "crop_mode": "center",
+          "crop_pct": 0.875,
+          "custom_load": false,
+          "first_conv": "stem.0",
+          "fixed_input_size": false,
+          "hf_hub_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k",
+          "input_size": [
+            3,
+            224,
+            224
+          ],
+          "interpolation": "bicubic",
+          "license": "cc-by-nc-4.0",
+          "mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "num_classes": 1000,
+          "origin_url": "https://github.com/facebookresearch/ConvNeXt-V2",
+          "paper_ids": "arXiv:2301.00808",
+          "paper_name": "ConvNeXt-V2: Co-designing and Scaling ConvNets with Masked Autoencoders",
+          "pool_size": [
+            7,
+            7
+          ],
+          "std": [
+            0.229,
+            0.224,
+            0.225
+          ],
+          "tag": "fcmae_ft_in22k_in1k",
+          "test_crop_pct": 1.0,
+          "test_input_size": [
+            3,
+            288,
+            288
+          ],
+          "url": "https://dl.fbaipublicfiles.com/convnext/convnextv2/im22k/convnextv2_tiny_22k_224_ema.pt"
+        }
+      },
+      "audio": {
+        "status": "PASS",
+        "model_name": "tf_efficientnetv2_b2.in1k",
+        "seed": 42,
+        "pretrained_requested": true,
+        "random_reference_requested": false,
+        "pretrained_state_sha256": "7e97f6eeaf1deee25cb9c9f7b625eaa20d3330f3620f2f21a1f4ded33192d2d7",
+        "random_state_sha256": "0d06bd1ff84712d62de49fd3a6e4855130000b154cff70aec8e34497533d26d2",
+        "state_hashes_differ": true,
+        "parameter_count": 8687086,
+        "feature_dim": 1408,
+        "resolved_pretrained_cfg": {
+          "architecture": "tf_efficientnetv2_b2",
+          "classifier": "classifier",
+          "crop_mode": "center",
+          "crop_pct": 0.89,
+          "custom_load": false,
+          "first_conv": "conv_stem",
+          "fixed_input_size": false,
+          "hf_hub_id": "timm/tf_efficientnetv2_b2.in1k",
+          "input_size": [
+            3,
+            208,
+            208
+          ],
+          "interpolation": "bicubic",
+          "license": "apache-2.0",
+          "mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "num_classes": 1000,
+          "pool_size": [
+            7,
+            7
+          ],
+          "std": [
+            0.229,
+            0.224,
+            0.225
+          ],
+          "tag": "in1k",
+          "test_input_size": [
+            3,
+            260,
+            260
+          ],
+          "url": "https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-effv2-weights/tf_efficientnetv2_b2-847de54e.pth"
+        },
+        "random_reference_pretrained_cfg": {
+          "architecture": "tf_efficientnetv2_b2",
+          "classifier": "classifier",
+          "crop_mode": "center",
+          "crop_pct": 0.89,
+          "custom_load": false,
+          "first_conv": "conv_stem",
+          "fixed_input_size": false,
+          "hf_hub_id": "timm/tf_efficientnetv2_b2.in1k",
+          "input_size": [
+            3,
+            208,
+            208
+          ],
+          "interpolation": "bicubic",
+          "license": "apache-2.0",
+          "mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "num_classes": 1000,
+          "pool_size": [
+            7,
+            7
+          ],
+          "std": [
+            0.229,
+            0.224,
+            0.225
+          ],
+          "tag": "in1k",
+          "test_input_size": [
+            3,
+            260,
+            260
+          ],
+          "url": "https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-effv2-weights/tf_efficientnetv2_b2-847de54e.pth"
+        }
+      }
+    }
+  },
+  "official_cache_receipt": {
+    "bytes": 1709,
+    "sha256": "edecae3ae9ba5fbc7102883d1c1d667df71810facb2731d2ec34503a81bca255",
+    "assets": {
+      "audio": {
+        "status": "PASS",
+        "model": "tf_efficientnetv2_b2.in1k",
+        "url": "https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-effv2-weights/tf_efficientnetv2_b2-847de54e.pth",
+        "target": "E:\\OV-OrthKD-R3\\student_shortcut_control\\model_cache\\torch\\hub\\checkpoints\\tf_efficientnetv2_b2-847de54e.pth",
+        "bytes": 40795861,
+        "sha256": "847de54eb133fad3ab1230ff637ed242aefe9fd2da197d041e6753d9ec5a80bd",
+        "expected_sha256_prefix": "847de54e",
+        "candidate_source": "preexisting_final"
+      },
+      "visual": {
+        "status": "PASS",
+        "model": "convnextv2_tiny.fcmae_ft_in22k_in1k",
+        "url": "https://dl.fbaipublicfiles.com/convnext/convnextv2/im22k/convnextv2_tiny_22k_224_ema.pt",
+        "target": "E:\\OV-OrthKD-R3\\student_shortcut_control\\model_cache\\torch\\hub\\checkpoints\\convnextv2_tiny_22k_224_ema.pt",
+        "bytes": 114604362,
+        "sha256": "853d431aa9363f1b058e3c343d4bf2fca5fe2a4196621c381ddbcd4828290a96",
+        "expected_sha256_prefix": null,
+        "candidate_source": "complete_partial"
+      }
+    },
+    "audio_range_receipt": {
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\download_receipt.json",
+      "sha256": "f04da1879bb659fb71e2c813b7f95a38f39f708f4eccda2e7e978a3086871014"
+    }
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "global_step": 400,
+      "learning_rate": 0.00019945218953682734,
+      "train_loss": {
+        "bce": 0.6648177696764469,
+        "strong_logit": 0.0,
+        "weak_logit": 0.0,
+        "strong_feat": 0.0,
+        "weak_feat": 0.0,
+        "text_align": 0.0,
+        "orth": 0.0,
+        "total": 0.6648177696764469
+      },
+      "validation": {
+        "threshold": 0.5,
+        "ap": 0.7415805449065994,
+        "auroc": 0.6439464067580667,
+        "binary_micro_f1_at_0_5": 0.7618651035160212,
+        "query_fg_f1_macro_at_0_5": 0.656577396858288,
+        "ovavel_segment_f1_at_0_5": 0.5377574807678815,
+        "ovavel_event_f1_at_0_5": 0.5770955501897206,
+        "binary_micro_f1_at_threshold": 0.7618651035160212,
+        "query_fg_f1_macro_at_threshold": 0.656577396858288,
+        "ovavel_segment_f1_at_threshold": 0.5377574807678815,
+        "ovavel_event_f1_at_threshold": 0.5770955501897206,
+        "accuracy": 0.6153328734046223,
+        "binary_precision_at_threshold": 0.6153328734046223,
+        "binary_recall_at_threshold": 1.0,
+        "auroc_available": true,
+        "positive_rate": 0.6153328734046223,
+        "predicted_positive_rate": 1.0,
+        "sample_count": 5798,
+        "segment_count": 57980
+      },
+      "saved_best": true,
+      "elapsed_seconds": 610.5507837999612,
+      "peak_memory_mb": 6554.9287109375
+    },
+    {
+      "epoch": 1,
+      "global_step": 800,
+      "learning_rate": 0.00019781476007338058,
+      "train_loss": {
+        "bce": 0.6586513455212116,
+        "strong_logit": 0.0,
+        "weak_logit": 0.0,
+        "strong_feat": 0.0,
+        "weak_feat": 0.0,
+        "text_align": 0.0,
+        "orth": 0.0,
+        "total": 0.6586513455212116
+      },
+      "validation": {
+        "threshold": 0.5,
+        "ap": 0.6573782839281949,
+        "auroc": 0.4966798519737734,
+        "binary_micro_f1_at_0_5": 0.7618651035160212,
+        "query_fg_f1_macro_at_0_5": 0.656577396858288,
+        "ovavel_segment_f1_at_0_5": 0.5377574807678815,
+        "ovavel_event_f1_at_0_5": 0.5770955501897206,
+        "binary_micro_f1_at_threshold": 0.7618651035160212,
+        "query_fg_f1_macro_at_threshold": 0.656577396858288,
+        "ovavel_segment_f1_at_threshold": 0.5377574807678815,
+        "ovavel_event_f1_at_threshold": 0.5770955501897206,
+        "accuracy": 0.6153328734046223,
+        "binary_precision_at_threshold": 0.6153328734046223,
+        "binary_recall_at_threshold": 1.0,
+        "auroc_available": true,
+        "positive_rate": 0.6153328734046223,
+        "predicted_positive_rate": 1.0,
+        "sample_count": 5798,
+        "segment_count": 57980
+      },
+      "saved_best": false,
+      "elapsed_seconds": 431.1027277999092,
+      "peak_memory_mb": 6554.9287109375
+    },
+    {
+      "epoch": 2,
+      "global_step": 1200,
+      "learning_rate": 0.00019510565162951537,
+      "train_loss": {
+        "bce": 0.6692964457720518,
+        "strong_logit": 0.0,
+        "weak_logit": 0.0,
+        "strong_feat": 0.0,
+        "weak_feat": 0.0,
+        "text_align": 0.0,
+        "orth": 0.0,
+        "total": 0.6692964457720518
+      },
+      "validation": {
+        "threshold": 0.5,
+        "ap": 0.6555984636321437,
+        "auroc": 0.5350142979212459,
+        "binary_micro_f1_at_0_5": 0.7618651035160212,
+        "query_fg_f1_macro_at_0_5": 0.656577396858288,
+        "ovavel_segment_f1_at_0_5": 0.5377574807678815,
+        "ovavel_event_f1_at_0_5": 0.5770955501897206,
+        "binary_micro_f1_at_threshold": 0.7618651035160212,
+        "query_fg_f1_macro_at_threshold": 0.656577396858288,
+        "ovavel_segment_f1_at_threshold": 0.5377574807678815,
+        "ovavel_event_f1_at_threshold": 0.5770955501897206,
+        "accuracy": 0.6153328734046223,
+        "binary_precision_at_threshold": 0.6153328734046223,
+        "binary_recall_at_threshold": 1.0,
+        "auroc_available": true,
+        "positive_rate": 0.6153328734046223,
+        "predicted_positive_rate": 1.0,
+        "sample_count": 5798,
+        "segment_count": 57980
+      },
+      "saved_best": false,
+      "elapsed_seconds": 422.75030019995756,
+      "peak_memory_mb": 6554.9287109375
+    }
+  ],
+  "final_metrics": {
+    "validation_ap": 0.7415805449065994,
+    "test_ap": 0.7456886646827068,
+    "test_auroc": 0.6523319338475717,
+    "test_ovavel_segment_f1_at_0_5": 0.5403934127616343
+  },
+  "artifacts": {
+    "best.pt": {
+      "bytes": 556938489,
+      "sha256": "7d110de52e1bf3aed2a56db788573c3120b97783170a6b2d9da56986d8dcbff8"
+    },
+    "last.pt": {
+      "bytes": 556938489,
+      "sha256": "41f3d66821cb37e199e4027dd6455f6d83deba7e2b4987e7ed7b04ea071d8503"
+    },
+    "final_metrics.json": {
+      "bytes": 6253,
+      "sha256": "3d167e16c9249855b326545d2b92b85e6061f0ca5ae5614442469c5c5c280140"
+    },
+    "history.jsonl": {
+      "bytes": 3295,
+      "sha256": "8ee072241ebbc5fc5f1fdec5958c5671320e6280e7bfc98d00cf5eac8158f66f"
+    },
+    "training_diagnostics.jsonl": {
+      "bytes": 22380,
+      "sha256": "cf1423a60449f25d2618e013117f1722ffc5e08d6330287d79f3df3189938020"
+    },
+    "implementation_behavior.json": {
+      "bytes": 1275,
+      "sha256": "25dc3f5b6173dd6d5fb9c66a2917e60d15594b76fcceed5ec9aeb1b74c60519e"
+    },
+    "resolved_config.yaml": {
+      "bytes": 9044,
+      "sha256": "2c8c2978029056164a6ddbbe73f00eab1c7f8eefdd2770a92add4ba85b6e5bcd"
+    },
+    "config_resolved.yaml": {
+      "bytes": 9044,
+      "sha256": "2c8c2978029056164a6ddbbe73f00eab1c7f8eefdd2770a92add4ba85b6e5bcd"
+    }
+  },
+  "predictions": {
+    "validation": {
+      "bytes": 572662,
+      "sha256": "044ba32945516256985958cbdbd44b0fc9f5f0153f8859859045e8e35ee34eec",
+      "sample_count": 5798,
+      "segment_count": 57980,
+      "positive_rate": 0.6153328734046223,
+      "predicted_positive_rate_at_0_5": 1.0,
+      "logit_min": 0.34180131554603577,
+      "logit_max": 1.0356857776641846
+    },
+    "test": {
+      "bytes": 574804,
+      "sha256": "e29fde2292fc723198e156b2090aad70a1c5e1c099952f0c0dd698c8b2dce3c0",
+      "sample_count": 5820,
+      "segment_count": 58200,
+      "positive_rate": 0.6154639175257732,
+      "predicted_positive_rate_at_0_5": 1.0,
+      "logit_min": 0.3398103415966034,
+      "logit_max": 1.0273101329803467
+    }
+  }
+}

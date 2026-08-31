@@ -1,5 +1,7 @@
 # Canonical seed42 正式复现证据入口
 
+> **2026-08-31 最新诊断：** Student shortcut recovery 的 A0、S3（仅开启学生预训练）和完整后验审计已经结束。S3 没有通过恢复门槛，正式 Full 继续暂停。请优先阅读 [S3 网页审查交接](student_shortcut_recovery/WEB_REVIEW_HANDOFF.md)；下文保留的是较早的 canonical seed42 正式运行记录。
+
 本目录是给独立审阅者和诊断对话使用的网页入口。它把正式训练所用的完整代码树，与本次运行的小型结果、实际 resolved config、环境冻结、数据/教师/evaluator 身份哈希和最终审计收据放在同一个 Git commit 中。
 
 最新的固定门控与论文式加性融合单变量实验已经完成，请先读 [causal fusion diagnostics 网页审查入口](causal_fusion_diagnostics/WEB_REVIEW_HANDOFF.md)。两项修改都未恢复健康的时间定位，正式 Full 复跑仍应暂停。

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "noncanonical_s3_posthoc_artifact_audit",
+  "git_commit": "a0aa4d7ad4b98455e26a2fe6ff2537a321293233",
+  "task_segments": 10,
+  "training_audit": {
+    "bytes": 14863,
+    "sha256": "5058f78a8a9dfef354158d956205987550e0a745b3fe3f8f3cb79d8de7edbf71"
+  },
+  "prediction": {
+    "bytes": 22576,
+    "sha256": "8d23133e2eadad59c20bd67e18f234ca3d999e681e0219da0535c7b24ee8afe8"
+  },
+  "modality": {
+    "bytes": 20055,
+    "sha256": "9fd6fb051a4e069766d00e149583302763fae4c459046c4fb00c561d2a75f019"
+  },
+  "test": {
+    "original_ap": 0.7456886646827068,
+    "query_only_prior_ap": 0.6939849428273384,
+    "query_position_prior_ap": 0.71932419983999,
+    "mean_centered_ap": 0.6176752535019181,
+    "shuffle_mean_ap": 0.742031769047243,
+    "original_within_sample_std": 0.07192640735795273,
+    "visual_zero_ap": 0.7456887910255308,
+    "audio_zero_ap": 0.7363037088362867,
+    "both_zero_ap": 0.7361561795867542
+  }
+}

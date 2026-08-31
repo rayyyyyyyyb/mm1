@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "official_timm_1.0.28_pretrained_cfg_direct_url_cache_lock",
+  "created_at_utc": "2026-08-31T05:59:03.488529+00:00",
+  "cache_dir": "E:\\OV-OrthKD-R3\\student_shortcut_control\\model_cache\\torch\\hub\\checkpoints",
+  "source_policy": "exact_url_from_locked_timm_1.0.28_pretrained_cfg",
+  "audio_range_receipt": {
+    "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\download_receipt.json",
+    "sha256": "f04da1879bb659fb71e2c813b7f95a38f39f708f4eccda2e7e978a3086871014"
+  },
+  "assets": {
+    "audio": {
+      "status": "PASS",
+      "model": "tf_efficientnetv2_b2.in1k",
+      "url": "https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-effv2-weights/tf_efficientnetv2_b2-847de54e.pth",
+      "target": "E:\\OV-OrthKD-R3\\student_shortcut_control\\model_cache\\torch\\hub\\checkpoints\\tf_efficientnetv2_b2-847de54e.pth",
+      "bytes": 40795861,
+      "sha256": "847de54eb133fad3ab1230ff637ed242aefe9fd2da197d041e6753d9ec5a80bd",
+      "expected_sha256_prefix": "847de54e",
+      "candidate_source": "preexisting_final"
+    },
+    "visual": {
+      "status": "PASS",
+      "model": "convnextv2_tiny.fcmae_ft_in22k_in1k",
+      "url": "https://dl.fbaipublicfiles.com/convnext/convnextv2/im22k/convnextv2_tiny_22k_224_ema.pt",
+      "target": "E:\\OV-OrthKD-R3\\student_shortcut_control\\model_cache\\torch\\hub\\checkpoints\\convnextv2_tiny_22k_224_ema.pt",
+      "bytes": 114604362,
+      "sha256": "853d431aa9363f1b058e3c343d4bf2fca5fe2a4196621c381ddbcd4828290a96",
+      "expected_sha256_prefix": null,
+      "candidate_source": "complete_partial"
+    }
+  }
+}

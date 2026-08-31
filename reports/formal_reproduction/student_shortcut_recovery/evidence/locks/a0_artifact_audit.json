@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "noncanonical_posthoc_diagnostic_audit",
+  "git_commit": "f739399463c082cd670dff56e43c710d4fa6f283",
+  "task_segments": 10,
+  "worker_state": {
+    "schema_version": 1,
+    "status": "completed",
+    "worker_process_id": 16028,
+    "updated_at_utc": "2026-08-31T05:30:10.3825411Z",
+    "git_commit": "f739399463c082cd670dff56e43c710d4fa6f283",
+    "current_control": "",
+    "completed_controls": [
+      "student",
+      "visual",
+      "full",
+      "s0"
+    ],
+    "exit_code": 0,
+    "message": "A0 Student/Visual/Full/S0 completed"
+  },
+  "runs": {
+    "student": {
+      "prediction_file": {
+        "bytes": 22609,
+        "sha256": "b0e0ebaeba5a2ade3378d5e2f02766ae53a0135bde26bf08bfa2fe400ce8a654"
+      },
+      "modality_file": {
+        "bytes": 20112,
+        "sha256": "45306a8c8076fa15b8b311221646729977648ba8b789e5aca5b36b9d20fa36a7"
+      },
+      "test": {
+        "original_ap": 0.7487446823980081,
+        "query_only_prior_ap": 0.6939849428273384,
+        "query_position_prior_ap": 0.71932419983999,
+        "mean_centered_ap": 0.6376356327985894,
+        "shuffle_mean_ap": 0.7466994046460933,
+        "original_within_sample_std": 0.003236041445982784,
+        "visual_zero_ap": 0.747909000967501,
+        "audio_zero_ap": 0.7444666250097893,
+        "both_zero_ap": 0.743670419324807
+      }
+    },
+    "visual": {
+      "prediction_file": {
+        "bytes": 22612,
+        "sha256": "467a5992e2180890241e4df6d35a6674de142edf559a5efbdd9a07b30a3dc2b0"
+      },
+      "modality_file": {
+        "bytes": 20152,
+        "sha256": "c6dab2cd4ccc4bba2cd254742fdaca1ec2bb183bb68d775c379b4a6c1bd0c465"
+      },
+      "test": {
+        "original_ap": 0.7253093694866315,
+        "query_only_prior_ap": 0.6939849428273384,
+        "query_position_prior_ap": 0.71932419983999,
+        "mean_centered_ap": 0.5838495256516403,
+        "shuffle_mean_ap": 0.7257255490140432,
+        "original_within_sample_std": 3.1932721768492224e-06,
+        "visual_zero_ap": 0.7256998514974925,
+        "audio_zero_ap": 0.725334815883484,
+        "both_zero_ap": 0.7254163801956088
+      }
+    },
+    "full": {
+      "prediction_file": {
+        "bytes": 22551,
+        "sha256": "9526f3bd8265737000b9dc4ec60ae9c1865dd1856aab0c5017f3c5c923d3be2a"
+      },
+      "modality_file": {
+        "bytes": 20084,
+        "sha256": "8908ff06ae41660ca8d88843238bfea38e1f75d7d93b3346a832d9a5f78805a0"
+      },
+      "test": {
+        "original_ap": 0.7419461390325246,
+        "query_only_prior_ap": 0.6939849428273384,
+        "query_position_prior_ap": 0.71932419983999,
+        "mean_centered_ap": 0.6597842557993382,
+        "shuffle_mean_ap": 0.7416847682008024,
+        "original_within_sample_std": 0.0010854638122072414,
+        "visual_zero_ap": 0.7415354850658245,
+        "audio_zero_ap": 0.7378665897371988,
+        "both_zero_ap": 0.7355148165918861
+      }
+    },
+    "s0": {
+      "prediction_file": {
+        "bytes": 22571,
+        "sha256": "5aba971a11758292dfbd799e3a82dfefda19e13c94729d3b845517362c589cfb"
+      },
+      "modality_file": {
+        "bytes": 20074,
+        "sha256": "495f6133421e4bb6369f684ebd3a8bc67e3fb547589cfd3f70594d84e2e4701f"
+      },
+      "test": {
+        "original_ap": 0.7487446823980081,
+        "query_only_prior_ap": 0.6939849428273384,
+        "query_position_prior_ap": 0.71932419983999,
+        "mean_centered_ap": 0.6376356327985894,
+        "shuffle_mean_ap": 0.7466994046460933,
+        "original_within_sample_std": 0.003236041445982784,
+        "visual_zero_ap": 0.747909000967501,
+        "audio_zero_ap": 0.7444666250097893,
+        "both_zero_ap": 0.743670419324807
+      }
+    }
+  }
+}

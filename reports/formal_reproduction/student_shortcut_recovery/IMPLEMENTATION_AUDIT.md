@@ -1,0 +1,82 @@
+# Student shortcut recovery implementation audit
+
+Date: 2026-08-31
+
+Scientific A0 runtime commit: `f739399463c082cd670dff56e43c710d4fa6f283`
+
+Scientific S3 runtime commit: `a0aa4d7ad4b98455e26a2fe6ff2537a321293233`
+
+Scope: observation-only A0 diagnostics plus the S3 pretrained-student single-variable control. This package does not authorize or run formal Full training.
+
+## Independent source review
+
+The complete range from the accepted diagnosis baseline `0b2bf7eea8e09a1036432775ecbc0f50c5f7b9d3` to the scientific runtime commit was reviewed without editing during the first pass. It adds only:
+
+- three read-only diagnostic/audit scripts;
+- four focused test modules;
+- one noncanonical S3 diagnostic configuration;
+- the approved design, execution plan and ledger entries.
+
+There is no change under `src/`, no edit to the trainer, model, loss, evaluator, teacher cache, formal configuration or canonical guard. `git diff --check 0b2bf7e..f739399` returned exit 0.
+
+The only source difference from the A0 commit to the S3 runtime commit is a one-line audit serialization fix plus its regression test: scalar integer state buffers are flattened before byte reinterpretation. This is required for EfficientNet BatchNorm `num_batches_tracked` buffers and does not change any model or training computation.
+
+## A0 semantics reviewed
+
+- The empirical priors use training labels only. Unknown queries use an explicitly counted global fallback; query-position priors use the matching global position fallback.
+- Mean centering is performed independently inside each sample boundary from `sample_offsets`.
+- Each of the 100 seed-42 shuffles independently permutes logits only inside the same ten-segment sample; labels and sample boundaries stay fixed.
+- Content ablation replaces only `frame` and/or `spectrogram` with same-shape zeros. `frame_valid`, `audio_valid` and `sequence_mask` are preserved.
+- Every checkpoint rerun requires strict state loading and canonical equality between the external resolved config and checkpoint-embedded config.
+- Labels, logits and metric indices are rejected unless every sample has the ordered official segment indices `0..9` and exactly `T_task=10` values.
+- Required path tensors must be finite and have leading `[B,T]`; scale summaries use only valid rows.
+- The forward output named `query_features` is `query_proj(shared_features)`, a post-fusion shared-path projection. It is not an unmodified raw text token and is not described as one in the result report.
+
+## S3 single-variable review
+
+After normalizing only `reproduction.variant` and `logging.log_dir`, the S3/S0 configuration difference set is exactly `{student.pretrained}`. The literal YAML diff contains only those two identity/output fields and `pretrained: false -> true`. Seed, data, augmentation, batch size, three-epoch/400-batch diagnostic exposure, `CosineAnnealingLR(T_max=30)`, model, loss, gate, fusion and temporal settings are unchanged.
+
+The config value reaches both constructors:
+
+1. `build_model_and_loss` passes `student.pretrained` into `OVOrthKDStudent`;
+2. `OVOrthKDStudent` passes the same boolean to both `SequenceImageEncoder` instances;
+3. each encoder passes it directly to `timm.create_model(..., pretrained=pretrained)`.
+
+The runtime receipt constructs each exact backbone first with `pretrained=True`, then with `pretrained=False` under the same seed. It hashes the actual backbone state, requires equal architecture dimensions/parameter counts but different state hashes, records resolved timm pretrained metadata, and propagates download/construction failures without fallback.
+
+The two files are first locked from the exact official URLs in the installed timm 1.0.28 metadata. The cache receipt binds URL, byte count and full SHA256; the audio file additionally verifies the official filename SHA prefix. The receipt and training both run with Hugging Face/Transformers offline and `TIMM_USE_OLD_CACHE=1`, so construction must use those receipted files. A fresh run rejects an existing control directory or nonempty output. Resume is explicit and requires `last.pt`. Completion requires exactly three history records, three first-batch diagnostic records, global step 1200, finite full validation/test predictions and the official `T=10` ordering.
+
+## Artifact audit design
+
+- A0 is accepted only when all Student, Visual, Full and S0 JSONs are PASS, source checkpoint/NPZ hashes match the locked values, exact Git is clean, and saved versus checkpoint-rerun AP agrees within `1e-12`.
+- S3 training is accepted only when the config is the exact single-variable control, both pretrained receipts pass, all required outputs exist, histories/diagnostics are complete, prediction arrays have the exact schema/order and all key files are hashed.
+- S3 posthoc is accepted only when it is bound back to the audited S3 checkpoint and NPZ hashes and training AP, saved prediction AP and checkpoint-rerun AP agree within `1e-12`.
+- Checkpoints, NPZ files, datasets, caches, archives, bundles and progress logs remain on the 5090. Git receives only source, configuration and small review evidence.
+
+## Verification evidence
+
+The exact clean A0 runtime commit was installed in `E:\OV-OrthKD-R3\student-shortcut-f739399` with the nine locked resource junctions. Fresh verification returned:
+
+- compileall: exit 0;
+- full pytest: exit 0, `457 passed in 331.58s`;
+- pytest log SHA256: `dd5d2df9e9c77b95e7f6eaf4c76fcdb4b84bfce1cda2a2c47ed41a787fa2447f`;
+- HEAD before/after: exact `f739399463c082cd670dff56e43c710d4fa6f283`;
+- dirty status before/after: empty.
+
+The scalar-buffer fix was then installed independently in `E:\OV-OrthKD-R3\student-shortcut-a0aa4d7`. Focused verification returned `6 passed in 3.17s`; full verification returned compileall exit 0 and `458 passed in 336.08s`, with pytest log SHA256 `7e28a001986a4fe5bf20861c212eb1ff8e1b4c858603f9313a276e4b70a5bdc9`. HEAD before/after was exact `a0aa4d7ad4b98455e26a2fe6ff2537a321293233` and both dirty counts were zero.
+
+Official cache evidence is locked by receipt SHA256 `edecae3ae9ba5fbc7102883d1c1d667df71810facb2731d2ec34503a81bca255`. The visual file is 114,604,362 bytes with SHA256 `853d431aa9363f1b058e3c343d4bf2fca5fe2a4196621c381ddbcd4828290a96`; the audio file is 40,795,861 bytes with SHA256 `847de54eb133fad3ab1230ff637ed242aefe9fd2da197d041e6753d9ec5a80bd`.
+
+The exact S3 worker completed with exit 0 at global step 1200. Its independent training artifact audit also exited 0 and produced PASS receipt SHA256 `5058f78a8a9dfef354158d956205987550e0a745b3fe3f8f3cb79d8de7edbf71`. In addition to the output/config/prediction checks above, this audit re-hashed both official timm files at audit time. The audited best-checkpoint test AP/AUROC/F1@0.5 is `0.7456886647/0.6523319338/0.5403934128`; the saved test prediction contains 5,820 samples and 58,200 ordered task segments.
+
+An independent pre-launch review found that posthoc model reconstruction did not yet force the training-time timm cache. The worker was changed before modality inference to set `TIMM_USE_OLD_CACHE=1`, bind the exact `TORCH_HOME`, compare the cache receipt embedded in the training audit against fixed role/path/size/SHA expectations, and re-hash both files immediately before model construction. Static RED/GREEN binding checks, local and remote PowerShell parsing, exact uploaded SHA checks, Python compile and the posthoc preflight all passed.
+
+The first posthoc launch then failed closed before model inference because the wrapper passed obsolete prediction CLI names. Its state and stderr were retained. Source inspection confirmed that the current parser requires `--validation` and `--test`; those two names alone were corrected, parser/SHA/preflight checks were repeated, and explicit resume preserved the failed launch history. Prediction-only diagnostics then passed and modality inference began. This runner-only correction does not change model, predictions, labels or metrics.
+
+The resumed posthoc worker completed with exit 0 and empty stderr. Its independent audit also exited 0 and produced PASS receipt SHA256 `6dc432dfccf142ed80902328755402cd140170894be3a44c7130b8b93b69ee44`. The receipt binds the result to the audited best checkpoint and prediction NPZ identities and re-establishes training AP, saved-NPZ AP and strict checkpoint-rerun AP agreement within `1e-12`.
+
+The posthoc result does not support Student-only recovery. Test AP is `0.7456886647`, while 100 within-sample temporal shuffles average `0.7420317690`; removing visual content changes AP by only `+0.0000001263`, removing audio content lowers it by `0.0093849558`, and removing both modalities still leaves `0.7361561796` (98.72% of the original AP). All four content modes predict every segment positive at threshold 0.5. The best checkpoint has 22.23 times the S0 within-sample logit standard deviation, but visual projected-token temporal standard deviation is only `3.09e-5`; zeroing audio collapses logit temporal standard deviation to `1.60e-6`. These facts establish an audio-dominated transient variation together with a large query/sample/position shortcut, not healthy audiovisual temporal localization.
+
+All active PowerShell workers, launchers, resumptions, queries, preflights and artifact-audit wrappers were parsed locally and on the 5090 with zero parser errors. The three Python artifact auditors passed `py_compile`; their exact uploaded hashes were bound into the remote wrappers. The locked 5090 environment does not include Ruff, so Ruff was run locally against those exact hashes and recorded separately rather than claimed as a remote result.
+
+The final evidence commit additionally hardens `.gitignore` for common checkpoint, array and archive formats. This is a publication-safety change only and is outside the scientific runtime commit.

@@ -63,6 +63,18 @@ configs/local_*.yml
 *.pth
 *.onnx
 *.safetensors
+*.bin
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.bundle
 
 # Notebooks
 *.ipynb_checkpoints/

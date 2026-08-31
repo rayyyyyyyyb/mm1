@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "official_timm_pretrained_cfg_direct_url_range_receipt",
+  "url": "https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-effv2-weights/tf_efficientnetv2_b2-847de54e.pth",
+  "target": "E:\\OV-OrthKD-R3\\student_shortcut_control\\model_cache\\torch\\hub\\checkpoints\\tf_efficientnetv2_b2-847de54e.pth",
+  "bytes": 40795861,
+  "sha256": "847de54eb133fad3ab1230ff637ed242aefe9fd2da197d041e6753d9ec5a80bd",
+  "expected_sha256_prefix": "847de54e",
+  "connections": 8,
+  "parts": [
+    {
+      "index": 0,
+      "start": 0,
+      "end": 5099482,
+      "bytes": 5099483,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_00_0_5099482.part",
+      "attempts": 2
+    },
+    {
+      "index": 1,
+      "start": 5099483,
+      "end": 10198965,
+      "bytes": 5099483,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_01_5099483_10198965.part",
+      "attempts": 3
+    },
+    {
+      "index": 2,
+      "start": 10198966,
+      "end": 15298448,
+      "bytes": 5099483,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_02_10198966_15298448.part",
+      "attempts": 1
+    },
+    {
+      "index": 3,
+      "start": 15298449,
+      "end": 20397931,
+      "bytes": 5099483,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_03_15298449_20397931.part",
+      "attempts": 1
+    },
+    {
+      "index": 4,
+      "start": 20397932,
+      "end": 25497414,
+      "bytes": 5099483,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_04_20397932_25497414.part",
+      "attempts": 1
+    },
+    {
+      "index": 5,
+      "start": 25497415,
+      "end": 30596896,
+      "bytes": 5099482,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_05_25497415_30596896.part",
+      "attempts": 3
+    },
+    {
+      "index": 6,
+      "start": 30596897,
+      "end": 35696378,
+      "bytes": 5099482,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_06_30596897_35696378.part",
+      "attempts": 1
+    },
+    {
+      "index": 7,
+      "start": 35696379,
+      "end": 40795860,
+      "bytes": 5099482,
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\audio_ranges_f739399\\range_07_35696379_40795860.part",
+      "attempts": 1
+    }
+  ]
+}

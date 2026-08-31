@@ -1,0 +1,37 @@
+﻿{
+    "schema_version":  1,
+    "status":  "running",
+    "resume":  true,
+    "utc":  "2026-08-31T07:08:42.4611851Z",
+    "worker_process_id":  11384,
+    "return_value":  0,
+    "module_sha256":  "3105384926f66900f57b767984fd029aec968792564420f0bd665cf011bf42e5",
+    "worker_sha256":  "d7932dda1afea09b0f7cea62fdbde862b1851b69f45a20b649d00f884846926e",
+    "git_head":  "a0aa4d7ad4b98455e26a2fe6ff2537a321293233",
+    "state_before":  {
+                         "schema_version":  1,
+                         "status":  "failed",
+                         "worker_process_id":  28176,
+                         "updated_at_utc":  "2026-08-31T07:05:23.5247734Z",
+                         "git_commit":  "a0aa4d7ad4b98455e26a2fe6ff2537a321293233",
+                         "current_phase":  "",
+                         "completed_phases":  [
+
+                                              ],
+                         "exit_code":  1,
+                         "message":  "System.Management.Automation.RuntimeException: S3 prediction diagnostic exited with code 2"
+                     },
+    "state_after":  {
+                        "schema_version":  1,
+                        "status":  "running",
+                        "worker_process_id":  11384,
+                        "updated_at_utc":  "2026-08-31T07:08:34.1409009Z",
+                        "git_commit":  "a0aa4d7ad4b98455e26a2fe6ff2537a321293233",
+                        "current_phase":  "prediction",
+                        "completed_phases":  [
+
+                                             ],
+                        "exit_code":  null,
+                        "message":  "S3 prediction shortcut diagnostic"
+                    }
+}

@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "runtime_construction_receipt_not_archival_fact",
+  "config": {
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-a0aa4d7\\configs\\diagnostics\\recovery\\ov_orthkd_s3_pretrained_seed42.yaml",
+    "bytes": 7945,
+    "sha256": "96b98047f0ae8404a1e1fb99d0cc4934e1ed87c858766d05a2d502eb362b39e5"
+  },
+  "seed": 42,
+  "comparison": "same_seed_pretrained_true_vs_pretrained_false_constructed_encoder_state",
+  "fallback_policy": "construction_or_download_failure_propagates_and_blocks",
+  "backbones": {
+    "visual": {
+      "status": "PASS",
+      "model_name": "convnextv2_tiny.fcmae_ft_in22k_in1k",
+      "seed": 42,
+      "pretrained_requested": true,
+      "random_reference_requested": false,
+      "pretrained_state_sha256": "de6d242dd8f75a0a4b4f43fa63c6c26255d11ccd90e8c0d7ec650d5d66233beb",
+      "random_state_sha256": "eab66a82329af840c6429f34b104387c2dc31fb15e2eb6c245345f3cc33b4b5d",
+      "state_hashes_differ": true,
+      "parameter_count": 27866496,
+      "feature_dim": 768,
+      "resolved_pretrained_cfg": {
+        "architecture": "convnextv2_tiny",
+        "classifier": "head.fc",
+        "crop_mode": "center",
+        "crop_pct": 0.875,
+        "custom_load": false,
+        "first_conv": "stem.0",
+        "fixed_input_size": false,
+        "hf_hub_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k",
+        "input_size": [
+          3,
+          224,
+          224
+        ],
+        "interpolation": "bicubic",
+        "license": "cc-by-nc-4.0",
+        "mean": [
+          0.485,
+          0.456,
+          0.406
+        ],
+        "num_classes": 1000,
+        "origin_url": "https://github.com/facebookresearch/ConvNeXt-V2",
+        "paper_ids": "arXiv:2301.00808",
+        "paper_name": "ConvNeXt-V2: Co-designing and Scaling ConvNets with Masked Autoencoders",
+        "pool_size": [
+          7,
+          7
+        ],
+        "std": [
+          0.229,
+          0.224,
+          0.225
+        ],
+        "tag": "fcmae_ft_in22k_in1k",
+        "test_crop_pct": 1.0,
+        "test_input_size": [
+          3,
+          288,
+          288
+        ],
+        "url": "https://dl.fbaipublicfiles.com/convnext/convnextv2/im22k/convnextv2_tiny_22k_224_ema.pt"
+      },
+      "random_reference_pretrained_cfg": {
+        "architecture": "convnextv2_tiny",
+        "classifier": "head.fc",
+        "crop_mode": "center",
+        "crop_pct": 0.875,
+        "custom_load": false,
+        "first_conv": "stem.0",
+        "fixed_input_size": false,
+        "hf_hub_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k",
+        "input_size": [
+          3,
+          224,
+          224
+        ],
+        "interpolation": "bicubic",
+        "license": "cc-by-nc-4.0",
+        "mean": [
+          0.485,
+          0.456,
+          0.406
+        ],
+        "num_classes": 1000,
+        "origin_url": "https://github.com/facebookresearch/ConvNeXt-V2",
+        "paper_ids": "arXiv:2301.00808",
+        "paper_name": "ConvNeXt-V2: Co-designing and Scaling ConvNets with Masked Autoencoders",
+        "pool_size": [
+          7,
+          7
+        ],
+        "std": [
+          0.229,
+          0.224,
+          0.225
+        ],
+        "tag": "fcmae_ft_in22k_in1k",
+        "test_crop_pct": 1.0,
+        "test_input_size": [
+          3,
+          288,
+          288
+        ],
+        "url": "https://dl.fbaipublicfiles.com/convnext/convnextv2/im22k/convnextv2_tiny_22k_224_ema.pt"
+      }
+    },
+    "audio": {
+      "status": "PASS",
+      "model_name": "tf_efficientnetv2_b2.in1k",
+      "seed": 42,
+      "pretrained_requested": true,
+      "random_reference_requested": false,
+      "pretrained_state_sha256": "7e97f6eeaf1deee25cb9c9f7b625eaa20d3330f3620f2f21a1f4ded33192d2d7",
+      "random_state_sha256": "0d06bd1ff84712d62de49fd3a6e4855130000b154cff70aec8e34497533d26d2",
+      "state_hashes_differ": true,
+      "parameter_count": 8687086,
+      "feature_dim": 1408,
+      "resolved_pretrained_cfg": {
+        "architecture": "tf_efficientnetv2_b2",
+        "classifier": "classifier",
+        "crop_mode": "center",
+        "crop_pct": 0.89,
+        "custom_load": false,
+        "first_conv": "conv_stem",
+        "fixed_input_size": false,
+        "hf_hub_id": "timm/tf_efficientnetv2_b2.in1k",
+        "input_size": [
+          3,
+          208,
+          208
+        ],
+        "interpolation": "bicubic",
+        "license": "apache-2.0",
+        "mean": [
+          0.485,
+          0.456,
+          0.406
+        ],
+        "num_classes": 1000,
+        "pool_size": [
+          7,
+          7
+        ],
+        "std": [
+          0.229,
+          0.224,
+          0.225
+        ],
+        "tag": "in1k",
+        "test_input_size": [
+          3,
+          260,
+          260
+        ],
+        "url": "https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-effv2-weights/tf_efficientnetv2_b2-847de54e.pth"
+      },
+      "random_reference_pretrained_cfg": {
+        "architecture": "tf_efficientnetv2_b2",
+        "classifier": "classifier",
+        "crop_mode": "center",
+        "crop_pct": 0.89,
+        "custom_load": false,
+        "first_conv": "conv_stem",
+        "fixed_input_size": false,
+        "hf_hub_id": "timm/tf_efficientnetv2_b2.in1k",
+        "input_size": [
+          3,
+          208,
+          208
+        ],
+        "interpolation": "bicubic",
+        "license": "apache-2.0",
+        "mean": [
+          0.485,
+          0.456,
+          0.406
+        ],
+        "num_classes": 1000,
+        "pool_size": [
+          7,
+          7
+        ],
+        "std": [
+          0.229,
+          0.224,
+          0.225
+        ],
+        "tag": "in1k",
+        "test_input_size": [
+          3,
+          260,
+          260
+        ],
+        "url": "https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-effv2-weights/tf_efficientnetv2_b2-847de54e.pth"
+      }
+    }
+  }
+}
