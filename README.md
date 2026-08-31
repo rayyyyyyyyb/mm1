@@ -1,5 +1,7 @@
 # OV-OrthKD Collaboration Base
 
+> Current diagnostic status (2026-08-31): A0 shortcut diagnostics and the S3 pretrained-only Student control are complete and independently audited. S3 did not recover healthy temporal localization; formal Full training remains paused. Start with the [student shortcut recovery web handoff](reports/formal_reproduction/student_shortcut_recovery/WEB_REVIEW_HANDOFF.md).
+
 This package contains the core implementation of OV-OrthKD for research collaboration and method extension. The R2 branch adds a fail-closed conference-reproduction evidence chain while keeping the historical collaboration path separately labelled.
 
 Paper: *If You Hear It, Help Find It: Orthogonal Knowledge Distillation for Open-Vocabulary Audio-Visual Event Localization* (ACM Multimedia 2026).

@@ -2938,3 +2938,9 @@
 - 新建 `S3_RESULTS.md` 与 `WEB_REVIEW_HANDOFF.md`，补全 `IMPLEMENTATION_AUDIT.md`、evidence inventory 和正式复现总入口；报告明确区分“全局数值处于常见范围”和“没有恢复健康定位”，列出运行 commit、完整测试、两层 audit、T=10、S0/S3 对比、shortcut/content/path-scale 结果、恢复门槛及仍禁止启动的实验。第一次直接用错误的旧 schema 路径读取 prediction/final-metrics 得到 `$null`，没有据此写结论；检查真实顶层字段后逐项重算。第一次报告 literal 断言错误要求中英文报告同时含 `22.23x`，exit 1；拆分中英文预期后数值/文本/7 个小型文件 SHA 校验 PASS，history=3、global step=1200、test segments=58,200、两项 audit=PASS。
 - 把仓库 65-file/523,136-byte 小型报告树复制到外层 `复现/student_shortcut_recovery/review_package`。首次机械复制错误使用 `Copy-Item -LiteralPath` 加 `*`，得到 0 files/mismatch 65；改用 `-Path` 后逐文件 SHA mismatch=0。另把最终 posthoc worker/launch/resume/preflight 覆盖回外层顶层，四文件与仓库副本哈希完全一致；worker/launch/resume SHA 为 `d7932dda...6926e`/`a510af50...b559`/`fee42638...5882`。
 - 独立代码检查覆盖报告内全部 18 个 PowerShell 文件（parser errors=0）和 5 个 Python 文件（py_compile exit 0、Ruff exit 0）。结构化证据检查实际解析 24 JSON、4 JSONL/12 records、2 YAML，全部 PASS；首轮 YAML 文件枚举误用 `Get-ChildItem -Include` 导致把 `A0_RESULTS.md` 送入 YAML parser 而 exit 1，改为显式扩展名筛选后通过。7 份 Markdown 共检查 21 个相对链接、missing=0；禁传扩展名=0、超过 2 MiB 文件=0、secret pattern 命中=0、`git diff --check` exit 0。
+
+### 693. 2026-08-31：证据提交、GitHub 发布与根入口补充
+
+- 发布前 staged 审查为 64 files/11,206 insertions；60 份报告/证据/runtime blob 的 raw 文件 SHA 与 Git index blob 全部相同，证明 `-text` 属性没有改变运行收据 bytes；staged 禁传扩展名 0，且相对已完整验证的科学提交 a0aa4d7，`src/scripts/configs/tests` 改动为 0。创建证据提交 `8cfe28d06f7ef121bf407f275f84c78b2934aa26`，message `docs: publish student shortcut recovery evidence`，提交后工作树 clean。
+- 非强制 push 新分支 `repro/student-shortcut-recovery` 成功；本地 HEAD、upstream 与 `git ls-remote` 均精确为 `8cfe28d06f7ef121bf407f275f84c78b2934aa26`。未登录网页独立打开确认仓库为 Public、分支页与 `reports/formal_reproduction/student_shortcut_recovery/WEB_REVIEW_HANDOFF.md` 页面均可访问。
+- GitHub 根 README 仍显示较早的 canonical seed42 状态，虽然正式报告入口已指向 S3；为避免网页审阅者从仓库首页误判，在根标题下新增一条 2026-08-31 状态提示和当前 handoff 相对链接。该补充与本条双份 ledger 将作为只含入口/记录的收尾提交，不修改任何科学代码、配置、测试或实验证据。
