@@ -37,7 +37,9 @@ def state_dict_sha256(state_dict: Mapping[str, torch.Tensor]) -> str:
         digest.update(name.encode("utf-8"))
         digest.update(str(contiguous.dtype).encode("ascii"))
         digest.update(json.dumps(list(contiguous.shape)).encode("ascii"))
-        digest.update(contiguous.view(torch.uint8).numpy().tobytes(order="C"))
+        digest.update(
+            contiguous.reshape(-1).view(torch.uint8).numpy().tobytes(order="C")
+        )
     return digest.hexdigest()
 
 

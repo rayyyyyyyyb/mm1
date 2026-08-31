@@ -37,6 +37,15 @@ def test_state_dict_hash_is_order_stable_and_value_sensitive() -> None:
     assert state_dict_sha256(first) != state_dict_sha256(changed)
 
 
+def test_state_dict_hash_supports_scalar_integer_buffers() -> None:
+    first = {"num_batches_tracked": torch.tensor(7, dtype=torch.long)}
+    same = {"num_batches_tracked": torch.tensor(7, dtype=torch.long)}
+    changed = {"num_batches_tracked": torch.tensor(8, dtype=torch.long)}
+
+    assert state_dict_sha256(first) == state_dict_sha256(same)
+    assert state_dict_sha256(first) != state_dict_sha256(changed)
+
+
 def test_backbone_audit_calls_true_then_false_and_receipts_different_states() -> None:
     calls: list[tuple[str, bool]] = []
 
