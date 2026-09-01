@@ -3064,3 +3064,11 @@
 
 - entry 707 追加后，仓库/外层双份 `all.md` 均为 641,827 bytes、SHA256 `d00003af5f2626e5eee3a8e5d9f662e8d2c66e0e8effb354cc587657ea45130d`，逐字节一致。发布前 diff 只有 `all.md`，11 insertions；`git diff --check` 与 staged check 均 exit 0，没有科学代码、配置、测试或结果文件变化。创建 ledger-only commit `eceb602300cf671432dd737eba7b7101330ffead`（`docs: record latest S7 diagnosis review`）并非强制 push 成功；当时本地 HEAD、upstream、`ls-remote` 三者精确相同，工作树为空。
 - 提交后再对 5090 做一次只读 Win32 process 查询，匹配 `recovery/causal_s8` 与 `recovery/causal_s9` 的进程数为 0，确认本轮没有启动 S8/S9。本条用于记录上述发布和最终无训练边界；将由独立 ledger-only 收尾提交发布，不改变任何科学判断。
+
+### 709. 2026-09-01：A–F 零训练审计阶段启动与设计锁定
+
+- 用户明确回复“开始”后，将其视为对 entry 707 所述“先 A–F、通过完整性/数据门禁后再决定 S8”的设计批准。按 using-superpowers、receiving-code-review、brainstorming、writing-plans、using-git-worktrees、test-driven-development、systematic-debugging 与 inline executing-plans 流程启动；没有使用子代理。技能文件首次组合读取因总输出 15,092 tokens 被工具截断，随后把 brainstorming/writing-plans/TDD/Codex reference 分文件完整读取，确保没有依据截断说明执行。
+- worktree 检查确认当前目录本来就是 linked worktree：git-dir=`.../.git/worktrees/OV-OrthKD-R2`、common-dir=`.../.git`，不是 submodule，branch=`repro/student-shortcut-recovery`，启动时 HEAD/upstream=`0c35328642e95f5da85eff0095ea170070d82f23`、status 空。因此遵循 worktree 技能不再嵌套创建，继续使用用户指定的本地“扩刊”目录。仓库 `AGENTS.md` 搜索无命中、rg exit 1；没有额外项目级指令。
+- 完整重读网页端 19,998-byte A–F 诊断、S7 trajectory runtime、checkpoint modality/shortcut 生产脚本及相关测试、学生模型、损失和数据集/loader 关键路径。一次文件枚举把不存在的仓库根 `runtime` 作为搜索根导致 rg os error 2，但其它真实路径结果有效；随后只使用 `reports/formal_reproduction/student_shortcut_recovery/runtime`。确认直接模型 forward、严格 T=10 offsets、现有原始/visual-zero/audio-zero/both-zero 收集器、test dataset records 与自定义 collate 都可复用。
+- 比较三种实现：生产 forward 的显式诊断控制、临时 PyTorch hook、在审计脚本复制 fusion。锁定第一种：只增加默认关闭的精确 gate override 和返回已经计算的 visual-backbone tensor，避免 hook 泄漏/极端权重近似和外部 fusion 逻辑漂移；所有默认 state/输出必须由测试证明不变。A/E/F 等纯计算与运行编排分层，F 的唯一 optimizer step 只允许发生在进程退出即丢弃的 projector+decision clone，禁止写更新 checkpoint。
+- 通过 apply_patch 新建 `docs/superpowers/specs/2026-09-01-zero-training-audits-design.md`，锁定 A–F 范围、S8 条件门禁、单类 strata 的 AUROC=`null` 语义、reconstructed-zero-step 证据边界、全 test JPG 内容审计、五点 gate grid、deterministic audio donor、Full projector clone、独立 artifact audit、5090 持久/可恢复运行与禁传大文件策略。self-review 的 placeholder scan 无命中/rg exit 1（正常“未找到”语义），标题结构完整，`git diff --check` exit 0；当前仍未改科学代码、未启动 GPU 审计或 S8。
