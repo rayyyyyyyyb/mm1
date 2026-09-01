@@ -3301,3 +3301,8 @@
 
 - 在即将声明完成和提交前使用 verification-before-completion 技能，重新运行而非只引用旧收据。锁定 5090 venv、显式 MinGit PATH、exact audit candidate `E:\OV-OrthKD-R3\student-shortcut-s8-audit-6f39172`，执行完整 `python -m pytest -q -p no:cacheprovider`：`536 passed in 343.74s`、pytest exit0；HEAD before/after 均为 `6f39172120ab877c246d3fd6fbd1a4699a6f2871`，dirty before/after 均为 0。
 - 运行期间约 26% 后有两段长时间无 stdout，但 SSH session 持续存活，随后推进至 40/53/67/80/94/100%，无 failure/ERROR；没有将阶段性静默误判为结束。该 fresh full result 与先前 clean verification `536 passed in 347.58s` 相互独立，支持提交当前仅含控制/报告/小证据的发布层变更。
+
+### 748. 2026-09-01：S8 证据主提交与 GitHub 推送
+
+- 提交前 staged 集合精确为 37 个文件，`git diff --cached --check` exit0、无 unstaged/untracked；主提交中的 `all.md` 为 703,325 bytes，提交前双 ledger SHA256 均为 `42e09fe7da1c6210ac2309b4f3f25c423d8ad3d4666fe2c3e771f5f2989c778e`，逐字节一致。创建主发布 commit `dedcb96347fddf383c76e4cebfdac8b9fab50613`，message=`docs: publish S8 diagnostic evidence`，37 files、8,981 insertions/29 deletions；包括 S8 报告、网页交接、完整小证据、恢复控制和计划/ledger 更新，不含大文件。
+- 推送前 `@{upstream}..HEAD` 精确只有 `6f39172 fix: audit real S8 fusion block schema` 与 `dedcb96 docs: publish S8 diagnostic evidence`。执行 `git push origin repro/student-shortcut-recovery` exit0，远端从 `176052c` 前进至 `dedcb96`；GitHub 分支已包含 scientific reader fix 和完整 S8 发布证据。下一提交只记录本次提交/推送结果，不改变科学代码、配置或结果。
