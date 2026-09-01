@@ -90,6 +90,26 @@ def canonical_mapping_sha256(value: Mapping[str, Any]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def validate_identity_gate_config(
+    config: Mapping[str, Any], *, expected_gate_mode: str
+) -> None:
+    """Fail closed on the two identity-path causal cells supported by this audit."""
+    if expected_gate_mode not in {"learned_softmax", "fixed_equal"}:
+        raise ValueError(f"Unsupported expected gate_mode: {expected_gate_mode}")
+    if task_segments_from_config(config) != TASK_SEGMENTS:
+        raise ValueError("Identity-path diagnostic requires official T=10")
+    student = config.get("student")
+    if not isinstance(student, Mapping):
+        raise ValueError("Identity-path diagnostic requires a student config")
+    if student.get("temporal_path_mode") != "identity_passthrough":
+        raise ValueError("Expected identity_passthrough temporal path")
+    if student.get("gate_mode") != expected_gate_mode:
+        raise ValueError(
+            "Resolved student.gate_mode does not match the explicitly expected "
+            f"gate_mode {expected_gate_mode}"
+        )
+
+
 def state_dict_sha256(module: torch.nn.Module) -> str:
     digest = hashlib.sha256()
     for name, tensor in sorted(module.state_dict().items()):
@@ -871,7 +891,7 @@ def _prediction_metric_report(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="S7 A-E read-only zero/near-zero-training diagnostics"
+        description="Identity-path A-E read-only zero/near-zero-training diagnostics"
     )
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--git", type=Path, required=True)
@@ -880,6 +900,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--prediction-output", type=Path, required=True)
     parser.add_argument("--expected-commit", required=True)
+    parser.add_argument(
+        "--expected-gate-mode",
+        choices=("learned_softmax", "fixed_equal"),
+        default="learned_softmax",
+    )
     parser.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
     parser.add_argument("--shuffle-repeats", type=int, default=100)
     parser.add_argument("--image-examples", type=int, default=8)
@@ -909,13 +934,14 @@ def main() -> None:
 
     training_audit = _read_json(args.training_audit)
     if training_audit.get("status") != "PASS" or int(training_audit.get("task_segments", -1)) != TASK_SEGMENTS:
-        raise ValueError("S7 training audit is not a PASS T=10 receipt")
+        raise ValueError("Identity-path training audit is not a PASS T=10 receipt")
     config_path = args.training_output / "resolved_config.yaml"
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    if not isinstance(config, dict) or task_segments_from_config(config) != TASK_SEGMENTS:
-        raise ValueError("S7 resolved config does not enforce official T=10")
-    if config.get("student", {}).get("temporal_path_mode") != "identity_passthrough":
-        raise ValueError("Expected S7 identity_passthrough config")
+    if not isinstance(config, dict):
+        raise ValueError("Identity-path resolved config must be a mapping")
+    validate_identity_gate_config(
+        config, expected_gate_mode=args.expected_gate_mode
+    )
     config_sha = canonical_mapping_sha256(config)
     seed = int(config.get("seed", 42))
     set_seed(
@@ -928,7 +954,7 @@ def main() -> None:
     diagnostics_path = args.training_output / "training_diagnostics.jsonl"
     diagnostics = _read_jsonl(diagnostics_path)
     if not diagnostics:
-        raise ValueError("S7 training diagnostics are empty")
+        raise ValueError("Identity-path training diagnostics are empty")
     reconstructed_receipt = verify_reconstructed_zero_step(diagnostics[0], student)
     if reconstructed_receipt["student_state_sha256"] != reconstructed_state_sha:
         raise RuntimeError("Reconstructed zero-step identity changed during verification")
@@ -936,7 +962,7 @@ def main() -> None:
     train_loader, validation_loader, test_loader = create_ov_avel_data_loaders(config)
     del train_loader, validation_loader
     if not isinstance(test_loader, DataLoader):
-        raise RuntimeError("S7 zero-training audit requires a test DataLoader")
+        raise RuntimeError("Identity-path audit requires a test DataLoader")
     test_records = test_loader.dataset.records
     ids = [str(record.get("id", index)) for index, record in enumerate(test_records)]
     queries = [
@@ -1035,7 +1061,11 @@ def main() -> None:
     report = {
         "schema_version": 1,
         "status": "PASS",
-        "claim_level": "read_only_s7_zero_near_zero_training_diagnostics",
+        "claim_level": (
+            "read_only_s7_zero_near_zero_training_diagnostics"
+            if args.expected_gate_mode == "learned_softmax"
+            else "read_only_identity_fixed_equal_zero_near_zero_training_diagnostics"
+        ),
         "protocol": {
             "task_segments": TASK_SEGMENTS,
             "temporal_conversion": "forbidden",
@@ -1051,6 +1081,7 @@ def main() -> None:
             },
             "seed": seed,
             "test_views": 1,
+            "expected_gate_mode": args.expected_gate_mode,
             "shuffle_repeats": args.shuffle_repeats,
         },
         "git": {

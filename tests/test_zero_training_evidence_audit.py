@@ -8,7 +8,10 @@ from typing import Any
 import numpy as np
 import pytest
 
-from scripts.audit_zero_training_evidence import audit_zero_training_evidence
+from scripts.audit_zero_training_evidence import (
+    audit_identity_ae_evidence,
+    audit_zero_training_evidence,
+)
 from scripts.diagnose_s7_zero_training import (
     GATE_GRID,
     TIMELINE_STATE_LABELS,
@@ -232,6 +235,30 @@ def test_valid_compact_evidence_is_independently_recomputed(tmp_path: Path) -> N
     assert result["prediction_archive"]["mode_count"] == 17
     assert result["independent_metrics"]["sample_count"] == 4
     assert result["claim_level"] == "artifact_integrity_only"
+
+
+def test_fixed_equal_identity_ae_can_be_audited_without_reusing_full_probe(
+    tmp_path: Path,
+) -> None:
+    fixture = _fixture(tmp_path)
+    fixture["ae_report"]["protocol"]["expected_gate_mode"] = "fixed_equal"
+    fixture["ae_report"]["claim_level"] = (
+        "read_only_identity_fixed_equal_zero_near_zero_training_diagnostics"
+    )
+
+    result = audit_identity_ae_evidence(
+        ae_report=fixture["ae_report"],
+        prediction_archive=fixture["prediction_path"],
+        training_audit=fixture["training_audit"],
+        expected_commit=fixture["expected_commit"],
+        expected_gate_mode="fixed_equal",
+        git_head=fixture["expected_commit"],
+        git_status="",
+    )
+
+    assert result["status"] == "PASS"
+    assert result["expected_gate_mode"] == "fixed_equal"
+    assert result["scientific_success_claimed"] is False
 
 
 @pytest.mark.parametrize(

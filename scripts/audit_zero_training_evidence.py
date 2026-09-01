@@ -411,6 +411,99 @@ def audit_zero_training_evidence(
     }
 
 
+def audit_identity_ae_evidence(
+    *,
+    ae_report: Mapping[str, Any],
+    prediction_archive: str | Path,
+    training_audit: Mapping[str, Any],
+    expected_commit: str,
+    expected_gate_mode: str,
+    git_head: str,
+    git_status: str,
+) -> dict[str, Any]:
+    """Independently audit identity-path A-E artifacts without coupling them to F."""
+    if expected_gate_mode not in {"learned_softmax", "fixed_equal"}:
+        raise ValueError(f"Unsupported expected gate mode: {expected_gate_mode}")
+    _assert_finite_json(ae_report, "ae_report")
+    _assert_finite_json(training_audit, "training_audit")
+    if len(expected_commit) != 40 or git_head != expected_commit or git_status:
+        raise ValueError("Evidence repository commit/status is not exact and clean")
+    git = ae_report.get("git")
+    if (
+        not isinstance(git, Mapping)
+        or git.get("implementation_commit") != expected_commit
+        or git.get("status") != "clean"
+    ):
+        raise ValueError("A-E implementation commit/status mismatch")
+    if training_audit.get("status") != "PASS" or int(
+        training_audit.get("task_segments", -1)
+    ) != TASK_SEGMENTS:
+        raise ValueError("Identity-path training audit is not PASS T=10")
+    audit_commit = training_audit.get("git_commit")
+    if audit_commit is not None and audit_commit != expected_commit:
+        raise ValueError("Identity-path training audit commit mismatch")
+    protocol = ae_report.get("protocol")
+    if not isinstance(protocol, Mapping) or protocol.get(
+        "expected_gate_mode"
+    ) != expected_gate_mode:
+        raise ValueError("A-E expected gate mode is absent or incorrect")
+    expected_claim = (
+        "read_only_s7_zero_near_zero_training_diagnostics"
+        if expected_gate_mode == "learned_softmax"
+        else "read_only_identity_fixed_equal_zero_near_zero_training_diagnostics"
+    )
+    if ae_report.get("claim_level") != expected_claim:
+        raise ValueError("A-E claim level does not bind the expected gate mode")
+
+    prediction_path = Path(prediction_archive).resolve()
+    archive = _load_prediction_archive(prediction_path)
+    _validate_ae_structure(ae_report, archive)
+    source_count = _verify_source_receipts(ae_report.get("sources", {}), "ae.sources")
+    prediction_receipt = ae_report["sources"].get("prediction_archive")
+    if not isinstance(prediction_receipt, Mapping) or Path(
+        str(prediction_receipt.get("path", ""))
+    ).resolve() != prediction_path:
+        raise ValueError("A-E prediction receipt does not bind supplied archive")
+    repeats = int(protocol.get("shuffle_repeats", 0))
+    seed = int(protocol.get("seed", -1))
+    if repeats < 1 or seed < 0:
+        raise ValueError("A-E metric recomputation seed/repeats are invalid")
+    independent = summarize_label_strata(
+        archive["predictions"],
+        shuffle_repeats=repeats,
+        seed=seed,
+        threshold=0.5,
+    )
+    _assert_equal(
+        independent,
+        ae_report.get("intervention_metrics"),
+        location="intervention_metrics",
+    )
+    metrics_payload = json.dumps(
+        independent, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")
+    return {
+        "schema_version": 1,
+        "status": "PASS",
+        "claim_level": "artifact_integrity_only",
+        "task_segments": TASK_SEGMENTS,
+        "expected_gate_mode": expected_gate_mode,
+        "git": {"head": git_head, "status": "clean"},
+        "verified_source_receipt_count": source_count,
+        "prediction_archive": {
+            **_source_receipt(prediction_path),
+            "mode_count": len(archive["modes"]),
+            "sample_count": int(archive["arrays"]["ids"].size),
+            "segment_count": int(archive["arrays"]["labels"].size),
+        },
+        "independent_metrics": independent,
+        "independent_metrics_canonical_sha256": hashlib.sha256(
+            metrics_payload
+        ).hexdigest(),
+        "scientific_success_claimed": False,
+    }
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8-sig"))
     if not isinstance(value, dict):

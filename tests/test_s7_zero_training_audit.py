@@ -20,6 +20,7 @@ from scripts.diagnose_s7_zero_training import (
     input_jacobian_norms,
     intervention_mode_names,
     reserve_output_paths,
+    validate_identity_gate_config,
     verify_reconstructed_zero_step,
 )
 from src.data.ov_avel_dataset import ov_avel_collate_fn
@@ -353,3 +354,46 @@ def test_full_intervention_matrix_is_aligned_t10_and_read_only() -> None:
     after = student.state_dict()
     assert all(torch.equal(before[name], after[name]) for name in before)
     assert all(parameter.grad is None for parameter in student.parameters())
+
+
+@pytest.mark.parametrize("gate_mode", ["learned_softmax", "fixed_equal"])
+def test_identity_gate_config_accepts_only_the_explicit_expected_mode(
+    gate_mode: str,
+) -> None:
+    config = {
+        "data": {"num_segments": 10},
+        "student": {
+            "temporal_path_mode": "identity_passthrough",
+            "gate_mode": gate_mode,
+        },
+    }
+
+    validate_identity_gate_config(config, expected_gate_mode=gate_mode)
+    other = "fixed_equal" if gate_mode == "learned_softmax" else "learned_softmax"
+    with pytest.raises(ValueError, match="gate_mode"):
+        validate_identity_gate_config(config, expected_gate_mode=other)
+
+
+def test_identity_gate_config_rejects_nonofficial_timeline_or_transformer() -> None:
+    with pytest.raises(ValueError, match="T=10"):
+        validate_identity_gate_config(
+            {
+                "data": {"num_segments": 16},
+                "student": {
+                    "temporal_path_mode": "identity_passthrough",
+                    "gate_mode": "fixed_equal",
+                },
+            },
+            expected_gate_mode="fixed_equal",
+        )
+    with pytest.raises(ValueError, match="identity_passthrough"):
+        validate_identity_gate_config(
+            {
+                "data": {"num_segments": 10},
+                "student": {
+                    "temporal_path_mode": "transformer",
+                    "gate_mode": "fixed_equal",
+                },
+            },
+            expected_gate_mode="fixed_equal",
+        )

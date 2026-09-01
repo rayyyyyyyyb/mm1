@@ -3187,3 +3187,30 @@
 
 - 精确暂存 19 个小型文档/JSON/ledger/plan 文件；staged forbidden extensions NONE，cached diff check 无输出，stat 为 6,207 insertions/21 deletions。创建 commit `5f7ea2228eb0f90d6d8623c26b5240e2f5ebe15f`（`docs: publish zero-training audit evidence`），随后 worktree clean。push `repro/student-shortcut-recovery` 成功，GitHub 从 `0c35328` 前进到 `5f7ea22`；local HEAD、upstream 与 `git ls-remote origin refs/heads/repro/student-shortcut-recovery` 均精确为 `5f7ea2228eb0f90d6d8623c26b5240e2f5ebe15f`，`SHA_EQUALITY_PASS`。
 - Task 6 Step 6 据实完成。依据 A–F integrity PASS、官方帧非相同/损坏、reconstructed step zero 有证据、全链 T=10、所有 source/checkpoint SHA resolved 五项，Task 7 Step 1 blocker gate 据实通过；只授权 S8 `identity_passthrough + fixed_equal` 单变量 cell。此刻尚未创建/启动 S8，正式 Full 与 canonical loss 修改仍禁止。
+
+### 729. 2026-09-01：Task 6 closure 提交与 S8 TDD RED
+
+- 将 entry 728 与 Task 6 Step 6/Task 7 Step 1 勾选创建 commit `164d49ce506faf6c54300f8de4d0fdbc2aa82d60`（`docs: record zero-training publication gate`），2 files/7 insertions/2 deletions；push 成功，local/upstream/remote SHA 三者一致，worktree clean。
+- 只读检查 S7 YAML 与现有 config/model tests，确认模型已有 tested `fixed_equal` gate，S7 当前为 seed42、identity passthrough、random initialization、augmentation on、concat fusion、Student-only BCE、3×400 exposure、checkpoints 400/800/1200。先用 apply_patch 新增 S8 配置测试，规定归一化 S7→S8 唯一差异 `{student.gate_mode}`，并检查全部协议锁与同 seed state-dict bitwise identity。
+- 首次本机 `py -3.11 -m pytest` 因该环境没有 pytest、exit 1，未收集测试，不计 RED；第二次 Anaconda Python 在 import NumPy/Torch 的 `blas_fpe_check` fatal abort、exit 1，也未计 RED。为不污染 exact c181ffb candidate，在 5090 新建隔离 clone `E:\OV-OrthKD-R3\s8-red-164d49c`，source/target HEAD 均为 clean c181ffb；上传测试后本地/远端 SHA 同为 `a5b30488...3d81`。真实 remote pytest 得到三个精确 `S8_PATH FileNotFoundError`，`3 failed in 7.16s`、`RED_EXIT=1`，构成有效 TDD RED；没有 S8 config/worker/training。
+
+### 730. 2026-09-01：S8 配置 GREEN、交叉回归与最新诊断复核
+
+- 通过 apply_patch 从 S7 机械生成 `ov_orthkd_s8_identity_fixed_gate_seed42.yaml`；独立 raw diff 首次发现除三个预期字段外还有文件末多一个空行，已去掉，最终 S7→S8 raw diff 只有 variant、`student.gate_mode: learned→fixed_equal`、log_dir 三行，归一化语义差异仅为 `student.gate_mode`。S8 原始字节 7,823，SHA256 `9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505`，本地/远端一致。
+- 隔离 5090 clone 上的配置 TDD GREEN 为 `3 passed in 7.53s`、exit 0。独立交叉回归为：本机 Ruff `All checks passed!`、exit 0；`py_compile` exit 0；远端合并 S8/S7 config、training reproducibility 和 paper-faithfulness 共 `72 passed in 13.83s`、exit 0；`git diff --check` exit 0。Task 7 Step 2 据实勾选，尚未启动 S8。
+- 再次完整阅读网页端两份诊断（附件 18,205/19,998 bytes），确认 S8 是 Transformer/Identity × learned/fixed 的第四个因果 cell，而非正式 Full 复现。预注册的 S8 主要诊断为 mixed-only audio-shuffle AP/AUROC drop、mixed-only positive-vs-negative concordance、visual-zero drop、pre-gate visual-token variance、visual encoder gradient norm、fusion Wv/Wa/Wq 与 input Jacobian；将结果分为“恢复视觉敏感性”、“视觉 token 仍变化但 concat MLP 主动压制”、“觉 token 本身近常数”三类证据解释。S8 后仍禁止自行启动 S9、Visual-only 或 Full。
+
+### 731. 2026-09-01：S8 诊断复用的显式 gate 锁 TDD
+
+- 先在 `test_s7_zero_training_audit.py` 增加 learned/fixed 两类 identity gate config 的正反测试；隔离 5090 clone 在实现函数不存在时得到有效 RED：`ImportError: cannot import name validate_identity_gate_config`、collection exit 2。通过 apply_patch 将既有 A–E 诊断最小化泛化：严格验证 T=10、identity_passthrough 和 CLI 显式 `--expected-gate-mode`，并把 claim/protocol 绑定实际 gate mode；不改 17-mode 推理、指标或干预实现。远端 GREEN 为 `3 passed, 12 deselected in 6.05s`、exit 0。
+
+### 732. 2026-09-01：S8 训练/事后独立审计 TDD
+
+- 先新建 `test_s8_result_audit.py`，要求 temporal encoder 与 fixed gate 从 reconstructed initial 到 400/800/1200 精确不变、segment head 真实改变、inactive gradients 精确为 0，以及不自创成功阈值地提取 mixed shuffle/concordance、visual-zero、visual std、Wv/Wa/Wq 与 Jacobian。隔离 5090 在模块不存在时有效 RED 为 `ModuleNotFoundError: scripts.audit_s8_results`、collection exit 2。通过 apply_patch 实现 `audit_s8_results.py`，其 CLI 还锁定 exact clean commit/config SHA、S7→S8 唯一 gate 差异、3×400/T=10/两份 prediction NPZ、checkpoint role/state/fingerprint 和 runtime behavior。
+- 再先扩展 zero-training auditor 测试，在新函数不存在时获得 `ImportError: audit_identity_ae_evidence`、collection exit 2；实现后可在不重用 Full projector F 的前提下，对 S8 A–E 的 17-mode NPZ、donor maps、mixed metrics、source receipts、clean commit 和无变更边界独立重算。新建薄 CLI `audit_s8_posthoc.py`，只声明 artifact integrity 和 exact metrics，`scientific_success_claimed=false`、`next_experiment_authorized=false`、`formal_full_training_authorized=false`。组合远端 GREEN 为 `31 passed in 11.36s`、exit 0；本机 compile exit 0；首轮 Ruff 仅报新 CLI 因 sys.path 导致的两个 E402，已以项目惯用的精确 `# noqa: E402` 修正，尚待下一轮完整复核。
+
+### 733. 2026-09-01：S8 实现独立复核与全量测试环境纠正
+
+- 修正 E402 后，本机 Ruff、py_compile、`git diff --check` 均 exit 0；本地 CLI help 因 `py -3.11` 未安装 torch 而三个均 exit 1，没有进入 argparse，不计为 CLI 失败。同一三个 help 在锁定 5090 venv 均 exit 0；S8 config/result/evidence、S7 A–E、zero-training、training reproducibility 和 paper-faithfulness 扩大交叉回归为 `107 passed in 15.71s`、exit 0。
+- 逐段独立审查发现事后摘要原先固定读 step 1200，而 best 可能是 400/800/1200 任一锁定 checkpoint；先扩展测试，随后改为从 A–E `sources.best_checkpoint.global_step` 取值，同时输出所有存在的 timeline 精确指标。另一复核修正为保持 S7 默认 claim 文字兼容，只在 fixed_equal S8 使用新 claim；不改 S7 诊断数值语义。最终 raw S7→S8 YAML diff 仍只有 variant/gate/log_dir 三行，归一化科学差异只有 gate。
+- 第一轮 5090 全仓测试忘记将 MinGit 加入 PATH；结果 `500 passed, 36 failed in 228.40s`，36 个 traceback 全部为测试 fixture 调用字面 `git` 时的 `FileNotFoundError [WinError 2]`，无 S8 断言/代码失败，因此该轮不计全仓 PASS。随后以 `E:\OV-OrthKD-R3\tools\mingit-2.55.0.5\root\cmd` 显式置于 PATH 重跑。期间一次只读 CIM inline query 错把 `$_` 转义为字面 `\$_.CommandLine`，产生大量 command-not-found 且无有效状态；改用 UTF-16LE encoded PowerShell 后确认重跑 pytest 子进程正在运行。尚未把该重跑计为 PASS，尚未启动 S8 训练。

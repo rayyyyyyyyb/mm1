@@ -262,7 +262,7 @@ Commit message: `docs: publish zero-training audit evidence`. Verify local HEAD,
 
 Block S8 if A–F integrity is not PASS, official frame content is corrupt/identical, reconstructed step zero cannot be supported, `T!=10`, or any source/checkpoint hash is unresolved. Otherwise authorize only the identity+fixed-equal cell.
 
-- [ ] **Step 2: If authorized, perform config TDD**
+- [x] **Step 2: If authorized, perform config TDD**
 
 Write a failing test proving S8 differs from S7 only at `student.gate_mode`, then add the config and make the test pass. Preserve seed, 3×400 exposure, random initialization, augmentation, concat fusion, identity temporal path, Student-only BCE, data/evaluator locks, and checkpoint schedule.
 
