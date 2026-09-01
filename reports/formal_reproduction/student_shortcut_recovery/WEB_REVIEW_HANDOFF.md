@@ -1,14 +1,22 @@
 # Student shortcut recovery：网页审查交接
 
-日期：2026-09-01
+日期：2026-09-02
 
-当前状态：**S8 identity + fixed-equal-gate 单变量诊断已经完成并通过独立产物审计。视觉表征、梯度和局部 Jacobian 已恢复，但 visual-zero mixed AP 只下降 `0.000632`，符合预先允许的证据模式 2：视觉信息在 concat fusion/decision 行为中仍被抑制。没有自动授权 S9 或正式 Full。**
+当前状态：**S9 paper-additive 单变量诊断已经完成。训练、A–E 与独立 posthoc 产物审计均 PASS；但预注册科学判定为 FAIL：visual-zero mixed AP/AUROC 略升，ΔC 仅 `0.000056`，未恢复视觉内容的标签对齐贡献。没有授权任何下一实验或正式 Full。**
 
-这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough；S8 相对 S7 仅将 gate 从 learned softmax 改为从初始化起固定 `0.5/0.5`。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
+这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough；S8 相对 S7 仅将 gate 从 learned softmax 改为从初始化起固定 `0.5/0.5`；S9 相对 S8 仅将 fusion 从 concat MLP 改为 paper-additive。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
 
-## 先看结论
+## 先看结论：S9
 
-最新 S8 证据见 [S8_RESULTS.md](S8_RESULTS.md)。S8 best test AP/AUROC、binary micro F1@0.5、官方 segment/event F1@0.5 分别为 `0.769761/0.674486/0.687314/0.537494/0.502510`；相对 S7，AP/AUROC/segment F1 分别为 `+0.011156/+0.005313/+0.007208`。这说明数值仍在正常范围且全局排序继续改善，不是训练崩溃。
+完整结果见 [S9_RESULTS.md](S9_RESULTS.md)。S9 的唯一科学变化是 `student.fusion_mode=concat_mlp_query_conditioned→paper_additive_query_conditioned`，保持 fixed `0.5/0.5` gate、identity temporal path、seed42、Student-only BCE 和三轮 400-batch exposure。test AP/AUROC 为 `0.774657/0.679398`，相对 S8 仅 `+0.004896/+0.004912`；这不是科学成功门槛。
+
+在 1,941 个 mixed-label 视频上，原始 AP/C 为 `0.657439/0.636175`，visual-zero AP/C 为 `0.657447/0.636118`。因此 `ΔAP=-0.0000082`、`ΔAUROC=-0.0000045`、`ΔC=+0.0000562`，同时两个 ranking 效应非正，严格触发预注册 FAIL。音频置零 AP 降 `0.035235`，原始 temporal shuffle AP drop 为 `0.035437`，说明审计本身能测到内容/时序依赖，但 additive readout 没有让视觉内容成为有效排序依据。A–E 与 posthoc artifact integrity 均 PASS；科学 FAIL 不等于运行或证据损坏。
+
+S9 的 5090 独立再审计与正式 posthoc 字节一致，且两者都写入 `next_experiment_authorized=false`、`formal_full_training_authorized=false`。这只能拒绝当前 additive 控制，不能把某个具体 downstream 层宣称为唯一根因。
+
+## S8 背景结论
+
+S8 证据见 [S8_RESULTS.md](S8_RESULTS.md)。S8 best test AP/AUROC、binary micro F1@0.5、官方 segment/event F1@0.5 分别为 `0.769761/0.674486/0.687314/0.537494/0.502510`；相对 S7，AP/AUROC/segment F1 分别为 `+0.011156/+0.005313/+0.007208`。这说明数值仍在正常范围且全局排序继续改善，不是训练崩溃。
 
 更关键的是表征层恢复：S8 step 1200 的 visual-backbone/projected temporal std 为 `0.138895/0.056053`，分别约为 S7 的 `40.7x/53.3x`；visual Jacobian 从 S7 的 `0.004885` 提升到 `0.274656`，step-800 visual-encoder gradient 也由约 `1.96e-5` 提升至 `0.041727`。但在 1,941 个 mixed 样本上，visual-zero AP 仅从 `0.649065` 变为 `0.648434`，下降 `0.000632`；audio-zero/both-zero 则下降 `0.030958/0.031151`，100 次样本内 temporal shuffle 平均下降 `0.034302`。因此固定 gate 确实阻止了视觉 backbone 表征塌缩，却没有让视觉内容成为最终排序的有效依据；剩余问题位于 concat fusion/decision 将视觉表征转化为标签相关决策的过程中。
 
@@ -53,10 +61,14 @@ S4 test AP/AUROC/F1@0.5 为 `0.703470/0.596009/0.540393`，相对 S0 分别变�
 - S8 配置 canonical-LF SHA256：`9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505`；compileall exit 0，5090 全量 `536 passed in 346.15s`。
 - S8 training/A–E/post-hoc audits：均为 PASS，SHA256 分别为 `7aa1108a8f536f720735edec5183d9846d52e8b28ce7236db2f5121354bc6a11`、`54baa6c27b286226bce5698ef0a3e56456aadf739c577915d5a57c82af55ca7d`、`7784887d05199ae4d70a81c29d497d4a9cd6c689a0746d56aa459b83df4e0d5b`。
 - S8 post-hoc reader fix：`6f39172120ab877c246d3fd6fbd1a4699a6f2871`；真实 schema 回归测试 `3 passed`、隔离 cross-suite `107 passed`、干净候选全量 `536 passed in 347.58s`。恢复只补跑 post-hoc，未重训、未重跑 A–E。
+- S9 scientific/runtime commit：`b8ea747dd792c939251152ead734d1826c26980d` / `31497d58eb5d17e60cbebc6afa1bef5bcecb37a7`；相对 S8 唯一科学变化为 `student.fusion_mode=concat_mlp_query_conditioned→paper_additive_query_conditioned`。
+- S9 配置 canonical-LF SHA256：`61942acb92fe0a9a1a87a828764073303761328783b515c606e97d8f10e26cbe`；exact candidate full suite `555 passed in 372.02s`，exit 0。
+- S9 training/A–E/posthoc audits：均为 artifact PASS，SHA256 分别为 `a0a1b35fae2a5c5cf352e406b57e8f2d7cdd7828fe837f19f0230f7b03f0a7c4`、`54391fa046dd7ec2900bc613aabcb6f1200fa59e8d18b3a2b0d8da2ac6dae264`、`a9a3040738f5a1b2e003838c36960e10b0dbae77a88e3d1a3170d75aa4f7a740`；独立再审计与正式 posthoc SHA 完全一致。
+- S9 worker exit code=0，阶段顺序为 `s9_training→training_audit→s9_ae→posthoc_audit`；A–E 17 modes、5,820 samples/58,200 T=10 segments、100 shuffles。科学分类严格为 FAIL，原因 `all_visual_effects_below_preregistered_fail_thresholds`，`next_experiment_authorized=false`、`formal_full_training_authorized=false`。
 - validation/test prediction 分别含 57,980/58,200 个有序 segment，每个样本严格为索引 `0..9`。
 - training AP、保存 NPZ AP 与 strict checkpoint rerun AP 在 `1e-12` 内一致；运行前后 Git HEAD exact、dirty=0。
 
-## S0/S3/S4/S7/S8 对比
+## S0/S3/S4/S7/S8/S9 对比
 
 | Run | 唯一科学变化 | Test AP | AUROC | F1@0.5 | 内容/时序诊断 |
 |---|---|---:|---:|---:|---|
@@ -65,31 +77,33 @@ S4 test AP/AUROC/F1@0.5 为 `0.703470/0.596009/0.540393`，相对 S0 分别变�
 | S4 | `train_augment true→false` | 0.703470 | 0.596009 | 0.540393 | 更快塌缩；both-zero AP 0.749499 |
 | S7 | `temporal Transformer→identity` | 0.758605 | 0.669173 | 0.530286 | 排序改善但视觉仍为零贡献；both-zero AP 0.733402 |
 | S8 | `learned gate→fixed 0.5/0.5` | 0.769761 | 0.674486 | 0.537494 | 视觉表征恢复但 visual-zero mixed AP drop 仅 0.000632 |
+| S9 | `concat MLP→paper additive` | 0.774657 | 0.679398 | 0.525174 | artifact PASS；visual-zero mixed AP/C 不降，科学判定 FAIL |
 
-S3 说明“只开学生预训练”不充分；S4 说明“完全关闭现有增强”不但不充分，而且使塌缩更严重；S7 说明 bypass temporal Transformer 能改善排序，却不能恢复视觉路径；S8 说明固定等权 gate 能恢复视觉表征和梯度，但 concat fusion/decision 仍没有把视觉内容用于最终排名。这些诊断都没有给出启动正式 Full 的依据。
+S3 说明“只开学生预训练”不充分；S4 说明“完全关闭现有增强”不但不充分，而且使塌缩更严重；S7 说明 bypass temporal Transformer 能改善排序，却不能恢复视觉路径；S8 说明固定等权 gate 能恢复视觉表征和梯度，但 concat fusion/decision 仍没有把视觉内容用于最终排名；S9 进一步显示在保持 S8 其余条件不变时，替换为论文式 additive readout 仍未产生视觉因果效应。这些诊断都没有给出启动正式 Full 的依据。
 
 ## 建议阅读顺序
 
-1. [S8 完整结果、三种证据模式与当前边界](S8_RESULTS.md)
-2. [S8 independent post-hoc audit](evidence/s8/posthoc/s8_posthoc_audit.json)
-3. [S8 full A–E evidence](evidence/s8/posthoc/s8_zero_training_ae.json)
-4. [S8 training audit](evidence/s8/control/s8_training_audit.json)
-5. [A–F zero/near-zero-training 审计与 S8 前置决策](ZERO_TRAINING_AUDITS.md)
-6. [A–F 独立 artifact audit](evidence/zero_training/zero_training_artifact_audit.json)
-7. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
-8. [S4 完整结果与恢复门槛](S4_RESULTS.md)
-9. [S3 完整结果与恢复门槛](S3_RESULTS.md)
-10. [A0 四组捷径与模态基线](A0_RESULTS.md)
-11. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
-12. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
+1. [S9 完整结果、预注册门槛与当前边界](S9_RESULTS.md)
+2. [S9 independent posthoc audit](evidence/s9/posthoc/s9_posthoc_audit.json)
+3. [S9 independent posthoc re-audit](evidence/s9/posthoc/s9_posthoc_reaudit.json)
+4. [S9 full A–E evidence](evidence/s9/posthoc/s9_zero_training_ae.json)
+5. [S9 training audit](evidence/s9/control/s9_training_audit.json)
+6. [S8 完整结果、三种证据模式与背景](S8_RESULTS.md)
+7. [A–F zero/near-zero-training 审计与前置决策](ZERO_TRAINING_AUDITS.md)
+8. [A–F 独立 artifact audit](evidence/zero_training/zero_training_artifact_audit.json)
+9. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
+10. [S4 完整结果与恢复门槛](S4_RESULTS.md)
+11. [S3 完整结果与恢复门槛](S3_RESULTS.md)
+12. [A0 四组捷径与模态基线](A0_RESULTS.md)
+13. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
+14. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
 
 ## 希望独立审阅者重点判断
 
-1. S8 已恢复 visual temporal std、梯度和局部 Jacobian，但 visual-zero AP drop 仍只有 `0.000632`；下一项应怎样以单变量区分 concat-fusion MLP、decision projection 和 segment head 的抑制/抵消？
-2. 在不修改 canonical loss、不启动 Full 的边界内，是否应先做零训练 readout/linear-probe 或一次 bounded Visual-only control，并应预注册哪些视觉内容依赖门槛？
-3. S8 temporal shuffle 和 audio-zero 已产生约 `0.03` AP 影响，但 visual-zero 近乎不变；checkpoint selection 是否应同时约束 global AP、visual-zero drop、audio-zero drop 和时序 shuffle drop？
-4. 网页审查是否同意把 S8 判定为证据模式 2，并在任何后续执行前给出唯一、可审计、带成功/失败阈值的实验授权？
+1. S9 已在 additive readout 下仍显示 visual-zero 近乎不变；在不改变 canonical loss 或启动 Full 的边界内，下一项是否应做零训练 readout/linear-probe，以区分 representation 与 label alignment？
+2. S9 的 forced visual concordance=`0.550823`、forced-visual shuffle AP drop=`0.001726`，是否支持先审查 visual teacher/projector target 对齐，而不是继续改变 fusion 算子？
+3. 是否同意 S9 的严格科学 FAIL 与 artifact PASS 分离表述，并在任何后续执行前给出唯一、可审计、带阈值的人工授权？
 
 ## 边界
 
-本阶段完成了 A–F 之后唯一获授权的 S8 单变量诊断；没有启动 S9、Visual-only、第二 seed、延长训练或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。S8 后处理 reader 的 schema 修复只补跑缺失审计，没有重训或重跑 A–E。GitHub 不上传数据集、teacher/student checkpoints、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。
+本阶段已完成 A–F 后获授权的 S8 与 S9 bounded controls；没有启动 Visual-only、第二 seed、延长训练或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。S9 只改变 fusion operator，训练与 A–E/posthoc 均完成；科学结果严格为 FAIL，且任何后续/Full 授权字段均为 false。GitHub 不上传数据集、teacher/student checkpoints、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。

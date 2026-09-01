@@ -1,6 +1,6 @@
 # Student shortcut recovery implementation audit
 
-Date: 2026-09-01
+Date: 2026-09-02
 
 Scientific A0 runtime commit: `f739399463c082cd670dff56e43c710d4fa6f283`
 
@@ -12,9 +12,13 @@ Scientific S7 runtime commit: `a7f0dc06d6a98493c0d03f1caa2059e31c50b648`
 
 Scientific S8 runtime commit: `60100c6fff95b313ae92bc91b10a3be7135dc437`
 
+Scientific S9 implementation commit: `b8ea747dd792c939251152ead734d1826c26980d`
+
+S9 runtime-control commit: `31497d58eb5d17e60cbebc6afa1bef5bcecb37a7`
+
 S8 post-hoc reader-fix commit: `6f39172120ab877c246d3fd6fbd1a4699a6f2871`
 
-Scope: observation-only A0 diagnostics plus the S3 pretrained-student, S4 no-augmentation, S7 temporal-identity and S8 fixed-equal-gate single-variable controls. This package does not authorize or run formal Full training.
+Scope: observation-only A0 diagnostics plus the S3 pretrained-student, S4 no-augmentation, S7 temporal-identity, S8 fixed-equal-gate and S9 paper-additive single-variable controls. This package does not authorize or run formal Full training.
 
 ## Independent source review
 
@@ -138,3 +142,15 @@ The persistent worker completed training, the independent training artifact audi
 The original post-hoc reader failed closed after A–E because it indexed the actual nested `fusion_input_blocks.blocks.visual/audio/query` schema as if the modality keys were direct children. A real-schema fixture reproduced the failure against the old reader (`1 failed, 2 passed`), and the minimal repair changed only that access. The repaired tests returned `3 passed`; an isolated cross-suite returned `107 passed`; and an independently prepared clean audit candidate at `6f39172120ab877c246d3fd6fbd1a4699a6f2871` passed compileall plus the full suite (`536 passed in 347.58s`). The original failed worker state was preserved. A SHA-locked recovery control then ran only the missing reader, not training or A–E, and refused any duplicate output.
 
 The recovered post-hoc artifact is PASS at SHA256 `7784887d05199ae4d70a81c29d497d4a9cd6c689a0746d56aa459b83df4e0d5b`. It independently verifies eight source receipts, 17 modes, 5,820 samples, 58,200 ordered T=10 segments and metric digest `08334096358cb5c6a9cf59e1e4deb22662abc727201ea26ab9eea72db174bfaf`; stderr is empty. The scientific conclusion is evidence pattern 2: visual backbone/projected variation and visual gradients recover, but mixed visual-zero AP drop is only `0.0006317742` while audio-zero and both-zero drops are `0.0309577768/0.0311512139`. The remaining failure lies in converting visual representations into useful final ranking behavior, not in the input frame corpus, fixed gate, or visual backbone collapse. Because no numeric S8 success threshold was preregistered, the audit makes no automatic success claim and authorizes neither S9 nor formal Full.
+
+## S9 paper-additive implementation and execution review
+
+S9 was implemented as a bounded configuration/audit change, not a new model structure. TDD first locked the S8→S9 YAML diff to the single field `student.fusion_mode`, and the mechanical tests verify the exact additive equation, equal fixed gate, identity temporal path, T=10, unchanged parameter count (`46,278,129`), unchanged state-dict keys and bitwise-equal S8/S9 initialization. `token_fusion` remains constructed for state/RNG compatibility but has no gradient and no state change in the additive branch. The core `OVOrthKDStudent` source was not structurally altered.
+
+The exact detached candidate at `b8ea747dd792c939251152ead734d1826c26980d` passed compileall and the complete 5090 suite (`555 passed in 372.02s`, exit 0). The persistent runtime commit is `31497d58eb5d17e60cbebc6afa1bef5bcecb37a7`; its only scientific phase sequence is `s9_training→training_audit→s9_ae→posthoc_audit`, with Full, canonical-loss and next-experiment flags false. The worker completed all four phases with exit code 0 and empty stderr. Training artifact audit is PASS (SHA256 `a0a1b35fae2a5c5cf352e406b57e8f2d7cdd7828fe837f19f0230f7b03f0a7c4`) and confirms the fixed inactive modules remain immutable while the active segment head changes at steps 400/800/1200.
+
+The full A–E producer is PASS (SHA256 `54391fa046dd7ec2900bc613aabcb6f1200fa59e8d18b3a2b0d8da2ac6dae264`) over 17 modes, 5,820 samples and 58,200 T=10 segments with 100 fixed-seed shuffles. The formal posthoc artifact audit is PASS (SHA256 `a9a3040738f5a1b2e003838c36960e10b0dbae77a88e3d1a3170d75aa4f7a740`), and a second read-only posthoc invocation on the same remote NPZ produced byte-identical output and the same scientific classification. The remote prediction archive is intentionally not published.
+
+The pre-registered scientific classifier returns FAIL, not because of artifact corruption but because additive fusion does not recover visual label-aligned behavior: mixed visual-zero changes are `ΔAP=-0.0000082206`, `ΔAUROC=-0.0000044761`, `ΔC=+0.0000561892`; two effects are non-positive and all three are below the weak-effect fail thresholds. Mixed AP (`0.657439`) and original temporal-shuffle AP drop (`0.035437`) remain measurable, while mixed concordance (`0.636175`) is below the protection gate. Forced visual concordance (`0.550823`) and forced-visual shuffle AP drop (`0.001726`) are also weak supporting signals. The bounded result rejects this additive readout as a sufficient recovery under S8 conditions; it does not identify one downstream layer as the unique root cause.
+
+S9 therefore leaves `next_experiment_authorized=false` and `formal_full_training_authorized=false`. No Visual-only, second seed, extended schedule, canonical loss edit or formal Full run was started. Any future intervention requires a new human-approved design, explicit thresholds and a fresh clean candidate.

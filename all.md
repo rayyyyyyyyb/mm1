@@ -3328,3 +3328,70 @@
 - 首次尝试用单个 UTF-16LE encoded PowerShell 命令准备 5090 candidate，在执行前因 Windows 命令行长度限制返回“命令行太长”、exit1；未创建 candidate、receipt 或进程。随后把同一逻辑写成可哈希脚本，local parser 0 errors、SHA `1d836f12...f2f8`，上传执行 exit0：detached candidate `E:\OV-OrthKD-R3\student-shortcut-s9-b8ea747` HEAD 精确 b8ea747、dirty0，bundle fetch/verify PASS，9 个 asset junction 精确复用既有目标；prepare receipt SHA `536a946a9c843d84251f2116a32a74aea61b84ef94d66bcdc1ead6aa3ab3f6a3`。
 - exact verification 控制 local parser0、SHA `c6046103...b952`；5090 编译、完整 pytest、generic training auditor help、S9 posthoc help、A–E help 全部 exit0，HEAD before/after 均 b8ea747、dirty before/after 均0。全仓结果 `555 passed in 372.02s`，verification receipt SHA `e2071da533d757ec627b9e55c2998f334c5a3385f209b4d2509d73944ac9acc7`，pytest stderr 与 compile stdout/stderr 均为空 SHA。S9 config canonical LF SHA `61942acb92fe0a9a1a87a828764073303761328783b515c606e97d8f10e26cbe`；remote raw CRLF SHA 不作为跨 checkout 锁。
 - 以已通过的 exact receipts 生成六份可审计 runtime controls：prepare、verify、worker、launch、query、resume。worker 只允许 `s9_training -> training_audit -> s9_ae -> posthoc_audit`；training audit 以 S8 为 baseline 且 expected fusion=paper-additive，A–E 显式绑定 fixed_equal/additive，posthoc 使用预注册三态判定。六份 PowerShell parser 均0；移除 EOF 多余空行后的 worker SHA `2e890967...9dd4b`，launch SHA `b909468b...142e`，并绑定 S8 正式 posthoc SHA `7784887d...e0d5b`。此刻尚未运行 launch 或训练。
+
+### 752. 2026-09-02：S9 runtime 修订、no-launch preflight 与 persistent launch
+
+- 首次 runtime commit 前的 cached diff check 正确报出 5 个新脚本 EOF 多一空行，但顺序 PowerShell 命令未 fail-fast，仍创建了临时 commit `3c6493d`。立即停止启动流程，用 apply_patch 移除全部多余空行；worker raw SHA 随之更新并同步改写 launch/resume 锁。重新对六份脚本运行 AST parser 均0，cached diff check exit0、`git show --check` 无输出后 amend 为最终 runtime commit `31497d58eb5d17e60cbebc6afa1bef5bcecb37a7`（578 insertions）。没有保留已知 whitespace 缺陷。
+- 六份最终控制逐一 scp 上传，远端 parser 均0且 SHA 与本地逐文件一致：launch `b909468b...142e`、prepare `1d836f12...f2f8`、query `8e3b73c0...d43a6`、resume `ce5dd821...15db`、worker `2e890967...9dd4b`、verify `c6046103...b952`。第一次在已启动 PowerShell 内用 `& script.ps1 -PreflightOnly` 被系统 ExecutionPolicy 在进入脚本前拒绝、exit1；未创建 control dir/worker/training。改用 `powershell -ExecutionPolicy Bypass -File ... -PreflightOnly` 后 READY：starts_worker/training=false，b8ea747 clean、config/verification/prepare/S8 blocker SHA 全匹配，Full/canonical loss/next experiment 全 false。
+- launch 前 query exit0：state/history/diagnostics/checkpoints/artifacts 全为空，final metrics=false，GPU 796/32607 MiB、utilization0%。随后唯一实际 launch exit0，经已验证 PersistentProcess module 启动隐藏 worker PID 27508、return_value0；state=`running/s9_training`，completed phases 空。launch receipt 绑定 implementation b8ea747、worker/config/prepare/verification/S8 posthoc 全部 SHA，唯一科学变化为 `student.fusion_mode_concat_to_paper_additive`，序列只含四个 S9 阶段，正式 Full=false。
+
+### 753. 2026-09-02：S9 缓存锁完成、训练启动与 step-400 中间证据
+
+- 持续只读轮询唯一 worker PID 27508；从 00:53:40 至 01:11:32 本地时间期间 state 始终为 `running/s9_training`、无 history/checkpoint/final artifact，stderr 仅 CUDA 初始化。实际 Python 子进程 PID 14300 持续响应，CPU 从 129.7 秒增长到 201.9 秒、working set 约 1.03–1.11 GiB，证明该阶段在执行磁盘受限的教师缓存树哈希而非挂起；未启动 resume 或第二 worker。
+- `teacher_cache_hash.json` 于 01:11:32 原子生成；随后 stderr 出现 epoch 1，GPU 显存从约 1.5 GiB 升到 8.48 GiB、利用率采样最高约 57%，训练以约 2.4–3.8 it/s 推进。首批 diagnostics 锁定 logits shape `[4,10]`、40 个有效段；视觉/音频编码器、视觉/音频/文本投影、decision projection 和 segment head 梯度非零，fixed gate、inactive token_fusion、identity temporal encoder 及全部 KD projector 梯度严格为 0，符合 S9 机械合同。
+- epoch 1 完成精确 400 个优化步并对完整 5,798 个验证样本/57,980 个 T=10 段评估；step-400 val AP=`0.7289936806400772`、AUROC=`0.6354707683426617`、binary micro F1=`0.7299476479804349`、OV-AVEL segment/event F1=`0.5575609671774399/0.5379613659882717`，train total/BCE=`0.6271236094273627`，所有 KD/orth 项为 0。`step_000400.pt` 493,132,963 bytes 已落盘并被列入 diagnostic checkpoints，epoch 2 已启动；该中间值尚不触发 S9 科学判定或任何后续实验授权。
+
+### 754. 2026-09-02：S9 step-800 中间证据
+
+- epoch 2 完成精确 400 个新增优化步并再次对完整 5,798 样本/57,980 个 T=10 段验证；step-800 val AP=`0.7589356980079056`、AUROC=`0.6663681629170781`、binary micro F1=`0.7612434942936495`、OV-AVEL segment/event F1=`0.5731838700003365/0.5846194911217333`，train total/BCE=`0.5780562711879611`，所有 KD/orth 项仍为 0。该点成为新 best；`step_000800.pt` 493,132,963 bytes 已原子落盘，epoch 3 已启动。
+- 与 S8 的同同步数 step-800 相比，S9 AP/AUROC 分别约为 `+0.016469/+0.027589`；这是有利的中间 ranking 信号，但预注册判定还要求最终 best-checkpoint test、mixed-only concordance、visual-zero 与 temporal-shuffle 因果效应，因此没有提前分类或授权后续实验。
+
+### 755. 2026-09-02：S9 step-1200 完整训练轨迹
+
+- epoch 3 完成最后 400 个优化步和第三次完整验证；step-1200 val AP=`0.7626212460961785`、AUROC=`0.6705303720485523`、binary micro F1=`0.6110722959709884`、OV-AVEL segment/event F1=`0.514987609236994/0.43572167742571327`，train total/BCE=`0.578540182095021`，所有 KD/orth 项严格为 0。AP/AUROC 再创新高，故预注册的 validation-AP model selection 锁定 step 1200；`step_001200.pt` 493,132,963 bytes 已落盘，三点 checkpoint 齐全。
+- 固定阈值 F1 同时回落且 predicted-positive rate 从 step 800 的 `0.8626595` 降到 `0.4214729`，属于 ranking 与 threshold calibration 分化的真实观测，不是 NaN/OOM/训练退出；不得以 F1 回落改写预注册 best-checkpoint 选择。程序随后开始用 step-1200 best 完整重算 validation/test；训练阶段尚未宣告结束，科学判定仍等待 A–E 与独立 posthoc。
+
+### 756. 2026-09-02：S9 训练完成、final metrics 与 training audit PASS
+
+- best step-1200 的完整 val/test 复评结束并原子生成 `final_metrics.json`：test AP=`0.7746567976422074`、AUROC=`0.6793983153030569`，binary/OV-AVEL segment/event F1@0.5=`0.6201106216672738/0.5251743898728914/0.44483554246440843`；validation 最优 binary-F1 阈值=`0.07115380086427883`，在该阈值 test segment/event F1=`0.5696454141226691/0.5996739486172474`。相对 S8 最终 test AP/AUROC 仅约 `+0.004896/+0.004912`，总榜增益本身不足以作 S9 PASS 判定。
+- 独立 `s9_training_audit.json` 生成并为 PASS，claim=`noncanonical_s9_training_artifact_integrity`、T=10、T_max=16、唯一科学变化=`student.fusion_mode`、expected fusion=`paper_additive_query_conditioned`；best/last 均匹配 diagnostic step 1200。三个 diagnostic checkpoint SHA 分别为 `c049c9a1...f8bad`、`d49c4a56...06441`、`86191c35...d3e36`，best/last SHA=`f88a4a5a...2c98/7ac39ee0...ccef`。
+- audit 证实 temporal encoder、fixed modality gate 与 inactive token_fusion 在 400/800/1200 均从初始化严格不变，三者 diagnostics 梯度严格为 0，active segment head 真实改变；视觉编码器梯度 L2 在 global step 0/400/800 为 `2.4543487042/0.03719796145/0.03398399306`。训练与 training-audit 两阶段 completed exit0 后，唯一 worker 自动进入 `s9_ae`，正式 Full/下一实验仍未授权。
+
+### 757. 2026-09-02：S9 A–E 只读审计持续推进
+
+- `s9_ae` 由唯一 persistent worker PID 27508 启动独立 Python PID 21084；持续轮询均为 state=`running/s9_ae`、completed=`s9_training,training_audit`、worker count=1、stderr=0，尚未原子写入 A–E JSON/NPZ。GPU 此阶段约 1.60/32.61 GiB、utilization 0%、约 66–67 W/43℃，符合官方 JPG 内容/身份审计的 CPU/I/O 阶段。
+- 独立进程查询证明 PID 21084 的累计 CPU 从先前约 548 秒继续增长到 `1337.53 s`，working set 约 `1,307,200 KiB`，进程仍存在；因此没有将低 GPU 利用率误判为停滞，也没有调用 resume、启动第二 worker 或更改实验。决定性 PASS/FAIL/INCONCLUSIVE 判定仍等待 A–E 与 posthoc 原子产物。
+
+### 758. 2026-09-02：S9 A–E/posthoc 完成、独立复核与证据抽取
+
+- 持久 worker 最终状态为 `completed`、阶段顺序严格为 `s9_training,training_audit,s9_ae,posthoc_audit`、exit code=0、worker count=1；A–E JSON SHA256=`54391fa046dd7ec2900bc613aabcb6f1200fa59e8d18b3a2b0d8da2ac6dae264`，正式 posthoc SHA256=`a9a3040738f5a1b2e003838c36960e10b0dbae77a88e3d1a3170d75aa4f7a740`，final_metrics SHA256=`347e11b03b8141978b3e7d397f32e524e59b94884a07d3963cad48ce73b98a12`。
+- 从 5090 仅复制 22 个小型 S9 训练/控制/posthoc JSON、JSONL、YAML、TXT 证据到仓库 evidence/s9；没有复制 checkpoint、预测 NPZ、数据、cache 或日志。A–E 与 posthoc 的协议均锁定 T=10、fixed_equal、paper_additive_query_conditioned、seed42、17 modes/5,820 samples/58,200 segments/100 shuffles。
+- 独立使用本地 stdlib JSON 解析（18 JSON+2 JSONL，`allow_nan=false`）通过；独立调用仓库 `build_s9_scientific_outcome` 重新从 A–E 数值提取并判定：`FAIL`，原因 `all_visual_effects_below_preregistered_fail_thresholds`；`ΔC=0.0000561892`、`ΔAP=-0.0000082206`、`ΔAUROC=-0.0000044761`、mixed AP=`0.6574391`、mixed C=`0.6361746`、shuffle AP drop=`0.0354367`，两个 ranking 效应非正且三项均低于 FAIL 门槛。
+- 为独立交叉验证，在 5090 exact candidate 对同一只读 A–E/NPZ/training-audit 再运行一次 posthoc auditor，输出 `s9_posthoc_reaudit.json`；其 SHA256=`a9a3040738f5a1b2e003838c36960e10b0dbae77a88e3d1a3170d75aa4f7a740` 与正式 posthoc 字节一致，确认 artifact integrity=PASS、scientific classification=FAIL、next/formal-full authorization 均为 false。未覆盖原正式产物、未训练、未运行任何下一实验。
+
+### 759. 2026-09-02：S9 报告、交接文档与本地“复现”镜像整理
+
+- 新建 `reports/formal_reproduction/student_shortcut_recovery/S9_RESULTS.md`，写入唯一变化、完整 T=10 协议、训练/干预/阈值结果、FAIL 与 artifact PASS 分离、全量 SHA 和禁止 Full 边界；修正独立复核中发现的两处表述：shuffle AUROC drop=`0.0481806614`，视觉 concordance 效应约为 PASS 门槛的 1/356（不是四个数量级）。
+- 更新 `README.md`、中文 `WEB_REVIEW_HANDOFF.md`、`IMPLEMENTATION_AUDIT.md`、`evidence/README.md` 与 `runtime/README.md`，将 S9 设为最新结果，明确训练/A–E/posthoc 均已完成但科学 FAIL；保留 S8 及更早结果作为历史上下文，不把旧的“尚未启动 S9”陈述误当成当前状态。
+- 在 `扩刊/复现/student_shortcut_recovery/s9` 生成 37 个文件的紧凑镜像（报告、交接、审计、配置、runtime 控制和 25 个小证据，合计 501,880 bytes），并同步到 `review_package/s9`；不含 checkpoint、NPZ、数据、cache、bundle 或日志。review_package README 已改为 S9 入口。
+- 镜像第一次复制 runtime 时因目标目录尚未先创建，产生同名普通临时文件；只读确认目标在新建 S9 镜像内后，以可恢复 Move-Item 移到 `扩刊/tmp_s9/runtime_placeholder_from_mirror.tmp`，再创建正确 runtime 目录并完成重拷贝。没有删除用户原有文件或科学产物；该临时文件留存以便追溯。
+
+### 760. 2026-09-02：S9 final independent verification
+
+- The first long full-suite SSH session ended without returning a summary; it was not counted as a pass. A fresh targeted run on the exact 5090 candidate completed with exit code 0: `29 passed in 27.03s` (S9 result/config tests, generalized S8 auditor tests, and shortcut diagnostics tests).
+- `git diff --check` exit 0. PowerShell AST parse covered 67 runtime `.ps1` files with 0 errors. Credential-signature scan found 0 hits; tracked files over 5 MiB: 0; forbidden large-artifact extensions in untracked S9 evidence: 0.
+- Strict local evidence parse completed with `JSON=19`, `JSONL=2`, `allow_nan=false`; all/repo ledgers were byte-identical (`ALL_EQUAL=True`, SHA256 `3bb3e7ee752921201561f8dcccc24f3991cbd9be07945d626624294c81be3cb4`). Relative-link check covered 33 links with 0 broken targets.
+- Corrected mirror verification mapped 37 S9 package files to `扩刊/复现/student_shortcut_recovery/s9`: missing=0, mismatch=0. (Two earlier checks used an incorrect relative root or an incorrect UTF-8 decoder; they produced no repository changes and were rerun correctly.)
+- Independent `build_s9_scientific_outcome` re-audit remains `FAIL` (`all_visual_effects_below_preregistered_fail_thresholds`): ΔC `5.618924537842407e-05`, ΔAP `-8.220622510712872e-06`, ΔAUROC `-4.476052576918299e-06`; mixed AP `0.6574390532922458`, mixed C `0.6361746361746362`, shuffle AP drop `0.03543672228593209`. Artifact integrity remains PASS; next-experiment and formal-full authorization remain false.
+
+### 761. 2026-09-02：最终全量测试与提交前复核
+
+- 修正 `S9_RESULTS.md` 开头两处 Markdown 行尾空格；`git diff --cached --check` 随后 exit 0，并同步更新 `扩刊/复现/student_shortcut_recovery/s9/S9_RESULTS.md` 与其 `review_package/s9` 副本。
+- 两轮未设置正确工作目录的全量尝试分别暴露环境问题：`519 passed, 36 failed`（MinGit 未进入 PATH）及 `554 passed, 1 failed`（相对数据路径解析到 `C:\Users\LXT\data`）；均未改动代码，孤儿 pytest PID 已按命令行核实后终止。
+- 使用自动生成的 UTF-16LE PowerShell 命令，显式 `Set-Location E:\OV-OrthKD-R3\student-shortcut-s9-b8ea747` 并将 MinGit 加入 PATH，在 5090 精确候选上完成最终全量测试：`555 passed in 372.27s (0:06:12)`，pytest exit 0；`git version 2.55.0.windows.5`。
+- 该最终全量结果、此前 29 项 S9 相关测试（exit 0）以及所有静态/证据检查均已记录；没有启动任何正式 Full 或下一实验。
+
+### 762. 2026-09-02：commit 前最终暂存检查
+
+- 暂存区仅包含 S9 报告、交接/审计文档、33 个小证据/日志和账本更新；不包含数据集、checkpoint、NPZ、cache、bundle 或完整运行日志。
+- 最终暂存 `git diff --cached --check` exit 0；本地 `all.md` 与扩刊根目录 `all.md` 仍逐字节相同。提交前不再修改科学代码或运行配置。

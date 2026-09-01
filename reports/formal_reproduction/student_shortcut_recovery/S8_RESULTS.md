@@ -98,4 +98,4 @@ Primary compact evidence:
 
 S8 completes the only experiment authorized by A–F. It clears the representation-collapse branch but does not clear the behavioral visual-dependence branch. No numeric S8 success threshold was preregistered, so none is invented after seeing the data. The supported classification is evidence pattern 2, not a successful audiovisual recovery.
 
-No S9, Visual-only, second seed, extended schedule or formal Full training was started. No canonical loss was changed and the canonical full-run guard remains intact. A reviewer must approve and preregister any next bounded intervention; S8 itself authorizes none.
+At the time of the S8 report, no S9, Visual-only, second seed, extended schedule or formal Full training had been started. The subsequently authorized S9 paper-additive control is documented separately in [S9_RESULTS.md](S9_RESULTS.md); S8 itself did not authorize it. No canonical loss was changed and the canonical full-run guard remains intact.

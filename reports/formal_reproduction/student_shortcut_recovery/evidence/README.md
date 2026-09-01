@@ -22,5 +22,8 @@ This directory contains only small review artifacts (JSON, JSONL and YAML) suita
 - `s8/training`: the audited fixed-equal-gate three-epoch metrics, history, diagnostics, resolved configuration and exact runtime/data/cache/environment receipts.
 - `s8/control`: scientific-candidate and reader-fix verification, launch/state receipts, independent training audit and the fail-closed post-hoc-only recovery receipt.
 - `s8/posthoc`: full A–E fixed-equal diagnostic evidence and the independent 17-mode/T=10 metric recomputation.
+- `s9/training`: paper-additive three-epoch metrics, resolved configuration, runtime/data/cache/environment receipts and training diagnostics.
+- `s9/control`: exact candidate prepare/verification, launch/worker state and independent training artifact audit.
+- `s9/posthoc`: full A–E paper-additive diagnostic, formal posthoc integrity/scientific audit and byte-identical independent re-audit.
 
-The corresponding datasets, teacher cache, timm weight files, student checkpoints, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3, S4, S7, zero-training and S8 JSONs were copied here only after their independent artifact audits passed.
+The corresponding datasets, teacher cache, timm weight files, student checkpoints, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3, S4, S7, zero-training, S8 and S9 JSONs were copied here only after their independent artifact audits passed.
