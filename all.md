@@ -3401,3 +3401,9 @@
 - 创建干净提交 `fc47fc1`（`docs: publish S9 additive diagnostic evidence`）：33 个文件，10,875 insertions、31 deletions；提交后 `git diff HEAD^ HEAD --check` exit 0，工作树干净。
 - `git push origin repro/student-shortcut-recovery` exit 0，远端已更新 `21b4e6a..fc47fc1`。网页入口为 `https://github.com/rayyyyyyyyb/mm1/tree/repro/student-shortcut-recovery`。
 - 本地仓库只发布源代码、配置、runtime 控制和小型审计证据；数据集、teacher/student checkpoint、NPZ、cache、bundle、archive、完整日志均未上传。最终科学状态仍为 S9 `FAIL`、artifact integrity `PASS`，未授权下一实验或正式 Full。
+
+### 764. 2026-09-02：推送后最终完整性复核
+
+- 一次使用中文路径字面量的 Python 复核因 Windows 控制台编码导致路径乱码并退出；没有产生文件变化。改用目录 glob 重新执行成功：19 个 JSON、2 个 JSONL 在 `utf-8-sig`/`allow_nan=false` 下全部解析通过。
+- 推送后账本再次确认逐字节一致：725,970 bytes，SHA256 `053434e063861f73e71636834c8f3956a6491b1717f958d22f89439c11cd76f8`；S9 镜像报告存在且 SHA256 `3a67100428001876ac5770f7e2c6be4e145d1ed0618c26c438c401401e70aad9`。
+- 报告、交接、审计、证据和 runtime 文档共 6 个入口存在；S9 package 共 232 个文件且大于 5 MiB 的文件数为 0。远端 ref 已核对为 `6197186`，工作树保持 clean。
