@@ -209,15 +209,15 @@ Expected: import failure for the auditor.
 
 Recompute label histogram, mixed AP/AUROC/shuffle/concordance from NPZ arrays, validate exact mode set and offsets, verify source hashes/commit/clean status, and require the F source-state before/after hash equality plus disposable-clone declaration.
 
-- [ ] **Step 4: Create fail-closed remote scripts**
+- [x] **Step 4: Create fail-closed remote scripts**
 
 Adapt the existing S7 candidate/runtime pattern. Bind the eventual exact implementation commit, all local/remote script SHA256 values, existing S7 training/posthoc audit SHA256 values, S7 checkpoint/config hashes, canonical Full config/checkpoint hashes, nine resource junction targets, locked venv, GPU identity, atomic phases, and refusal to overwrite outputs.
 
-- [ ] **Step 5: Verify runtime scripts**
+- [x] **Step 5: Verify runtime scripts**
 
 Run local Python `py_compile`, focused pytest, Ruff, and PowerShell parser checks. Upload scripts, compare every SHA, and run remote `--help`/preflight without launching the worker.
 
-- [ ] **Step 6: Run complete locked repository tests and commit**
+- [x] **Step 6: Run complete locked repository tests and commit**
 
 Run remote `python -m compileall -q .` and full `python -m pytest -q` at the exact implementation commit. Commit message: `feat: lock zero-training evidence audit`.
 
