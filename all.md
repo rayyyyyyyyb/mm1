@@ -3072,3 +3072,9 @@
 - 完整重读网页端 19,998-byte A–F 诊断、S7 trajectory runtime、checkpoint modality/shortcut 生产脚本及相关测试、学生模型、损失和数据集/loader 关键路径。一次文件枚举把不存在的仓库根 `runtime` 作为搜索根导致 rg os error 2，但其它真实路径结果有效；随后只使用 `reports/formal_reproduction/student_shortcut_recovery/runtime`。确认直接模型 forward、严格 T=10 offsets、现有原始/visual-zero/audio-zero/both-zero 收集器、test dataset records 与自定义 collate 都可复用。
 - 比较三种实现：生产 forward 的显式诊断控制、临时 PyTorch hook、在审计脚本复制 fusion。锁定第一种：只增加默认关闭的精确 gate override 和返回已经计算的 visual-backbone tensor，避免 hook 泄漏/极端权重近似和外部 fusion 逻辑漂移；所有默认 state/输出必须由测试证明不变。A/E/F 等纯计算与运行编排分层，F 的唯一 optimizer step 只允许发生在进程退出即丢弃的 projector+decision clone，禁止写更新 checkpoint。
 - 通过 apply_patch 新建 `docs/superpowers/specs/2026-09-01-zero-training-audits-design.md`，锁定 A–F 范围、S8 条件门禁、单类 strata 的 AUROC=`null` 语义、reconstructed-zero-step 证据边界、全 test JPG 内容审计、五点 gate grid、deterministic audio donor、Full projector clone、独立 artifact audit、5090 持久/可恢复运行与禁传大文件策略。self-review 的 placeholder scan 无命中/rg exit 1（正常“未找到”语义），标题结构完整，`git diff --check` exit 0；当前仍未改科学代码、未启动 GPU 审计或 S8。
+
+### 710. 2026-09-01：零训练审计设计提交与逐步计划完成
+
+- 双 ledger 同步一致且 diff check/cached check 均 exit 0 后，将 spec 与 entry 709 提交为 `3693859`（`docs: design zero-training audit phase`），2 files/86 insertions。该提交只含设计和流水账，不含科学代码。
+- 使用 writing-plans 技能通过 apply_patch 新建 `docs/superpowers/plans/2026-09-01-zero-training-audits.md`：7 个任务、40 个 checkbox，逐项规定 A 纯指标/配对、模型默认关闭的诊断控制、A–E runtime、F clone probe、独立 auditor/远端控制、A–F 发布与条件 S8。每个生产改动都先写 failing test、确认 RED、最小实现、确认 GREEN、独立提交；明确 `k=0/k=10` 不伪造 AUROC、step0 只能称 reconstructed、运行 arrays 留在 5090、S8 不与 A–F 同 worker 启动。
+- 计划 self-review：spec coverage 覆盖 A–F、remote persistence、artifact audit 和 S8 blocker；接口名称在前后任务一致；禁止 placeholder pattern 无命中/rg exit 1；40 个 checkbox 被检出；`git diff --check` exit 0。根据用户已明确“开始”且禁止再次询问，选择 inline executing-plans，不派发子代理。下一步先在已隔离 worktree/锁定 5090 环境建立 fresh baseline，然后进入 Task 1 RED；此刻仍未写生产代码或启动训练。
