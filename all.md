@@ -3395,3 +3395,9 @@
 
 - 暂存区仅包含 S9 报告、交接/审计文档、33 个小证据/日志和账本更新；不包含数据集、checkpoint、NPZ、cache、bundle 或完整运行日志。
 - 最终暂存 `git diff --cached --check` exit 0；本地 `all.md` 与扩刊根目录 `all.md` 仍逐字节相同。提交前不再修改科学代码或运行配置。
+
+### 763. 2026-09-02：发布提交与远端回执
+
+- 创建干净提交 `fc47fc1`（`docs: publish S9 additive diagnostic evidence`）：33 个文件，10,875 insertions、31 deletions；提交后 `git diff HEAD^ HEAD --check` exit 0，工作树干净。
+- `git push origin repro/student-shortcut-recovery` exit 0，远端已更新 `21b4e6a..fc47fc1`。网页入口为 `https://github.com/rayyyyyyyyb/mm1/tree/repro/student-shortcut-recovery`。
+- 本地仓库只发布源代码、配置、runtime 控制和小型审计证据；数据集、teacher/student checkpoint、NPZ、cache、bundle、archive、完整日志均未上传。最终科学状态仍为 S9 `FAIL`、artifact integrity `PASS`，未授权下一实验或正式 Full。
