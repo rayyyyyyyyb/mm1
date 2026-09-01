@@ -3182,3 +3182,8 @@
 
 - 首次语义 checker 错误假定 verification receipt 内含 `pytest_summary`、launch JSON 另包一层 `receipt`，因此只把 `verification_pass` 与 `launch_no_training` 判 false，checker exit 1；原始 JSON 显示 verification 实际以 pytest stdout SHA 锁定完整输出，launch 字段位于顶层。该失败是 checker schema 假定错误，不是 evidence/实验失败，未修改证据文件。
 - 按真实 schema 重跑：prepare PASS；verification PASS/compileall 0/pytest 0/前后 dirty 0/stdout SHA `1d15c6ff...d45e59`；preflight READY；launch sequence `ae,f,audit` 且 `starts_training=false/starts_s8=false`；worker completed exit0；A–E/F 均 PASS T=10 且 mutation boundaries 成立；independent audit PASS、no scientific claim；NPZ SHA 正确且 Git evidence 内不存在 NPZ；报告绑定关键数值和“Formal Full remains blocked”。10/10 semantic checks true，`SEMANTIC_PUBLICATION_PASS`；两份 `all.md` SHA 同为 `c85c4ade...0711`，`git diff --check` exit 0。可以进入 Task 6 evidence commit/push。
+
+### 728. 2026-09-01：Task 6 evidence commit/push 与 Task 7 blocker gate
+
+- 精确暂存 19 个小型文档/JSON/ledger/plan 文件；staged forbidden extensions NONE，cached diff check 无输出，stat 为 6,207 insertions/21 deletions。创建 commit `5f7ea2228eb0f90d6d8623c26b5240e2f5ebe15f`（`docs: publish zero-training audit evidence`），随后 worktree clean。push `repro/student-shortcut-recovery` 成功，GitHub 从 `0c35328` 前进到 `5f7ea22`；local HEAD、upstream 与 `git ls-remote origin refs/heads/repro/student-shortcut-recovery` 均精确为 `5f7ea2228eb0f90d6d8623c26b5240e2f5ebe15f`，`SHA_EQUALITY_PASS`。
+- Task 6 Step 6 据实完成。依据 A–F integrity PASS、官方帧非相同/损坏、reconstructed step zero 有证据、全链 T=10、所有 source/checkpoint SHA resolved 五项，Task 7 Step 1 blocker gate 据实通过；只授权 S8 `identity_passthrough + fixed_equal` 单变量 cell。此刻尚未创建/启动 S8，正式 Full 与 canonical loss 修改仍禁止。

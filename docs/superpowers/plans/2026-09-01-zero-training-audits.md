@@ -248,7 +248,7 @@ Check whether raw JPGs vary, reconstructed step-zero visual features are healthy
 
 Copy JSON/YAML/TXT receipts and reports below the publication size threshold. Exclude checkpoint, NPZ, data, cache, bundle, archive, and raw logs. Verify JSON/YAML parsing, links, secret scan, forbidden extension scan, and exact evidence hashes.
 
-- [ ] **Step 6: Commit and push evidence**
+- [x] **Step 6: Commit and push evidence**
 
 Commit message: `docs: publish zero-training audit evidence`. Verify local HEAD, upstream, and GitHub remote SHA equality and a clean worktree.
 
@@ -258,7 +258,7 @@ Commit message: `docs: publish zero-training audit evidence`. Verify local HEAD,
 - Conditional create: `configs/diagnostics/recovery/ov_orthkd_s8_identity_fixed_gate_seed42.yaml`
 - Conditional create: S8 tests/runtime/report/evidence following the S7 pattern.
 
-- [ ] **Step 1: Evaluate the preregistered blocker gate**
+- [x] **Step 1: Evaluate the preregistered blocker gate**
 
 Block S8 if A–F integrity is not PASS, official frame content is corrupt/identical, reconstructed step zero cannot be supported, `T!=10`, or any source/checkpoint hash is unresolved. Otherwise authorize only the identity+fixed-equal cell.
 
