@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "purpose": "S8 posthoc reader-fix clean-candidate verification",
+  "candidate_path": "E:\\OV-OrthKD-R3\\student-shortcut-s8-audit-6f39172",
+  "git_commit": "6f39172120ab877c246d3fd6fbd1a4699a6f2871",
+  "scientific_parent_commit": "60100c6fff95b313ae92bc91b10a3be7135dc437",
+  "bundle": {
+    "bytes": 2211263,
+    "sha256": "e9090d00f204b9f4f3e2af4e28ec8f39c195143923d00722bc5f05b7be1abb4f",
+    "complete_history_verified": true
+  },
+  "git_info_exclude_sha256": "e15bbfcb32323d3ab6e8f186dd6c8c3b3ddf3077e653487c05cb7370348dc359",
+  "compileall": {
+    "targets": ["scripts", "src", "tests"],
+    "exit_code": 0
+  },
+  "pytest": {
+    "command": "python -m pytest -q",
+    "passed": 536,
+    "failed": 0,
+    "duration_seconds": 347.58,
+    "exit_code": 0
+  },
+  "head_before": "6f39172120ab877c246d3fd6fbd1a4699a6f2871",
+  "head_after": "6f39172120ab877c246d3fd6fbd1a4699a6f2871",
+  "status_before": "",
+  "status_after": "",
+  "starts_training": false,
+  "starts_ae": false,
+  "formal_full_training_authorized": false,
+  "next_experiment_authorized": false
+}

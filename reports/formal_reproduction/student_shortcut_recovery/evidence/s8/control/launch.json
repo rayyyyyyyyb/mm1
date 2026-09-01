@@ -1,0 +1,26 @@
+﻿{
+    "schema_version":  1,
+    "status":  "running",
+    "launch_method":  "Win32_Process.Create_via_verified_PersistentProcess_module",
+    "utc":  "2026-09-01T11:56:11.9931615Z",
+    "worker_process_id":  20828,
+    "return_value":  0,
+    "module_sha256":  "3105384926f66900f57b767984fd029aec968792564420f0bd665cf011bf42e5",
+    "worker_sha256":  "0956fcbef0be3e7b4a14476e1f60a0556d9f72ebc81f04ce4a48eb3f2a2daa4e",
+    "git_head":  "60100c6fff95b313ae92bc91b10a3be7135dc437",
+    "config_sha256":  "9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505",
+    "candidate_verification_sha256":  "80aa29b284c2ab5ae4ec91277f7f7d53c178d18a6c4fe2f84e438cdbd0e12223",
+    "candidate_prepare_sha256":  "97e90f746b33eb27cd1ec79bc56884a86105607246baadbfb5a6a13617d9dffb",
+    "blocker_audit_sha256":  "a90cf867cb9c1598644b2e072691f1dba26446d19973ecaa1a7e202e4affd31a",
+    "sole_scientific_change_from_s7":  "student.gate_mode_learned_to_fixed_equal",
+    "sequence":  [
+                     "s8_training",
+                     "training_audit",
+                     "s8_ae",
+                     "posthoc_audit"
+                 ],
+    "formal_full_training":  false,
+    "canonical_loss_changed":  false,
+    "next_experiment_authorized":  false,
+    "worker_state":  "E:\\OV-OrthKD-R3\\student_shortcut_control\\s8_60100c6\\worker_state.json"
+}

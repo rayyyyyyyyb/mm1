@@ -1,0 +1,88 @@
+{
+    "schema_version":  1,
+    "status":  "PASS",
+    "claim_level":  "s8_posthoc_reader_fix_recovery",
+    "completed_utc":  "2026-09-01T14:37:34.2964460Z",
+    "gate":  {
+                 "schema_version":  1,
+                 "status":  "READY",
+                 "preflight_only":  false,
+                 "scientific_commit":  "60100c6fff95b313ae92bc91b10a3be7135dc437",
+                 "audit_commit":  "6f39172120ab877c246d3fd6fbd1a4699a6f2871",
+                 "config_sha256":  "9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505",
+                 "verification_sha256":  "0ce8cf933c256eb710a0b6dd223aab2d8961a6665925dc4c1d44217449dd549c",
+                 "bundle_sha256":  "e9090d00f204b9f4f3e2af4e28ec8f39c195143923d00722bc5f05b7be1abb4f",
+                 "training_audit_sha256":  "7aa1108a8f536f720735edec5183d9846d52e8b28ce7236db2f5121354bc6a11",
+                 "ae_report_sha256":  "54baa6c27b286226bce5698ef0a3e56456aadf739c577915d5a57c82af55ca7d",
+                 "predictions_sha256":  "5a28ce8cc58674f89aa4388b9e205410877a954491051b93c9db9e839c2bec68",
+                 "recovery_control_sha256":  "2fd473aa4ba37fd18e50755e50d331d7c53897c6d951caaaf22c934a0d038ed8",
+                 "completed_phases_before":  [
+                                                 "s8_training",
+                                                 "training_audit",
+                                                 "s8_ae"
+                                             ],
+                 "starts_training":  false,
+                 "starts_ae":  false,
+                 "changes_canonical_loss":  false,
+                 "formal_full_training_authorized":  false,
+                 "next_experiment_authorized":  false
+             },
+    "scientific_worker_state_before":  {
+                                           "schema_version":  1,
+                                           "status":  "failed",
+                                           "worker_process_id":  20828,
+                                           "updated_at_utc":  "2026-09-01T13:56:10.7634429Z",
+                                           "git_commit":  "60100c6fff95b313ae92bc91b10a3be7135dc437",
+                                           "config_sha256":  "9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505",
+                                           "current_phase":  "",
+                                           "completed_phases":  [
+                                                                    "s8_training",
+                                                                    "training_audit",
+                                                                    "s8_ae"
+                                                                ],
+                                           "exit_code":  1,
+                                           "message":  "System.Management.Automation.RuntimeException: Independent S8 posthoc audit failed with code 1"
+                                       },
+    "preserved_failed_state":  {
+                                   "path":  "E:\\OV-OrthKD-R3\\student_shortcut_control\\s8_60100c6\\worker_state_failed_before_posthoc_recovery.json",
+                                   "sha256":  "27653ca33ab7482b338e3f9847db44e061f2bc3523d337a359058ae9811463fb"
+                               },
+    "scientific_worker_state_after":  {
+                                          "schema_version":  1,
+                                          "status":  "completed",
+                                          "worker_process_id":  16744,
+                                          "updated_at_utc":  "2026-09-01T14:37:34.2675006Z",
+                                          "git_commit":  "60100c6fff95b313ae92bc91b10a3be7135dc437",
+                                          "config_sha256":  "9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505",
+                                          "current_phase":  null,
+                                          "completed_phases":  [
+                                                                   "s8_training",
+                                                                   "training_audit",
+                                                                   "s8_ae",
+                                                                   "posthoc_audit"
+                                                               ],
+                                          "exit_code":  0,
+                                          "message":  "S8 identity+fixed-equal training and independent audits completed via posthoc reader fix 6f39172120ab877c246d3fd6fbd1a4699a6f2871"
+                                      },
+    "recovered_posthoc_audit":  {
+                                    "path":  "E:\\OV-OrthKD-R3\\student_shortcut_control\\s8_60100c6\\s8_posthoc_audit.json",
+                                    "bytes":  90384,
+                                    "sha256":  "7784887d05199ae4d70a81c29d497d4a9cd6c689a0746d56aa459b83df4e0d5b",
+                                    "independent_metrics_canonical_sha256":  "08334096358cb5c6a9cf59e1e4deb22662abc727201ea26ab9eea72db174bfaf"
+                                },
+    "recovery_logs":  {
+                          "stdout":  {
+                                         "bytes":  90384,
+                                         "sha256":  "7784887d05199ae4d70a81c29d497d4a9cd6c689a0746d56aa459b83df4e0d5b"
+                                     },
+                          "stderr":  {
+                                         "bytes":  0,
+                                         "sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                     }
+                      },
+    "starts_training":  false,
+    "starts_ae":  false,
+    "changes_canonical_loss":  false,
+    "formal_full_training_authorized":  false,
+    "next_experiment_authorized":  false
+}

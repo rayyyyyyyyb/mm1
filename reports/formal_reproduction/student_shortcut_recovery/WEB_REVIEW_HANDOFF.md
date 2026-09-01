@@ -2,11 +2,17 @@
 
 日期：2026-09-01
 
-当前状态：**S7 仍是预注册因果失败；其后的 A–F zero/near-zero-training 审计完整通过，并仅授权 S8 identity + fixed-equal-gate 单变量诊断。正式 Full 复现继续暂停。**
+当前状态：**S8 identity + fixed-equal-gate 单变量诊断已经完成并通过独立产物审计。视觉表征、梯度和局部 Jacobian 已恢复，但 visual-zero mixed AP 只下降 `0.000632`，符合预先允许的证据模式 2：视觉信息在 concat fusion/decision 行为中仍被抑制。没有自动授权 S9 或正式 Full。**
 
-这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
+这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough；S8 相对 S7 仅将 gate 从 learned softmax 改为从初始化起固定 `0.5/0.5`。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
 
 ## 先看结论
+
+最新 S8 证据见 [S8_RESULTS.md](S8_RESULTS.md)。S8 best test AP/AUROC、binary micro F1@0.5、官方 segment/event F1@0.5 分别为 `0.769761/0.674486/0.687314/0.537494/0.502510`；相对 S7，AP/AUROC/segment F1 分别为 `+0.011156/+0.005313/+0.007208`。这说明数值仍在正常范围且全局排序继续改善，不是训练崩溃。
+
+更关键的是表征层恢复：S8 step 1200 的 visual-backbone/projected temporal std 为 `0.138895/0.056053`，分别约为 S7 的 `40.7x/53.3x`；visual Jacobian 从 S7 的 `0.004885` 提升到 `0.274656`，step-800 visual-encoder gradient 也由约 `1.96e-5` 提升至 `0.041727`。但在 1,941 个 mixed 样本上，visual-zero AP 仅从 `0.649065` 变为 `0.648434`，下降 `0.000632`；audio-zero/both-zero 则下降 `0.030958/0.031151`，100 次样本内 temporal shuffle 平均下降 `0.034302`。因此固定 gate 确实阻止了视觉 backbone 表征塌缩，却没有让视觉内容成为最终排序的有效依据；剩余问题位于 concat fusion/decision 将视觉表征转化为标签相关决策的过程中。
+
+S8 没有预注册可用于自动判成功的数值阈值，因此审计没有事后发明阈值。正式 post-hoc audit 为 PASS，但明确写入 `automatic_scientific_success_claimed=false`、`next_experiment_authorized=false` 和 `formal_full_training_authorized=false`。这不是“审计失败”，而是“产物可信、科学结果落在证据模式 2”。
 
 最新 A–F 证据见 [ZERO_TRAINING_AUDITS.md](ZERO_TRAINING_AUDITS.md)。全量 58,200 张 JPG 并非相同/损坏；reconstructed step zero 的 visual-backbone/projected temporal std 为 `0.218586/0.066350`，到 step 400 已降为 `0.004290/0.001516`。fusion 静态三块权重范数近似相等，但 step 800 visual/audio/query Jacobian 为 `0.001385/0.393753/1.142958`。即使强制纯视觉，visual-zero mixed AP drop 也只有 `0.000066`，说明事后 gate 不能恢复已塌缩表示。音频 donor/shuffle 则把 mixed pairwise concordance 从 `0.667107` 降到 `0.505–0.520`，证明音频仍携带样本时序信息。canonical Full projector probe 还证明现有 mean reduction 将 loss 与梯度精确缩小 256×，而一次 disposable sum-reduction AdamW step 可正常改变 clone，不触碰源 checkpoint。
 
@@ -43,10 +49,14 @@ S4 test AP/AUROC/F1@0.5 为 `0.703470/0.596009/0.540393`，相对 S0 分别变�
 - S7 candidate verification receipt：`ce10e08506e7382bedfc16442c4d46f30834b2f20b0b90d54148100193ae7cf9`。
 - S7 training/posthoc audits：均为 PASS，SHA256 分别为 `6583c7f403041be961bba5a40dd7f7e4c8f8d38fd1fee2c7548396b5b6e30dc2` 与 `1207c255ccbd918cb5c2899f7da929170c8020f63becd7548e29c473f9671956`。
 - S7 exposure：seed 42，3 epochs × 400 batches，global step 1200；唯一科学变化为 `student.temporal_path_mode=identity_passthrough`。
+- S8 scientific runtime：`60100c6fff95b313ae92bc91b10a3be7135dc437`；相对 S7 唯一科学变化为 `student.gate_mode=learned_softmax→fixed_equal`。
+- S8 配置 canonical-LF SHA256：`9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505`；compileall exit 0，5090 全量 `536 passed in 346.15s`。
+- S8 training/A–E/post-hoc audits：均为 PASS，SHA256 分别为 `7aa1108a8f536f720735edec5183d9846d52e8b28ce7236db2f5121354bc6a11`、`54baa6c27b286226bce5698ef0a3e56456aadf739c577915d5a57c82af55ca7d`、`7784887d05199ae4d70a81c29d497d4a9cd6c689a0746d56aa459b83df4e0d5b`。
+- S8 post-hoc reader fix：`6f39172120ab877c246d3fd6fbd1a4699a6f2871`；真实 schema 回归测试 `3 passed`、隔离 cross-suite `107 passed`、干净候选全量 `536 passed in 347.58s`。恢复只补跑 post-hoc，未重训、未重跑 A–E。
 - validation/test prediction 分别含 57,980/58,200 个有序 segment，每个样本严格为索引 `0..9`。
 - training AP、保存 NPZ AP 与 strict checkpoint rerun AP 在 `1e-12` 内一致；运行前后 Git HEAD exact、dirty=0。
 
-## S0/S3/S4/S7 对比
+## S0/S3/S4/S7/S8 对比
 
 | Run | 唯一科学变化 | Test AP | AUROC | F1@0.5 | 内容/时序诊断 |
 |---|---|---:|---:|---:|---|
@@ -54,30 +64,32 @@ S4 test AP/AUROC/F1@0.5 为 `0.703470/0.596009/0.540393`，相对 S0 分别变�
 | S3 | `pretrained false→true` | 0.745689 | 0.652332 | 0.540393 | 音频主导；both-zero AP 0.736156 |
 | S4 | `train_augment true→false` | 0.703470 | 0.596009 | 0.540393 | 更快塌缩；both-zero AP 0.749499 |
 | S7 | `temporal Transformer→identity` | 0.758605 | 0.669173 | 0.530286 | 排序改善但视觉仍为零贡献；both-zero AP 0.733402 |
+| S8 | `learned gate→fixed 0.5/0.5` | 0.769761 | 0.674486 | 0.537494 | 视觉表征恢复但 visual-zero mixed AP drop 仅 0.000632 |
 
-S3 说明“只开学生预训练”不充分；S4 说明“完全关闭现有增强”不但不充分，而且使塌缩更严重；S7 说明 bypass temporal Transformer 能改善排序，却不能恢复健康的视听时序依赖。三者都没有给出启动正式 Full 的依据。
+S3 说明“只开学生预训练”不充分；S4 说明“完全关闭现有增强”不但不充分，而且使塌缩更严重；S7 说明 bypass temporal Transformer 能改善排序，却不能恢复视觉路径；S8 说明固定等权 gate 能恢复视觉表征和梯度，但 concat fusion/decision 仍没有把视觉内容用于最终排名。这些诊断都没有给出启动正式 Full 的依据。
 
 ## 建议阅读顺序
 
-1. [A–F zero/near-zero-training 审计、解释与 S8 决策](ZERO_TRAINING_AUDITS.md)
-2. [A–F 独立 artifact audit](evidence/zero_training/zero_training_artifact_audit.json)
-3. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
-4. [S7 checkpoint trajectory](evidence/s7/posthoc/s7_checkpoint_trajectory.json)
-5. [S7 independent posthoc audit](evidence/s7/posthoc/s7_posthoc_artifact_audit.json)
-6. [S7 training audit](evidence/s7/control/s7_training_artifact_audit.json)
-7. [S4 完整结果与恢复门槛](S4_RESULTS.md)
-8. [S3 完整结果与恢复门槛](S3_RESULTS.md)
-9. [A0 四组捷径与模态基线](A0_RESULTS.md)
-10. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
-11. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
+1. [S8 完整结果、三种证据模式与当前边界](S8_RESULTS.md)
+2. [S8 independent post-hoc audit](evidence/s8/posthoc/s8_posthoc_audit.json)
+3. [S8 full A–E evidence](evidence/s8/posthoc/s8_zero_training_ae.json)
+4. [S8 training audit](evidence/s8/control/s8_training_audit.json)
+5. [A–F zero/near-zero-training 审计与 S8 前置决策](ZERO_TRAINING_AUDITS.md)
+6. [A–F 独立 artifact audit](evidence/zero_training/zero_training_artifact_audit.json)
+7. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
+8. [S4 完整结果与恢复门槛](S4_RESULTS.md)
+9. [S3 完整结果与恢复门槛](S3_RESULTS.md)
+10. [A0 四组捷径与模态基线](A0_RESULTS.md)
+11. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
+12. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
 
 ## 希望独立审阅者重点判断
 
-1. S7 在 early checkpoint 明确失败、但 best AP/AUROC 改善的组合证据，是否足以排除把 temporal Transformer 作为下一项主要修复对象？
-2. 视觉置零在 S7 仍完全无代价、gate 在 step 800 为 `0.001115/0.998885`，下一项是否应优先隔离 gate/fusion 的音频饱和，而不是修改 temporal encoder 的归一化方式？
-3. both-zero 仍保留较高 AP、shuffle 影响很小，checkpoint selection 是否必须加入内容依赖门槛，避免只按 global validation AP 选出捷径模型？
-4. 下一项 bounded control 应怎样设置单变量和预注册门槛，才能区分 gate 形成、query/position prior 与 decision head 三个剩余来源？
+1. S8 已恢复 visual temporal std、梯度和局部 Jacobian，但 visual-zero AP drop 仍只有 `0.000632`；下一项应怎样以单变量区分 concat-fusion MLP、decision projection 和 segment head 的抑制/抵消？
+2. 在不修改 canonical loss、不启动 Full 的边界内，是否应先做零训练 readout/linear-probe 或一次 bounded Visual-only control，并应预注册哪些视觉内容依赖门槛？
+3. S8 temporal shuffle 和 audio-zero 已产生约 `0.03` AP 影响，但 visual-zero 近乎不变；checkpoint selection 是否应同时约束 global AP、visual-zero drop、audio-zero drop 和时序 shuffle drop？
+4. 网页审查是否同意把 S8 判定为证据模式 2，并在任何后续执行前给出唯一、可审计、带成功/失败阈值的实验授权？
 
 ## 边界
 
-本阶段在已完成 S7 之后只运行了 A–F 零/近零训练审计；没有启动 S8、S9、第二 seed 或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。A–E 没有 optimizer；F 只更新未持久化的内存 clone。GitHub 不上传数据集、teacher/student checkpoints、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。
+本阶段完成了 A–F 之后唯一获授权的 S8 单变量诊断；没有启动 S9、Visual-only、第二 seed、延长训练或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。S8 后处理 reader 的 schema 修复只补跑缺失审计，没有重训或重跑 A–E。GitHub 不上传数据集、teacher/student checkpoints、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。

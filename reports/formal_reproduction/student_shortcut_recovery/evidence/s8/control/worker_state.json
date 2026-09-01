@@ -1,0 +1,17 @@
+{
+    "schema_version":  1,
+    "status":  "completed",
+    "worker_process_id":  16744,
+    "updated_at_utc":  "2026-09-01T14:37:34.2675006Z",
+    "git_commit":  "60100c6fff95b313ae92bc91b10a3be7135dc437",
+    "config_sha256":  "9175ae127d602741f8e6357366b093dafec433d3a578d096be8d49ae2ad1c505",
+    "current_phase":  null,
+    "completed_phases":  [
+                             "s8_training",
+                             "training_audit",
+                             "s8_ae",
+                             "posthoc_audit"
+                         ],
+    "exit_code":  0,
+    "message":  "S8 identity+fixed-equal training and independent audits completed via posthoc reader fix 6f39172120ab877c246d3fd6fbd1a4699a6f2871"
+}

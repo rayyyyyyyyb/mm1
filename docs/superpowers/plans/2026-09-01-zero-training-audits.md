@@ -266,10 +266,10 @@ Block S8 if A–F integrity is not PASS, official frame content is corrupt/ident
 
 Write a failing test proving S8 differs from S7 only at `student.gate_mode`, then add the config and make the test pass. Preserve seed, 3×400 exposure, random initialization, augmentation, concat fusion, identity temporal path, Student-only BCE, data/evaluator locks, and checkpoint schedule.
 
-- [ ] **Step 3: Run full verification and persistent S8**
+- [x] **Step 3: Run full verification and persistent S8**
 
 Prepare an exact detached 5090 worktree, run full tests, launch one persistent worker, monitor to completion, and run mixed-only/visual/Jacobian posthoc gates.
 
-- [ ] **Step 4: Independently audit and report**
+- [x] **Step 4: Independently audit and report**
 
 Do not reinterpret S7. Classify S8 using the design’s three outcomes and stop before S9 or any Full rerun.
