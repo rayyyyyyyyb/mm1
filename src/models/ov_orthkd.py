@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Dict, Optional
 
 import timm
@@ -191,14 +192,34 @@ class OVOrthKDStudent(nn.Module):
         sequence_mask: torch.Tensor,
         frame_valid: Optional[torch.Tensor] = None,
         audio_valid: Optional[torch.Tensor] = None,
+        forced_gate_weights: tuple[float, float] | None = None,
     ) -> Dict[str, torch.Tensor | None]:
+        forced_gate_values: tuple[float, float] | None = None
+        if forced_gate_weights is not None:
+            try:
+                values = tuple(float(value) for value in forced_gate_weights)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "forced_gate_weights must contain two finite non-negative values summing to 1"
+                ) from exc
+            if (
+                len(values) != 2
+                or not all(math.isfinite(value) for value in values)
+                or any(value < 0.0 for value in values)
+                or not math.isclose(sum(values), 1.0, rel_tol=0.0, abs_tol=1e-9)
+            ):
+                raise ValueError(
+                    "forced_gate_weights must contain two finite non-negative values summing to 1"
+                )
+            forced_gate_values = (values[0], values[1])
         input_segments = int(frame.shape[1])
         if input_segments > self.max_position_segments:
             raise ValueError(
                 f"input task segments {input_segments} exceed student position capacity "
                 f"{self.max_position_segments}"
             )
-        visual_tokens = self.visual_proj(self.visual_encoder(frame))
+        visual_backbone_features = self.visual_encoder(frame)
+        visual_tokens = self.visual_proj(visual_backbone_features)
         audio_tokens = self.audio_proj(self.audio_encoder(spectrogram))
         projected_text = self.text_proj(text_embedding)
         text_token = projected_text.unsqueeze(1).expand(
@@ -222,7 +243,29 @@ class OVOrthKDStudent(nn.Module):
             dim=-1,
         )
         both_missing = validity.sum(dim=-1, keepdim=True) == 0
-        if self.gate_mode == "learned_softmax":
+        if forced_gate_values is not None:
+            forced = visual_tokens.new_tensor(forced_gate_values).view(1, 1, 2)
+            fixed_validity = validity.to(dtype=visual_tokens.dtype)
+            weighted_validity = forced * fixed_validity
+            forced_denominator = weighted_validity.sum(dim=-1, keepdim=True)
+            available_denominator = fixed_validity.sum(
+                dim=-1, keepdim=True
+            ).clamp_min(1.0)
+            available_fallback = fixed_validity / available_denominator
+            gate_weights = torch.where(
+                forced_denominator > 0,
+                weighted_validity / forced_denominator.clamp_min(1e-12),
+                available_fallback,
+            )
+            gate_weights = torch.where(
+                both_missing,
+                torch.full_like(gate_weights, 0.5),
+                gate_weights,
+            )
+            gate_logits = torch.log(
+                gate_weights.clamp_min(torch.finfo(gate_weights.dtype).tiny)
+            )
+        elif self.gate_mode == "learned_softmax":
             if self.modality_gate is None:
                 raise RuntimeError("learned_softmax gate module is missing")
             gate_logits = self.modality_gate(gate_input)
@@ -280,6 +323,7 @@ class OVOrthKDStudent(nn.Module):
             "audio_aux_features": audio_aux_features,
             "query_features": query_features,
             "segment_features": shared_features,
+            "visual_backbone_features": visual_backbone_features,
             "visual_tokens": visual_tokens,
             "audio_tokens": audio_tokens,
             "text_tokens": text_token,

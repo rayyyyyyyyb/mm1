@@ -178,6 +178,76 @@ def test_fixed_equal_gate_is_literal_and_respects_missing_modalities() -> None:
     assert torch.equal(outputs["gate_weights"], expected)
 
 
+@pytest.mark.parametrize(
+    ("forced", "expected_both_valid"),
+    [
+        ((0.0, 1.0), [0.0, 1.0]),
+        ((0.25, 0.75), [0.25, 0.75]),
+        ((0.5, 0.5), [0.5, 0.5]),
+        ((0.75, 0.25), [0.75, 0.25]),
+        ((1.0, 0.0), [1.0, 0.0]),
+    ],
+)
+def test_forced_gate_weights_are_literal_and_respect_validity(
+    forced: tuple[float, float], expected_both_valid: list[float]
+) -> None:
+    """Catch approximate gate forcing or an override that revives missing content."""
+    model = build_tiny_test_student(
+        path_mode="explicit_projected",
+        gate_mode="learned_softmax",
+    )
+    model.eval()
+    batch = make_tiny_batch()
+    batch["frame_valid"] = torch.tensor([[1.0, 1.0]])
+    batch["audio_valid"] = torch.tensor([[1.0, 0.0]])
+
+    with torch.no_grad():
+        outputs = model(**batch, forced_gate_weights=forced)
+
+    expected = torch.tensor([[expected_both_valid, [1.0, 0.0]]])
+    assert torch.equal(outputs["gate_weights"], expected)
+
+
+@pytest.mark.parametrize(
+    "forced",
+    [
+        (1.0,),
+        (0.2, 0.2),
+        (-0.1, 1.1),
+        (float("nan"), 0.0),
+        (float("inf"), 0.0),
+    ],
+)
+def test_forced_gate_weights_reject_invalid_ratios(forced: tuple[float, ...]) -> None:
+    """Catch a diagnostic receipt claiming weights the forward did not apply."""
+    model = build_tiny_test_student(path_mode="explicit_projected")
+
+    with pytest.raises(ValueError, match="forced_gate_weights"):
+        model(**make_tiny_batch(), forced_gate_weights=forced)
+
+
+def test_visual_backbone_output_is_the_exact_visual_projection_input() -> None:
+    """Catch a timeline audit reading a tensor from a different visual path."""
+    model = build_tiny_test_student(path_mode="explicit_projected")
+    model.eval()
+    captured: dict[str, torch.Tensor] = {}
+
+    def capture_projection_input(
+        _module: torch.nn.Module, inputs: tuple[torch.Tensor, ...]
+    ) -> None:
+        captured["visual_projection_input"] = inputs[0]
+
+    handle = model.visual_proj.register_forward_pre_hook(capture_projection_input)
+    with torch.no_grad():
+        outputs = model(**make_tiny_batch())
+    handle.remove()
+
+    assert torch.equal(
+        outputs["visual_backbone_features"],
+        captured["visual_projection_input"],
+    )
+
+
 def test_fixed_gate_preserves_counterfactual_initialization_and_ignores_gate() -> None:
     torch.manual_seed(123)
     learned = build_tiny_test_student(
