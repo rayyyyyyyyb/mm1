@@ -195,17 +195,17 @@ Commit message: `feat: add disposable Full projector probe`.
 - Auditor consumes A–E JSON, intervention NPZ, F JSON, S7 training audit, S7 trajectory, exact repo, and git executable.
 - Produces a schema-1 PASS/FAIL artifact-integrity receipt; it does not emit a scientific success claim.
 
-- [ ] **Step 1: Write failing tamper tests**
+- [x] **Step 1: Write failing tamper tests**
 
 Construct compact fixtures and assert PASS for valid evidence. Independently mutate `task_segments` to 16, change a donor query, alter a gate ratio, fabricate concordance, claim a saved step-zero checkpoint, change a source SHA, inject NaN, or mark the clone step as persistent; each mutation must fail.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `python -m pytest tests/test_zero_training_evidence_audit.py -q`
 
 Expected: import failure for the auditor.
 
-- [ ] **Step 3: Implement independent recomputation and run GREEN**
+- [x] **Step 3: Implement independent recomputation and run GREEN**
 
 Recompute label histogram, mixed AP/AUROC/shuffle/concordance from NPZ arrays, validate exact mode set and offsets, verify source hashes/commit/clean status, and require the F source-state before/after hash equality plus disposable-clone declaration.
 

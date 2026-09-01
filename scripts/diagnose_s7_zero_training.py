@@ -1049,6 +1049,7 @@ def main() -> None:
                 "different_query_donor": "audio_different_query_donor",
                 "temporal_shuffle": "audio_temporal_shuffle",
             },
+            "seed": seed,
             "test_views": 1,
             "shuffle_repeats": args.shuffle_repeats,
         },
