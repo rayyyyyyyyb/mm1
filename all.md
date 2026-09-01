@@ -3226,3 +3226,8 @@
 
 - 六份 S8 PowerShell 在本地 PowerShell AST parser 均 0 errors，placeholder/TODO/FIXME 扫描无结果，`git diff --check` exit 0。独立复核后在 launch 增加 `-PreflightOnly`：经过所有同样的 commit/config/prepare/verification/blocker/worker/module/冲突检查后，只输出 READY 并显式 `starts_worker=false`/`starts_training=false`。远端 no-launch preflight exit 0，锁定 HEAD 60100c6、config `9175ae12...1c505`、verification `80aa29b2...12223`、prepare `97e90f74...d9dffb`、blocker audit `a90cf867...d31a`，Full/canonical loss/next experiment 均 false。
 - worker/launch/query/resume 原始字节已逐个上传并校验本地/远端 SHA 完全一致：worker `0956fcbe...daa4e`，launch `e4a57200...f3280`，query `35a944aa...7fc5`，resume `a9a60f9d...cba4`。启动前只读 query exit 0：state null、history/diagnostics/artifacts 空、final metrics false、GPU 816/32607 MiB 与 utilization 0%；确认没有 worker 或 S8 训练被预检启动。此刻待 runtime-lock commit，尚未调用真实 launch。
+
+### 736. 2026-09-01：启动唯一获准 S8 persistent worker
+
+- 将 6 份 runtime、runtime README 与 ledger 精确暂存，parser 0 errors、worker SHA 锁定、双 ledger SHA 一致、cached diff check exit 0；创建 commit `1ce00d6db00ed750428d822b17f78262a211e714`（`feat: lock S8 identity fixed-gate runtime`，586 insertions）。随后调用无 dry-run 标志的真实 launch，exit 0；验证 PersistentProcess module SHA `31053849...2e5`后启动 hidden PowerShell worker PID 20828，return value 0。
+- launch receipt 锁定 implementation HEAD 60100c6、config `9175ae12...1c505`、worker `0956fcbe...daa4e`、candidate verification `80aa29b2...12223`、prepare `97e90f74...d9dffb`、A–F blocker audit `a90cf867...d31a`；顺序仅为 `s8_training, training_audit, s8_ae, posthoc_audit`，并显式 Full=false、canonical loss change=false、next experiment=false。初始 state=running/current_phase=s8_training、无 completed phase；GPU 1553/32607 MiB、0% utilization、43℃，符合训练刚启动的准备阶段，尚不声明完成。
