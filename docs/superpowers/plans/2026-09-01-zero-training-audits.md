@@ -36,37 +36,37 @@
 - Produces: `build_audio_donor_maps(ids: Sequence[str], queries: Sequence[str]) -> dict[str, np.ndarray]`.
 - Produces: `temporally_shuffle_audio(batch: Mapping[str, Any], *, seed: int, sample_offset: int) -> dict[str, Any]`.
 
-- [ ] **Step 1: Write failing schema/strata tests**
+- [x] **Step 1: Write failing schema/strata tests**
 
 Create a three-video `T=10` payload containing `k=0`, `k=4`, and `k=10`. Assert counts, mixed AP/AUROC, `null` single-class AUROC with reason, predicted-positive distributions, 25-seed mixed-only shuffle, and a hand-calculated positive/negative concordance. Assert `T=16`, malformed offsets, non-binary labels, and cross-mode metadata changes fail closed.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `python -m pytest tests/test_zero_training_diagnostics.py -q`
 
 Expected: collection fails with `ModuleNotFoundError: src.utils.zero_training_diagnostics`.
 
-- [ ] **Step 3: Implement the minimal strict metric core**
+- [x] **Step 3: Implement the minimal strict metric core**
 
 Use `average_precision_score`/`roc_auc_score` only when both classes exist. Shuffle scores independently within mixed samples with `np.random.default_rng(seed)` and report mean/std/min/max/drop for both AP and AUROC. Compute concordance over every positive-negative pair, counting ties as 0.5, with both pair-weighted and video-macro results.
 
-- [ ] **Step 4: Run GREEN for schema/strata**
+- [x] **Step 4: Run GREEN for schema/strata**
 
 Run: `python -m pytest tests/test_zero_training_diagnostics.py -q`
 
 Expected: all current tests pass.
 
-- [ ] **Step 5: Add failing deterministic donor/audio-shuffle tests**
+- [x] **Step 5: Add failing deterministic donor/audio-shuffle tests**
 
 Assert same-query donors have different IDs and identical queries, different-query donors never share a query, both maps are permutations, singleton same-query groups fail closed, temporal shuffle preserves every non-audio field, and spectrogram/audio-valid tensors receive the same within-sample permutation.
 
-- [ ] **Step 6: Implement donor maps and temporal shuffle, then run GREEN**
+- [x] **Step 6: Implement donor maps and temporal shuffle, then run GREEN**
 
 Run: `python -m pytest tests/test_zero_training_diagnostics.py -q`
 
 Expected: all Task 1 tests pass with no warnings.
 
-- [ ] **Step 7: Commit Task 1**
+- [x] **Step 7: Commit Task 1**
 
 Commit message: `feat: add zero-training diagnostic primitives`.
 
@@ -80,27 +80,27 @@ Commit message: `feat: add zero-training diagnostic primitives`.
 - Extends: `OVOrthKDStudent.forward(..., forced_gate_weights: tuple[float, float] | None = None)`.
 - Produces output: `visual_backbone_features: torch.Tensor` with shape `[B,T,D_visual]`.
 
-- [ ] **Step 1: Write failing gate/backbone tests**
+- [x] **Step 1: Write failing gate/backbone tests**
 
 Assert `(0.25,0.75)` appears literally on both-valid segments, missing-modality segments renormalize to the available modality, `(0,1)` and `(1,0)` are exact, invalid length/negative/non-finite/non-unit-sum ratios raise `ValueError`, and the returned backbone tensor is the exact input consumed by `visual_proj`.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `python -m pytest tests/test_paper_faithfulness.py -k 'forced_gate or backbone_features' -q`
 
 Expected: failures show the missing `forced_gate_weights` argument/output.
 
-- [ ] **Step 3: Implement minimal default-disabled controls**
+- [x] **Step 3: Implement minimal default-disabled controls**
 
 Compute `visual_backbone_features = self.visual_encoder(frame)` once and pass it through `visual_proj`. When an override is present, create the ratio tensor on the visual-token device/dtype, multiply by validity, renormalize, use equal weights only when both modalities are missing, and set receipt logits from the effective weights. The `None` branch remains byte-for-byte equivalent in mathematical operations to the previous branch.
 
-- [ ] **Step 4: Run GREEN and default-path regression**
+- [x] **Step 4: Run GREEN and default-path regression**
 
 Run: `python -m pytest tests/test_paper_faithfulness.py tests/test_s7_temporal_identity.py tests/test_ov_orthkd_pipeline.py -q`
 
 Expected: all tests pass; default versus explicit temporal mode still has identical output keys/tensors.
 
-- [ ] **Step 5: Commit Task 2**
+- [x] **Step 5: Commit Task 2**
 
 Commit message: `feat: expose exact checkpoint diagnostic controls`.
 
@@ -114,29 +114,29 @@ Commit message: `feat: expose exact checkpoint diagnostic controls`.
 - CLI consumes `--repo`, `--git`, `--training-output`, `--training-audit`, `--output`, `--prediction-output`, `--expected-commit`, `--device`, `--shuffle-repeats`, and `--image-examples`.
 - Produces compact schema-1 JSON plus a remote-only compressed NPZ containing aligned logits for independent recomputation.
 
-- [ ] **Step 1: Write failing tests for zero-step provenance and content hashing**
+- [x] **Step 1: Write failing tests for zero-step provenance and content hashing**
 
 Use temporary ten-frame RGB fixtures. Assert all ten SHA256 values are bound into a canonical digest, exact duplicates are counted, adjacent pixel mean-absolute-differences are non-negative, and a duplicate example is retained. Assert a reconstructed model receipt that disagrees with stored step-zero segment-head weight/bias is rejected.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `python -m pytest tests/test_s7_zero_training_audit.py -q`
 
 Expected: import failure for the new runtime helpers.
 
-- [ ] **Step 3: Implement content/provenance helpers and run GREEN**
+- [x] **Step 3: Implement content/provenance helpers and run GREEN**
 
 The compact report keeps ten hashes for deterministic example videos and a canonical digest/count summary for the full test split. It labels the model `reconstructed_zero_step`, records seed/builder/config hashes, and binds the matching stored step-zero receipt.
 
-- [ ] **Step 4: Add failing tests for timeline, gate grid, fusion/Jacobian, and audio modes**
+- [x] **Step 4: Add failing tests for timeline, gate grid, fusion/Jacobian, and audio modes**
 
 Use a tiny student and loader to assert the exact four-state timeline labels, five forced ratios, original+visual-zero pairing, three audio interventions, concat input blocks `[visual,audio,query]`, finite Jacobian norms, no parameter/optimizer mutation, immutable labels/queries/positions, and output-collision refusal.
 
-- [ ] **Step 5: Implement A–E orchestration**
+- [x] **Step 5: Implement A–E orchestration**
 
 At reconstructed step zero and checkpoint steps 400/800/1200, collect raw-pixel/backbone/projected temporal summaries, concat linear Frobenius blocks, and first-test-batch input Jacobians. At best step run the five-ratio original/visual-zero sweep and deterministic audio interventions. Reuse Task 1 for strata and store all intervention logits in the remote-only NPZ.
 
-- [ ] **Step 6: Run GREEN and CLI checks**
+- [x] **Step 6: Run GREEN and CLI checks**
 
 Run: `python -m pytest tests/test_s7_zero_training_audit.py tests/test_zero_training_diagnostics.py tests/test_paper_faithfulness.py -q`
 
@@ -144,7 +144,7 @@ Run: `python scripts/diagnose_s7_zero_training.py --help`
 
 Expected: tests and help exit 0.
 
-- [ ] **Step 7: Commit Task 3**
+- [x] **Step 7: Commit Task 3**
 
 Commit message: `feat: add S7 zero-training audit runtime`.
 
