@@ -261,6 +261,48 @@ def test_fixed_equal_identity_ae_can_be_audited_without_reusing_full_probe(
     assert result["scientific_success_claimed"] is False
 
 
+def test_fixed_equal_additive_ae_must_bind_the_expected_fusion_mode(
+    tmp_path: Path,
+) -> None:
+    fixture = _fixture(tmp_path)
+    fixture["ae_report"]["protocol"].update(
+        {
+            "expected_gate_mode": "fixed_equal",
+            "expected_fusion_mode": "paper_additive_query_conditioned",
+        }
+    )
+    fixture["ae_report"]["claim_level"] = (
+        "read_only_identity_fixed_equal_additive_zero_near_zero_training_diagnostics"
+    )
+
+    result = audit_identity_ae_evidence(
+        ae_report=fixture["ae_report"],
+        prediction_archive=fixture["prediction_path"],
+        training_audit=fixture["training_audit"],
+        expected_commit=fixture["expected_commit"],
+        expected_gate_mode="fixed_equal",
+        expected_fusion_mode="paper_additive_query_conditioned",
+        git_head=fixture["expected_commit"],
+        git_status="",
+    )
+
+    assert result["expected_fusion_mode"] == "paper_additive_query_conditioned"
+    fixture["ae_report"]["protocol"]["expected_fusion_mode"] = (
+        "concat_mlp_query_conditioned"
+    )
+    with pytest.raises(ValueError, match="fusion mode"):
+        audit_identity_ae_evidence(
+            ae_report=fixture["ae_report"],
+            prediction_archive=fixture["prediction_path"],
+            training_audit=fixture["training_audit"],
+            expected_commit=fixture["expected_commit"],
+            expected_gate_mode="fixed_equal",
+            expected_fusion_mode="paper_additive_query_conditioned",
+            git_head=fixture["expected_commit"],
+            git_status="",
+        )
+
+
 @pytest.mark.parametrize(
     "mutation",
     [

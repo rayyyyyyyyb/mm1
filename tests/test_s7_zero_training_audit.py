@@ -397,3 +397,26 @@ def test_identity_gate_config_rejects_nonofficial_timeline_or_transformer() -> N
             },
             expected_gate_mode="fixed_equal",
         )
+
+
+def test_identity_gate_config_binds_the_explicit_additive_fusion_mode() -> None:
+    config = {
+        "data": {"num_segments": 10},
+        "student": {
+            "temporal_path_mode": "identity_passthrough",
+            "gate_mode": "fixed_equal",
+            "fusion_mode": "paper_additive_query_conditioned",
+        },
+    }
+
+    validate_identity_gate_config(
+        config,
+        expected_gate_mode="fixed_equal",
+        expected_fusion_mode="paper_additive_query_conditioned",
+    )
+    with pytest.raises(ValueError, match="fusion_mode"):
+        validate_identity_gate_config(
+            config,
+            expected_gate_mode="fixed_equal",
+            expected_fusion_mode="concat_mlp_query_conditioned",
+        )

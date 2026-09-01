@@ -418,12 +418,18 @@ def audit_identity_ae_evidence(
     training_audit: Mapping[str, Any],
     expected_commit: str,
     expected_gate_mode: str,
+    expected_fusion_mode: str | None = None,
     git_head: str,
     git_status: str,
 ) -> dict[str, Any]:
     """Independently audit identity-path A-E artifacts without coupling them to F."""
     if expected_gate_mode not in {"learned_softmax", "fixed_equal"}:
         raise ValueError(f"Unsupported expected gate mode: {expected_gate_mode}")
+    if expected_fusion_mode is not None and expected_fusion_mode not in {
+        "concat_mlp_query_conditioned",
+        "paper_additive_query_conditioned",
+    }:
+        raise ValueError(f"Unsupported expected fusion mode: {expected_fusion_mode}")
     _assert_finite_json(ae_report, "ae_report")
     _assert_finite_json(training_audit, "training_audit")
     if len(expected_commit) != 40 or git_head != expected_commit or git_status:
@@ -447,10 +453,19 @@ def audit_identity_ae_evidence(
         "expected_gate_mode"
     ) != expected_gate_mode:
         raise ValueError("A-E expected gate mode is absent or incorrect")
+    if (
+        expected_fusion_mode is not None
+        and protocol.get("expected_fusion_mode") != expected_fusion_mode
+    ):
+        raise ValueError("A-E expected fusion mode is absent or incorrect")
     expected_claim = (
-        "read_only_s7_zero_near_zero_training_diagnostics"
-        if expected_gate_mode == "learned_softmax"
-        else "read_only_identity_fixed_equal_zero_near_zero_training_diagnostics"
+        "read_only_identity_fixed_equal_additive_zero_near_zero_training_diagnostics"
+        if expected_fusion_mode == "paper_additive_query_conditioned"
+        else (
+            "read_only_s7_zero_near_zero_training_diagnostics"
+            if expected_gate_mode == "learned_softmax"
+            else "read_only_identity_fixed_equal_zero_near_zero_training_diagnostics"
+        )
     )
     if ae_report.get("claim_level") != expected_claim:
         raise ValueError("A-E claim level does not bind the expected gate mode")
@@ -488,6 +503,7 @@ def audit_identity_ae_evidence(
         "claim_level": "artifact_integrity_only",
         "task_segments": TASK_SEGMENTS,
         "expected_gate_mode": expected_gate_mode,
+        "expected_fusion_mode": expected_fusion_mode,
         "git": {"head": git_head, "status": "clean"},
         "verified_source_receipt_count": source_count,
         "prediction_archive": {

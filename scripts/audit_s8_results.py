@@ -119,6 +119,66 @@ def normalize_scientific_config(config: Mapping[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def validate_identity_fixed_control_pair(
+    baseline: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+    *,
+    expected_fusion_mode: str,
+) -> dict[str, Any]:
+    if expected_fusion_mode not in {
+        "concat_mlp_query_conditioned",
+        "paper_additive_query_conditioned",
+    }:
+        raise ValueError(f"Unsupported expected fusion mode: {expected_fusion_mode}")
+    differences = different_paths(
+        normalize_scientific_config(baseline),
+        normalize_scientific_config(candidate),
+    )
+    baseline_student = baseline.get("student")
+    candidate_student = candidate.get("student")
+    if not isinstance(baseline_student, Mapping) or not isinstance(
+        candidate_student, Mapping
+    ):
+        raise ValueError("Control pair must contain student mappings")
+    if expected_fusion_mode == "paper_additive_query_conditioned":
+        expected_difference = "student.fusion_mode"
+        if (
+            differences != {expected_difference}
+            or baseline_student.get("fusion_mode")
+            != "concat_mlp_query_conditioned"
+            or candidate_student.get("fusion_mode") != expected_fusion_mode
+            or baseline_student.get("gate_mode") != "fixed_equal"
+            or candidate_student.get("gate_mode") != "fixed_equal"
+        ):
+            raise ValueError(
+                "S9 must differ from its S8 baseline only at student.fusion_mode"
+            )
+        control_name = "s9"
+    else:
+        expected_difference = "student.gate_mode"
+        if (
+            differences != {expected_difference}
+            or baseline_student.get("gate_mode") != "learned_softmax"
+            or candidate_student.get("gate_mode") != "fixed_equal"
+            or baseline_student.get("fusion_mode") != expected_fusion_mode
+            or candidate_student.get("fusion_mode") != expected_fusion_mode
+        ):
+            raise ValueError(
+                "S8 must differ from its S7 baseline only at student.gate_mode"
+            )
+        control_name = "s8"
+    if (
+        int(candidate.get("data", {}).get("num_segments", -1)) != TASK_SEGMENTS
+        or candidate_student.get("temporal_path_mode") != "identity_passthrough"
+    ):
+        raise ValueError("Identity fixed control must preserve T=10 and identity path")
+    return {
+        "control_name": control_name,
+        "sole_scientific_change": expected_difference,
+        "expected_fusion_mode": expected_fusion_mode,
+    }
+
+
 def state_dict_sha256(state: Mapping[str, torch.Tensor]) -> str:
     digest = hashlib.sha256()
     for name, tensor in sorted(state.items()):
@@ -159,11 +219,23 @@ def _require_equal_state(
 def audit_inactive_checkpoint_states(
     checkpoints: Mapping[int, Mapping[str, torch.Tensor]],
     reconstructed_initial: Mapping[str, torch.Tensor],
+    *,
+    expected_fusion_mode: str = "concat_mlp_query_conditioned",
 ) -> dict[str, Any]:
+    if expected_fusion_mode not in {
+        "concat_mlp_query_conditioned",
+        "paper_additive_query_conditioned",
+    }:
+        raise ValueError(f"Unsupported expected fusion mode: {expected_fusion_mode}")
     if tuple(sorted(checkpoints)) != CHECKPOINT_STEPS:
         raise ValueError("S8 checkpoints must be exactly 400, 800, 1200")
     initial_temporal = _prefix_state(reconstructed_initial, "temporal_encoder.")
     initial_gate = _prefix_state(reconstructed_initial, "modality_gate.")
+    initial_token_fusion = (
+        _prefix_state(reconstructed_initial, "token_fusion.")
+        if expected_fusion_mode == "paper_additive_query_conditioned"
+        else None
+    )
     previous_head: torch.Tensor | None = None
     head_changed = False
     for step in CHECKPOINT_STEPS:
@@ -178,6 +250,12 @@ def audit_inactive_checkpoint_states(
             initial_gate,
             label=f"step {step} modality_gate",
         )
+        if initial_token_fusion is not None:
+            _require_equal_state(
+                _prefix_state(state, "token_fusion."),
+                initial_token_fusion,
+                label=f"step {step} token_fusion",
+            )
         head = state.get("segment_head.weight")
         if not isinstance(head, torch.Tensor):
             raise ValueError(f"step {step} is missing segment_head.weight")
@@ -193,13 +271,26 @@ def audit_inactive_checkpoint_states(
         "modality_gate_tensor_count": len(initial_gate),
         "temporal_encoder_unchanged_from_initial": True,
         "modality_gate_unchanged_from_initial": True,
+        "token_fusion_tensor_count": (
+            len(initial_token_fusion) if initial_token_fusion is not None else None
+        ),
+        "token_fusion_unchanged_from_initial": (
+            True if initial_token_fusion is not None else None
+        ),
         "active_segment_head_changed_across_steps": True,
     }
 
 
 def validate_s8_training_diagnostics(
     records: Sequence[Mapping[str, Any]],
+    *,
+    expected_fusion_mode: str = "concat_mlp_query_conditioned",
 ) -> dict[str, Any]:
+    if expected_fusion_mode not in {
+        "concat_mlp_query_conditioned",
+        "paper_additive_query_conditioned",
+    }:
+        raise ValueError(f"Unsupported expected fusion mode: {expected_fusion_mode}")
     if [int(record.get("global_step_before_update", -1)) for record in records] != [
         0,
         400,
@@ -215,6 +306,14 @@ def validate_s8_training_diagnostics(
             value = float(gradients.get(key, float("nan")))
             if not math.isfinite(value) or value != 0.0:
                 raise ValueError(f"Inactive {key} gradient is not exactly zero")
+        if expected_fusion_mode == "paper_additive_query_conditioned":
+            token_fusion = float(
+                gradients.get("student_token_fusion", float("nan"))
+            )
+            if not math.isfinite(token_fusion) or token_fusion != 0.0:
+                raise ValueError(
+                    "Inactive student_token_fusion gradient is not exactly zero"
+                )
         visual = float(gradients.get("student_visual_encoder", float("nan")))
         if not math.isfinite(visual) or visual < 0.0:
             raise ValueError("student_visual_encoder gradient is invalid")
@@ -223,6 +322,11 @@ def validate_s8_training_diagnostics(
         "global_step_before_update": [0, 400, 800],
         "temporal_encoder_gradient_exact_zero": True,
         "modality_gate_gradient_exact_zero": True,
+        "token_fusion_gradient_exact_zero": (
+            True
+            if expected_fusion_mode == "paper_additive_query_conditioned"
+            else None
+        ),
         "visual_encoder_gradient_l2": visual_gradients,
     }
 
@@ -409,44 +513,41 @@ def audit_s8_training_artifacts(
     git: Path,
     output: Path,
     source_config_path: Path,
-    s7_config_path: Path,
+    baseline_config_path: Path,
     worker_state_path: Path,
     candidate_verification_path: Path,
     expected_commit: str,
     expected_config_sha256: str,
+    expected_fusion_mode: str = "concat_mlp_query_conditioned",
 ) -> dict[str, Any]:
     if len(expected_commit) != 40:
         raise ValueError("Expected commit must be a full 40-character SHA")
     head = run_git(git, repo, "rev-parse", "HEAD")
     status = run_git(git, repo, "status", "--porcelain=v1", "--untracked-files=all")
     if head != expected_commit or status:
-        raise ValueError("S8 audit requires the exact clean implementation commit")
+        raise ValueError("Control audit requires the exact clean implementation commit")
     if normalized_text_sha256(source_config_path) != expected_config_sha256:
-        raise ValueError("S8 source config SHA256 mismatch")
-    s8 = yaml.safe_load(source_config_path.read_text(encoding="utf-8"))
-    s7 = yaml.safe_load(s7_config_path.read_text(encoding="utf-8"))
-    if not isinstance(s8, dict) or not isinstance(s7, dict):
-        raise ValueError("S7/S8 source configs must be mappings")
-    if different_paths(
-        normalize_scientific_config(s7), normalize_scientific_config(s8)
-    ) != {"student.gate_mode"}:
-        raise ValueError("S8 does not differ from S7 only at student.gate_mode")
+        raise ValueError("Control source config SHA256 mismatch")
+    control = yaml.safe_load(source_config_path.read_text(encoding="utf-8"))
+    baseline = yaml.safe_load(baseline_config_path.read_text(encoding="utf-8"))
+    if not isinstance(control, dict) or not isinstance(baseline, dict):
+        raise ValueError("Baseline/control source configs must be mappings")
+    control_contract = validate_identity_fixed_control_pair(
+        baseline,
+        control,
+        expected_fusion_mode=expected_fusion_mode,
+    )
+    control_name = str(control_contract["control_name"])
+    control_label = control_name.upper()
     if (
-        s7["student"]["gate_mode"] != "learned_softmax"
-        or s8["student"]["gate_mode"] != "fixed_equal"
-        or s8["student"]["temporal_path_mode"] != "identity_passthrough"
-        or int(s8["data"]["num_segments"]) != TASK_SEGMENTS
-    ):
-        raise ValueError("S8 source config does not bind identity + fixed_equal + T=10")
-    if (
-        int(s8["training"]["epochs"]) != 3
-        or int(s8["training"]["max_batches_per_epoch"]) != 400
-        or s8["logging"]["training_diagnostics"]["checkpoint_steps"]
+        int(control["training"]["epochs"]) != 3
+        or int(control["training"]["max_batches_per_epoch"]) != 400
+        or control["logging"]["training_diagnostics"]["checkpoint_steps"]
         != list(CHECKPOINT_STEPS)
     ):
-        raise ValueError("S8 exposure/checkpoint schedule changed")
+        raise ValueError(f"{control_label} exposure/checkpoint schedule changed")
     if any(
-        float(s8["loss"][key]) != 0.0
+        float(control["loss"][key]) != 0.0
         for key in (
             "alpha_strong_logit",
             "alpha_weak_logit",
@@ -456,7 +557,7 @@ def audit_s8_training_artifacts(
             "alpha_orth",
         )
     ):
-        raise ValueError("S8 is not Student-only BCE")
+        raise ValueError(f"{control_label} is not Student-only BCE")
 
     worker = read_json(worker_state_path)
     candidate = read_json(candidate_verification_path)
@@ -465,9 +566,11 @@ def audit_s8_training_artifacts(
         or int(worker.get("exit_code", -1)) != 0
         or worker.get("git_commit") != expected_commit
         or worker.get("config_sha256") != expected_config_sha256
-        or worker.get("completed_phases") != ["s8_training"]
+        or worker.get("completed_phases") != [f"{control_name}_training"]
     ):
-        raise ValueError("S8 worker did not complete the exact locked training phase")
+        raise ValueError(
+            f"{control_label} worker did not complete the exact locked training phase"
+        )
     if (
         candidate.get("status") != "PASS"
         or candidate.get("commit_before") != expected_commit
@@ -477,11 +580,11 @@ def audit_s8_training_artifacts(
         or int(candidate.get("compileall_exit", -1)) != 0
         or int(candidate.get("pytest_exit", -1)) != 0
     ):
-        raise ValueError("S8 exact-candidate verification is not PASS")
+        raise ValueError(f"{control_label} exact-candidate verification is not PASS")
     for name in REQUIRED_OUTPUTS:
         path = output / name
         if not path.is_file() or path.stat().st_size <= 0:
-            raise FileNotFoundError(f"Missing S8 output: {name}")
+            raise FileNotFoundError(f"Missing {control_label} output: {name}")
 
     resolved = yaml.safe_load((output / "resolved_config.yaml").read_text(encoding="utf-8"))
     duplicate = yaml.safe_load((output / "config_resolved.yaml").read_text(encoding="utf-8"))
@@ -491,25 +594,36 @@ def audit_s8_training_artifacts(
     without_runtime = copy.deepcopy(resolved)
     del without_runtime["runtime_implementation"]
     observed_log_dir = str(without_runtime["logging"]["log_dir"]).replace("\\", "/")
-    source_log_dir = str(s8["logging"]["log_dir"]).replace("\\", "/")
+    source_log_dir = str(control["logging"]["log_dir"]).replace("\\", "/")
     if observed_log_dir != source_log_dir:
-        raise ValueError("S8 output directory does not match the locked config")
-    without_runtime["logging"]["log_dir"] = s8["logging"]["log_dir"]
-    if without_runtime != s8:
-        raise ValueError("Resolved S8 config differs from the locked source config")
+        raise ValueError(
+            f"{control_label} output directory does not match the locked config"
+        )
+    without_runtime["logging"]["log_dir"] = control["logging"]["log_dir"]
+    if without_runtime != control:
+        raise ValueError(
+            f"Resolved {control_label} config differs from the locked source config"
+        )
     if (
         behavior["student"]["path_mode"] != "explicit_projected"
-        or behavior["student"]["fusion_mode"] != "concat_mlp_query_conditioned"
+        or behavior["student"]["fusion_mode"] != expected_fusion_mode
         or behavior["student"]["gate_mode"] != "fixed_equal"
         or behavior["student"]["temporal_path_mode"] != "identity_passthrough"
     ):
-        raise ValueError("S8 runtime behavior is not the approved causal cell")
+        raise ValueError(
+            f"{control_label} runtime behavior is not the approved causal cell"
+        )
 
     history = read_jsonl(output / "history.jsonl")
     diagnostics = read_jsonl(output / "training_diagnostics.jsonl")
     if len(history) != 3 or [int(row["global_step"]) for row in history] != list(CHECKPOINT_STEPS):
-        raise ValueError("S8 history does not contain exact 3x400 exposure")
-    diagnostic_receipt = validate_s8_training_diagnostics(diagnostics)
+        raise ValueError(
+            f"{control_label} history does not contain exact 3x400 exposure"
+        )
+    diagnostic_receipt = validate_s8_training_diagnostics(
+        diagnostics,
+        expected_fusion_mode=expected_fusion_mode,
+    )
     assert_finite(history, "history")
     assert_finite(diagnostics, "training_diagnostics")
     metrics = read_json(output / "final_metrics.json")
@@ -517,14 +631,16 @@ def audit_s8_training_artifacts(
     for split, (samples, segments) in EXPECTED_SPLITS.items():
         total = metrics[split]["metrics"]["total"]
         if int(total["sample_count"]) != samples or int(total["segment_count"]) != segments:
-            raise ValueError(f"S8 {split} metrics do not preserve official sample/T=10 counts")
+            raise ValueError(
+                f"{control_label} {split} metrics do not preserve official sample/T=10 counts"
+            )
 
     sys.path.insert(0, str(repo))
     from scripts.train_ov_orthkd import build_model_and_loss, set_seed  # noqa: PLC0415
 
     device = torch.device("cpu")
-    set_seed(int(s8.get("seed", 42)), deterministic=True)
-    initial_student, initial_loss = build_model_and_loss(s8, device)
+    set_seed(int(control.get("seed", 42)), deterministic=True)
+    initial_student, initial_loss = build_model_and_loss(control, device)
     del initial_loss
     initial_state = {
         name: value.detach().cpu().clone()
@@ -545,18 +661,28 @@ def audit_s8_training_artifacts(
             or checkpoint.get("config") != resolved
             or checkpoint["runtime_implementation"]["student"]["gate_mode"]
             != "fixed_equal"
+            or checkpoint["runtime_implementation"]["student"]["fusion_mode"]
+            != expected_fusion_mode
         ):
-            raise ValueError(f"S8 checkpoint metadata mismatch at step {step}")
+            raise ValueError(
+                f"{control_label} checkpoint metadata mismatch at step {step}"
+            )
         fingerprint = checkpoint.get("reproduction_fingerprint")
         if not isinstance(fingerprint, Mapping) or not isinstance(fingerprint.get("sha256"), str):
-            raise ValueError(f"S8 checkpoint fingerprint missing at step {step}")
+            raise ValueError(
+                f"{control_label} checkpoint fingerprint missing at step {step}"
+            )
         if fingerprint_sha is None:
             fingerprint_sha = str(fingerprint["sha256"])
         if fingerprint["sha256"] != fingerprint_sha:
-            raise ValueError("S8 reproduction fingerprint changed across checkpoints")
+            raise ValueError(
+                f"{control_label} reproduction fingerprint changed across checkpoints"
+            )
         state = checkpoint.get("student_state_dict")
         if not isinstance(state, dict) or not all(torch.isfinite(value).all() for value in state.values()):
-            raise ValueError(f"S8 checkpoint state is invalid at step {step}")
+            raise ValueError(
+                f"{control_label} checkpoint state is invalid at step {step}"
+            )
         checkpoint_states[step] = {
             name: value.detach().cpu().clone() for name, value in state.items()
         }
@@ -574,14 +700,16 @@ def audit_s8_training_artifacts(
         del checkpoint, state
         gc.collect()
     inactive_receipt = audit_inactive_checkpoint_states(
-        checkpoint_states, initial_state
+        checkpoint_states,
+        initial_state,
+        expected_fusion_mode=expected_fusion_mode,
     )
     checkpoint_roles = {
         role: _checkpoint_role(output / f"{role}.pt", resolved, state_hashes)
         for role in ("best", "last")
     }
     if checkpoint_roles["last"]["global_step"] != 1200:
-        raise ValueError("S8 last checkpoint is not step 1200")
+        raise ValueError(f"{control_label} last checkpoint is not step 1200")
     prediction_receipts = {
         split: audit_prediction_npz(
             output / f"{split}_predictions.npz", samples, segments
@@ -599,11 +727,31 @@ def audit_s8_training_artifacts(
     return {
         "schema_version": 1,
         "status": "PASS",
-        "claim_level": "noncanonical_s8_training_artifact_integrity",
+        "claim_level": f"noncanonical_{control_name}_training_artifact_integrity",
         "git_commit": expected_commit,
         "task_segments": TASK_SEGMENTS,
         "max_position_segments": 16,
-        "sole_scientific_change_from_s7": "student.gate_mode_learned_to_fixed_equal",
+        "control_name": control_name,
+        "baseline_config": {
+            "path": str(baseline_config_path.resolve()),
+            "bytes": baseline_config_path.stat().st_size,
+            "sha256": sha256_file(baseline_config_path),
+        },
+        "expected_fusion_mode": expected_fusion_mode,
+        "sole_scientific_change": control_contract["sole_scientific_change"],
+        **(
+            {
+                "sole_scientific_change_from_s7": (
+                    "student.gate_mode_learned_to_fixed_equal"
+                )
+            }
+            if control_name == "s8"
+            else {
+                "sole_scientific_change_from_s8": (
+                    "student.fusion_mode_concat_to_paper_additive"
+                )
+            }
+        ),
         "worker_state": worker,
         "candidate_verification": {
             "bytes": candidate_verification_path.stat().st_size,
@@ -637,17 +785,29 @@ def audit_s8_training_artifacts(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Independent S8 training artifact audit")
+    parser = argparse.ArgumentParser(
+        description="Independent identity fixed-gate control training artifact audit"
+    )
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--git", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-config", type=Path, required=True)
-    parser.add_argument("--s7-config", type=Path, required=True)
+    baseline = parser.add_mutually_exclusive_group(required=True)
+    baseline.add_argument("--baseline-config", type=Path)
+    baseline.add_argument("--s7-config", type=Path)
     parser.add_argument("--worker-state", type=Path, required=True)
     parser.add_argument("--candidate-verification", type=Path, required=True)
     parser.add_argument("--audit-output", type=Path, required=True)
     parser.add_argument("--expected-commit", required=True)
     parser.add_argument("--expected-config-sha256", required=True)
+    parser.add_argument(
+        "--expected-fusion-mode",
+        choices=(
+            "concat_mlp_query_conditioned",
+            "paper_additive_query_conditioned",
+        ),
+        default="concat_mlp_query_conditioned",
+    )
     return parser.parse_args()
 
 
@@ -656,17 +816,21 @@ def main() -> None:
     audit_output = args.audit_output.resolve()
     temporary = audit_output.with_name(audit_output.name + ".tmp")
     if audit_output.exists() or temporary.exists():
-        raise FileExistsError(f"Refusing to overwrite S8 audit output: {audit_output}")
+        raise FileExistsError(f"Refusing to overwrite control audit output: {audit_output}")
+    baseline_config = args.baseline_config or args.s7_config
+    if baseline_config is None:
+        raise ValueError("A baseline config is required")
     report = audit_s8_training_artifacts(
         repo=args.repo.resolve(),
         git=args.git.resolve(),
         output=args.output.resolve(),
         source_config_path=args.source_config.resolve(),
-        s7_config_path=args.s7_config.resolve(),
+        baseline_config_path=baseline_config.resolve(),
         worker_state_path=args.worker_state.resolve(),
         candidate_verification_path=args.candidate_verification.resolve(),
         expected_commit=args.expected_commit,
         expected_config_sha256=args.expected_config_sha256,
+        expected_fusion_mode=args.expected_fusion_mode,
     )
     assert_finite(report, "report")
     audit_output.parent.mkdir(parents=True, exist_ok=True)

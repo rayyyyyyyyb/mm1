@@ -91,7 +91,10 @@ def canonical_mapping_sha256(value: Mapping[str, Any]) -> str:
 
 
 def validate_identity_gate_config(
-    config: Mapping[str, Any], *, expected_gate_mode: str
+    config: Mapping[str, Any],
+    *,
+    expected_gate_mode: str,
+    expected_fusion_mode: str | None = None,
 ) -> None:
     """Fail closed on the two identity-path causal cells supported by this audit."""
     if expected_gate_mode not in {"learned_softmax", "fixed_equal"}:
@@ -108,6 +111,19 @@ def validate_identity_gate_config(
             "Resolved student.gate_mode does not match the explicitly expected "
             f"gate_mode {expected_gate_mode}"
         )
+    if expected_fusion_mode is not None:
+        if expected_fusion_mode not in {
+            "concat_mlp_query_conditioned",
+            "paper_additive_query_conditioned",
+        }:
+            raise ValueError(
+                f"Unsupported expected fusion_mode: {expected_fusion_mode}"
+            )
+        if student.get("fusion_mode") != expected_fusion_mode:
+            raise ValueError(
+                "Resolved student.fusion_mode does not match the explicitly "
+                f"expected fusion_mode {expected_fusion_mode}"
+            )
 
 
 def state_dict_sha256(module: torch.nn.Module) -> str:
@@ -309,8 +325,12 @@ def verify_reconstructed_zero_step(
 
 
 def fusion_input_block_norms(student: torch.nn.Module) -> dict[str, Any]:
-    if getattr(student, "fusion_mode", None) != "concat_mlp_query_conditioned":
-        raise ValueError("Fusion block audit requires concat_mlp_query_conditioned")
+    fusion_mode = getattr(student, "fusion_mode", None)
+    if fusion_mode not in {
+        "concat_mlp_query_conditioned",
+        "paper_additive_query_conditioned",
+    }:
+        raise ValueError("Fusion block audit requires a supported fusion mode")
     token_fusion = getattr(student, "token_fusion", None)
     if not isinstance(token_fusion, torch.nn.Sequential) or len(token_fusion) < 2:
         raise ValueError("Student concat fusion module is unavailable")
@@ -334,6 +354,8 @@ def fusion_input_block_norms(student: torch.nn.Module) -> dict[str, Any]:
             "frobenius_l2": float(block.to(dtype=torch.float64).norm()),
         }
     return {
+        "student_fusion_mode": fusion_mode,
+        "active_in_forward": fusion_mode == "concat_mlp_query_conditioned",
         "block_order": order,
         "semantics": "token_fusion_first_linear_columns_after_concat_layernorm",
         "first_linear_shape": list(linear.weight.shape),
@@ -905,6 +927,14 @@ def parse_args() -> argparse.Namespace:
         choices=("learned_softmax", "fixed_equal"),
         default="learned_softmax",
     )
+    parser.add_argument(
+        "--expected-fusion-mode",
+        choices=(
+            "concat_mlp_query_conditioned",
+            "paper_additive_query_conditioned",
+        ),
+        default="concat_mlp_query_conditioned",
+    )
     parser.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
     parser.add_argument("--shuffle-repeats", type=int, default=100)
     parser.add_argument("--image-examples", type=int, default=8)
@@ -940,7 +970,9 @@ def main() -> None:
     if not isinstance(config, dict):
         raise ValueError("Identity-path resolved config must be a mapping")
     validate_identity_gate_config(
-        config, expected_gate_mode=args.expected_gate_mode
+        config,
+        expected_gate_mode=args.expected_gate_mode,
+        expected_fusion_mode=args.expected_fusion_mode,
     )
     config_sha = canonical_mapping_sha256(config)
     seed = int(config.get("seed", 42))
@@ -1062,9 +1094,13 @@ def main() -> None:
         "schema_version": 1,
         "status": "PASS",
         "claim_level": (
-            "read_only_s7_zero_near_zero_training_diagnostics"
-            if args.expected_gate_mode == "learned_softmax"
-            else "read_only_identity_fixed_equal_zero_near_zero_training_diagnostics"
+            "read_only_identity_fixed_equal_additive_zero_near_zero_training_diagnostics"
+            if args.expected_fusion_mode == "paper_additive_query_conditioned"
+            else (
+                "read_only_s7_zero_near_zero_training_diagnostics"
+                if args.expected_gate_mode == "learned_softmax"
+                else "read_only_identity_fixed_equal_zero_near_zero_training_diagnostics"
+            )
         ),
         "protocol": {
             "task_segments": TASK_SEGMENTS,
@@ -1082,6 +1118,7 @@ def main() -> None:
             "seed": seed,
             "test_views": 1,
             "expected_gate_mode": args.expected_gate_mode,
+            "expected_fusion_mode": args.expected_fusion_mode,
             "shuffle_repeats": args.shuffle_repeats,
         },
         "git": {
