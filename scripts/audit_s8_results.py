@@ -260,7 +260,7 @@ def extract_s8_primary_metrics(
 
     def summarize_timeline_entry(entry: Mapping[str, Any]) -> dict[str, Any]:
         paths = entry["visual_timeline"]["paths"]
-        blocks = entry["fusion_input_blocks"]
+        blocks = entry["fusion_input_blocks"]["blocks"]
         jacobian = entry["first_test_batch_input_jacobians"]["l2"]
         return {
             "visual_path": {

@@ -71,9 +71,12 @@ def _ae_report() -> dict[str, object]:
                     }
                 },
                 "fusion_input_blocks": {
-                    "visual": {"frobenius_l2": 4.0},
-                    "audio": {"frobenius_l2": 5.0},
-                    "query": {"frobenius_l2": 6.0},
+                    "block_order": ["visual", "audio", "query"],
+                    "blocks": {
+                        "visual": {"frobenius_l2": 4.0},
+                        "audio": {"frobenius_l2": 5.0},
+                        "query": {"frobenius_l2": 6.0},
+                    },
                 },
                 "first_test_batch_input_jacobians": {
                     "l2": {"visual": 0.3, "audio": 0.4, "query": 0.5}

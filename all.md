@@ -3231,3 +3231,39 @@
 
 - 将 6 份 runtime、runtime README 与 ledger 精确暂存，parser 0 errors、worker SHA 锁定、双 ledger SHA 一致、cached diff check exit 0；创建 commit `1ce00d6db00ed750428d822b17f78262a211e714`（`feat: lock S8 identity fixed-gate runtime`，586 insertions）。随后调用无 dry-run 标志的真实 launch，exit 0；验证 PersistentProcess module SHA `31053849...2e5`后启动 hidden PowerShell worker PID 20828，return value 0。
 - launch receipt 锁定 implementation HEAD 60100c6、config `9175ae12...1c505`、worker `0956fcbe...daa4e`、candidate verification `80aa29b2...12223`、prepare `97e90f74...d9dffb`、A–F blocker audit `a90cf867...d31a`；顺序仅为 `s8_training, training_audit, s8_ae, posthoc_audit`，并显式 Full=false、canonical loss change=false、next experiment=false。初始 state=running/current_phase=s8_training、无 completed phase；GPU 1553/32607 MiB、0% utilization、43℃，符合训练刚启动的准备阶段，尚不声明完成。
+
+### 737. 2026-09-01：S8 教师缓存锁定完成并进入训练
+
+- 启动后持续只读监控唯一 PID 20828。前约 13.7 分钟处于训练入口的预期 `canonical_tree_hash` 阶段：教师缓存共 99,334 个文件、1,310,102,478 bytes；Python 进程累计读取与 I/O 操作数持续增长，stderr 仅有 `Using device: cuda`，没有 OOM、异常或第二 worker。随后 `teacher_cache_hash.json` 原子出现，证明缓存全量哈希完成。
+- 第一次自定义 inline PowerShell 精简查询因本地 shell 提前展开 `$c/$o`，远端得到无效赋值并 exit 0 但带 `CommandNotFoundException`；该结果不用于实验判断，也未触碰 worker。改用锁定的 query control 后，读取到 state=running/current_phase=`s8_training`、PID 20828 存活，训练已到 step 400，GPU PID 8505、32,607 MiB、约 73.56 W/49℃，stderr 只有正常 tqdm/loss 行。
+- step-zero 训练诊断已经写入：logits shape `[4,10]`；固定等权 gate 梯度严格为 `0.0`，visual/audio encoder 梯度 L2 分别为 `2.5840075/5.2926427`，visual/audio projection 为 `1.0048096/1.1483089`，token fusion 为 `3.6755249`。这与 S8 从初始化起固定等权、但视觉与音频主路径可训练的预注册行为一致。当前正在执行首个 400-step 验证/checkpoint，尚不声明训练或科学结论完成。
+
+### 738. 2026-09-01：S8 step 400 首个验证与 checkpoint 正常落盘
+
+- 验证期间主 Python PID 27176 的累计 CPU 从约 398.44 秒持续增至 427.06 秒，working set 约 3.78 GB；GPU 显存持续 32,607 MiB，功耗约 121–142 W，worker/进程树无变化，证明是完整测试集计算而非停滞。20:20 本地时 `history.jsonl`、best/last、prediction NPZ 和 `step_000400.pt` 原子出现。
+- step 400 的锁定结果为：train BCE/total `0.6348587299`；validation AP `0.7473147423`、AUROC `0.6548232951`、binary micro-F1@0.5 `0.7453871804`、query foreground macro-F1 `0.6063290389`、official OV-AVEL segment/event F1 `0.5707205571/0.5573547529`，5,798 samples/57,980 segments；best=true，elapsed `568.1612 s`，peak memory `6463.8311 MB`。
+- `best.pt`/`last.pt` 均 496,564,649 bytes，`step_000400.pt` 为 496,696,875 bytes；stderr 明确记录 New best 和 checkpoint 保存，随后进入 epoch 2。当前只记录轨迹，不以 step400 单点声称 S8 科学成功；仍待 800/1200、训练 artifact audit、17-mode A–E 与独立 posthoc audit。
+
+### 739. 2026-09-01：S8 step 800 验证、梯度与第二 checkpoint
+
+- 第二段训练到 step 800 后完成全量验证并原子写入 `step_000800.pt`（496,696,875 bytes）。train BCE/total `0.5792089313`；validation AP `0.7424658266`、AUROC `0.6387786731`、binary micro-F1 `0.7450573291`、query foreground macro-F1 `0.6168720398`、official segment/event F1 `0.5475699180/0.5605060858`；best=false，elapsed `426.4621 s`，peak memory `6463.8311 MB`。
+- step800 固定 gate 仍精确 visual/audio=`0.5/0.5`、entropy=`0.6931471806`、saturation=0、gate gradient=0。logit within-sample std mean `0.1235867593`，positive/negative means `1.4686865/0.6306803`。visual/audio encoder gradient L2 为 `0.0417267045/0.1059190400`，约 1:2.54；同阶段 S7 learned-gate 的对应值约 `1.957e-5/0.4122434`，因此 S8 已明确保住远强于 S7 的视觉反向信号，但这尚不等价于真实视觉内容敏感性。
+- shared/decision 几何 variance mean 为 `0.4638738612/0.0388572850`，effective rank `13.15396/3.23688`。训练随后进入最后一段 800→1200；正式因果判断仍等待 1200、全 checkpoint 状态审计及 A–E visual-zero/shuffle/Jacobian 证据。
+
+### 740. 2026-09-01：S8 训练完成且 training artifact audit PASS
+
+- step1200 validation 完成并刷新 best：train BCE `0.5819044593`；AP `0.7583849632`、AUROC `0.6649110648`、binary micro-F1@0.5 `0.6848789706`、query foreground macro-F1 `0.5460576090`、official segment/event F1 `0.5326239323/0.5017789386`；predicted-positive rate `0.6258882373`，elapsed `414.0568 s`。三份 diagnostic checkpoints 均 496,696,875 bytes。
+- best checkpoint 的 official T=10 test 总体指标为 AP `0.7697610107`、AUROC `0.6744859113`、binary micro-F1@0.5 `0.6873138773`、query foreground macro-F1 `0.5529092357`、official segment/event F1@0.5 `0.5374944533/0.5025102275`，5,820 samples/58,200 segments。相对 S7 test AP/AUROC/F1@0.5 分别为 `+0.0111556418/+0.0053129084/+0.1570278474`；总体排序/阈值表现改善不被当作视觉因果成功的替代证据。
+- `s8_training_audit.json` 状态 PASS、claim=`noncanonical_s8_training_artifact_integrity`、commit `60100c6...`、T=10，唯一归一化科学变化为 `student.gate_mode_learned_to_fixed_equal`。审计确认 fixed modality gate 与 bypassed temporal encoder 从 reconstructed initial 到 400/800/1200 全部精确不变、相应梯度精确为 0，active segment head 跨步真实改变；best/last 均绑定 step1200 student-state SHA `cbb940e0...5d132`。worker 随即把 completed phases 更新为 `s8_training,training_audit` 并进入只读 `s8_ae`，GPU 显存降至约 685 MiB；未开始下一项训练。
+
+### 741. 2026-09-01：S8 A–E 全量只读审计由帧内容阶段切入 timeline 推理
+
+- `s8_ae` 启动独立 Python PID 29396，无 optimizer/checkpoint 写入。前约 17 分钟为 CPU/I/O 密集的官方 JPG 内容与身份审计：GPU 约 1.42 GB/0%，stderr 始终 0；累计 CPU 由 141.91 秒持续增至 1,014.5 秒，读取由约 3.87 GB/262,777 ops 增至 5.61 GB/380,605 ops，证明没有停滞或错误。
+- 随后 GPU 显存升至约 2.36 GB、利用率采样 1–29%、功耗约 82–120 W，确认进入 reconstructed-zero 及 step400/800/1200 的完整 test timeline/Jacobian 推理。转段后多线程累计 CPU 约 11,760.94 秒、总读取约 6.615 GB、写入约 165.5 MB；state 仍为 `s8_ae/running`，唯一已提交审计产物仍是 PASS training audit，A–E JSON/NPZ 尚未原子提交。
+
+### 742. 2026-09-01：A–E PASS 后定位并修复 posthoc 真实-schema 缺陷
+
+- A–E 最终原子写入 JSON 118,363 bytes 与 remote-only NPZ 9,883,684 bytes，stderr 0；worker 随即进入 `posthoc_audit`，但原 auditor exit 1，state=failed，completed phases 精确为 `s8_training,training_audit,s8_ae`。traceback 唯一根因为 `extract_s8_primary_metrics` 错把真实 `fusion_input_blocks.blocks.visual/audio/query` 当作 `fusion_input_blocks.visual/audio/query`，触发 `KeyError: visual`；训练、checkpoint、A–E 与 NPZ 均未失败或被修改。
+- 先将单元 fixture 改为真实嵌套 schema，并在不修改 exact candidate 的外置测试中得到有效 RED：`1 failed, 2 passed`、失败点精确为原 `blocks[name]`。最小实现只把读取改为 `entry["fusion_input_blocks"]["blocks"]`；同一真实-schema 测试 GREEN 为 `3 passed in 2.61–2.63s`。首次 overlay probe 因 Python script-dir 导入优先级仍加载旧 candidate auditor，再次复现相同 KeyError；该无效 probe 未写正式产物。随后新建隔离 probe clone、只覆盖修复脚本与测试，focused tests exit0。
+- 隔离 clone 使用修复 auditor 对原 candidate 的真实 A–E/NPZ/training audit 运行非正式输出 `s8_posthoc_probe.json`，exit0/PASS：commit 60100c6 clean、T=10、fixed_equal、8 个 source receipts、17 modes、5,820 samples/58,200 segments；A–E/NPZ/training-audit SHA 分别为 `54baa6c2...ca7d`、`5a28ce8c...ec68`、`7aa1108a...6a11`，独立 metrics digest `08334096...bfaf`。probe 不替代正式 worker 状态，下一步仍须干净修复 commit、全量验证与仅 posthoc resume。
+- 已独立重算的预注册主指标：mixed original AP/AUROC `0.6490653172/0.6034675535`；visual-zero AP `0.6484335430`，AP drop `0.0006317742`，AUROC drop `-0.0014620706`；temporal-shuffle AP/AUROC mean drop `0.0343021784/0.0466042293`；pairwise concordance `0.6854245097`。best step1200 visual backbone/projected temporal std `0.1388954948/0.0560528340`，visual/audio/query Jacobian `0.2746560161/0.4810615136/2.8476615070`。因此证据属于预注册第二类：视觉表示与梯度存在，但 visual-zero 仍近乎无代价，行为级 concat fusion/decision 继续压制视觉；不授权自动 S9 或 Full。
