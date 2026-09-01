@@ -3138,3 +3138,47 @@
 ### 719. 2026-09-01：Task 5 提交前静态复核有效通过
 
 - 使用真实 `C:\windows\py.exe -3.11` 得到 Python 3.11.9、version exit 0；对 A–E、F、independent auditor 与诊断工具模块运行 `py_compile` exit 0。使用真实 Ruff 和准确的 8 个实现/测试文件重跑，`All checks passed!`、exit 0。7 份 c181ffb PowerShell runtime 再次全部 parser errors=0；`git diff --check` 再次 exit 0。上述检查命令总体 `FINAL_EXIT=0`，可以进入精确暂存与 Task 5 runtime-lock commit。
+
+### 720. 2026-09-01：Task 5 runtime lock 干净提交
+
+- 提交前两份 `all.md` SHA256 同为 `c0fa35fe...54d25`；精确暂存计划、仓库 ledger 和 7 份 runtime，cached diff check 无输出、exit 0，未暂存 bundle、数据、checkpoint 或远端产物。创建 commit `9786eb4da95a99d123078674508dbe340170cef8`（`feat: lock zero-training evidence audit`），9 files、773 insertions、3 deletions，随后 `git status --short` 为空。该 commit 保存控制层，runtime 锁定和实际执行的实现仍是已完成全量测试的 `c181ffb3297ff480a0d01186c626acce7c66afff`。
+
+### 721. 2026-09-01：启动不含训练的 5090 A–F evidence worker
+
+- 运行远端 `launch_zero_training_c181ffb.ps1`，exit 0；经已验证 PersistentProcess 模块启动 hidden PowerShell worker PID 27752，return value 0。launch receipt 锁定 module SHA `31053849...2e5`、worker SHA `e572bd31...a18`、preflight SHA `3c7a1dca...6692`、Git HEAD `c181ffb3297ff480a0d01186c626acce7c66afff`，sequence 仅为 `ae→f→audit`，并显式记录 `starts_training=false`、`starts_s8=false`。初始 worker state 为 running/current_phase=ae、无 completed phase；进程命令行与 worker 路径一致。初始 GPU 842/32607 MiB、utilization 0%、temperature 42°C，符合刚开始数据/模型准备，尚未据此判断完成或失败。
+
+### 722. 2026-09-01：A–E 早期活性诊断与 Task 6 Step 1 完成
+
+- 三次只读 query 均为 running/current_phase=ae、worker PID 27752 存活、日志 0 bytes、尚无 artifact；GPU 显存稳定在 1579/32607 MiB、utilization 0%、42°C。一次 35 秒 `Start-Sleep; ssh query` 受本地 exec 约 30 秒窗口影响返回空输出，没有修改任何状态，不作为查询证据。首次进程树尝试使用系统已移除的 `wmic`，command not found、exit 1；改用只读 CIM encoded command 成功。
+- 第一层 CIM 发现 venv shim Python PID 12844，但其 CPU/I/O 为零；递归 CIM 随即确认实际解释器子进程 PID 6880（`E:\OV-OrthKD-R0\env\Python311\python.exe`）命令行与锁定 A–E CLI 完全一致，累计 kernel/user time 约 66.3/147.1 秒、working set 约 1.31 GB、read transfer 约 896 MB，证明任务正在 CPU/I/O 处理而非挂起；尚未进入明显 GPU 推理属于合理早期阶段。Task 6 Step 1 据实勾选，未勾选监控完成或审计通过。
+
+### 723. 2026-09-01：A–E 全量图像审计持续监控
+
+- 阅读 A–E 实现确认其先遍历 5,820 条 test records，对 58,200 张官方 JPG 同时做文件 SHA256、decoded RGB 和相邻像素 MAD，全部结束后才执行模型推理并原子写 JSON/NPZ；因此中间日志与 artifact 为空是设计行为。只读梳理现有 recovery README、web handoff、implementation audit、runtime/evidence inventories，确认 Task 6 后续应更新的既有入口，未修改这些文档。
+- 建立 45 秒间隔的本地只读 query 循环，poll 1–10 的 SSH exit 均为 0，远端始终是唯一 PID 27752、phase=ae、stderr/stdout 0 bytes、artifact 尚无、GPU 1579/32607 MiB 且 utilization 0%、温度约 42°C；没有重复启动。poll 10 后仅向本地监控 loop 发送 Ctrl-C，local session exit 1，未向远端 worker/解释器发送信号。
+- 期间实际解释器 PID 6880 的累计 CPU/I/O 单调增长：约 250 秒/1.12 GB → 317 秒/1.36 GB → 424 秒/1.92 GB → 555 秒/2.54 GB → 697 秒/3.33 GB，最终 read operations 225,142、working set 约 1.33 GB；这证明完整 JPG 内容审计持续推进、无挂起或异常输出。尚未勾选 Task 6 Step 2，因为 A–F 尚未完成。
+
+### 724. 2026-09-01：A–E 从图像审计进入多路径 GPU 推理
+
+- 第二组 60 秒监控前 7 轮均 SSH exit 0、ae/running、0-byte stderr；实际解释器继续增至约 976 秒 CPU、4.88 GB read/328,169 operations。第 8 轮 SSH ConnectTimeout 一次 exit 255，随后 20 秒重试仍 timeout/本地 exit 1；ICMP 4/4 timeout，但 `Test-NetConnection` 显示 TCP 22 成功。使用 30 秒窗口及 `ssh -vv` 后完整握手、公钥认证、remote query 均 exit 0，原 PID 27752/phase=ae 无变化；证明只是短时监控连接拥塞，没有启动 resume 或第二 worker。
+- 恢复连接时 PID 6880 已约 1,118 秒 CPU、5.58 GB read/378,656 operations。随后 GPU 从 1579 MiB/0% 切换至 2513 MiB/28%（约 115 W、47°C），证明 58,200 JPG 内容审计已越过并进入模型推理。复核实现顺序为 reconstructed step zero 加 step 400/800/1200 四次全 test timeline/Jacobian，再对 best checkpoint 一次性执行 17 个干预模式，最后原子写 NPZ/JSON。
+- 推理后期显存从约 2.5 GB 升至 11.55–11.75 GB，GPU 利用率采样最高 29%、功耗约 104–129 W、最高 52°C、总显存 32.61 GB，始终无 stderr/OOM。CIM 多线程累计 CPU 曾从约 6,881 秒跃升到约 120,635 秒，working set 3.24 GB、读取 6.62 GB，确认持续实算。到 10:15:37Z 仍为唯一 ae/running worker、尚未原子提交产物，因此未勾选 Task 6 Step 2/3。
+
+### 725. 2026-09-01：A–F 与独立 artifact audit 完整 PASS
+
+- 继续以 60 秒条件轮询监控唯一 worker；A–E 后半段 GPU 显存稳定约 11.65–11.75/32.61 GB，利用率最高采样 56%、功耗约 266–302 W、最高 68°C，stderr 始终 0 bytes，无 OOM/过热/重复启动。CIM 累计多线程 CPU 曾达到约 383,389 秒、读取 8.64 GB、写入 331 MB，证明高成本 17-mode 全量前向持续实算。10:52:38Z A–E 原子完成并进入 F，生成 A–E JSON 118,357 bytes、NPZ 9,623,269 bytes，A–E stdout 236,716 bytes、stderr 0；10:53:33Z F 完成并进入 audit，F JSON 3,406 bytes、stdout 6,814 bytes、stderr 0；10:54:14Z 最终 state=completed、exit 0、completed phases=`ae,f,audit`，audit JSON 81,987 bytes、stdout 163,976 bytes、stderr 0。总时段约 1:21:41，launch receipt 始终为 no-training/no-S8。
+- 完成后的首次只读 artifact SHA 清单因 PowerShell 数组里未给 `Join-Path` 调用加括号，产生非终止 parameter-binding error 且 artifacts 数组为空；该无效结果未采信。加括号、设置 fail-fast 后有效锁定：A–E JSON `e41c985f...706c`，remote-only NPZ `061fea68...c45f`，F JSON `4cf50e2b...e6ad`，independent audit `a90cf867...d31a`，worker state `8fda43d7...9ac8`。prepare/verification/preflight SHA 分别为 `ed5f3fb1...a3d2`、`a4816b7e...fbb5`、`3c7a1dca...6692`。
+- 独立 audit 为 PASS、`artifact_integrity_only`、T=10、clean c181ffb，验证 10 个 source receipts、17 modes、5,820 samples/58,200 segments、NPZ SHA/bytes，独立 metrics digest `2801f769...a22f`，并显式 `scientific_success_claimed=false`。Task 6 Step 2/3 据实完成。
+
+### 726. 2026-09-01：A–F 科学解释、S8 条件授权与小型证据发布
+
+- 官方帧审计覆盖 58,200 JPG：canonical SHA `1dc149cc...d298`，adjacent decoded-RGB MAD mean/range `25.290085/0–222.609861`，within-video duplicate extras 307、affected videos 189/5,820；数据不相同/损坏。reconstructed step zero 的 backbone/projected temporal std 为 `0.218586/0.066350`，step 400 降到 `0.004290/0.001516`（50.95×/43.77× collapse），step 800 约 64× collapse，说明视觉变化首先在 learned backbone path 内消失。
+- fusion visual/audio/query 静态 block norm step0 为 `6.535/6.534/6.530`、step1200 为 `6.624/6.665/7.072`，并无静态视觉列缺失；动态 Jacobian 才显示压制：step800 visual/audio/query `0.001385/0.393753/1.142958`（audio/visual 284.30×，query/visual 825.24×）。五组强制 gate 的 visual-zero mixed AP drop 从 0 到最大 `0.00006618`，事后 fixed gate 无法恢复已塌缩表示，但不否定从初始化固定 gate 的预注册 S8。
+- mixed original AP/AUROC/pairwise 为 `0.634651/0.597801/0.667107`；same-query donor、different-query donor、temporal shuffle AP 分别降 `0.020414/0.021369/0.021102`，pairwise 降至 `0.519189/0.505338/0.516604`，证明音频含样本时序信息；both-zero mixed AP 仍 `0.627199`，证明大 prior 共存。F 在 canonical Full step400 精确观察 mean→sum 的 loss/projector-gradient/decision-gradient 比均为 256；一次真实 AdamW disposable clone step 改变 projector/decision SHA 与 target variance，source SHA 不变、gradients None、persisted false，证明路径未断而是现有 reduction 缩小 256×。
+- 所有预注册 S8 blockers 因此清除，只授权 `identity_passthrough + fixed_equal` 从初始化单变量 S8；正式 Full、S9、第二 seed、延长训练、canonical loss 修改和 full-run guard 解除仍禁止。新增 `ZERO_TRAINING_AUDITS.md` 与 `evidence/zero_training/README.md`，更新根 README、formal/recovery README、web handoff、implementation audit、evidence/runtime inventories。
+- 只复制 8 个小型 audited JSON 至 Git evidence，未复制 NPZ/checkpoint/data/cache/bundle/log。8/8 JSON parse PASS；本地/远端 SHA 全一致；forbidden extensions NONE；secret scan NONE；9 份 Markdown 相对 links PASS；`git diff --check` exit 0。随后把报告与同一证据精确镜像到 `扩刊/复现/student_shortcut_recovery/zero_training`，10 个 source/mirror 文件逐 SHA `ALL_IDENTICAL`。Task 6 Step 4/5 据实勾选，Step 6 尚待提交与 push。
+
+### 727. 2026-09-01：Task 6 发布语义独立复核
+
+- 首次语义 checker 错误假定 verification receipt 内含 `pytest_summary`、launch JSON 另包一层 `receipt`，因此只把 `verification_pass` 与 `launch_no_training` 判 false，checker exit 1；原始 JSON 显示 verification 实际以 pytest stdout SHA 锁定完整输出，launch 字段位于顶层。该失败是 checker schema 假定错误，不是 evidence/实验失败，未修改证据文件。
+- 按真实 schema 重跑：prepare PASS；verification PASS/compileall 0/pytest 0/前后 dirty 0/stdout SHA `1d15c6ff...d45e59`；preflight READY；launch sequence `ae,f,audit` 且 `starts_training=false/starts_s8=false`；worker completed exit0；A–E/F 均 PASS T=10 且 mutation boundaries 成立；independent audit PASS、no scientific claim；NPZ SHA 正确且 Git evidence 内不存在 NPZ；报告绑定关键数值和“Formal Full remains blocked”。10/10 semantic checks true，`SEMANTIC_PUBLICATION_PASS`；两份 `all.md` SHA 同为 `c85c4ade...0711`，`git diff --check` exit 0。可以进入 Task 6 evidence commit/push。

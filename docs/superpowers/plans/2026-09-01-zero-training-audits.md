@@ -228,23 +228,23 @@ Run remote `python -m compileall -q .` and full `python -m pytest -q` at the exa
 - Create compact evidence under `reports/formal_reproduction/student_shortcut_recovery/evidence/zero_training/`.
 - Update recovery README, web handoff, evidence/runtime inventories, root report indexes, and `all.md`.
 
-- [ ] **Step 1: Launch one persistent A–F worker after READY preflight**
+- [x] **Step 1: Launch one persistent A–F worker after READY preflight**
 
 Record process identity and exact phase. Do not start S8 in the same worker.
 
-- [ ] **Step 2: Monitor by state/CPU/GPU/artifact growth**
+- [x] **Step 2: Monitor by state/CPU/GPU/artifact growth**
 
 Use condition-based polling no more frequently than useful phase transitions. If interrupted, use only the locked resume script and reuse only already-PASS atomic phases.
 
-- [ ] **Step 3: Run independent artifact audit**
+- [x] **Step 3: Run independent artifact audit**
 
 Require PASS, exact source hashes, `T=10`, finite outputs, immutable loaded checkpoints, and clean candidate worktree.
 
-- [ ] **Step 4: Independently inspect scientific interpretation**
+- [x] **Step 4: Independently inspect scientific interpretation**
 
 Check whether raw JPGs vary, reconstructed step-zero visual features are healthy, where visual variance collapses, whether forced gate restores visual-zero sensitivity, whether fusion Jacobians suppress vision, what the audio swaps retain, and whether the Full target clone moves.
 
-- [ ] **Step 5: Publish only compact evidence**
+- [x] **Step 5: Publish only compact evidence**
 
 Copy JSON/YAML/TXT receipts and reports below the publication size threshold. Exclude checkpoint, NPZ, data, cache, bundle, archive, and raw logs. Verify JSON/YAML parsing, links, secret scan, forbidden extension scan, and exact evidence hashes.
 

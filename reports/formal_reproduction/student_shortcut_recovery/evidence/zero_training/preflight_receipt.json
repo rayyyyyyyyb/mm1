@@ -1,0 +1,84 @@
+﻿{
+    "schema_version":  1,
+    "status":  "READY",
+    "claim_level":  "execution_preflight_only",
+    "git_commit":  "c181ffb3297ff480a0d01186c626acce7c66afff",
+    "git_dirty_count":  0,
+    "python_version":  "Python 3.11.9",
+    "python_sha256":  "21bb438c0d4a6f1f164b9a646f6ee000340185e5871180aec06db8d3f07c0082",
+    "git_sha256":  "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f",
+    "cuda":  {
+                 "torch":  "2.10.0+cu128",
+                 "cuda":  "12.8",
+                 "device":  "NVIDIA GeForce RTX 5090",
+                 "capability":  [
+                                    12,
+                                    0
+                                ]
+             },
+    "prepare_receipt_sha256":  "ed5f3fb11dce56a4c36ab682f2ca4fed69b71f1715491995a20815b3217ea3d2",
+    "verification_receipt_sha256":  "a4816b7e2d72572f9a9a218fa531f7b392b6066a4e2dd34d7f217393abb2fbb5",
+    "worker_normalized_sha256":  "e572bd314a1188b0a9f5eb9a7511d2cfdd4b10565fe4b586aac090b2b49a5a18",
+    "query_normalized_sha256":  "d0c797f489d1fc69d60ecfb681a3508f808ab6211dffdcaa3acdd92d92c3e82a",
+    "source_sha256":  {
+                          "E:\\OV-OrthKD-R3\\student_shortcut_control\\s7_a7f0dc0\\s7_training_artifact_audit.json":  "6583c7f403041be961bba5a40dd7f7e4c8f8d38fd1fee2c7548396b5b6e30dc2",
+                          "E:\\OV-OrthKD-R3\\student_shortcut_control\\s7_posthoc_a7f0dc0_results\\s7_checkpoint_trajectory.json":  "74fd36bafd08d0d30e0e165c886e02b84fa94ac092b359399714d71e360be992",
+                          "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\resolved_config.yaml":  "6453f0c0c2bf9d09c8ac19089ffff60a5bf044be2cee5b76fa0750406889d366",
+                          "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\best.pt":  "60cfb52dfb366e315feeee3e704c996793636ba8b802e7b7d92072ba19bbf572",
+                          "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\diagnostic_checkpoints\\step_000400.pt":  "c4c591b4f4a4cdfbe0586939de803db8c27901a9c4c5be47ec3f55c59cf75c26",
+                          "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\diagnostic_checkpoints\\step_000800.pt":  "d100d89f7e816005f85a4e4b66f9b1d34c2dd71b5cfd3723ec05dbb48ad445e0",
+                          "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\diagnostic_checkpoints\\step_001200.pt":  "1a65c41b23ac854ec7568ec308ef444469a21130a115e25c24c7f98e38e2c958",
+                          "E:\\OV-OrthKD-R3\\formal-canonical-31b86c0\\outputs\\formal\\mm26_canonical_seed42\\resolved_config.yaml":  "9d7ed87ac27303596f70463f56bba95a0bee687bc328f2ec0f14930dc2e66dc7",
+                          "E:\\OV-OrthKD-R3\\formal-canonical-31b86c0\\outputs\\formal\\mm26_canonical_seed42\\best.pt":  "01cdb036ec11768ced94331742490d62c1f62bf842b2b2ee03134101dba1f392"
+                      },
+    "junctions":  [
+                      {
+                          "relative_path":  "external",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\external",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "weights",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\weights",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "proposed_method",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\external\\OV-AVEL\\proposed_method",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\official",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\official",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\teacher_cache",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\teacher_cache",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\downloads\\hf_cache",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\downloads\\hf_cache",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\downloads\\incoming",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\downloads\\incoming",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\ov_ave\\exported",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\ov_ave\\source",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\source",
+                          "link_type":  "Junction"
+                      }
+                  ],
+    "active_conflict_count":  0,
+    "outputs_absent":  true,
+    "checked_utc":  "2026-09-01T09:24:12.1710648Z"
+}

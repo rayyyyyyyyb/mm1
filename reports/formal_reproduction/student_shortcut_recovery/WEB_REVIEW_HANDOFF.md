@@ -2,11 +2,13 @@
 
 日期：2026-09-01
 
-当前状态：**S7 已完成并通过两层独立审计，但未通过预先批准的因果门槛；正式 Full 复现继续暂停。**
+当前状态：**S7 仍是预注册因果失败；其后的 A–F zero/near-zero-training 审计完整通过，并仅授权 S8 identity + fixed-equal-gate 单变量诊断。正式 Full 复现继续暂停。**
 
 这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
 
 ## 先看结论
+
+最新 A–F 证据见 [ZERO_TRAINING_AUDITS.md](ZERO_TRAINING_AUDITS.md)。全量 58,200 张 JPG 并非相同/损坏；reconstructed step zero 的 visual-backbone/projected temporal std 为 `0.218586/0.066350`，到 step 400 已降为 `0.004290/0.001516`。fusion 静态三块权重范数近似相等，但 step 800 visual/audio/query Jacobian 为 `0.001385/0.393753/1.142958`。即使强制纯视觉，visual-zero mixed AP drop 也只有 `0.000066`，说明事后 gate 不能恢复已塌缩表示。音频 donor/shuffle 则把 mixed pairwise concordance 从 `0.667107` 降到 `0.505–0.520`，证明音频仍携带样本时序信息。canonical Full projector probe 还证明现有 mean reduction 将 loss 与梯度精确缩小 256×，而一次 disposable sum-reduction AdamW step 可正常改变 clone，不触碰源 checkpoint。
 
 S7 best-checkpoint test AP/AUROC/F1@0.5 为 `0.758605/0.669173/0.530286`，相对 S0 为 `+0.009861/+0.033038/-0.010107`。数值不是整体跑偏：全局排序确有改善，0.5 阈值下的全正塌缩也缓解。但预先规定必须在 step 400 和 800 同时通过的因果门槛在两点均失败：shuffle AP drop 仅为 `0.005508/0.010488`，both-zero AP drop 仅为 `0.010096/0.003133`。因此不能把 temporal Transformer 判为主要塌缩源。
 
@@ -57,15 +59,17 @@ S3 说明“只开学生预训练”不充分；S4 说明“完全关闭现有�
 
 ## 建议阅读顺序
 
-1. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
-2. [S7 checkpoint trajectory](evidence/s7/posthoc/s7_checkpoint_trajectory.json)
-3. [S7 independent posthoc audit](evidence/s7/posthoc/s7_posthoc_artifact_audit.json)
-4. [S7 training audit](evidence/s7/control/s7_training_artifact_audit.json)
-5. [S4 完整结果与恢复门槛](S4_RESULTS.md)
-6. [S3 完整结果与恢复门槛](S3_RESULTS.md)
-7. [A0 四组捷径与模态基线](A0_RESULTS.md)
-8. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
-9. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
+1. [A–F zero/near-zero-training 审计、解释与 S8 决策](ZERO_TRAINING_AUDITS.md)
+2. [A–F 独立 artifact audit](evidence/zero_training/zero_training_artifact_audit.json)
+3. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
+4. [S7 checkpoint trajectory](evidence/s7/posthoc/s7_checkpoint_trajectory.json)
+5. [S7 independent posthoc audit](evidence/s7/posthoc/s7_posthoc_artifact_audit.json)
+6. [S7 training audit](evidence/s7/control/s7_training_artifact_audit.json)
+7. [S4 完整结果与恢复门槛](S4_RESULTS.md)
+8. [S3 完整结果与恢复门槛](S3_RESULTS.md)
+9. [A0 四组捷径与模态基线](A0_RESULTS.md)
+10. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
+11. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
 
 ## 希望独立审阅者重点判断
 
@@ -76,4 +80,4 @@ S3 说明“只开学生预训练”不充分；S4 说明“完全关闭现有�
 
 ## 边界
 
-本阶段仅启动并完成 S7；没有启动 S5、S6、Visual-only、第二 seed 或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。S7 的模型开关只存在于非 canonical 诊断配置，默认缺省行为仍为原 Transformer。GitHub 不上传数据集、teacher/student checkpoints、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。
+本阶段在已完成 S7 之后只运行了 A–F 零/近零训练审计；没有启动 S8、S9、第二 seed 或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。A–E 没有 optimizer；F 只更新未持久化的内存 clone。GitHub 不上传数据集、teacher/student checkpoints、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。

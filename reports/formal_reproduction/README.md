@@ -1,6 +1,6 @@
 # Canonical seed42 正式复现证据入口
 
-> **2026-09-01 最新诊断：** Student shortcut recovery 的 A0、S3、S4、S7 及独立后验审计均已结束。S7 bypass temporal Transformer 后 AP/AUROC 有改善，但未通过预注册的 early-checkpoint 因果门槛，且视觉内容仍无可测贡献；正式 Full 继续暂停。请优先阅读 [最新网页审查交接](student_shortcut_recovery/WEB_REVIEW_HANDOFF.md)；下文保留的是较早的 canonical seed42 正式运行记录。
+> **2026-09-01 最新诊断：** A0、S3、S4、S7 之后的 A–F zero/near-zero-training 审计已完整通过。官方 JPG 有真实时间变化；视觉 temporal std 在 step 400 前已于 backbone 路径塌缩，事后强制 gate 不能恢复；canonical Full projector 的现有 mean reduction 将 loss/gradient 精确缩小 256×，但 disposable clone 可正常更新。现在只授权 S8 identity + fixed-equal-gate 单变量诊断，正式 Full 继续暂停。请先读 [A–F 报告](student_shortcut_recovery/ZERO_TRAINING_AUDITS.md) 与 [最新网页审查交接](student_shortcut_recovery/WEB_REVIEW_HANDOFF.md)。
 
 本目录是给独立审阅者和诊断对话使用的网页入口。它把正式训练所用的完整代码树，与本次运行的小型结果、实际 resolved config、环境冻结、数据/教师/evaluator 身份哈希和最终审计收据放在同一个 Git commit 中。
 

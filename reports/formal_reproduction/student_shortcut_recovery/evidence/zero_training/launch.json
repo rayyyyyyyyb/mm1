@@ -1,0 +1,20 @@
+﻿{
+    "schema_version":  1,
+    "status":  "running",
+    "launch_method":  "Win32_Process.Create_via_verified_PersistentProcess_module",
+    "utc":  "2026-09-01T09:32:33.6984963Z",
+    "worker_process_id":  27752,
+    "return_value":  0,
+    "module_sha256":  "3105384926f66900f57b767984fd029aec968792564420f0bd665cf011bf42e5",
+    "worker_sha256":  "e572bd314a1188b0a9f5eb9a7511d2cfdd4b10565fe4b586aac090b2b49a5a18",
+    "preflight_sha256":  "3c7a1dca9a969587d077e2580437ffed3297e2966a0cc0301efb32889fd06692",
+    "git_head":  "c181ffb3297ff480a0d01186c626acce7c66afff",
+    "sequence":  [
+                     "ae",
+                     "f",
+                     "audit"
+                 ],
+    "starts_training":  false,
+    "starts_s8":  false,
+    "worker_state":  "E:\\OV-OrthKD-R3\\zero_training_control\\c181ffb\\worker\\worker_state.json"
+}

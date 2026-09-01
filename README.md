@@ -1,6 +1,6 @@
 # OV-OrthKD Collaboration Base
 
-> Current diagnostic status (2026-09-01): A0 plus the S3, S4 and S7 single-variable Student controls are complete and independently audited. S7 bypassed the temporal Transformer and improved test AP/AUROC to `0.758605/0.669173`, but failed the pre-approved early-checkpoint causal gates and left visual content with no measurable contribution. The temporal Transformer is therefore not established as the major collapse source, and formal Full training remains paused. Start with the [student shortcut recovery web handoff](reports/formal_reproduction/student_shortcut_recovery/WEB_REVIEW_HANDOFF.md).
+> Current diagnostic status (2026-09-01): A0, S3, S4 and S7 are complete. The subsequent A–F zero/near-zero-training audit independently passed and localized the visual collapse to the learned visual path by step 400, while showing that the Full projector gradient is attenuated exactly 256× rather than disconnected. The preregistered blockers now authorize only the bounded S8 identity + fixed-equal-gate control; formal Full training remains paused. Start with the [zero-training audit report](reports/formal_reproduction/student_shortcut_recovery/ZERO_TRAINING_AUDITS.md) and [web handoff](reports/formal_reproduction/student_shortcut_recovery/WEB_REVIEW_HANDOFF.md).
 
 This package contains the core implementation of OV-OrthKD for research collaboration and method extension. The R2 branch adds a fail-closed conference-reproduction evidence chain while keeping the historical collaboration path separately labelled.
 

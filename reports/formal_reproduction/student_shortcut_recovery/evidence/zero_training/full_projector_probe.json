@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "disposable_one_batch_full_projector_probe",
+  "protocol": {
+    "task_segments": 10,
+    "temporal_conversion": "forbidden",
+    "batch_index": 0,
+    "optimizer_steps_on_source": 0,
+    "optimizer_steps_on_disposable_clone": 1,
+    "updated_checkpoint_written": false
+  },
+  "git": {
+    "implementation_commit": "c181ffb3297ff480a0d01186c626acce7c66afff",
+    "status": "clean"
+  },
+  "sources": {
+    "config": {
+      "path": "E:\\OV-OrthKD-R3\\formal-canonical-31b86c0\\outputs\\formal\\mm26_canonical_seed42\\resolved_config.yaml",
+      "bytes": 7623,
+      "sha256": "9d7ed87ac27303596f70463f56bba95a0bee687bc328f2ec0f14930dc2e66dc7"
+    },
+    "checkpoint": {
+      "path": "E:\\OV-OrthKD-R3\\formal-canonical-31b86c0\\outputs\\formal\\mm26_canonical_seed42\\best.pt",
+      "bytes": 565912209,
+      "sha256": "01cdb036ec11768ced94331742490d62c1f62bf842b2b2ee03134101dba1f392"
+    },
+    "checkpoint_global_step": 400,
+    "strict_student_state_load": true,
+    "strict_loss_state_load": true,
+    "source_projector_state_sha256": "85615cc77502f17120af04c039748ab3bdd31feaba3f6bc130cb0e1284c24a45"
+  },
+  "batch": {
+    "sample_count": 4,
+    "task_segments": 10,
+    "strong_teacher_dimension": 512,
+    "projection_dimension": 256,
+    "valid_rows": 40
+  },
+  "probe": {
+    "feature_dimension": 256,
+    "valid_rows": 40,
+    "reductions": {
+      "mean_feature_then_masked_mean_segments": {
+        "loss": 0.007288639899343252,
+        "gradient_l2": {
+          "projector": 0.10815745598626177,
+          "student_decision": 0.0016873425901894877
+        },
+        "projected_target_variance": 0.009869786000579323
+      },
+      "sum_feature_then_masked_mean_segments": {
+        "loss": 1.8658918142318726,
+        "gradient_l2": {
+          "projector": 27.688308732483012,
+          "student_decision": 0.43195970308850884
+        },
+        "projected_target_variance": 0.009869786000579323
+      }
+    },
+    "mean_to_sum_expected_factor": 256.0,
+    "mean_to_sum_observed_ratios": {
+      "loss": 256.0,
+      "projector_gradient": 256.0,
+      "student_decision_gradient": 256.0
+    },
+    "source_projector": {
+      "state_sha256_before": "85615cc77502f17120af04c039748ab3bdd31feaba3f6bc130cb0e1284c24a45",
+      "state_sha256_after": "85615cc77502f17120af04c039748ab3bdd31feaba3f6bc130cb0e1284c24a45",
+      "gradients_remained_none": true
+    },
+    "disposable_adamw_step": {
+      "optimizer": "AdamW",
+      "learning_rate": 0.0002,
+      "weight_decay": 0.01,
+      "reduction": "sum_feature_then_masked_mean_segments",
+      "loss_before_step": 1.8658918142318726,
+      "clone_state_sha256_before": "85615cc77502f17120af04c039748ab3bdd31feaba3f6bc130cb0e1284c24a45",
+      "clone_state_sha256_after": "cdba1f3eb4cd937db7a76ac46389efcebdd1c2a550e7b5ca0badb260a554fba3",
+      "clone_state_changed": true,
+      "decision_sha256_before": "557e29fd9eda88e8e0904221130423b3e87860d33e04e9b5b966927fa75929ca",
+      "decision_sha256_after": "7dd351f315fc4397426752a04e7078fdbc4287406b2ea845c9474385a8e04537",
+      "decision_changed": true,
+      "target_variance_before": 0.009869786000579323,
+      "target_variance_after": 0.008443470637648637,
+      "source_state_unchanged": true,
+      "persisted": false
+    }
+  }
+}

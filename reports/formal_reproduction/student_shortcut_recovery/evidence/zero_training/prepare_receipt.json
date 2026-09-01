@@ -1,0 +1,56 @@
+﻿{
+    "schema_version":  1,
+    "status":  "PASS",
+    "candidate":  "E:\\OV-OrthKD-R3\\zero-training-c181ffb",
+    "commit":  "c181ffb3297ff480a0d01186c626acce7c66afff",
+    "dirty_count":  0,
+    "bundle_sha256":  "3810e473a8e80f8e5e93cb8de03ce0d49340f499cd867b0a1a8262c9e9a8be20",
+    "junctions":  [
+                      {
+                          "relative_path":  "external",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\external",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "weights",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\weights",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "proposed_method",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\external\\OV-AVEL\\proposed_method",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\official",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\official",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\teacher_cache",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\teacher_cache",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\downloads\\hf_cache",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\downloads\\hf_cache",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\downloads\\incoming",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\downloads\\incoming",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\ov_ave\\exported",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\exported",
+                          "link_type":  "Junction"
+                      },
+                      {
+                          "relative_path":  "data\\ov_ave\\source",
+                          "target":  "E:\\OV-OrthKD-R3\\repo\\data\\ov_ave\\source",
+                          "link_type":  "Junction"
+                      }
+                  ],
+    "prepared_utc":  "2026-09-01T09:08:22.8597876Z"
+}
