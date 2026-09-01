@@ -158,21 +158,21 @@ Commit message: `feat: add S7 zero-training audit runtime`.
 - Produces: `probe_strong_projector(*, projector, decision_features, teacher_features, mask, learning_rate) -> dict[str, Any]`.
 - CLI consumes exact Full config/checkpoint and one real train batch; it writes only compact JSON.
 
-- [ ] **Step 1: Write failing literal-gradient tests**
+- [x] **Step 1: Write failing literal-gradient tests**
 
 Use a deterministic two-dimensional projector fixture. Assert the strong projector receives nonzero gradient, student-decision gradient is finite/nonzero, sum loss and both gradient norms equal feature-dimension times mean counterparts, source module/state remain byte-identical, the clone state changes after one AdamW step, and target variance before/after is recorded.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `python -m pytest tests/test_full_projector_probe.py -q`
 
 Expected: import failure for `diagnose_full_projector_probe`.
 
-- [ ] **Step 3: Implement clone-only probe**
+- [x] **Step 3: Implement clone-only probe**
 
 Deep-copy only `strong_teacher_proj`; clone the detached decision tensor as a leaf parameter. Compute mean and sum reductions in separate fresh graphs. Apply one resolved-LR AdamW step only to a new projector/decision pair, hash before/after states, then discard them. Assert the loaded source projector hash is unchanged before writing output.
 
-- [ ] **Step 4: Run GREEN and help check**
+- [x] **Step 4: Run GREEN and help check**
 
 Run: `python -m pytest tests/test_full_projector_probe.py tests/test_paper_faithfulness.py -q`
 
@@ -180,7 +180,7 @@ Run: `python scripts/diagnose_full_projector_probe.py --help`
 
 Expected: all exit 0.
 
-- [ ] **Step 5: Commit Task 4**
+- [x] **Step 5: Commit Task 4**
 
 Commit message: `feat: add disposable Full projector probe`.
 
