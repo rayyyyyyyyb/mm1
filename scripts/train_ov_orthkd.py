@@ -408,6 +408,9 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
         temporal_layers=int(student_cfg.get("temporal_layers", 4)),
         temporal_heads=int(student_cfg.get("temporal_heads", 8)),
         temporal_dropout=float(student_cfg.get("temporal_dropout", 0.1)),
+        temporal_path_mode=str(
+            student_cfg.get("temporal_path_mode", "transformer")
+        ),
         max_position_segments=max_position_segments_from_config(config),
         pretrained=bool(student_cfg.get("pretrained", False)),
         fusion_mode=str(
@@ -529,6 +532,7 @@ def runtime_implementation_behavior(
             "class": type(student).__name__,
             "path_mode": getattr(student, "path_mode", None),
             "fusion_mode": getattr(student, "fusion_mode", None),
+            "temporal_path_mode": getattr(student, "temporal_path_mode", None),
             "gate_mode": getattr(student, "gate_mode", None),
             "query_anchor_mode": getattr(student, "query_anchor_mode", None),
             "fusion_dim": getattr(student, "fusion_dim", None),
@@ -1443,6 +1447,42 @@ def checkpoint_payload(
     }
 
 
+def save_requested_diagnostic_checkpoint(
+    *,
+    checkpoint: Dict[str, Any],
+    diagnostic_config: Dict[str, Any],
+    output_dir: Path,
+    global_step: int,
+) -> Path | None:
+    checkpoint_steps = diagnostic_config.get("checkpoint_steps", [])
+    valid_steps = (
+        isinstance(checkpoint_steps, list)
+        and all(type(step) is int and step > 0 for step in checkpoint_steps)
+        and checkpoint_steps == sorted(set(checkpoint_steps))
+    )
+    if not valid_steps:
+        raise ValueError(
+            "logging.training_diagnostics.checkpoint_steps must be a strictly "
+            "increasing list of positive integers"
+        )
+    if global_step not in checkpoint_steps:
+        return None
+    if checkpoint.get("global_step") != global_step:
+        raise ValueError("checkpoint payload global_step mismatch")
+
+    checkpoint_dir = output_dir / "diagnostic_checkpoints"
+    destination = checkpoint_dir / f"step_{global_step:06d}.pt"
+    temporary = destination.with_suffix(".pt.tmp")
+    if destination.exists() or temporary.exists():
+        raise FileExistsError(
+            f"diagnostic checkpoint already exists for global_step={global_step}"
+        )
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(checkpoint, temporary)
+    os.replace(temporary, destination)
+    return destination
+
+
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
@@ -1750,6 +1790,18 @@ def main() -> None:
             loader_generators=loader_generators,
         )
         torch.save(last_checkpoint, output_dir / "last.pt")
+        diagnostic_checkpoint_path = save_requested_diagnostic_checkpoint(
+            checkpoint=last_checkpoint,
+            diagnostic_config=diagnostic_cfg,
+            output_dir=output_dir,
+            global_step=global_step,
+        )
+        if diagnostic_checkpoint_path is not None:
+            logger.info(
+                "Saved diagnostic checkpoint at global_step=%d to %s",
+                global_step,
+                diagnostic_checkpoint_path,
+            )
         history_record = {
             "epoch": epoch,
             "global_step": global_step,

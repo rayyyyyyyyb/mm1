@@ -63,6 +63,7 @@ class OVOrthKDStudent(nn.Module):
         temporal_layers: int = 4,
         temporal_heads: int = 8,
         temporal_dropout: float = 0.1,
+        temporal_path_mode: str = "transformer",
         max_position_segments: int = 16,
         max_segments: int | None = None,
         pretrained: bool = False,
@@ -80,6 +81,8 @@ class OVOrthKDStudent(nn.Module):
             raise ValueError(f"Unsupported fusion_mode: {fusion_mode}")
         if gate_mode not in {"learned_softmax", "fixed_equal"}:
             raise ValueError(f"Unsupported gate_mode: {gate_mode}")
+        if temporal_path_mode not in {"transformer", "identity_passthrough"}:
+            raise ValueError(f"Unsupported temporal_path_mode: {temporal_path_mode}")
         if query_anchor_mode not in {
             "independent_loss_projection",
             "shared_fusion_projection",
@@ -104,6 +107,7 @@ class OVOrthKDStudent(nn.Module):
         self.path_mode = path_mode
         self.fusion_mode = fusion_mode
         self.gate_mode = gate_mode
+        self.temporal_path_mode = temporal_path_mode
         self.query_anchor_mode = query_anchor_mode
         if max_segments is not None:
             max_position_segments = int(max_segments)
@@ -249,11 +253,14 @@ class OVOrthKDStudent(nn.Module):
         fused_tokens_before_position = fused_tokens
 
         seq_len = fused_tokens.size(1)
-        fused_tokens = fused_tokens + self.position_embedding[:, :seq_len, :]
-        shared_features = self.temporal_encoder(
-            fused_tokens,
-            src_key_padding_mask=~sequence_mask.bool(),
-        )
+        temporal_input = fused_tokens + self.position_embedding[:, :seq_len, :]
+        if self.temporal_path_mode == "transformer":
+            shared_features = self.temporal_encoder(
+                temporal_input,
+                src_key_padding_mask=~sequence_mask.bool(),
+            )
+        else:
+            shared_features = temporal_input
 
         decision_features: torch.Tensor | None = None
         audio_aux_features: torch.Tensor | None = None
@@ -279,6 +286,7 @@ class OVOrthKDStudent(nn.Module):
             "gate_logits": gate_logits,
             "gate_weights": gate_weights,
             "fused_tokens_before_position": fused_tokens_before_position,
+            "temporal_input": temporal_input,
             "text_alignment_target": (
                 projected_text
                 if self.query_anchor_mode == "shared_fusion_projection"
