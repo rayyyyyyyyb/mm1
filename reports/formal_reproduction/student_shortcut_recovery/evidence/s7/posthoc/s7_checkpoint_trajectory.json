@@ -1,0 +1,1133 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "noncanonical_s7_checkpoint_trajectory_diagnostic",
+  "protocol": {
+    "task_segments": 10,
+    "temporal_conversion": "forbidden",
+    "checkpoints": [
+      400,
+      800,
+      1200
+    ],
+    "content_ablation_modes": [
+      "original",
+      "visual_zero",
+      "audio_zero",
+      "both_zero"
+    ],
+    "shuffle_repeats": 100,
+    "test_views": 1
+  },
+  "git_commit": "a7f0dc06d6a98493c0d03f1caa2059e31c50b648",
+  "sources": {
+    "training_audit": {
+      "path": "E:\\OV-OrthKD-R3\\student_shortcut_control\\s7_a7f0dc0\\s7_training_artifact_audit.json",
+      "bytes": 46411,
+      "sha256": "6583c7f403041be961bba5a40dd7f7e4c8f8d38fd1fee2c7548396b5b6e30dc2"
+    },
+    "resolved_config": {
+      "path": "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\resolved_config.yaml",
+      "bytes": 9206,
+      "sha256": "6453f0c0c2bf9d09c8ac19089ffff60a5bf044be2cee5b76fa0750406889d366"
+    }
+  },
+  "s0_reference": {
+    "global_test_ap": 0.7487446823980081,
+    "mean_centered_test_ap": 0.6376356327985894,
+    "per_query_macro_test_ap": 0.6243702016586737
+  },
+  "best_step": 1200,
+  "checkpoint_reports": {
+    "400": {
+      "checkpoint": {
+        "path": "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\diagnostic_checkpoints\\step_000400.pt",
+        "bytes": 500254643,
+        "sha256": "c4c591b4f4a4cdfbe0586939de803db8c27901a9c4c5be47ec3f55c59cf75c26",
+        "global_step": 400
+      },
+      "modes": {
+        "original": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7548558585346434,
+          "auroc": 0.6490108720546433,
+          "predicted_positive_rate": 0.8672164948453608,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.08697352252426997,
+            "std": 0.06567589380349459,
+            "quantiles": {
+              "0.0": 0.0031326734564396897,
+              "0.05": 0.007217996195326749,
+              "0.25": 0.03302327342168237,
+              "0.5": 0.07726285754670173,
+              "0.75": 0.12712079911587487,
+              "0.95": 0.20598624034660784,
+              "1.0": 0.47547068569186135
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7548558585346434,
+            "global_segment_micro_auroc": 0.6490108720546433,
+            "per_query_macro_ap": 0.6416166172920581,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.7481342418764196,
+            "query_fg_f1_macro_at_threshold": 0.6202289236993683,
+            "ovavel_segment_f1_at_threshold": 0.5511512980724185,
+            "ovavel_event_f1_at_threshold": 0.5615586647029945,
+            "predicted_positive_rate_at_threshold": 0.8672164948453608
+          }
+        },
+        "visual_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7548560328804199,
+          "auroc": 0.6490110984622248,
+          "predicted_positive_rate": 0.8672164948453608,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.08697347554452109,
+            "std": 0.06567621603243898,
+            "quantiles": {
+              "0.0": 0.003132854195123618,
+              "0.05": 0.0072181553513879695,
+              "0.25": 0.03302457324480358,
+              "0.5": 0.07726235827376232,
+              "0.75": 0.12711116267350514,
+              "0.95": 0.2059821792699487,
+              "1.0": 0.4754613151635477
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7548560328804199,
+            "global_segment_micro_auroc": 0.6490110984622248,
+            "per_query_macro_ap": 0.6416093557202688,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.7481342418764196,
+            "query_fg_f1_macro_at_threshold": 0.6202289236993683,
+            "ovavel_segment_f1_at_threshold": 0.5511512980724185,
+            "ovavel_event_f1_at_threshold": 0.5615586647029945,
+            "predicted_positive_rate_at_threshold": 0.8672164948453608
+          }
+        },
+        "audio_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7452937158201972,
+          "auroc": 0.6345200165508308,
+          "predicted_positive_rate": 0.8505154639175257,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.0054255922476391435,
+            "std": 0.0013004653837784068,
+            "quantiles": {
+              "0.0": 0.0020245751763815346,
+              "0.05": 0.003774137682742845,
+              "0.25": 0.004847214086949001,
+              "0.5": 0.005163120327559783,
+              "0.75": 0.005843230668479103,
+              "0.95": 0.007893037733614343,
+              "1.0": 0.00948744365476537
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7452937158201972,
+            "global_segment_micro_auroc": 0.6345200165508308,
+            "per_query_macro_ap": 0.6003092709492006,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.7410454758556024,
+            "query_fg_f1_macro_at_threshold": 0.6098962766711961,
+            "ovavel_segment_f1_at_threshold": 0.5467318905940001,
+            "ovavel_event_f1_at_threshold": 0.5603951890034364,
+            "predicted_positive_rate_at_threshold": 0.8505154639175257
+          }
+        },
+        "both_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7447600958549476,
+          "auroc": 0.6344813208131812,
+          "predicted_positive_rate": 0.8505154639175257,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.005425203632385218,
+            "std": 0.0013002650603350873,
+            "quantiles": {
+              "0.0": 0.002024945291212396,
+              "0.05": 0.0037743964877996927,
+              "0.25": 0.004846576318625181,
+              "0.5": 0.005162601806483233,
+              "0.75": 0.0058442920176787014,
+              "0.95": 0.007892700442465986,
+              "1.0": 0.009475362659126838
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7447600958549476,
+            "global_segment_micro_auroc": 0.6344813208131812,
+            "per_query_macro_ap": 0.5958316937482473,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.7410454758556024,
+            "query_fg_f1_macro_at_threshold": 0.6098962766711961,
+            "ovavel_segment_f1_at_threshold": 0.5467318905940001,
+            "ovavel_event_f1_at_threshold": 0.5603951890034364,
+            "predicted_positive_rate_at_threshold": 0.8505154639175257
+          }
+        }
+      },
+      "original_path_scales": {
+        "query_features": {
+          "observed_batch_shapes": {
+            "4x10x256": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 256,
+          "absolute_mean": 0.443773441318577,
+          "rms": 0.5563286962187277,
+          "row_l2_mean": 8.898969797424389,
+          "within_sample_temporal_std_mean": 0.09133945486996212,
+          "temporal_sample_count": 5820
+        },
+        "visual_tokens": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.4790919100128855,
+          "rms": 0.994054870899593,
+          "row_l2_mean": 19.479257964586107,
+          "within_sample_temporal_std_mean": 0.0015160280820929073,
+          "temporal_sample_count": 5820
+        },
+        "audio_tokens": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.4416290231590626,
+          "rms": 0.8780613106332166,
+          "row_l2_mean": 16.330581723145016,
+          "within_sample_temporal_std_mean": 0.28223883899690133,
+          "temporal_sample_count": 5820
+        },
+        "fused_tokens_before_position": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.5700401800253232,
+          "rms": 1.012851129913297,
+          "row_l2_mean": 19.700551042165436,
+          "within_sample_temporal_std_mean": 0.1147673229716106,
+          "temporal_sample_count": 5820
+        },
+        "shared_features": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.5708163690865108,
+          "rms": 1.0137388205155249,
+          "row_l2_mean": 19.717936054138253,
+          "within_sample_temporal_std_mean": 0.11515574463230874,
+          "temporal_sample_count": 5820
+        },
+        "decision_features": {
+          "observed_batch_shapes": {
+            "4x10x256": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 256,
+          "absolute_mean": 0.4462262519949027,
+          "rms": 0.5679128261767019,
+          "row_l2_mean": 9.07476221815214,
+          "within_sample_temporal_std_mean": 0.0591951846949221,
+          "temporal_sample_count": 5820
+        },
+        "segment_logits": {
+          "observed_batch_shapes": {
+            "4x10": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 1,
+          "absolute_mean": 1.1483691324845047,
+          "rms": 1.3068384061430953,
+          "row_l2_mean": 1.1483691324845047,
+          "within_sample_temporal_std_mean": 0.08697352252427,
+          "temporal_sample_count": 5820
+        }
+      },
+      "label_conditioned_logits": {
+        "positive_mean": 1.1118885590123364,
+        "negative_mean": 0.6182701897569387,
+        "positive_minus_negative": 0.4936183692553977
+      },
+      "mean_centered": {
+        "ap": 0.6522628608352055,
+        "delta_from_original": -0.10259299769943797
+      },
+      "per_query": {
+        "query_count": 67,
+        "macro_ap": 0.6416166172920581,
+        "minimum_ap": 0.0,
+        "maximum_ap": 0.9697022070451197,
+        "per_query": {
+          "airplane flyby": 0.8398231404509802,
+          "ambulance siren": 0.6914856733072601,
+          "arc welding": 0.3656209633920996,
+          "baby laughter": 0.8144000861033249,
+          "basketball bounce": 0.37575662169902857,
+          "bird chirping": 0.48712537636970354,
+          "bowling impact": 0.1810065796961185,
+          "cat purring": 0.786382261278302,
+          "cattle mooing": 0.3293866357930376,
+          "chainsawing trees": 0.519025516716616,
+          "chicken crowing": 0.7002473831527702,
+          "child singing": 0.6938351491886243,
+          "child speech": 0.4829749953557737,
+          "church bell ringing": 0.565105336997321,
+          "cricket chirping": 0.6709774444393808,
+          "crow cawing": 0.5151973240713944,
+          "dog barking": 0.7574816257534309,
+          "driving buses": 0.5495208336596547,
+          "electric shaver": 0.6985607791468991,
+          "engine accelerating": 0.6237753710810247,
+          "female singing": 0.88600443209094,
+          "female speech": 0.6771197399010973,
+          "fire truck siren": 0.8199203812372811,
+          "fireworks banging": 0.917054621281951,
+          "frog croaking": 0.7105216271932284,
+          "gibbon howling": 0.6134785616609753,
+          "goose honking": 0.5421903388014914,
+          "helicopter": 0.876248874567398,
+          "horse clip-clop": 0.7123028140512951,
+          "lions roaring": 0.7779346551951083,
+          "missile launch": 0.16392897235758302,
+          "motorboat": 0.24626774904096502,
+          "mynah bird singing": 0.8182789870737612,
+          "ocean burbling": 0.9244891366315277,
+          "people booing": 0.0,
+          "people burping": 0.5583534480908547,
+          "people cheering": 0.7939761486241205,
+          "people clapping": 0.4162554565559478,
+          "people crowd": 0.5667509689568773,
+          "people sniggering": 0.3668269500975616,
+          "people whistling": 0.639318339018966,
+          "playing acoustic guitar": 0.9307179078929301,
+          "playing banjo": 0.817308792277195,
+          "playing bass drum": 0.40281801031717124,
+          "playing bass guitar": 0.932519179863791,
+          "playing bassoon": 0.8109415022537256,
+          "playing cymbal": 0.74613132317099,
+          "playing drum kit": 0.8037239015311061,
+          "playing electric guitar": 0.8873484341422959,
+          "playing glockenspiel": 0.815502557214256,
+          "playing harp": 0.9433451776869468,
+          "playing mandolin": 0.9697022070451197,
+          "playing piano": 0.6928894018952443,
+          "playing saxophone": 0.8681860046064793,
+          "playing sitar": 0.966662859831956,
+          "playing synthesizer": 0.7496146628661239,
+          "playing violin": 0.9589302837368819,
+          "race car": 0.8151440232485938,
+          "roller coaster running": 0.2191009954174701,
+          "singing bowl": 0.9204732679434869,
+          "slot machine": 0.7676506916182189,
+          "train horning": 0.46647042161331487,
+          "turkey gobbling": 0.5149615428919609,
+          "typing on typewriter": 0.3440531433860493,
+          "vacuum cleaner cleaning floors": 0.4853900997065088,
+          "volcano explosion": 0.287497167882894,
+          "woodpecker pecking tree": 0.19631849844550323
+        }
+      },
+      "temporal_shuffle": {
+        "semantics": "labels_fixed_logits_permuted_independently_within_each_sample",
+        "repeats": 100,
+        "seed": 42,
+        "student_original_ap": 0.7548558585346434,
+        "ap_distribution": {
+          "count": 100,
+          "mean": 0.7493474255573486,
+          "std": 0.000253768918025307,
+          "quantiles": {
+            "0.0": 0.7486257081253744,
+            "0.05": 0.748929261476152,
+            "0.25": 0.7491855522703575,
+            "0.5": 0.7493858718367825,
+            "0.75": 0.7495106804353335,
+            "0.95": 0.7497186792602613,
+            "1.0": 0.7499939889790017
+          }
+        },
+        "mean_delta_from_original": -0.005508432977294864
+      },
+      "causal_deltas": {
+        "shuffle_ap_drop": 0.005508432977294864,
+        "both_zero_ap_drop": 0.010095762679695808,
+        "visual_zero_ap_drop": -1.7434577648245408e-07,
+        "audio_zero_ap_drop": 0.00956214271444622
+      },
+      "compression": {
+        "temporal_input_shared_std": 0.11515574463230874,
+        "decision_std": 0.0591951846949221,
+        "logit_std": 0.08697352252427,
+        "shared_to_decision_compression_factor": 1.9453566236137967,
+        "shared_to_logit_compression_factor": 1.324032203021034
+      }
+    },
+    "800": {
+      "checkpoint": {
+        "path": "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\diagnostic_checkpoints\\step_000800.pt",
+        "bytes": 500254643,
+        "sha256": "d100d89f7e816005f85a4e4b66f9b1d34c2dd71b5cfd3723ec05dbb48ad445e0",
+        "global_step": 800
+      },
+      "modes": {
+        "original": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7528279802605473,
+          "auroc": 0.6606717781140835,
+          "predicted_positive_rate": 0.7959450171821306,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.20677788979208453,
+            "std": 0.19142733725349345,
+            "quantiles": {
+              "0.0": 0.0016112042672135347,
+              "0.05": 0.008419842407633106,
+              "0.25": 0.05745594771271504,
+              "0.5": 0.14608742954944284,
+              "0.75": 0.3155442723392254,
+              "0.95": 0.5923120976304467,
+              "1.0": 1.1103926130536161
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7528279802605473,
+            "global_segment_micro_auroc": 0.6606717781140835,
+            "per_query_macro_ap": 0.6557923517878113,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.752702571094663,
+            "query_fg_f1_macro_at_threshold": 0.6158239746628245,
+            "ovavel_segment_f1_at_threshold": 0.5743139216399326,
+            "ovavel_event_f1_at_threshold": 0.5588972072219495,
+            "predicted_positive_rate_at_threshold": 0.7959450171821306
+          }
+        },
+        "visual_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7528279313541414,
+          "auroc": 0.66067151927346,
+          "predicted_positive_rate": 0.7959621993127147,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.20677524341058462,
+            "std": 0.1914249915902136,
+            "quantiles": {
+              "0.0": 0.001611182593102103,
+              "0.05": 0.008419899602699945,
+              "0.25": 0.05745535610802166,
+              "0.5": 0.14608471663044437,
+              "0.75": 0.31553706186155106,
+              "0.95": 0.5923089741297839,
+              "1.0": 1.1103525575387434
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7528279313541414,
+            "global_segment_micro_auroc": 0.66067151927346,
+            "per_query_macro_ap": 0.6557923547763124,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.7527177551889951,
+            "query_fg_f1_macro_at_threshold": 0.6158366085823717,
+            "ovavel_segment_f1_at_threshold": 0.5743202385997062,
+            "ovavel_event_f1_at_threshold": 0.5588972072219495,
+            "predicted_positive_rate_at_threshold": 0.7959621993127147
+          }
+        },
+        "audio_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7500006714936444,
+          "auroc": 0.6446998571449243,
+          "predicted_positive_rate": 0.5494845360824743,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.009650447178168688,
+            "std": 0.006014051105168177,
+            "quantiles": {
+              "0.0": 0.0025457233401964077,
+              "0.05": 0.0027601320361299673,
+              "0.25": 0.004175070842437227,
+              "0.5": 0.007136871174540387,
+              "0.75": 0.015564187687812711,
+              "0.95": 0.019332101211032758,
+              "1.0": 0.026974270936373668
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7500006714936444,
+            "global_segment_micro_auroc": 0.6446998571449243,
+            "per_query_macro_ap": 0.6002095965525465,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.6432448377581121,
+            "query_fg_f1_macro_at_threshold": 0.5177346616604062,
+            "ovavel_segment_f1_at_threshold": 0.5205830227274644,
+            "ovavel_event_f1_at_threshold": 0.4884020618556701,
+            "predicted_positive_rate_at_threshold": 0.5494845360824743
+          }
+        },
+        "both_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7496948227019966,
+          "auroc": 0.6447693125043348,
+          "predicted_positive_rate": 0.5494845360824743,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.009650457317661693,
+            "std": 0.006014078099227108,
+            "quantiles": {
+              "0.0": 0.002546449518559719,
+              "0.05": 0.00276006554197427,
+              "0.25": 0.004175026364695516,
+              "0.5": 0.007136632406214863,
+              "0.75": 0.015563654586836895,
+              "0.95": 0.019332057821398085,
+              "1.0": 0.026973093209247415
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7496948227019966,
+            "global_segment_micro_auroc": 0.6447693125043348,
+            "per_query_macro_ap": 0.5970875156947191,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.6432448377581121,
+            "query_fg_f1_macro_at_threshold": 0.5177346616604062,
+            "ovavel_segment_f1_at_threshold": 0.5205830227274644,
+            "ovavel_event_f1_at_threshold": 0.4884020618556701,
+            "predicted_positive_rate_at_threshold": 0.5494845360824743
+          }
+        }
+      },
+      "original_path_scales": {
+        "query_features": {
+          "observed_batch_shapes": {
+            "4x10x256": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 256,
+          "absolute_mean": 0.44656839182857627,
+          "rms": 0.5648942240534527,
+          "row_l2_mean": 9.032996923289327,
+          "within_sample_temporal_std_mean": 0.1013312084801502,
+          "temporal_sample_count": 5820
+        },
+        "visual_tokens": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.584501938061243,
+          "rms": 1.1834090307287064,
+          "row_l2_mean": 23.189970418001646,
+          "within_sample_temporal_std_mean": 0.0010459160801278085,
+          "temporal_sample_count": 5820
+        },
+        "audio_tokens": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.4142332603636875,
+          "rms": 1.1154253272460457,
+          "row_l2_mean": 20.778323019534113,
+          "within_sample_temporal_std_mean": 0.30372652858525545,
+          "temporal_sample_count": 5820
+        },
+        "fused_tokens_before_position": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.6620294217472357,
+          "rms": 1.1896597740848687,
+          "row_l2_mean": 23.104992165937468,
+          "within_sample_temporal_std_mean": 0.14444921936238533,
+          "temporal_sample_count": 5820
+        },
+        "shared_features": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.6630371696119686,
+          "rms": 1.1907967092351488,
+          "row_l2_mean": 23.127498915044516,
+          "within_sample_temporal_std_mean": 0.1451566600536206,
+          "temporal_sample_count": 5820
+        },
+        "decision_features": {
+          "observed_batch_shapes": {
+            "4x10x256": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 256,
+          "absolute_mean": 0.4312734609930543,
+          "rms": 0.5533031050423155,
+          "row_l2_mean": 8.821063246758584,
+          "within_sample_temporal_std_mean": 0.0585462866137729,
+          "temporal_sample_count": 5820
+        },
+        "segment_logits": {
+          "observed_batch_shapes": {
+            "4x10": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 1,
+          "absolute_mean": 1.2492361498984454,
+          "rms": 1.563908876603422,
+          "row_l2_mean": 1.2492361498984454,
+          "within_sample_temporal_std_mean": 0.2067778897920842,
+          "temporal_sample_count": 5820
+        }
+      },
+      "label_conditioned_logits": {
+        "positive_mean": 1.2953283154289694,
+        "negative_mean": 0.6377893988906977,
+        "positive_minus_negative": 0.6575389165382717
+      },
+      "mean_centered": {
+        "ap": 0.6617617760482991,
+        "delta_from_original": -0.0910662042122482
+      },
+      "per_query": {
+        "query_count": 67,
+        "macro_ap": 0.6557923517878113,
+        "minimum_ap": 0.0,
+        "maximum_ap": 0.9840156607880994,
+        "per_query": {
+          "airplane flyby": 0.8974655262796508,
+          "ambulance siren": 0.6180608826093212,
+          "arc welding": 0.4336340295424571,
+          "baby laughter": 0.822691430461248,
+          "basketball bounce": 0.39360207785133733,
+          "bird chirping": 0.6023469467028746,
+          "bowling impact": 0.27282405063145065,
+          "cat purring": 0.9213865050381598,
+          "cattle mooing": 0.3135310895179961,
+          "chainsawing trees": 0.44072400143128115,
+          "chicken crowing": 0.8059741195331798,
+          "child singing": 0.669585193202936,
+          "child speech": 0.48561776249038985,
+          "church bell ringing": 0.5396497245937915,
+          "cricket chirping": 0.5919629752444174,
+          "crow cawing": 0.529598184270722,
+          "dog barking": 0.8864172429443736,
+          "driving buses": 0.5983609884477474,
+          "electric shaver": 0.5914168361758344,
+          "engine accelerating": 0.601625613878941,
+          "female singing": 0.8839254290164926,
+          "female speech": 0.6582734969441417,
+          "fire truck siren": 0.8052440828892427,
+          "fireworks banging": 0.9380031343420356,
+          "frog croaking": 0.5927005392781852,
+          "gibbon howling": 0.6435705913867313,
+          "goose honking": 0.5499813686381372,
+          "helicopter": 0.8955782965871224,
+          "horse clip-clop": 0.8467650837926887,
+          "lions roaring": 0.8004960555121452,
+          "missile launch": 0.19747410724702252,
+          "motorboat": 0.275164713801483,
+          "mynah bird singing": 0.8497101809382792,
+          "ocean burbling": 0.8937050153123296,
+          "people booing": 0.0,
+          "people burping": 0.664050686782799,
+          "people cheering": 0.7227740810736334,
+          "people clapping": 0.4113440840682038,
+          "people crowd": 0.5497734085536707,
+          "people sniggering": 0.42432004090154074,
+          "people whistling": 0.6366955637315715,
+          "playing acoustic guitar": 0.9178429933534348,
+          "playing banjo": 0.7934605760357056,
+          "playing bass drum": 0.5617308702873245,
+          "playing bass guitar": 0.9427664857424217,
+          "playing bassoon": 0.8256864717744067,
+          "playing cymbal": 0.7852652902586629,
+          "playing drum kit": 0.862984179815782,
+          "playing electric guitar": 0.9225863676584738,
+          "playing glockenspiel": 0.7906157346335321,
+          "playing harp": 0.9656335726034775,
+          "playing mandolin": 0.9840156607880994,
+          "playing piano": 0.7186120640848446,
+          "playing saxophone": 0.896847126957198,
+          "playing sitar": 0.9690302288123738,
+          "playing synthesizer": 0.6872499229293447,
+          "playing violin": 0.9471410583336339,
+          "race car": 0.8579497494008004,
+          "roller coaster running": 0.1879544535879358,
+          "singing bowl": 0.820506726756643,
+          "slot machine": 0.7381846480360099,
+          "train horning": 0.4197654625384279,
+          "turkey gobbling": 0.5588899335424778,
+          "typing on typewriter": 0.45898787516625494,
+          "vacuum cleaner cleaning floors": 0.4996400299494388,
+          "volcano explosion": 0.30473456078745464,
+          "woodpecker pecking tree": 0.26398038430363824
+        }
+      },
+      "temporal_shuffle": {
+        "semantics": "labels_fixed_logits_permuted_independently_within_each_sample",
+        "repeats": 100,
+        "seed": 42,
+        "student_original_ap": 0.7528279802605473,
+        "ap_distribution": {
+          "count": 100,
+          "mean": 0.7423398358543036,
+          "std": 0.00026976507581897397,
+          "quantiles": {
+            "0.0": 0.74162144070272,
+            "0.05": 0.7419255267563527,
+            "0.25": 0.7421326364193234,
+            "0.5": 0.7423474764383176,
+            "0.75": 0.7425076018719337,
+            "0.95": 0.7427710057382172,
+            "1.0": 0.7430786467196935
+          }
+        },
+        "mean_delta_from_original": -0.010488144406243682
+      },
+      "causal_deltas": {
+        "shuffle_ap_drop": 0.010488144406243682,
+        "both_zero_ap_drop": 0.003133157558550703,
+        "visual_zero_ap_drop": 4.890640592503104e-08,
+        "audio_zero_ap_drop": 0.0028273087669029584
+      },
+      "compression": {
+        "temporal_input_shared_std": 0.1451566600536206,
+        "decision_std": 0.0585462866137729,
+        "logit_std": 0.2067778897920842,
+        "shared_to_decision_compression_factor": 2.4793487076509613,
+        "shared_to_logit_compression_factor": 0.7019931395932905
+      }
+    },
+    "1200": {
+      "checkpoint": {
+        "path": "E:\\OV-OrthKD-R3\\student-shortcut-s7-a7f0dc0\\outputs\\diagnostic\\recovery_s7_temporal_identity_seed42\\diagnostic_checkpoints\\step_001200.pt",
+        "bytes": 500254643,
+        "sha256": "1a65c41b23ac854ec7568ec308ef444469a21130a115e25c24c7f98e38e2c958",
+        "global_step": 1200
+      },
+      "modes": {
+        "original": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7586053688762218,
+          "auroc": 0.6691730029603883,
+          "predicted_positive_rate": 0.5840893470790378,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.20121207257205442,
+            "std": 0.19275470398119807,
+            "quantiles": {
+              "0.0": 0.0019411103124753362,
+              "0.05": 0.014372743595006995,
+              "0.25": 0.05073255390950613,
+              "0.5": 0.1405065927792385,
+              "0.75": 0.29293852359900663,
+              "0.95": 0.6025628770546025,
+              "1.0": 1.2200271820512572
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7586053688762218,
+            "global_segment_micro_auroc": 0.6691730029603883,
+            "per_query_macro_ap": 0.6558778730407498,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.6781734322628699,
+            "query_fg_f1_macro_at_threshold": 0.5404394653354949,
+            "ovavel_segment_f1_at_threshold": 0.5302860299302122,
+            "ovavel_event_f1_at_threshold": 0.48527777777777775,
+            "predicted_positive_rate_at_threshold": 0.5840893470790378
+          }
+        },
+        "visual_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7586052894133496,
+          "auroc": 0.669172735387792,
+          "predicted_positive_rate": 0.5840893470790378,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.2012089202916,
+            "std": 0.19275262028929077,
+            "quantiles": {
+              "0.0": 0.0019410686229267152,
+              "0.05": 0.01437272075614404,
+              "0.25": 0.05073074356903422,
+              "0.5": 0.14050269837406892,
+              "0.75": 0.2929307542106065,
+              "0.95": 0.602560043499858,
+              "1.0": 1.2200244518319023
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7586052894133496,
+            "global_segment_micro_auroc": 0.669172735387792,
+            "per_query_macro_ap": 0.6558724815562132,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.6781734322628699,
+            "query_fg_f1_macro_at_threshold": 0.5404394653354949,
+            "ovavel_segment_f1_at_threshold": 0.5302860299302122,
+            "ovavel_event_f1_at_threshold": 0.48527777777777775,
+            "predicted_positive_rate_at_threshold": 0.5840893470790378
+          }
+        },
+        "audio_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7335981849949048,
+          "auroc": 0.6333379806140225,
+          "predicted_positive_rate": 0.011512027491408935,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.013720889842503385,
+            "std": 0.008230232204799705,
+            "quantiles": {
+              "0.0": 0.0008292240257331922,
+              "0.05": 0.0037538313961694523,
+              "0.25": 0.005822451047367295,
+              "0.5": 0.013243207097468089,
+              "0.75": 0.01815305455860558,
+              "0.95": 0.03144431104792819,
+              "1.0": 0.037749658705188614
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7335981849949048,
+            "global_segment_micro_auroc": 0.6333379806140225,
+            "per_query_macro_ap": 0.5962421593847758,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.031844340915319264,
+            "query_fg_f1_macro_at_threshold": 0.2506980573021395,
+            "ovavel_segment_f1_at_threshold": 0.342705236756855,
+            "ovavel_event_f1_at_threshold": 0.2508591065292096,
+            "predicted_positive_rate_at_threshold": 0.011512027491408935
+          }
+        },
+        "both_zero": {
+          "sample_count": 5820,
+          "segment_count": 58200,
+          "threshold": 0.5,
+          "ap": 0.7334019022863308,
+          "auroc": 0.6334202888137441,
+          "predicted_positive_rate": 0.011512027491408935,
+          "positive_rate": 0.6154639175257732,
+          "within_sample_logit_std": {
+            "count": 5820,
+            "mean": 0.013720952502991705,
+            "std": 0.008230253895275692,
+            "quantiles": {
+              "0.0": 0.0008295567356166071,
+              "0.05": 0.0037538271585189184,
+              "0.25": 0.005822448810062927,
+              "0.5": 0.013243060984141743,
+              "0.75": 0.018152816766791376,
+              "0.95": 0.03144438910648599,
+              "1.0": 0.037749378026840794
+            }
+          },
+          "metrics": {
+            "sample_count": 5820,
+            "segment_count": 58200,
+            "global_segment_micro_ap": 0.7334019022863308,
+            "global_segment_micro_auroc": 0.6334202888137441,
+            "per_query_macro_ap": 0.5951872922403226,
+            "threshold": 0.5,
+            "binary_micro_f1_at_threshold": 0.031844340915319264,
+            "query_fg_f1_macro_at_threshold": 0.2506980573021395,
+            "ovavel_segment_f1_at_threshold": 0.342705236756855,
+            "ovavel_event_f1_at_threshold": 0.2508591065292096,
+            "predicted_positive_rate_at_threshold": 0.011512027491408935
+          }
+        }
+      },
+      "original_path_scales": {
+        "query_features": {
+          "observed_batch_shapes": {
+            "4x10x256": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 256,
+          "absolute_mean": 0.45182393885608,
+          "rms": 0.5697372764761172,
+          "row_l2_mean": 9.110551078147253,
+          "within_sample_temporal_std_mean": 0.10852046956823105,
+          "temporal_sample_count": 5820
+        },
+        "visual_tokens": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.5875352862473862,
+          "rms": 1.1877200825992884,
+          "row_l2_mean": 23.274450493164448,
+          "within_sample_temporal_std_mean": 0.0010507043501850237,
+          "temporal_sample_count": 5820
+        },
+        "audio_tokens": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.48009501107404606,
+          "rms": 1.146140043975766,
+          "row_l2_mean": 19.699970621967072,
+          "within_sample_temporal_std_mean": 0.31783907862763,
+          "temporal_sample_count": 5820
+        },
+        "fused_tokens_before_position": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.6681730154751806,
+          "rms": 1.2199747693734053,
+          "row_l2_mean": 23.671022963404013,
+          "within_sample_temporal_std_mean": 0.15325689360938094,
+          "temporal_sample_count": 5820
+        },
+        "shared_features": {
+          "observed_batch_shapes": {
+            "4x10x384": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 384,
+          "absolute_mean": 0.6692621451887842,
+          "rms": 1.2212720378789907,
+          "row_l2_mean": 23.69660506920588,
+          "within_sample_temporal_std_mean": 0.15453580317355053,
+          "temporal_sample_count": 5820
+        },
+        "decision_features": {
+          "observed_batch_shapes": {
+            "4x10x256": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 256,
+          "absolute_mean": 0.4004417282580339,
+          "rms": 0.5192469286127713,
+          "row_l2_mean": 8.296029364882147,
+          "within_sample_temporal_std_mean": 0.05825243290198985,
+          "temporal_sample_count": 5820
+        },
+        "segment_logits": {
+          "observed_batch_shapes": {
+            "4x10": 1455
+          },
+          "valid_rows": 58200,
+          "feature_dim": 1,
+          "absolute_mean": 0.9387738056022265,
+          "rms": 1.1131715511919977,
+          "row_l2_mean": 0.9387738056022265,
+          "within_sample_temporal_std_mean": 0.20121207257205442,
+          "temporal_sample_count": 5820
+        }
+      },
+      "label_conditioned_logits": {
+        "positive_mean": 0.23163120665965525,
+        "negative_mean": -0.4272085409022208,
+        "positive_minus_negative": 0.6588397475618761
+      },
+      "mean_centered": {
+        "ap": 0.6462279612289399,
+        "delta_from_original": -0.11237740764728188
+      },
+      "per_query": {
+        "query_count": 67,
+        "macro_ap": 0.6558778730407498,
+        "minimum_ap": 0.0,
+        "maximum_ap": 0.9726374621036832,
+        "per_query": {
+          "airplane flyby": 0.846826143385407,
+          "ambulance siren": 0.624142545189459,
+          "arc welding": 0.3548511455744231,
+          "baby laughter": 0.8345046981183792,
+          "basketball bounce": 0.4265076311793304,
+          "bird chirping": 0.5978769466859883,
+          "bowling impact": 0.19439447760237166,
+          "cat purring": 0.9687567936501629,
+          "cattle mooing": 0.31502949318982454,
+          "chainsawing trees": 0.46823320815410235,
+          "chicken crowing": 0.8326296482697257,
+          "child singing": 0.7582559605250888,
+          "child speech": 0.4536408126199566,
+          "church bell ringing": 0.5461484186702623,
+          "cricket chirping": 0.5329198372381785,
+          "crow cawing": 0.5290335482211859,
+          "dog barking": 0.8749586620308101,
+          "driving buses": 0.5689410327947101,
+          "electric shaver": 0.6240946391676703,
+          "engine accelerating": 0.5910187677160905,
+          "female singing": 0.8897640126439362,
+          "female speech": 0.727780844288923,
+          "fire truck siren": 0.7618844278429805,
+          "fireworks banging": 0.8803773703656166,
+          "frog croaking": 0.5538405436669613,
+          "gibbon howling": 0.6276868738302069,
+          "goose honking": 0.5342089473858481,
+          "helicopter": 0.8736617897746553,
+          "horse clip-clop": 0.8392681145163874,
+          "lions roaring": 0.8128660332515234,
+          "missile launch": 0.24045709751050492,
+          "motorboat": 0.3252234569737209,
+          "mynah bird singing": 0.8373908211760777,
+          "ocean burbling": 0.8732023769533259,
+          "people booing": 0.0,
+          "people burping": 0.6075063195225253,
+          "people cheering": 0.7981254024063387,
+          "people clapping": 0.40248285076784196,
+          "people crowd": 0.6271274066654156,
+          "people sniggering": 0.39884900198072226,
+          "people whistling": 0.6561563280165461,
+          "playing acoustic guitar": 0.8693903170084143,
+          "playing banjo": 0.8036135260699868,
+          "playing bass drum": 0.406062503067439,
+          "playing bass guitar": 0.8464686709255282,
+          "playing bassoon": 0.8586734096112211,
+          "playing cymbal": 0.8101563582221709,
+          "playing drum kit": 0.8327147857242991,
+          "playing electric guitar": 0.8570926095263366,
+          "playing glockenspiel": 0.8288214197797699,
+          "playing harp": 0.8817961538795993,
+          "playing mandolin": 0.8945143963566997,
+          "playing piano": 0.71525536810038,
+          "playing saxophone": 0.8679991244057652,
+          "playing sitar": 0.9726374621036832,
+          "playing synthesizer": 0.7027975818401835,
+          "playing violin": 0.9386006869942096,
+          "race car": 0.7772530499190994,
+          "roller coaster running": 0.4827494841036199,
+          "singing bowl": 0.8685639682757111,
+          "slot machine": 0.7774506612650736,
+          "train horning": 0.48173152409405834,
+          "turkey gobbling": 0.5885366688547575,
+          "typing on typewriter": 0.45140268893145735,
+          "vacuum cleaner cleaning floors": 0.5119721614078494,
+          "volcano explosion": 0.35688591200966496,
+          "woodpecker pecking tree": 0.3500525717300829
+        }
+      },
+      "temporal_shuffle": {
+        "semantics": "labels_fixed_logits_permuted_independently_within_each_sample",
+        "repeats": 100,
+        "seed": 42,
+        "student_original_ap": 0.7586053688762218,
+        "ap_distribution": {
+          "count": 100,
+          "mean": 0.7535723252915427,
+          "std": 0.00028154947030150106,
+          "quantiles": {
+            "0.0": 0.7528005544933113,
+            "0.05": 0.7531462534047193,
+            "0.25": 0.7533949548686025,
+            "0.5": 0.753556097454401,
+            "0.75": 0.7537212942359552,
+            "0.95": 0.7540105394003233,
+            "1.0": 0.7544013330637314
+          }
+        },
+        "mean_delta_from_original": -0.005033043584679042
+      },
+      "causal_deltas": {
+        "shuffle_ap_drop": 0.005033043584679042,
+        "both_zero_ap_drop": 0.02520346658989092,
+        "visual_zero_ap_drop": 7.946287217119874e-08,
+        "audio_zero_ap_drop": 0.025007183881316952
+      },
+      "compression": {
+        "temporal_input_shared_std": 0.15453580317355053,
+        "decision_std": 0.05825243290198985,
+        "logit_std": 0.20121207257205442,
+        "shared_to_decision_compression_factor": 2.652864360765123,
+        "shared_to_logit_compression_factor": 0.7680245086596927
+      }
+    }
+  },
+  "causal_decision": {
+    "criteria_source": "approved_web_review_S7_plan",
+    "step_400_supports_shared_encoder_major_cause": false,
+    "step_800_supports_shared_encoder_major_cause": false,
+    "simultaneous_step_400_and_800_support": false,
+    "stronger_recovery_at_best": {
+      "predicted_positive_rate_below_0_98": true,
+      "centered_ap_above_s0": true,
+      "per_query_macro_ap_above_s0": true
+    },
+    "failure_signals": {
+      "step_400_shuffle_drop_below_0_01": true,
+      "step_400_both_zero_retains_at_least_98_percent": true,
+      "step_400_positive_not_above_negative": false
+    }
+  }
+}

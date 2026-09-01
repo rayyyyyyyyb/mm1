@@ -15,5 +15,8 @@ This directory contains only small review artifacts (JSON, JSONL and YAML) suita
 - `s4/training`: the audited three-epoch no-augmentation control metrics, history, first-batch diagnostics, resolved config, runtime/lock receipts and environment identity.
 - `s4/control`: candidate verification, launch/worker state and the independent S4 training artifact audit.
 - `s4/posthoc`: independently audited prediction-shortcut, content-ablation and forward-path-scale results plus launch/worker state.
+- `s7/training`: the audited three-epoch temporal-identity metrics, history, first-batch diagnostics, resolved config, runtime/lock receipts and environment identity.
+- `s7/control`: exact candidate preparation/verification, launch/worker state and the independent S7 training artifact audit.
+- `s7/posthoc`: the three-checkpoint trajectory with four content modes, 100 within-sample shuffles per checkpoint, path scales, compression factors and the recomputed causal decision, plus launch/worker state and the independent posthoc audit.
 
-The corresponding datasets, teacher cache, timm weight files, student checkpoints, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3 and S4 posthoc JSONs were copied here only after their independent artifact audits passed.
+The corresponding datasets, teacher cache, timm weight files, student checkpoints, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3, S4 and S7 posthoc JSONs were copied here only after their independent artifact audits passed.

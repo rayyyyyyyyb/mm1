@@ -8,7 +8,9 @@ Scientific S3 runtime commit: `a0aa4d7ad4b98455e26a2fe6ff2537a321293233`
 
 Scientific S4 runtime commit: `74d211d34ace74ce3b74ea082a7dfd0379b251fb`
 
-Scope: observation-only A0 diagnostics plus the S3 pretrained-student and S4 no-augmentation single-variable controls. This package does not authorize or run formal Full training.
+Scientific S7 runtime commit: `a7f0dc06d6a98493c0d03f1caa2059e31c50b648`
+
+Scope: observation-only A0 diagnostics plus the S3 pretrained-student, S4 no-augmentation and S7 temporal-identity single-variable controls. This package does not authorize or run formal Full training.
 
 ## Independent source review
 
@@ -24,6 +26,8 @@ There is no change under `src/`, no edit to the trainer, model, loss, evaluator,
 The only source difference from the A0 commit to the S3 runtime commit is a one-line audit serialization fix plus its regression test: scalar integer state buffers are flattened before byte reinterpretation. This is required for EfficientNet BatchNorm `num_batches_tracked` buffers and does not change any model or training computation.
 
 The S4 candidate adds one diagnostic YAML and focused regression coverage; it does not change `src/`, trainer, model, loss, evaluator, teacher cache, canonical configurations, or the canonical full-run guard. After run-name/output normalization, the exact scientific difference from S0 is `{data.train_augment}`.
+
+The S7 candidate adds a fail-closed optional model mode and observation-only diagnostic checkpoint support. The default for a missing or explicit canonical value is still `transformer`; only the noncanonical S7 YAML selects `identity_passthrough`. The temporal encoder is always constructed in the original order, so state-dict keys, parameter identity and constructor-time RNG use are unchanged. The active forward computes `temporal_input = fused_tokens_before_position + position_embedding`; S7 assigns that tensor directly to `shared_features`, while the original mode passes it through the temporal encoder. After output-path normalization, the exact S7/S0 scientific difference set is `{student.temporal_path_mode}`.
 
 ## A0 semantics reviewed
 
@@ -63,6 +67,8 @@ Focused tests require the S4/S0 normalized difference set to be exactly `{data.t
 - S3 posthoc is accepted only when it is bound back to the audited S3 checkpoint and NPZ hashes and training AP, saved prediction AP and checkpoint-rerun AP agree within `1e-12`.
 - S4 training is accepted only when the candidate-verification receipt passes, the resolved configuration has the exact single scientific difference, the three history/diagnostic records end at steps 400/800/1200, and full validation/test arrays pass the same official ten-segment schema checks.
 - S4 posthoc is accepted only when it binds back to the audited S4 checkpoint and NPZ hashes, strict state loading has no missing or unexpected keys, all four content modes are present, and training, saved-NPZ and checkpoint-rerun AP agree within `1e-12`.
+- S7 training is accepted only when the exact candidate/config/worker identities pass, all three atomic diagnostic checkpoints contain the same strict state/config/global-step payload as `last.pt`, all required T=10 outputs are complete, and the bypassed temporal tensors stay byte-identical while the active segment head changes.
+- S7 posthoc is accepted only when all three checkpoint hashes are bound to the PASS training audit, every checkpoint has original/visual-zero/audio-zero/both-zero inference, 100 independent within-sample shuffles, finite path scales and exactly 5,820 samples/58,200 ordered segments. A separate auditor recomputes every delta, compression factor and causal Boolean instead of trusting the producer's summary.
 - Checkpoints, NPZ files, datasets, caches, archives, bundles and progress logs remain on the 5090. Git receives only source, configuration and small review evidence.
 
 ## Verification evidence
@@ -92,6 +98,20 @@ The posthoc result does not support Student-only recovery. Test AP is `0.7456886
 The exact clean S4 candidate was independently verified in `E:\OV-OrthKD-R3\student-shortcut-s4-74d211d`: focused tests returned `5 passed`, compileall exit 0, and the full suite returned `461 passed in 335.90s`. The verification receipt SHA256 is `f5cba2ea8d7504717ca3bdf458eb633c178ba34f956f5162d5759f284665fcf3`. The three-epoch worker then completed at step 1200 with exit 0. Its training audit passed with SHA256 `6f28df765bd436cf38db8fe0a38a239ce3d967518a934d214ebeee5416faa962`; its separate posthoc audit passed with SHA256 `1a9751cbafe3f8504105063150f33cc09214abafb7768e88a1ba4f5c765dfe80`.
 
 S4 test AP/AUROC/F1@0.5 is `0.7034703980/0.5960085404/0.5403934128`, a change of `-0.0452742844/-0.0401261259/0` from S0. Query+position prior AP (`0.7193241998`) exceeds the student; mean-centered AP is `0.5810092411`; 100 temporal shuffles increase rather than reduce mean AP to `0.7046448804`. Visual-zero AP is effectively unchanged (`0.7032248832`), while audio-zero and both-zero AP rise to `0.7504406649/0.7494988965`. The original test logit temporal standard deviation is only `2.48e-5`; the visual/audio token temporal standard deviations of `0.058241/0.579760` are compressed to shared/decision values `0.000874/0.000106`. These independently audited facts reject augmentation removal as a recovery and show a stronger content-independent collapse.
+
+## S7 implementation and execution review
+
+Focused model/config/checkpoint tests were written against the absent behavior before implementation, then passed after the bounded changes. A structural re-review found that the first checkpoint-helper insertion had accidentally split `main()` and made the remaining training body unreachable; Ruff exposed the unreachable layout, the helper was moved above `main()`, and the combined focused suite returned `16 passed in 8.18s`. No experiment was launched from the defective intermediate tree.
+
+The exact clean candidate was installed in `E:\OV-OrthKD-R3\student-shortcut-s7-a7f0dc0` with the nine validated resource junctions. Verification returned compileall exit 0 and `477 passed in 354.75s`, pytest exit 0, stdout SHA256 `d12c0906fe4463d2c9ad3e0548927471e35bb140dcf87862481fc1a613041a7f`, and verification-receipt SHA256 `ce10e08506e7382bedfc16442c4d46f30834b2f20b0b90d54148100193ae7cf9`. HEAD remained exact and dirty status remained empty.
+
+The persistent training worker completed with exit 0 at step 1200. Its artifact audit passed with SHA256 `6583c7f403041be961bba5a40dd7f7e4c8f8d38fd1fee2c7548396b5b6e30dc2`. It binds the sole config change, every small output, the three 500,254,643-byte diagnostic checkpoint hashes, the best/last strict state hash, and the fact that all 48 bypassed temporal-encoder tensors remained unchanged while the active segment head changed.
+
+The posthoc launcher was independently reviewed before use. Its initial launch-time health check accepted only the `training_audit` phase; because that audit can finish inside the ten-second window, a healthy worker could already be in `checkpoint_trajectory` and be rejected. The accepted phase set was widened to `training_audit`, `checkpoint_trajectory`, or `completed`, then its parser, exact hash and preflight were rerun before launch. The successful worker completed both phases with exit 0.
+
+The trajectory producer evaluated steps 400, 800 and 1200 over the full test set in four content modes and performed 100 seed-42 within-sample shuffles at each step. The independent auditor had five focused tamper tests, including altered deltas, altered decisions, T=16 rejection and overwrite refusal; local and remote runs both returned `5 passed`. The final independent audit exited 0 and produced PASS SHA256 `1207c255ccbd918cb5c2899f7da929170c8020f63becd7548e29c473f9671956`, binding the trajectory SHA256 `74fd36bafd08d0d30e0e165c886e02b84fa94ac092b359399714d71e360be992`.
+
+The S7 causal claim was rejected exactly as pre-registered. At steps 400/800, shuffle AP drops are only `0.005508/0.010488` against the required `0.02`; both-zero AP drops are only `0.010096/0.003133` against `0.03`. Positive-minus-negative logits, logit temporal variation and compression checks pass, but all five conditions had to pass at both checkpoints. At best step 1200, AP/AUROC improve to `0.7586053689/0.6691730030`, while F1@0.5 falls to `0.5302860299`. Visual-zero AP is unchanged to eight decimal places; audio-zero and both-zero AP are `0.7335981850/0.7334019023`. This is modest ranking recovery dominated by audio, not restored audiovisual temporal localization and not evidence to start formal Full training.
 
 All active PowerShell workers, launchers, resumptions, queries, preflights and artifact-audit wrappers were parsed locally and on the 5090 with zero parser errors. The Python artifact auditors passed compilation checks; their exact uploaded hashes were bound into the remote wrappers. The locked 5090 environment does not include Ruff, so Ruff was run locally against those exact hashes and recorded separately rather than claimed as a remote result.
 

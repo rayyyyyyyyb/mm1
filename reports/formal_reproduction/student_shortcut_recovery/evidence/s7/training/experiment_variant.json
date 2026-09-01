@@ -1,0 +1,7 @@
+{
+  "variant": "recovery_s7_temporal_identity_seed42",
+  "declared_claim_level": "noncanonical_diagnostic",
+  "effective_claim_level": "noncanonical_diagnostic",
+  "git_dirty": false,
+  "diagnostic_override": false
+}

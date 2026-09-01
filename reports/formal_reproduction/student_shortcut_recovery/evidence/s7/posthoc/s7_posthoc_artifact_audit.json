@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "noncanonical_s7_posthoc_artifact_audit",
+  "git_commit": "a7f0dc06d6a98493c0d03f1caa2059e31c50b648",
+  "task_segments": 10,
+  "max_position_segments": 16,
+  "best_step": 1200,
+  "checkpoint_steps": [
+    400,
+    800,
+    1200
+  ],
+  "causal_decision_recomputed": {
+    "criteria_source": "approved_web_review_S7_plan",
+    "step_400_supports_shared_encoder_major_cause": false,
+    "step_800_supports_shared_encoder_major_cause": false,
+    "simultaneous_step_400_and_800_support": false,
+    "stronger_recovery_at_best": {
+      "predicted_positive_rate_below_0_98": true,
+      "centered_ap_above_s0": true,
+      "per_query_macro_ap_above_s0": true
+    },
+    "failure_signals": {
+      "step_400_shuffle_drop_below_0_01": true,
+      "step_400_both_zero_retains_at_least_98_percent": true,
+      "step_400_positive_not_above_negative": false
+    }
+  },
+  "sources": {
+    "auditor": {
+      "bytes": 11197,
+      "sha256": "31ca63c83e49d121d6d2e850c1bb85ac647833af0a55b7770733e6fc63694826"
+    },
+    "training_audit": {
+      "bytes": 46411,
+      "sha256": "6583c7f403041be961bba5a40dd7f7e4c8f8d38fd1fee2c7548396b5b6e30dc2"
+    },
+    "trajectory": {
+      "bytes": 45552,
+      "sha256": "74fd36bafd08d0d30e0e165c886e02b84fa94ac092b359399714d71e360be992"
+    },
+    "worker_state": {
+      "bytes": 500,
+      "sha256": "f26228e9a8fda61a5a468c21b5475db634db5f90029f942dadf4a1a512b51fc4"
+    },
+    "launch": {
+      "bytes": 923,
+      "sha256": "09fb6aaa80860a12557ffd40e08d2a0752e3b3d0f7a43c89bfedb594440bbd83"
+    }
+  }
+}

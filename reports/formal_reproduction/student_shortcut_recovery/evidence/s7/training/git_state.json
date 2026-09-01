@@ -1,0 +1,42 @@
+{
+  "head": {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "returncode": 0,
+    "stdout": "a7f0dc06d6a98493c0d03f1caa2059e31c50b648",
+    "stderr": ""
+  },
+  "branch": {
+    "command": [
+      "git",
+      "branch",
+      "--show-current"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "status": {
+    "command": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "diff_stat": {
+    "command": [
+      "git",
+      "diff",
+      "--stat"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+}

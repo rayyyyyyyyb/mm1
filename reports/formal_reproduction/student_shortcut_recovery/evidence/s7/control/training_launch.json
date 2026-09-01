@@ -1,0 +1,20 @@
+﻿{
+    "schema_version":  1,
+    "status":  "running",
+    "launch_method":  "Win32_Process.Create_via_verified_PersistentProcess_module",
+    "utc":  "2026-09-01T04:34:11.7704393Z",
+    "worker_process_id":  22960,
+    "return_value":  0,
+    "module_sha256":  "3105384926f66900f57b767984fd029aec968792564420f0bd665cf011bf42e5",
+    "worker_sha256":  "1ef0988ca6ec8e8d20464fa3dc44671b00499111fdb2cce077efbcad87bac99b",
+    "git_head":  "a7f0dc06d6a98493c0d03f1caa2059e31c50b648",
+    "config_sha256":  "26e3f21504d7ce3f9a5498b8c89073fc910db80cbdf058c4b6a397b8735518b6",
+    "candidate_verification_sha256":  "ce10e08506e7382bedfc16442c4d46f30834b2f20b0b90d54148100193ae7cf9",
+    "s4_training_audit_sha256":  "6f28df765bd436cf38db8fe0a38a239ce3d967518a934d214ebeee5416faa962",
+    "s4_posthoc_audit_sha256":  "1a9751cbafe3f8504105063150f33cc09214abafb7768e88a1ba4f5c765dfe80",
+    "sole_scientific_change_from_s0":  "student.temporal_path_mode_transformer_to_identity_passthrough",
+    "sequence":  [
+                     "s7_training"
+                 ],
+    "worker_state":  "E:\\OV-OrthKD-R3\\student_shortcut_control\\s7_a7f0dc0\\worker_state.json"
+}

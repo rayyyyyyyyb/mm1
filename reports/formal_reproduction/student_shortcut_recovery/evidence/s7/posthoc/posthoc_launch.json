@@ -1,0 +1,18 @@
+﻿{
+    "schema_version":  1,
+    "status":  "running",
+    "utc":  "2026-09-01T05:27:01.1976316Z",
+    "launch_method":  "Win32_Process.Create_via_verified_PersistentProcess_module",
+    "worker_process_id":  30080,
+    "return_value":  0,
+    "git_commit":  "a7f0dc06d6a98493c0d03f1caa2059e31c50b648",
+    "module_sha256":  "3105384926f66900f57b767984fd029aec968792564420f0bd665cf011bf42e5",
+    "worker_sha256":  "31414e2b7e8b7437d4332678a99ce6ce446063e9f0eb4067bfc24a48f36728be",
+    "training_audit_script_sha256":  "7c768b7039e9740949ae8214a9a860fa43e14dfe4e4a5318a7a2065303e530c3",
+    "trajectory_script_sha256":  "efd36105f131dd4096c3ee35dfc1cba19bc175975f1931e7c9d1f749ffe5425a",
+    "training_state_sha256":  "969235cd7a11961248139c5f7dc0024401f54915532156549b34e544a8df66de",
+    "phases":  [
+                   "training_audit",
+                   "checkpoint_trajectory"
+               ]
+}
