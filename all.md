@@ -3078,3 +3078,10 @@
 - 双 ledger 同步一致且 diff check/cached check 均 exit 0 后，将 spec 与 entry 709 提交为 `3693859`（`docs: design zero-training audit phase`），2 files/86 insertions。该提交只含设计和流水账，不含科学代码。
 - 使用 writing-plans 技能通过 apply_patch 新建 `docs/superpowers/plans/2026-09-01-zero-training-audits.md`：7 个任务、40 个 checkbox，逐项规定 A 纯指标/配对、模型默认关闭的诊断控制、A–E runtime、F clone probe、独立 auditor/远端控制、A–F 发布与条件 S8。每个生产改动都先写 failing test、确认 RED、最小实现、确认 GREEN、独立提交；明确 `k=0/k=10` 不伪造 AUROC、step0 只能称 reconstructed、运行 arrays 留在 5090、S8 不与 A–F 同 worker 启动。
 - 计划 self-review：spec coverage 覆盖 A–F、remote persistence、artifact audit 和 S8 blocker；接口名称在前后任务一致；禁止 placeholder pattern 无命中/rg exit 1；40 个 checkbox 被检出；`git diff --check` exit 0。根据用户已明确“开始”且禁止再次询问，选择 inline executing-plans，不派发子代理。下一步先在已隔离 worktree/锁定 5090 环境建立 fresh baseline，然后进入 Task 1 RED；此刻仍未写生产代码或启动训练。
+
+### 711. 2026-09-01：实施计划提交与 fresh 5090 基线复核
+
+- 双 ledger 一致、diff/cached check exit 0 后，把 281-line plan 与 entry 710 提交为 `d9a4880`（`docs: plan zero-training audit phase`），2 files/281 insertions；仍无科学代码变化。比较 S7 scientific commit `a7f0dc0..HEAD` 的 `src/scripts/tests/configs` 时，第一次把未封装的 range 直接交给 PowerShell，git 收到坏参数并 exit 129；改为显式字符串 `$range` 后 diff exit 0、scientific file count=0。
+- 远端 `E:\OV-OrthKD-R3\student-shortcut-s7-a7f0dc0` 复核 HEAD exact a7f0dc0、status count 0。第一次 fresh full pytest 使用锁定 venv 但没有把 portable MinGit 加入 PATH，结果 `36 failed, 441 passed in 322.45s`、pytest exit 1、测试后 status 0；完整 traceback 的 36 项全部在临时 fixture 调用裸 `git init` 时以同一 `FileNotFoundError/WinError 2` 失败，没有代码断言失败。
+- 按 systematic-debugging 做环境边界对照：固定 MinGit `E:\OV-OrthKD-R0\env\Git\cmd\git.exe` 存在；同一远端 shell 中 `Get-Command git` 在加 PATH 前为 false，加 `E:\OV-OrthKD-R0\env\Git\cmd` 后精确解析到该 executable。代表失败用例 `test_static_teacher_identity_records_exact_provenance` 随即 `1 passed in 4.57s`、exit 0，确认根因是本次启动命令遗漏 PATH，而非仓库基线。
+- 使用相同 exact a7f0dc0/clean worktree、锁定 venv、MinGit PATH 和 `-p no:cacheprovider` 重跑全仓：`477 passed in 336.26s (0:05:36)`、pytest exit 0，测试后 status count 0。至此 fresh baseline 通过，可进入 Task 1 RED；仍没有启动 GPU 训练或 S8。
