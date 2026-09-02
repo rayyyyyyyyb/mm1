@@ -29,6 +29,19 @@ S4_PATH = (
     / "recovery"
     / "ov_orthkd_s4_no_augment_seed42.yaml"
 )
+VISUAL_ONLY_PATH = (
+    PROJECT_ROOT
+    / "configs"
+    / "diagnostics"
+    / "ov_orthkd_mm26_visual_only_seed42.yaml"
+)
+VISUAL_SUM_PATH = (
+    PROJECT_ROOT
+    / "configs"
+    / "diagnostics"
+    / "recovery"
+    / "ov_orthkd_visual_only_sum_feature_seed42.yaml"
+)
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -128,3 +141,42 @@ def test_s4_remains_short_noncanonical_t10_random_init_control() -> None:
             "alpha_orth",
         )
     )
+
+
+def test_visual_sum_control_changes_only_visual_feature_reduction() -> None:
+    baseline = _normalized(_load(VISUAL_ONLY_PATH))
+    control = _normalized(_load(VISUAL_SUM_PATH))
+
+    # Claim/guard/output metadata are intentionally diagnostic-only identity
+    # changes; the scientific configuration must differ in exactly one field.
+    for config in (baseline, control):
+        config["reproduction"].pop("claim_level", None)
+        config["reproduction"].pop("diagnostic_only", None)
+        config["reproduction"].pop("full_run_blocked", None)
+        config["reproduction"].pop("blocked_archival_facts", None)
+    assert _different_paths(baseline, control) == {
+        "loss.visual_l2_reduction"
+    }
+    assert baseline["loss"]["visual_l2_reduction"] == (
+        "mean_feature_then_masked_mean_segments"
+    )
+    assert control["loss"]["visual_l2_reduction"] == (
+        "sum_feature_then_masked_mean_segments"
+    )
+
+
+def test_visual_sum_control_is_explicitly_noncanonical_and_guarded() -> None:
+    config = _load(VISUAL_SUM_PATH)
+
+    assert config["seed"] == 42
+    assert config["reproduction"]["claim_level"] == "noncanonical_diagnostic"
+    assert config["reproduction"]["diagnostic_only"] is True
+    assert config["reproduction"]["full_run_blocked"] is True
+    assert "diagnostic" in config["logging"]["log_dir"]
+    assert config["data"]["num_segments"] == 10
+    assert config["student"]["max_position_segments"] == 16
+    assert config["training"]["epochs"] == 30
+    assert config["training"]["max_batches_per_epoch"] == 400
+    assert config["training"]["max_optimizer_steps"] is None
+    assert config["training"]["scheduler"]["T_max"] == 30
+    assert config["evaluation"]["test_views"] == 1

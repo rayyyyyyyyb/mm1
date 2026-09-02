@@ -3515,3 +3515,47 @@
 - 已将包含冻结 probe 报告、22 个小型证据/文档文件和本账本的提交 `08e94fcefeb4f620e6bbafb68e8503c7f41fe19e` 推送到 `origin/repro/student-shortcut-recovery`，push exit `0`。
 - 推送后 `git ls-remote` 与本地 HEAD 完全相同（`PUSH_MATCH=True`），工作树状态为空；该提交 diff stat 为 `22 files changed, 1889 insertions(+), 22 deletions(-)`。
 - 本条账本收据将在随后形成的最终文档提交中保存；最终分支 SHA 以推送后最后一次 `git rev-parse HEAD`/`ls-remote` 为准。
+
+### 783. 2026-09-02：接收 provenance / Visual-only 新裁决
+
+- 完整阅读网页端新裁决附件并与当前分支状态核对。接受的边界是：正式 Full、第二随机种子、盲目延长 schedule、继续枚举 Student-only readout 均暂停；`VISUAL_INFORMATION_NOT_DECODABLE` 仅表示当前逐段线性 logistic VQP probe 未稳定解码，不作信息论意义的绝对断言。
+- 将任务拆为两个有依赖关系的阶段：先只读恢复旧分支/reflog/checkpoint state、TensorBoard/W&B、shell history、实际命令、旧 YAML、环境快照和 state-dict/参数量 provenance；只有历史证据不足以恢复原实验时，才进入严格预注册的 Visual-only `visual feature loss mean→sum` 单变量 bounded control。用户已明确要求直接开始，视为对该两阶段设计的授权。
+- 当前本地分支为 `repro/student-shortcut-recovery`，HEAD `e95315d0ca859c16a5ccf8aa0bf34428f1eb9caa`，工作树起始为空；未发现仓库范围内 `AGENTS.md`。
+
+### 784. 2026-09-02：本地 Git provenance 只读审计
+
+- 检查本地仓库 refs、完整 log、reflog 与 `git fsck --unreachable --no-reflogs`。可见提交均从 `dca9f05`（2026-08-19 的 reconstruction artifact）开始；reflog 也只覆盖 2026-08-19 以后。
+- 14 个 unreachable commit 均为 2026-08-20 至 2026-09-02 的重建分支/中间修订，未发现原会议源码、旧实验分支或更早时间线。因此本地 Git 无可恢复的原始实验 provenance。
+
+### 785. 2026-09-02：本地 checkpoint 与历史命令审计
+
+- 对本地 `.pt/.pth/.ckpt` 资产做只读枚举与 SHA256：R0 smoke/preflight checkpoint 及 InternVideo2、CLAP、GPT-2 等均为当前重建/公开资产；checkpoint 的 config 明确包含 `mock_only`、`paper_specified_reconstruction` 与 BLOCKED archival facts，不能作为原会议运行证据。
+- 加载 R0 checkpoint 顶层 state：含 optimizer/scheduler 等状态，但其 base commit、mock teacher、短 smoke schedule 等均指向重建流程；不存在可证明原始命令或原始参数的状态快照。
+- 检查本地 PowerShell history，只见其他项目命令及本重建阶段的 smoke/resume 记录；未发现可归因于原会议 OV-OrthKD 运行的旧命令、旧 YAML、TensorBoard/W&B 运行记录或环境快照。
+
+### 786. 2026-09-02：5090 Git、目录与命令历史 provenance 审计
+
+- 5090 `E:\OV-OrthKD-R3\repo` 的分支只有当前重建/诊断相关分支（`repro/r2-conference-reproduction-readiness`、`repro/r3-assets-download-and-readiness`、causal/student-shortcut/zero-training 等）；远端 reflog 从 2026-08-20 clone 开始，unreachable commit 也仅为重建修订。
+- 5090 `E:\OV-OrthKD-R3` 顶层运行目录全部是 `formal-*`、`causal-*`、`student-shortcut-*`、`zero-training-*`、`frozen-probe-*` 等重建运行；未见 original/conference/wandb/tensorboard 之类独立原始运行目录。
+- 对 R3 运行目录排除 `env/.venv/site-packages/data/cache/memmap/tools` 后审计文件名，命中的 config、history、requirements freeze、worker/launch 脚本和 logs 均属于本重建代码；未发现原会议日志或外部实验记录。第一次更宽的递归查询因输出量过大被 30 秒超时并截断，随后用上述排除规则完成定向查询。
+- 5090 PowerShell history、bash/zsh history、Downloads/Desktop 中未发现可归因于原会议运行的命令或旧配置（PowerShell history 相关模式无命中；其他候选历史文件不存在或无相关资产）。
+
+### 787. 2026-09-02：5090 checkpoint provenance 复核
+
+- 定向枚举 5090 上大于 1 MB 的 `.pt/.pth/.ckpt`，命中仅为 causal/student-shortcut/formal-canonical/r5 等重建运行 checkpoint；没有原始命名或更早 provenance 文件。
+- 只读加载 `diagnostics-root-cause-c5c5036/outputs/diagnostic/mm26_visual_only_seed42_current_pipeline/best.pt`：顶层含 `student_state_dict`、`loss_state_dict`、`optimizer_state_dict`、`scheduler_state_dict`、`rng_state`，但 `implementation_mode=camera_ready_explicit_paths`、`claim_level=paper_specified_reconstruction`、`variant=diagnostic_visual_only_current_pipeline`，`visual_l2_reduction=mean_feature_then_masked_mean_segments`，30 epoch cosine 配置，明确是重建实验而非原会议历史资产。
+- 5090 checkpoint 复核结论：旧 state-dict/optimizer/scheduler 虽然存在，但不能恢复原始实验 provenance；截至本审计没有可验证的原始分支、命令、日志、YAML、环境或 checkpoint 证据。
+### 788. 2026-09-02: Visual-only bounded control tests (TDD RED)
+
+- Added two pre-registered contract tests in `tests/test_student_recovery_configs.py`: the scientific config may differ from the existing Visual-only config only at `loss.visual_l2_reduction`; the control must retain seed 42, official 10 task segments, 16-capacity positional buffer, 30 epochs/400 batches, single test view, and be explicitly `noncanonical_diagnostic`, `diagnostic_only=true`, `full_run_blocked=true`.
+- Before creating the config, the targeted test run returned `4 passed, 2 failed` with exit code `1`; both failures were the expected missing-control failure, confirming RED-before-implementation.
+
+### 789. 2026-09-02: Visual-only mean-to-sum control config created
+
+- Added `configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42.yaml`, copied from the existing `ov_orthkd_mm26_visual_only_seed42.yaml`; the sole scientific change is `loss.visual_l2_reduction`: `mean_feature_then_masked_mean_segments` to `sum_feature_then_masked_mean_segments`.
+- Only run-identity metadata was changed to prevent misreporting: `claim_level=noncanonical_diagnostic`, `diagnostic_only=true`, `full_run_blocked=true`, diagnostic output directory, and explicit provenance blockers. Data, teacher, student, optimizer, schedule, evaluation and seed remain unchanged.
+- `tests/test_student_recovery_configs.py` now returns `6 passed`, exit code `0`; independent YAML parsing confirms the diagnostic guard fields and sum reduction.
+- A local direct import of `validate_repro_config` could not run because the local environment lacks `timm` (exit code `1`, no files changed); the 5090 environment will be used for guard and runtime verification.
+### 790. 2026-09-02: pre-registered Visual-only control plan recorded
+
+- Added `reports/formal_reproduction/student_shortcut_recovery/VISUAL_ONLY_SUM_CONTROL_PLAN.md`, documenting the provenance boundary, frozen protocol, single mean-to-sum variable, exact 256-dimension reduction identity check, artifact requirements, and the rule that no threshold tuning, second seed, schedule extension, architecture change or Full launch is allowed.
