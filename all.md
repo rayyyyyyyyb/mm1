@@ -3643,3 +3643,7 @@
 ### 808. 2026-09-03: independent local verification after launch logging
 
 - Re-ran `python -m pytest -q tests/test_student_recovery_configs.py`: 10 passed, exit `0`; re-ran `python -m compileall -q scripts src tests`: exit `0`. The repository worktree is clean and both activity ledgers remain byte-identical (`all_equal=True`).
+
+### 809. 2026-09-03: control remains active in validation
+
+- A remote status poll found the no-worker Python process alive (about 36 minutes wall time, approximately 2.84 GB resident memory) with no new exception. The first training bound has completed and the process is still validating; `history.jsonl`/checkpoint files are not yet present, so no validation metric is recorded.
