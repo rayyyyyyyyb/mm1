@@ -3629,3 +3629,9 @@
 
 - Archived commit `9e7a6308677614a54e94d12125065cd86fa3c15f` to `tmp/visual_sum_control_9e7a630.tar` (SHA256 `79FAA8C01C32EB0EDC4A81465C4013936F9812D4B2C9AC740ABC485697B19D09`, 11,888,640 bytes), uploaded it to 5090, and deployed isolated tree commit `b1419fbf6ad5a3e908f3e50b4428b09f9d796988` at `E:\OV-OrthKD-R3\visual_sum_control_9e7a630` with shared assets junctioned read-only.
 - Verified the canonical guard without `--allow-blocked-reproduction`: Python exited `1` with the expected unresolved-archival-facts `RuntimeError`. Then launched the non-canonical bounded visual-only mean-to-sum control with `data.num_workers: 0` in persistent SSH session `20986` at 02:47:58. The run has not changed the scientific variable or canonical protocol.
+
+### 806. 2026-09-03: provenance recovery audit completed
+
+- Read-only audit of the 5090 original repository found no pre-existing conference checkpoint or hidden original branch: `git reflog --all` contains only the R2/R3 clone and diagnostic worktree heads; `git fsck --unreachable` found `53dc809` and `f07fd5c`, which are duplicate T10-protocol commits with the same parent, not an earlier training provenance.
+- The discovered `.pt` files are all generated S3–S9/causal/frozen-control artifacts. Loading representative S9 and S8 checkpoints confirmed the available metadata is our diagnostic pipeline (`student_state_dict`, optimizer/scheduler states, `global_step=1200`, three-epoch diagnostic config, trainable target projectors), not the authors' original run; no author checkpoint with a recoverable original command/schedule was found.
+- No PowerShell command history entries matched OV-OrthKD/training, no W&B or TensorBoard run directories were present under the 5090 workspace, and the only user-home history bundle (`smc_task3_b4a47f5_complete-history.bundle`) is an unrelated SMC repository. Existing requirements/pip-freeze and verification logs therefore document only this reconstruction environment.
