@@ -3647,3 +3647,7 @@
 ### 809. 2026-09-03: control remains active in validation
 
 - A remote status poll found the no-worker Python process alive (about 36 minutes wall time, approximately 2.84 GB resident memory) with no new exception. The first training bound has completed and the process is still validating; `history.jsonl`/checkpoint files are not yet present, so no validation metric is recorded.
+
+### 810. 2026-09-03: provenance report materialized
+
+- Added `reports/formal_reproduction/student_shortcut_recovery/PROVENANCE_RECOVERY_AUDIT.md` and mirrored it under `扩刊/复现/student_shortcut_recovery/`. The report records the exact refs, dangling commits, checkpoint metadata, absent histories/loggers, and the resulting decision to keep canonical Full blocked.
