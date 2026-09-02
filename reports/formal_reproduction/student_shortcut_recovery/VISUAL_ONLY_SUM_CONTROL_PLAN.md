@@ -79,3 +79,14 @@ still `loss.visual_l2_reduction`; no incompatible resume is allowed, so the
 retry starts from a clean output namespace and retains the same 30-epoch,
 400-batch, seed-42 protocol. A worker-count change is treated as runtime
 plumbing, not as a model, data, loss, schedule, or evaluation intervention.
+
+That single-worker retry also reproduced error 1455 before its first batch,
+showing that the shared-file mapping limit is not solved by reducing the worker
+count alone. The next and final runtime retry is
+`configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_no_workers.yaml`
+with `data.num_workers: 0`, so loading occurs in the training process and no
+inter-process tensor mapping is required. It remains a clean run (no
+incompatible resume), keeps the same scientific configuration and schedule,
+and records the two failed resource attempts as evidence. If this retry cannot
+complete, the control is `BLOCKED_BEFORE_R2` and no further runtime or
+scientific variants are authorized.

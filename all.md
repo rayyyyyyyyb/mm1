@@ -3620,3 +3620,7 @@
 - A read-back of the first single-worker deployment found its variant/log directory still named the generic sum control (the worker override was present, but the output identity was ambiguous). The process was stopped by exact command-line match during static hashing; no epoch/checkpoint or shared-asset mutation occurred.
 - Patched the retry config metadata/output namespace to `bounded_visual_only_sum_feature_seed42_single_worker`, reran the 8-test contract/compile checks (exit `0`), amended/pushed commit to `b270e039d9cce77a85df1ec3cc853f5261138d5e`, and deployed a fresh isolated tree with clean commit `61e7348d2a8710fad0f6e19ae79e27dd179db5b6`.
 - The corrected run is now active in persistent SSH session `97394`, started 01:53:13 with `Using device: cuda`; it is the only active process for this control.
+### 804. 2026-09-03: single-worker retry also hit Windows mapping limit
+
+- The corrected single-worker run completed static hashing (teacher cache hash at 02:12:29) but failed before the first scientific batch with the same PyTorch shared-file-mapping error 1455. The worker was actively reading cache; no checkpoint/history or scientific metric was produced.
+- Exact command-line matched processes were stopped; the failed output and error transcript are retained. This confirms the limit is caused by multiprocessing shared mappings under the real dataset, not simply worker count four. The next runtime-only retry will set `data.num_workers: 0` (main-process loading), with a new output identity and no incompatible resume.
