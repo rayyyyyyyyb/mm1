@@ -62,3 +62,20 @@ mean-reduction Visual-only baseline. No post-hoc threshold, second seed,
 schedule extension, architecture change, or Full launch is authorized by this
 plan. If any artifact or identity check fails, classify the control
 `BLOCKED_BEFORE_R2` and do not interpret metrics.
+
+## Runtime-only retry after Windows error 1455
+
+The first real run reached epoch 4 (global step 1600), then failed during
+validation with PyTorch's shared-file-mapping error 1455. The failure is an
+execution-resource issue from four DataLoader workers and does not identify a
+scientific effect. The failed output is retained as evidence.
+
+The retry configuration
+`configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_single_worker.yaml`
+sets `data.num_workers: 1` solely to avoid that Windows paging/shared-memory
+failure. Its `reproduction.runtime_overrides` field records the change and
+reason. The only scientific change relative to the mean-reduction baseline is
+still `loss.visual_l2_reduction`; no incompatible resume is allowed, so the
+retry starts from a clean output namespace and retains the same 30-epoch,
+400-batch, seed-42 protocol. A worker-count change is treated as runtime
+plumbing, not as a model, data, loss, schedule, or evaluation intervention.

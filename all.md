@@ -3559,3 +3559,59 @@
 ### 790. 2026-09-02: pre-registered Visual-only control plan recorded
 
 - Added `reports/formal_reproduction/student_shortcut_recovery/VISUAL_ONLY_SUM_CONTROL_PLAN.md`, documenting the provenance boundary, frozen protocol, single mean-to-sum variable, exact 256-dimension reduction identity check, artifact requirements, and the rule that no threshold tuning, second seed, schedule extension, architecture change or Full launch is allowed.
+### 791. 2026-09-02: 5090 隔离运行目录与 guard 预检
+
+- 本地提交 `9d5161a` 以 tar 方式部署到 `E:\\OV-OrthKD-R3\\visual_sum_control_9d5161a`；数据、teacher cache、weights、external 和公开下载缓存通过 junction 挂接到既有 5090 资产，未覆盖原 repo 的 160 项未提交文件。
+- 5090 guard 验证：不带 `--allow-blocked-reproduction` 退出并拒绝正式运行；带该参数通过且只写入 `NON_CANONICAL_UNRESOLVED_RUN.txt` marker，退出码 `0`。
+- 已启动真实数据一批预检（1 epoch、1 batch、1 eval batch，独立诊断输出目录），命令使用隔离目录的 `scripts/train_ov_orthkd.py` 与锁定 Python 环境；启动时记录 `Using device: cuda`，进程仍在执行中，尚未产生科学结果。
+### 792. 2026-09-03: 5090 一批真实数据预检完成
+
+- 隔离目录预检命令 exit `0`；真实 CUDA forward/backward 在 1 epoch/1 batch 下完成，训练 loss 的 `strong_feat=175.81350708007812`，未出现 NaN/Inf；1 batch validation/test artifacts 生成。
+- 预检输出记录 10 段协议、单视图、noncanonical claim marker、resolved config、runtime/lock/manifest receipts 和 checkpoint；预检不是正式指标，因 eval 限制仅覆盖 4 个样本/40 段。
+- 预检过程先花费约 10 分钟计算 99,334 个 teacher-cache 文件（总计 1,310,102,478 bytes）的 canonical hash，之后完成首 batch；未修改共享 cache 或原 repo。
+
+### 793. 2026-09-03: mean→sum 真实 batch 独立 identity probe PASS
+
+- 使用预检 checkpoint/config 和隔离 Git commit `3e27103dd5149440ea056311fb0c605286691906`，运行现有 disposable projector probe，exit `0`、status `PASS`，源 projector state SHA 前后相同、source gradients remained none、未写 updated checkpoint。
+- batch shape 为 `[B=4,T=10]`，strong teacher dim `512`，projection dim `256`，valid rows `40`；mean loss `0.6939502954483032`，sum loss `177.65127563476562`，loss/projector-gradient/student-decision-gradient 比均为精确 `256.0`。
+- 该结果验证了控制配置实际使用平方范数 sum 语义和梯度尺度；disposable clone 的一步 AdamW 更新发生且 source state unchanged，不能被解读为正式 Full 或复现结果。
+### 794. 2026-09-03: 完整 Visual-only sum 控制启动
+
+- 第一次使用 PowerShell `Start-Process -ArgumentList @(...)` 的脱离启动在 SSH 会话结束后未留下进程或输出；未产生训练文件，未改共享资产，判为启动方式失败而非科学运行。
+- 改用单一参数字符串重新启动，PID `28972`，启动命令仅为新控制配置加 `--allow-blocked-reproduction`，输出定向到隔离目录；10 秒后进程仍存活并记录 `Using device: cuda`。
+- 完整运行目标为 30 epochs × 400 batches、无 early stop/optimizer-step 截断、单固定 test view；运行身份 noncanonical diagnostic，canonical Full guard 保持不变。
+### 795. 2026-09-03: Visual-only sum control foreground session relaunch
+
+- The detached `Start-Process` launch did not survive the long static evidence/hash stage and produced no scientific output; only the exact output directory created for this control was removed, with shared cache and the original repository untouched.
+- A persistent SSH foreground session `2990` relaunched the same 30-epoch/400-batch noncanonical visual-only sum configuration and recorded `Using device: cuda`; the session is running and will be polled until complete artifacts are available.
+### 796. 2026-09-03: Visual-only sum control epoch 1 complete
+
+- The 5090 run completed its first capped epoch (400 optimizer batches) and full validation without NaN/Inf; epoch record was written to the isolated output.
+- Epoch 1 global step `400`: train total `5.134447072893381`, `strong_feat=9.954146811887622`; validation AP `0.7434986351345253`, AUROC `0.6455900918277374`, official segment-F1-at-0.5 `0.5377574807678815`, predicted-positive-rate `1.0`, `5798` samples / `57980` segments. This is a noncanonical diagnostic trajectory, not a paper result.
+- Checkpoints `best.pt` and `last.pt` were written only under the isolated control output (each `562480993` bytes); `history.jsonl`, predictions and diagnostics were created. Full/canonical guard remains unchanged.
+### 797. 2026-09-03: Visual-only sum control epoch 2 complete
+
+- Epoch 2 (global step `800`) completed its 400-batch cap and full validation with finite values; epoch elapsed time was `710.6370735999662` seconds and peak memory `6559.32763671875` MB.
+- Train total was `1.2411880990862847` with `strong_feat=0.33884570475667714`; validation AP `0.7188531594351667`, AUROC `0.6181175958982171`, segment-F1-at-0.5 `0.5377574807678815`, predicted-positive-rate `1.0`. It was not a new best checkpoint. Epoch 3 has started; no protocol changes were made.
+### 798. 2026-09-03: Visual-only sum control epoch 3 complete
+
+- Epoch 3 (global step `1200`) completed the same 400-batch cap and full validation with finite values; elapsed time `695.2429170999676` seconds, peak memory `6559.32763671875` MB.
+- Train total `1.1702378210425377`, `strong_feat=0.15377910995855928`; validation AP `0.7449027227648877`, AUROC `0.6458518643784696`, segment-F1-at-0.5 `0.5506134054228198`, predicted-positive-rate `0.9830976198689203`. This is the current best checkpoint. Epoch 4 has started; the run remains noncanonical diagnostic only.
+### 799. 2026-09-03: Visual-only sum control epoch 4 complete
+
+- Epoch 4 (global step `1600`) completed the 400-batch cap and full validation with finite values; elapsed time `680.6855281998869` seconds, peak memory `6559.32763671875` MB.
+- Train total `1.1458141300082207`, `strong_feat=0.09836488065309823`; validation AP `0.7208877600474906`, AUROC `0.6288829861560692`, segment-F1-at-0.5 `0.5377574807678815`, predicted-positive-rate `1.0`. It was not a new best. Epoch 5 started without any protocol/config change.
+### 800. 2026-09-03: Visual-only sum control resource failure at epoch 5
+
+- After four completed epochs (global step `1600`), epoch 5 validation failed with PyTorch multiprocessing `RuntimeError: Couldn't open shared file mapping ... error code: <1455>`; the foreground SSH process exited with code `1`.
+- The failure is a Windows paging/shared-memory exhaustion caused by four DataLoader workers and large real batches, not NaN/Inf or a scientific metric. The isolated output retains best/last checkpoints at epoch 4, history (4 records), diagnostics, locks and the traceback in the session transcript; no shared data/cache or canonical repository was modified.
+- The failed run is not resumed with an incompatible fingerprint. A runtime-only single-worker rerun will be pre-registered and tested; its only non-scientific difference is `data.num_workers`, while the sole scientific difference remains mean-to-sum visual feature reduction.
+### 801. 2026-09-03: Single-worker runtime retry prepared and launched
+
+- Added the explicitly guarded retry config `ov_orthkd_visual_only_sum_feature_seed42_single_worker.yaml`; it retains seed 42, T=10, max position 16, 30 epochs, 400 batches, one test view and sum reduction, while changing only runtime `data.num_workers: 4 -> 1` with a recorded error-1455 reason.
+- TDD RED before config creation: targeted tests returned `6 passed, 2 failed`, exit `1` due the expected missing file. After creation and correcting the comparison baseline, targeted tests returned `8 passed`, exit `0`; `compileall tests` exit `0`, `git diff --check` exit `0`.
+- Committed and pushed the retry contract as `84047f3932b941f57985b0da694bc789467cb938`; remote branch matched this SHA. New isolated deployment `E:\OV-OrthKD-R3\visual_sum_control_84047f3` was created with junctions to existing assets and clean isolated commit `bf8c57e2f4c28c45e8f1b71fa194a1ab71e6f2ef`.
+- Guard denial on 5090 without `--allow-blocked-reproduction` produced the expected RuntimeError (command exit `1`); no canonical run was started. The single-worker full diagnostic was then launched in persistent SSH foreground session `82365` at 01:43:46 with `Using device: cuda`.
+### 802. 2026-09-03: single-worker retry remains active
+
+- The retry session `82365` is still attached; remote process tree shows the isolated `train_ov_orthkd.py` process and no process from the failed four-worker run. At 01:47 it was in the initial static evidence/hash stage, with no scientific artifacts yet; shared data/cache junctions remain read-only from the run's perspective.

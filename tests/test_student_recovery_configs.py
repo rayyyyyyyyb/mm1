@@ -42,6 +42,13 @@ VISUAL_SUM_PATH = (
     / "recovery"
     / "ov_orthkd_visual_only_sum_feature_seed42.yaml"
 )
+VISUAL_SUM_SINGLE_WORKER_PATH = (
+    PROJECT_ROOT
+    / "configs"
+    / "diagnostics"
+    / "recovery"
+    / "ov_orthkd_visual_only_sum_feature_seed42_single_worker.yaml"
+)
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -173,6 +180,48 @@ def test_visual_sum_control_is_explicitly_noncanonical_and_guarded() -> None:
     assert config["reproduction"]["diagnostic_only"] is True
     assert config["reproduction"]["full_run_blocked"] is True
     assert "diagnostic" in config["logging"]["log_dir"]
+    assert config["data"]["num_segments"] == 10
+    assert config["student"]["max_position_segments"] == 16
+    assert config["training"]["epochs"] == 30
+    assert config["training"]["max_batches_per_epoch"] == 400
+    assert config["training"]["max_optimizer_steps"] is None
+    assert config["training"]["scheduler"]["T_max"] == 30
+    assert config["evaluation"]["test_views"] == 1
+
+
+def test_single_worker_retry_only_adds_runtime_worker_override() -> None:
+    control = _normalized(_load(VISUAL_ONLY_PATH))
+    retry = _normalized(_load(VISUAL_SUM_SINGLE_WORKER_PATH))
+
+    for config in (control, retry):
+        config["reproduction"].pop("claim_level", None)
+        config["reproduction"].pop("diagnostic_only", None)
+        config["reproduction"].pop("full_run_blocked", None)
+        config["reproduction"].pop("blocked_archival_facts", None)
+        config["reproduction"].pop("runtime_overrides", None)
+    assert _different_paths(control, retry) == {
+        "loss.visual_l2_reduction",
+        "data.num_workers",
+    }
+    assert retry["loss"]["visual_l2_reduction"] == (
+        "sum_feature_then_masked_mean_segments"
+    )
+    assert control["data"]["num_workers"] == 4
+    assert retry["data"]["num_workers"] == 1
+
+
+def test_single_worker_retry_is_guarded_and_declares_resource_reason() -> None:
+    config = _load(VISUAL_SUM_SINGLE_WORKER_PATH)
+
+    assert config["seed"] == 42
+    assert config["reproduction"]["claim_level"] == "noncanonical_diagnostic"
+    assert config["reproduction"]["diagnostic_only"] is True
+    assert config["reproduction"]["full_run_blocked"] is True
+    assert config["reproduction"]["runtime_overrides"]["data.num_workers"] == {
+        "from": 4,
+        "to": 1,
+        "reason": "Windows shared-file-mapping error 1455 during four-worker validation",
+    }
     assert config["data"]["num_segments"] == 10
     assert config["student"]["max_position_segments"] == 16
     assert config["training"]["epochs"] == 30
