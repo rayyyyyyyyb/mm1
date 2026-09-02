@@ -3509,3 +3509,9 @@
 - 最终 staged 验证：`tests/test_frozen_feature_probe.py` 为 `6 passed`、exit `0`；`compileall` exit `0`；`git diff --cached --check` exit `0`；独立证据脚本输出 `FINAL_EVIDENCE_VERIFY PASS`、exit `0`。
 - 独立确认冻结 probe 报告所引用的 6 个新文件全部存在，报告机制字段（S9 step 1200 visual std `0.005928`、projected std `0.000853`、Jacobian `0.814824`）与证据一致；报告副本 SHA 仍为 `74F8CB1261A773326924C16E7A879A472A43EA2682A0C8FD4FF90C0E9E6405DF`。
 - 本条之后只进行 Git stage/commit/push 与推送后只读核验，不再修改实验代码、配置、数据、checkpoint 或 full-run guard。
+
+### 782. 2026-09-02：冻结 probe 报告首次推送收据
+
+- 已将包含冻结 probe 报告、22 个小型证据/文档文件和本账本的提交 `08e94fcefeb4f620e6bbafb68e8503c7f41fe19e` 推送到 `origin/repro/student-shortcut-recovery`，push exit `0`。
+- 推送后 `git ls-remote` 与本地 HEAD 完全相同（`PUSH_MATCH=True`），工作树状态为空；该提交 diff stat 为 `22 files changed, 1889 insertions(+), 22 deletions(-)`。
+- 本条账本收据将在随后形成的最终文档提交中保存；最终分支 SHA 以推送后最后一次 `git rev-parse HEAD`/`ls-remote` 为准。
