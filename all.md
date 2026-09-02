@@ -3639,3 +3639,7 @@
 ### 807. 2026-09-03: no-worker control crossed first training bound
 
 - The no-worker run completed the configured first 400 optimizer updates without the previous Windows shared-file-mapping error; the live progress reached `epoch 1/30, 400/3296` and entered validation. Initial finite batch losses fell from approximately `71.68` to `1.57`, with `orth=0` as required by the visual-only control. No epoch validation metric or checkpoint is claimed yet; the persistent session remains active for the pre-registered run.
+
+### 808. 2026-09-03: independent local verification after launch logging
+
+- Re-ran `python -m pytest -q tests/test_student_recovery_configs.py`: 10 passed, exit `0`; re-ran `python -m compileall -q scripts src tests`: exit `0`. The repository worktree is clean and both activity ledgers remain byte-identical (`all_equal=True`).
