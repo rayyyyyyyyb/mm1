@@ -3434,3 +3434,78 @@
 ### 768. 2026-09-02：冻结 probe 代码提交
 
 - 将上述代码、配置、测试和账本提交为 `f78fd7452dd6b00168a3e09eab373e35be5e7ec9`（subject: `audit frozen feature decodability probes`）。提交前 `git diff --cached --check` exit `0`，提交后工作树仅因本条账本追加暂时变更；尚未推送或启动远端运行。
+
+### 769. 2026-09-02：推送与 5090 初次部署尝试
+
+- 将分支推送到 GitHub 成功：`4ed4270..24eb3f6`，远端 branch `repro/student-shortcut-recovery` 已包含冻结 probe 代码；当前本地 HEAD 为 `24eb3f69b57ef32f01e178ee4102768942d7d56d`。
+- 5090 只读状态核对显示没有实验 worker，只有既有下载监控 PID `21008/5204`；用于部署的干净目标 `E:\OV-OrthKD-R3\frozen-probe-24eb3f6` 原先不存在。
+- 使用 MinGit 从 GitHub 克隆精确候选时遇到网络层 `Recv failure: Connection was reset`，clone exit `1`，未进入测试或实验；随后改用本地 bundle 传输方案，避免重复依赖 5090 到 GitHub 的长连接。
+
+### 770. 2026-09-02：5090 精确候选测试与数据 junction 修复
+
+- bundle clone 精确得到 `24eb3f69b57ef32f01e178ee4102768942d7d56d`；首次完整 pytest 在 305.59 秒得到 `560 passed, 1 failed`，唯一失败是 canonical readiness 因新 clone 没有指向 5090 既有 `E:\OV-OrthKD-R3\repo` 的 weights/data/external 资产，非 probe 逻辑错误。
+- 只在新候选目录创建 junction：官方 data/manifest/teacher cache、weights、external 源码和 downloads/incoming 均指向既有共享资产；目标目录原有的 tracked `data/downloads/manual_sources` 未替换，任何非空路径均拒绝覆盖。
+- 针对唯一失败用例重跑，在 279.85 秒得到 `1 passed`，pytest exit `0`；git status 仍 clean（junction 与临时运行目录不进入 Git）。这确认远端完整资产映射有效，随后重新执行完整 pytest。
+
+### 771. 2026-09-02：冻结 probe 5090 后台任务启动
+
+- 5090 上对精确候选执行 `--help` 和 protocol validator 均 exit `0`，预注册协议 SHA256 为 `8425b39e3b0b8b8439f836b2c04bc26026167d42ebebb5979cfabe156127ff86`。
+- 按锁定的 S8 step1200 primary + S9 step400/800/1200 trajectory、batch 16、4 workers、100 shuffles、seed 42 启动唯一隐藏 worker，PID `29820`，输出目录为 `E:\OV-OrthKD-R3\frozen-probe-24eb3f6\outputs\diagnostic\frozen_feature_probe_audit_24eb3f6`。命令仅使用 inference/eval 提取和 sklearn probe，不启动任何 student training。
+- S8/S9 checkpoint、配置路径均先通过只读存在性与历史位置核对；5090 E: 盘可用空间约 `5.986 TB`。随后进入持续进度监控，异常将使用同一输出目录的 per-split/per-checkpoint 断点续跑。
+
+### 772. 2026-09-02：冻结 probe 启动校正与 S8 结果
+
+- 对初次隐藏启动进行结果核对：使用 S8 source config 会被脚本严格拒绝，报 `ValueError: Checkpoint config does not match source config`，退出码 `1`；该失败保护了 checkpoint/config 配对，未产生科学结果。随后改用 checkpoint 内嵌配置一致的 `resolved_config.yaml`，以同一冻结协议重新启动前台唯一审计任务。
+- S8 step 1200 已完成特征提取与三 probe 拟合；checkpoint SHA256 为 `96b2f7833edb1054b661721b05afd8d32b39c1beb52d413dd957db69ea7eb33c`，状态 SHA 前后相同，三 split 均为官方 `T=10`。AQP 正对照通过（相对 QP：mixed pair-weighted `+0.166854`、AP `+0.065560`、AUROC `+0.082068`），VQP 失败（相对 QP：`+0.000955`、`-0.002180`、`-0.000906`），因此 S8 主状态为 `VISUAL_INFORMATION_NOT_DECODABLE`；该结果只用于只读科学诊断，不授权任何训练。
+- 当前正式前台任务仍在 5090 上继续处理 S9 step 400/800/1200，未启动第二个 probe worker，也未修改训练参数或 canonical full-run guard。
+
+### 773. 2026-09-02：S9 step 400 冻结 probe 完成
+
+- S9 step 400 三 split 特征提取、alpha 选择、单次 test 评估与 100 次视频内 shuffle 均完成；结果原子文件为远端 `s9_step400.json`，审计进程未退出。
+- QP test raw AP/AUROC/C 为 `0.760588/0.662906/0.551835`；VQP 为 `0.765315/0.673702/0.560684`；AQP 为 `0.782570/0.704423/0.727847`。AQP 正对照通过，VQP 相对 QP 的 raw AP/AUROC 与 C 增量为 `C=+0.008850`、`AP=+0.004727`、`AUROC=+0.010797`，未达到成功门槛但也未触发全部弱失败条件，预注册状态为 `INCONCLUSIVE`。该点仍仅为轨迹证据，不授权训练或改变协议。
+
+### 774. 2026-09-02：S9 step 800 冻结 probe 完成
+
+- S9 step 800 三 split、probe alpha 选择、单次 test 与 100 次 shuffle 均完成，结果原子文件为远端 `s9_step800.json`。
+- QP test raw AP/AUROC/C 为 `0.758239/0.653141/0.554026`；VQP 为 `0.766032/0.665322/0.558156`；AQP 为 `0.781708/0.700256/0.742962`。AQP 正对照通过；VQP 相对 QP 的 raw AP/AUROC 与 C 增量为 `C=+0.004130`、`AP=+0.007793`、`AUROC=+0.012181`，未达到 `C>=0.020` 成功门槛且未满足全部弱失败条件，预注册状态为 `INCONCLUSIVE`。该点仅为轨迹证据，未授权任何训练。
+
+### 775. 2026-09-02：冻结 probe 全量审计完成
+
+- 5090 前台审计进程 `64822` 正常结束，`PROBE_EXIT=0`；远端 `summary.json` 状态为 `PASS`，协议 SHA256 为 `8425b39e3b0b8b8439f836b2c04bc26026167d42ebebb5979cfabe156127ff86`，明确记录 `formal_student_training_started=false`、`formal_full_authorized=false`。
+- S9 step 1200 结果：checkpoint SHA256 `86191c355ef28f1b836e8a1c7d058ad4b65eec932e2fb2992f8a196bb73d3e36`，resolved config SHA256 `6bb7520ae858b19c45d7be9cff22980b941a9dee3726cdd4d494cb1e285630a1`；QP mixed AP/AUROC/C=`0.625917/0.570061/0.552874`，VQP=`0.624184/0.565806/0.564702`，AQP=`0.691516/0.667545/0.723408`。AQP 正对照通过；VQP 相对 QP 为 `C=+0.011828`、mixed AP=`-0.001733`、mixed AUROC=`-0.004254`，触发 `VISUAL_INFORMATION_NOT_DECODABLE`。
+- 四点轨迹最终为：S8 step1200 `VISUAL_INFORMATION_NOT_DECODABLE`；S9 step400 `INCONCLUSIVE`；S9 step800 `INCONCLUSIVE`；S9 step1200 `VISUAL_INFORMATION_NOT_DECODABLE`。该模式与网页端诊断一致：additive 训练后期视觉时间信息不可由冻结学生表示解码；不支持“仅 concat readout 屏蔽视觉、换算子即可恢复”的假设。
+- 远端四个 checkpoint 的 train/val/test 特征元数据均已完成并固定为 13,182/5,798/5,820 视频、官方 T=10、384 维四块设计；大 memmap 仅保留在 5090，不上传 GitHub。
+
+### 776. 2026-09-02：冻结 probe 证据独立核验与交接准备
+
+- 将远端 `summary.json`、四个 checkpoint 结果 JSON 和每 split 元数据 JSON 复制到仓库 `reports/formal_reproduction/student_shortcut_recovery/evidence/frozen_feature_probe/`；外部 `扩刊/复现/student_shortcut_recovery/frozen_feature_probe/` 保持同一份小型证据镜像。大 feature memmap 仍仅保留在 5090。
+- 在本地从仓库工作目录独立复算 JSON 可序列化性、协议 SHA、四点 outcome、T=10、384 维、split counts、state unchanged 和全部 VQP/AQP deltas，输出 `LOCAL_VERIFY PASS`；远端/本地五个 JSON 的 SHA256 全部一致。审计进程检查为 `AUDIT_PROCESS_EXITED`，匹配进程数 `0`。
+- 更正此前 ledger 中将最终冻结 probe 代码 commit 记为 `f78fd7452dd6b00168a3e09eab373e35be5e7ec9` 的陈旧记录：该分支经 amend 后实际提交并推送的是 `24eb3f69b57ef32f01e178ee4102768942d7d56d`；科学结果和证据内容不受影响。
+
+### 777. 2026-09-02：生成冻结 probe 结果报告
+
+- 新增 `reports/formal_reproduction/student_shortcut_recovery/FROZEN_FEATURE_PROBE_RESULTS.md`，并同步到 `扩刊/复现/student_shortcut_recovery/`；报告明确区分 Artifact/runtime PASS 与 scientific primary `VISUAL_INFORMATION_NOT_DECODABLE`，记录 S8 primary、S9 三个 trajectory 点、协议锁、checkpoint/config SHA、数据覆盖、混合指标、shuffle 与独立复核结果。
+- 更新 `README.md`、`WEB_REVIEW_HANDOFF.md` 和 `evidence/README.md`，将冻结 probe 置于网页审查入口首位，并明确本阶段不授权 Visual-only、第二 seed、延长 schedule、canonical loss 修改或正式 Full。
+
+### 778. 2026-09-02：账本指标标签更正
+
+- 独立对照原始 `s9_step400.json` 与 `s9_step800.json` 后，将 ledger 中两处把 raw AP/AUROC 数值标作 mixed AP/AUROC 的文字修正为 `raw AP/AUROC/C`；数值本身未改动。报告与证据 JSON 一直使用正确的 mixed 指标门控。
+
+### 779. 2026-09-02：报告与证据最终复核
+
+- 运行 `tests/test_frozen_feature_probe.py`：`6 passed`，exit `0`；`python -m compileall -q src scripts tests` exit `0`；`git diff --check` exit `0`。
+- 独立 JSON/report 复核输出 `EVIDENCE_VERIFY PASS`，确认四点状态、官方 `T=10`、384 维、无增强/无 loader shuffle、state unchanged、协议 SHA 和所有 outcome 均与 evidence 一致。仓库报告与外部 `扩刊/复现/student_shortcut_recovery/` 报告 SHA256 一致：`581AE94ABE2BFF872A02AAF4EAB19BB7375C18A400740FD66554FD0D250F25DB`。
+- 一次使用 PowerShell 脚本内联中文外部路径的复核因路径编码被解析为 `??` 而退出码 `1`；未修改任何文件，随后改用仓库内 UTF-8 路径完成 `EVIDENCE_VERIFY PASS`，并用 PowerShell 文件哈希再次确认外部报告副本字节一致。
+- Git tracked 文件无大于 5 MiB 的文件，也没有 `.pt/.pth/.ckpt/.npz/.npy/.tar/.zip/.bundle` 数据/模型产物。
+
+### 780. 2026-09-02：补充机制层复核并刷新报告副本
+
+- 根据网页端诊断与仓库 `s9_zero_training_ae.json`、S8/S9 training diagnostics 交叉核对，在冻结 probe 报告中补充 S8/S9 visual-backbone/projected temporal std 轨迹、J_v/J_a/J_q 结构性解释、step 400/800 视觉与音频梯度差异及当前根因排序；没有新增训练或修改任何实验代码。
+- 报告更新后的仓库副本与 `扩刊/复现/student_shortcut_recovery/FROZEN_FEATURE_PROBE_RESULTS.md` 重新同步，SHA256 均为 `74F8CB1261A773326924C16E7A879A472A43EA2682A0C8FD4FF90C0E9E6405DF`； staged diff check 重新为 exit `0`。
+- 先前 779 条目中的报告 SHA `581AE94ABE2BFF872A02AAF4EAB19BB7375C18A400740FD66554FD0D250F25DB` 是补充机制段落前的旧副本哈希，本条以新哈希为准。
+
+### 781. 2026-09-02：最终提交前验证完成
+
+- 最终 staged 验证：`tests/test_frozen_feature_probe.py` 为 `6 passed`、exit `0`；`compileall` exit `0`；`git diff --cached --check` exit `0`；独立证据脚本输出 `FINAL_EVIDENCE_VERIFY PASS`、exit `0`。
+- 独立确认冻结 probe 报告所引用的 6 个新文件全部存在，报告机制字段（S9 step 1200 visual std `0.005928`、projected std `0.000853`、Jacobian `0.814824`）与证据一致；报告副本 SHA 仍为 `74F8CB1261A773326924C16E7A879A472A43EA2682A0C8FD4FF90C0E9E6405DF`。
+- 本条之后只进行 Git stage/commit/push 与推送后只读核验，不再修改实验代码、配置、数据、checkpoint 或 full-run guard。

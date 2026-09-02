@@ -1,0 +1,333 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "read_only_frozen_feature_probe_audit",
+  "checkpoint": {
+    "name": "s8_step1200",
+    "role": "primary",
+    "path": "E:\\OV-OrthKD-R3\\student-shortcut-s8-60100c6\\outputs\\diagnostic\\recovery_s8_identity_fixed_gate_seed42\\diagnostic_checkpoints\\step_001200.pt",
+    "sha256": "96b2f7833edb1054b661721b05afd8d32b39c1beb52d413dd957db69ea7eb33c",
+    "global_step": 1200,
+    "config_path": "E:\\OV-OrthKD-R3\\student-shortcut-s8-60100c6\\outputs\\diagnostic\\recovery_s8_identity_fixed_gate_seed42\\resolved_config.yaml",
+    "config_sha256": "7ecf17f07da6f6d5c661824a93b5da335cd050d6a066684ed085a60b3af8b212"
+  },
+  "protocol": {
+    "task_segments": 10,
+    "protocol_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\configs\\diagnostics\\recovery\\ov_orthkd_frozen_feature_probe.yaml",
+    "protocol_sha256": "8425b39e3b0b8b8439f836b2c04bc26026167d42ebebb5979cfabe156127ff86",
+    "temporal_conversion": "forbidden",
+    "visual_audio_query_position_blocks": 4,
+    "fusion_dim": 384,
+    "feature_designs": {
+      "qp": "[zero,q,zero,p]",
+      "vqp": "[v,q,v*q,p]",
+      "aqp": "[a,q,a*q,p]"
+    },
+    "train_augmentation": false,
+    "loader_shuffle": false,
+    "student_mode": "eval_inference_mode",
+    "student_optimizer_steps": 0,
+    "student_backward_calls": 0,
+    "checkpoint_writes": 0,
+    "shuffle_repeats": 100,
+    "shuffle_seed": 42
+  },
+  "sources": {
+    "state_sha256_before": "cbb940e0f56928b9d9098db5f9dc1a60de1317b2388bb78c018d02acbc95d132",
+    "state_sha256_after_extraction": "cbb940e0f56928b9d9098db5f9dc1a60de1317b2388bb78c018d02acbc95d132",
+    "state_unchanged": true,
+    "splits": {
+      "train": {
+        "samples": 13182,
+        "segments": 131820,
+        "task_segments": 10,
+        "fusion_dim": 384,
+        "base_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\train_base.npy",
+        "labels_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\train_labels.npy",
+        "offsets_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\train_offsets.npy",
+        "base_sha256": "4e5b6bc6f81b8d81ef0cbfc1c436f88105f1bbd4dd5339d0df23dfe325eeca5f",
+        "labels_sha256": "e2c42d063fea8512fac879184dc16de1c79acb59eb2d8f323241486747e21165",
+        "offsets_sha256": "5c010df858cfe0b84d082bb91d431a55138543d6425ed91e146254341b669bbf",
+        "split": "train",
+        "augmentation": false,
+        "loader_shuffle": false
+      },
+      "val": {
+        "samples": 5798,
+        "segments": 57980,
+        "task_segments": 10,
+        "fusion_dim": 384,
+        "base_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\val_base.npy",
+        "labels_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\val_labels.npy",
+        "offsets_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\val_offsets.npy",
+        "base_sha256": "ad9b9e7a3e40a93cc068aea13dd8410d516a659fe16bbefcfd20679cf097cb46",
+        "labels_sha256": "1c968ae812f7907dad577cbf615a74654d4f55b4f05449ccdc1044f9b6f577f9",
+        "offsets_sha256": "c666ecd5d1f121374981f8d344611cfa1967fca158ca99baf8424b85cc73407c",
+        "split": "val",
+        "augmentation": false,
+        "loader_shuffle": false
+      },
+      "test": {
+        "samples": 5820,
+        "segments": 58200,
+        "task_segments": 10,
+        "fusion_dim": 384,
+        "base_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\test_base.npy",
+        "labels_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\test_labels.npy",
+        "offsets_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s8_step1200\\test_offsets.npy",
+        "base_sha256": "e9d5eb1fa62026f0b0098df26d2581541448ffff7596446d691a5f29785dc64a",
+        "labels_sha256": "9f74b4ea4fa526a0e9ea20c89d7b3ee54af2dcf536ba63d0fb31fd407bd045d5",
+        "offsets_sha256": "4bafa8aece0cb297c925970809335676d9f22fa69f58ea9cdf93d44cdb4e7bf6",
+        "split": "test",
+        "augmentation": false,
+        "loader_shuffle": false
+      }
+    }
+  },
+  "probes": {
+    "qp": {
+      "protocol": {
+        "classifier": "sklearn.linear_model.SGDClassifier",
+        "loss": "log_loss",
+        "penalty": "l2",
+        "alpha_grid": [
+          1e-05,
+          0.0001,
+          0.001,
+          0.01
+        ],
+        "selected_alpha": 0.01,
+        "feature_standardization": "train_split_standard_scaler",
+        "random_state": 42,
+        "max_iter": 2000,
+        "tol": 1e-05,
+        "average_parameters": true,
+        "test_evaluations": 1
+      },
+      "validation_by_alpha": {
+        "1e-05": {
+          "mixed_pair_weighted": 0.5248424123978089,
+          "mixed_ap": 0.6335741356520972,
+          "mixed_auroc": 0.5737849356225592,
+          "ap": 0.747689400848349,
+          "auroc": 0.647741505818574
+        },
+        "0.0001": {
+          "mixed_pair_weighted": 0.5509372677475295,
+          "mixed_ap": 0.6344644616821143,
+          "mixed_auroc": 0.574952421062667,
+          "ap": 0.7505352442966512,
+          "auroc": 0.6509016301688649
+        },
+        "0.001": {
+          "mixed_pair_weighted": 0.5607641278317598,
+          "mixed_ap": 0.635294269027139,
+          "mixed_auroc": 0.5765281137095015,
+          "ap": 0.752001643656222,
+          "auroc": 0.6531173714617802
+        },
+        "0.01": {
+          "mixed_pair_weighted": 0.5645076935781331,
+          "mixed_ap": 0.6368515165326625,
+          "mixed_auroc": 0.5779111506636114,
+          "ap": 0.754531902359775,
+          "auroc": 0.6553178086994247
+        }
+      },
+      "test": {
+        "segments": 19410,
+        "positive_rate": 0.6154639175257732,
+        "ap": 0.7605889592838835,
+        "auroc": 0.6642252376219294,
+        "score_mean": 0.7919617635359879,
+        "score_std": 0.9493999764599312,
+        "videos": 1941,
+        "pairs": 35594,
+        "mixed_ap": 0.623612354574757,
+        "mixed_auroc": 0.5680144046524935,
+        "mixed_pair_weighted": 0.5540259594313648,
+        "mixed_video_macro": 0.5666087886296541,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.7605889592838835,
+          "baseline_auroc": 0.6642252376219294,
+          "shuffle_ap_mean": 0.7592567229703575,
+          "shuffle_auroc_mean": 0.6627631218848687,
+          "shuffle_ap_drop": 0.0013322363135259696,
+          "shuffle_auroc_drop": 0.0014621157370606763
+        }
+      }
+    },
+    "vqp": {
+      "protocol": {
+        "classifier": "sklearn.linear_model.SGDClassifier",
+        "loss": "log_loss",
+        "penalty": "l2",
+        "alpha_grid": [
+          1e-05,
+          0.0001,
+          0.001,
+          0.01
+        ],
+        "selected_alpha": 0.01,
+        "feature_standardization": "train_split_standard_scaler",
+        "random_state": 42,
+        "max_iter": 2000,
+        "tol": 1e-05,
+        "average_parameters": true,
+        "test_evaluations": 1
+      },
+      "validation_by_alpha": {
+        "1e-05": {
+          "mixed_pair_weighted": 0.5339535907952324,
+          "mixed_ap": 0.6065722847322087,
+          "mixed_auroc": 0.5536138124981836,
+          "ap": 0.7412470314404489,
+          "auroc": 0.6575162552473918
+        },
+        "0.0001": {
+          "mixed_pair_weighted": 0.5365961077926725,
+          "mixed_ap": 0.6135305482794127,
+          "mixed_auroc": 0.5599476162269339,
+          "ap": 0.7471956020328521,
+          "auroc": 0.658324193744823
+        },
+        "0.001": {
+          "mixed_pair_weighted": 0.5437529246607393,
+          "mixed_ap": 0.6236522461460225,
+          "mixed_auroc": 0.567453538632142,
+          "ap": 0.7576999648148027,
+          "auroc": 0.6621588973502515
+        },
+        "0.01": {
+          "mixed_pair_weighted": 0.556827878554323,
+          "mixed_ap": 0.6324715322886874,
+          "mixed_auroc": 0.5731974794218836,
+          "ap": 0.7624105266025373,
+          "auroc": 0.6665073867764046
+        }
+      },
+      "test": {
+        "segments": 19410,
+        "positive_rate": 0.6154639175257732,
+        "ap": 0.7669928573808629,
+        "auroc": 0.6727462516135438,
+        "score_mean": 0.8811636024780085,
+        "score_std": 1.003363944994262,
+        "videos": 1941,
+        "pairs": 35594,
+        "mixed_ap": 0.6214322501683968,
+        "mixed_auroc": 0.5671087897534162,
+        "mixed_pair_weighted": 0.5549811766027982,
+        "mixed_video_macro": 0.5639377100659945,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.7669928573808629,
+          "baseline_auroc": 0.6727462516135438,
+          "shuffle_ap_mean": 0.765388720796214,
+          "shuffle_auroc_mean": 0.6702738742241643,
+          "shuffle_ap_drop": 0.001604136584648863,
+          "shuffle_auroc_drop": 0.002472377389379554
+        }
+      }
+    },
+    "aqp": {
+      "protocol": {
+        "classifier": "sklearn.linear_model.SGDClassifier",
+        "loss": "log_loss",
+        "penalty": "l2",
+        "alpha_grid": [
+          1e-05,
+          0.0001,
+          0.001,
+          0.01
+        ],
+        "selected_alpha": 0.01,
+        "feature_standardization": "train_split_standard_scaler",
+        "random_state": 42,
+        "max_iter": 2000,
+        "tol": 1e-05,
+        "average_parameters": true,
+        "test_evaluations": 1
+      },
+      "validation_by_alpha": {
+        "1e-05": {
+          "mixed_pair_weighted": 0.6768421921880591,
+          "mixed_ap": 0.6811334044343207,
+          "mixed_auroc": 0.654346875307767,
+          "ap": 0.7521371670524799,
+          "auroc": 0.6807779699713536
+        },
+        "0.0001": {
+          "mixed_pair_weighted": 0.7037628340994797,
+          "mixed_ap": 0.6947702361992283,
+          "mixed_auroc": 0.666755726587358,
+          "ap": 0.7606545464471324,
+          "auroc": 0.689549611625681
+        },
+        "0.001": {
+          "mixed_pair_weighted": 0.7068182443777699,
+          "mixed_ap": 0.6979396214885631,
+          "mixed_auroc": 0.664555707992919,
+          "ap": 0.7710832776649656,
+          "auroc": 0.6920244203181094
+        },
+        "0.01": {
+          "mixed_pair_weighted": 0.7204437226458201,
+          "mixed_ap": 0.6980043168234131,
+          "mixed_auroc": 0.6605378279839651,
+          "ap": 0.7690454363655104,
+          "auroc": 0.6894989131330777
+        }
+      },
+      "test": {
+        "segments": 19410,
+        "positive_rate": 0.6154639175257732,
+        "ap": 0.7792605362730499,
+        "auroc": 0.698628104153974,
+        "score_mean": 0.8202895914330516,
+        "score_std": 1.1207557008953406,
+        "videos": 1941,
+        "pairs": 35594,
+        "mixed_ap": 0.6891724325983525,
+        "mixed_auroc": 0.6500819128459456,
+        "mixed_pair_weighted": 0.7208799235826263,
+        "mixed_video_macro": 0.7259436103137803,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.7792605362730499,
+          "baseline_auroc": 0.698628104153974,
+          "shuffle_ap_mean": 0.7617864939954814,
+          "shuffle_auroc_mean": 0.6720683733619442,
+          "shuffle_ap_drop": 0.017474042277568547,
+          "shuffle_auroc_drop": 0.02655973079202978
+        }
+      }
+    }
+  },
+  "outcome": {
+    "status": "VISUAL_INFORMATION_NOT_DECODABLE",
+    "positive_control_pass": true,
+    "visual_pass": false,
+    "visual_fail": true,
+    "aqp_delta_vs_qp": {
+      "mixed_pair_weighted": 0.16685396415126152,
+      "mixed_ap": 0.06556007802359543,
+      "mixed_auroc": 0.0820675081934521
+    },
+    "vqp_delta_vs_qp": {
+      "mixed_pair_weighted": 0.0009552171714334312,
+      "mixed_ap": -0.002180104406360295,
+      "mixed_auroc": -0.0009056148990773671
+    },
+    "thresholds": {
+      "success_concordance": 0.02,
+      "success_ap_or_auroc": 0.01,
+      "fail_concordance": 0.01,
+      "fail_ap_and_auroc": 0.005
+    }
+  }
+}

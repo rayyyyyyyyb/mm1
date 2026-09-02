@@ -2,9 +2,17 @@
 
 日期：2026-09-02
 
-当前状态：**S9 paper-additive 单变量诊断已经完成。训练、A–E 与独立 posthoc 产物审计均 PASS；但预注册科学判定为 FAIL：visual-zero mixed AP/AUROC 略升，ΔC 仅 `0.000056`，未恢复视觉内容的标签对齐贡献。没有授权任何下一实验或正式 Full。**
+当前状态：**S9 paper-additive 单变量诊断与其后的只读 frozen-feature probe 均已完成。两者 artifact/runtime 均 PASS；S9 预注册科学判定为 FAIL，冻结 probe 的 S8 主点判定为 `VISUAL_INFORMATION_NOT_DECODABLE`。没有授权任何下一实验或正式 Full。**
 
 这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough；S8 相对 S7 仅将 gate 从 learned softmax 改为从初始化起固定 `0.5/0.5`；S9 相对 S8 仅将 fusion 从 concat MLP 改为 paper-additive。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
+
+## 最新裁决：冻结特征可解码性
+
+完整协议、数值、哈希和边界见 [FROZEN_FEATURE_PROBE_RESULTS.md](FROZEN_FEATURE_PROBE_RESULTS.md)。审计冻结 student/backbone/projection/checkpoint，只拟合相同容量的 disposable logistic probes；QP 控制 query/position shortcut，VQP 测试 visual + query interaction，AQP 是已知可测的 audio 正对照。train augmentation 与 loader shuffle 均关闭，test 只评估一次，并执行 100 次视频内时间 shuffle。
+
+预注册 primary S8 step 1200 中，VQP 相对 QP 的 mixed pair-weighted concordance、mixed AP、mixed AUROC 增量分别为 `+0.000955/-0.002180/-0.000906`，而 AQP 三项增量为 `+0.166854/+0.065560/+0.082068`。因此正对照通过，视觉判定为 `VISUAL_INFORMATION_NOT_DECODABLE`。S9 step 400/800 为 `INCONCLUSIVE`，step 1200 再次为 `VISUAL_INFORMATION_NOT_DECODABLE`。
+
+这项结果支持：S8/S9 冻结视觉 token 中没有达到预注册门槛的、可由同容量 readout 稳定解码的 label-aligned boundary 信息；不能再把主要问题归为“健康视觉已存在，只是当前 concat/readout 没读出来”。它仍不能证明某个单一层是唯一根因，也不能外推否定论文完整 additive + temporal Transformer 架构。当前边界保持 `next_training_experiment_authorized=false`、`formal_full_training_authorized=false`。
 
 ## 先看结论：S9
 
@@ -83,27 +91,29 @@ S3 说明“只开学生预训练”不充分；S4 说明“完全关闭现有�
 
 ## 建议阅读顺序
 
-1. [S9 完整结果、预注册门槛与当前边界](S9_RESULTS.md)
-2. [S9 independent posthoc audit](evidence/s9/posthoc/s9_posthoc_audit.json)
-3. [S9 independent posthoc re-audit](evidence/s9/posthoc/s9_posthoc_reaudit.json)
-4. [S9 full A–E evidence](evidence/s9/posthoc/s9_zero_training_ae.json)
-5. [S9 training audit](evidence/s9/control/s9_training_audit.json)
-6. [S8 完整结果、三种证据模式与背景](S8_RESULTS.md)
-7. [A–F zero/near-zero-training 审计与前置决策](ZERO_TRAINING_AUDITS.md)
-8. [A–F 独立 artifact audit](evidence/zero_training/zero_training_artifact_audit.json)
-9. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
-10. [S4 完整结果与恢复门槛](S4_RESULTS.md)
-11. [S3 完整结果与恢复门槛](S3_RESULTS.md)
-12. [A0 四组捷径与模态基线](A0_RESULTS.md)
-13. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
-14. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
+1. [冻结特征可解码性主报告](FROZEN_FEATURE_PROBE_RESULTS.md)
+2. [冻结 probe 汇总证据](evidence/frozen_feature_probe/summary.json)
+3. [S9 完整结果、预注册门槛与当前边界](S9_RESULTS.md)
+4. [S9 independent posthoc audit](evidence/s9/posthoc/s9_posthoc_audit.json)
+5. [S9 independent posthoc re-audit](evidence/s9/posthoc/s9_posthoc_reaudit.json)
+6. [S9 full A–E evidence](evidence/s9/posthoc/s9_zero_training_ae.json)
+7. [S9 training audit](evidence/s9/control/s9_training_audit.json)
+8. [S8 完整结果、三种证据模式与背景](S8_RESULTS.md)
+9. [A–F zero/near-zero-training 审计与前置决策](ZERO_TRAINING_AUDITS.md)
+10. [A–F 独立 artifact audit](evidence/zero_training/zero_training_artifact_audit.json)
+11. [S7 完整结果、因果门槛与结论](S7_RESULTS.md)
+12. [S4 完整结果与恢复门槛](S4_RESULTS.md)
+13. [S3 完整结果与恢复门槛](S3_RESULTS.md)
+14. [A0 四组捷径与模态基线](A0_RESULTS.md)
+15. [实现、运行器与独立审计说明](IMPLEMENTATION_AUDIT.md)
+16. [小型证据清单](evidence/README.md) 与 [执行脚本清单](runtime/README.md)
 
 ## 希望独立审阅者重点判断
 
-1. S9 已在 additive readout 下仍显示 visual-zero 近乎不变；在不改变 canonical loss 或启动 Full 的边界内，下一项是否应做零训练 readout/linear-probe，以区分 representation 与 label alignment？
-2. S9 的 forced visual concordance=`0.550823`、forced-visual shuffle AP drop=`0.001726`，是否支持先审查 visual teacher/projector target 对齐，而不是继续改变 fusion 算子？
-3. 是否同意 S9 的严格科学 FAIL 与 artifact PASS 分离表述，并在任何后续执行前给出唯一、可审计、带阈值的人工授权？
+1. 冻结 probe 已排除“换同容量 readout 即可恢复”的窄假设；下一项是否应转入 visual pretraining/visual-teacher KD 的只读实现与 target provenance 审计？
+2. 若授权 bounded Visual-only visual-KD control，应先修复/锁定哪些 Full-specific 风险（visual loss reduction、teacher target projector 可训练性、text target projector、checkpoint selection），并采用什么唯一门槛？
+3. 是否同意继续保持 artifact PASS 与 scientific failure/inconclusive 分离表述，并在任何训练执行前给出唯一、可审计、带阈值的人工授权？
 
 ## 边界
 
-本阶段已完成 A–F 后获授权的 S8 与 S9 bounded controls；没有启动 Visual-only、第二 seed、延长训练或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。S9 只改变 fusion operator，训练与 A–E/posthoc 均完成；科学结果严格为 FAIL，且任何后续/Full 授权字段均为 false。GitHub 不上传数据集、teacher/student checkpoints、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。
+本阶段已完成 A–F 后获授权的 S8、S9 bounded controls，以及不更新 student 参数的 frozen-feature probe；没有启动 Visual-only、第二 seed、延长训练或正式 Full，也没有修改 canonical 配置、loss、evaluator、teacher cache 或 full-run guard。S9 科学结果严格为 FAIL；冻结 probe 的 primary 为 `VISUAL_INFORMATION_NOT_DECODABLE`；任何后续/Full 授权字段均为 false。GitHub 不上传数据集、teacher/student checkpoints、feature memmap、timm cache、prediction NPZ、bundle、archive 或完整日志；对应 SHA256、bytes、shape、数量和审计结论由这里的小型 receipts 锁定，大资产仍保存在 5090。

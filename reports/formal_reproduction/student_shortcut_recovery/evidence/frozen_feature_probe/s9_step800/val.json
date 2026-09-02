@@ -1,0 +1,15 @@
+{
+  "samples": 5798,
+  "segments": 57980,
+  "task_segments": 10,
+  "fusion_dim": 384,
+  "base_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s9_step800\\val_base.npy",
+  "labels_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s9_step800\\val_labels.npy",
+  "offsets_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\outputs\\diagnostic\\frozen_feature_probe_audit_24eb3f6\\features\\s9_step800\\val_offsets.npy",
+  "base_sha256": "b52f05a1968fca22f83d8a9743c84b9a11a9d6a80b67ca114f56a3e106bb0fac",
+  "labels_sha256": "1c968ae812f7907dad577cbf615a74654d4f55b4f05449ccdc1044f9b6f577f9",
+  "offsets_sha256": "c666ecd5d1f121374981f8d344611cfa1967fca158ca99baf8424b85cc73407c",
+  "split": "val",
+  "augmentation": false,
+  "loader_shuffle": false
+}

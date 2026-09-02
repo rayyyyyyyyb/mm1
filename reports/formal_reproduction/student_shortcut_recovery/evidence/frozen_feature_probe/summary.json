@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "claim_level": "read_only_frozen_feature_probe_audit",
+  "protocol": {
+    "task_segments": 10,
+    "protocol_path": "E:\\OV-OrthKD-R3\\frozen-probe-24eb3f6\\configs\\diagnostics\\recovery\\ov_orthkd_frozen_feature_probe.yaml",
+    "protocol_sha256": "8425b39e3b0b8b8439f836b2c04bc26026167d42ebebb5979cfabe156127ff86",
+    "alpha_grid": [
+      1e-05,
+      0.0001,
+      0.001,
+      0.01
+    ],
+    "test_evaluations": 1,
+    "formal_student_training_started": false,
+    "formal_full_authorized": false
+  },
+  "primary": {
+    "checkpoint": "s8_step1200",
+    "outcome": {
+      "status": "VISUAL_INFORMATION_NOT_DECODABLE",
+      "positive_control_pass": true,
+      "visual_pass": false,
+      "visual_fail": true,
+      "aqp_delta_vs_qp": {
+        "mixed_pair_weighted": 0.16685396415126152,
+        "mixed_ap": 0.06556007802359543,
+        "mixed_auroc": 0.0820675081934521
+      },
+      "vqp_delta_vs_qp": {
+        "mixed_pair_weighted": 0.0009552171714334312,
+        "mixed_ap": -0.002180104406360295,
+        "mixed_auroc": -0.0009056148990773671
+      },
+      "thresholds": {
+        "success_concordance": 0.02,
+        "success_ap_or_auroc": 0.01,
+        "fail_concordance": 0.01,
+        "fail_ap_and_auroc": 0.005
+      }
+    }
+  },
+  "checkpoints": {
+    "s8_step1200": {
+      "role": "primary",
+      "global_step": 1200,
+      "outcome": {
+        "status": "VISUAL_INFORMATION_NOT_DECODABLE",
+        "positive_control_pass": true,
+        "visual_pass": false,
+        "visual_fail": true,
+        "aqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.16685396415126152,
+          "mixed_ap": 0.06556007802359543,
+          "mixed_auroc": 0.0820675081934521
+        },
+        "vqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.0009552171714334312,
+          "mixed_ap": -0.002180104406360295,
+          "mixed_auroc": -0.0009056148990773671
+        },
+        "thresholds": {
+          "success_concordance": 0.02,
+          "success_ap_or_auroc": 0.01,
+          "fail_concordance": 0.01,
+          "fail_ap_and_auroc": 0.005
+        }
+      }
+    },
+    "s9_step400": {
+      "role": "trajectory",
+      "global_step": 400,
+      "outcome": {
+        "status": "INCONCLUSIVE",
+        "positive_control_pass": true,
+        "visual_pass": false,
+        "visual_fail": false,
+        "aqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.1760128111479462,
+          "mixed_ap": 0.08033552357252338,
+          "mixed_auroc": 0.09935680316640072
+        },
+        "vqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.0088498061471034,
+          "mixed_ap": 0.005692738614105575,
+          "mixed_auroc": 0.004475418559686473
+        },
+        "thresholds": {
+          "success_concordance": 0.02,
+          "success_ap_or_auroc": 0.01,
+          "fail_concordance": 0.01,
+          "fail_ap_and_auroc": 0.005
+        }
+      }
+    },
+    "s9_step800": {
+      "role": "trajectory",
+      "global_step": 800,
+      "outcome": {
+        "status": "INCONCLUSIVE",
+        "positive_control_pass": true,
+        "visual_pass": false,
+        "visual_fail": false,
+        "aqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.1889363375849863,
+          "mixed_ap": 0.07460622641637826,
+          "mixed_auroc": 0.10534346387944804
+        },
+        "vqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.004129909535315002,
+          "mixed_ap": 0.006825497264918323,
+          "mixed_auroc": 0.004467160080113941
+        },
+        "thresholds": {
+          "success_concordance": 0.02,
+          "success_ap_or_auroc": 0.01,
+          "fail_concordance": 0.01,
+          "fail_ap_and_auroc": 0.005
+        }
+      }
+    },
+    "s9_step1200": {
+      "role": "trajectory",
+      "global_step": 1200,
+      "outcome": {
+        "status": "VISUAL_INFORMATION_NOT_DECODABLE",
+        "positive_control_pass": true,
+        "visual_pass": false,
+        "visual_fail": true,
+        "aqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.1705343597235489,
+          "mixed_ap": 0.06559935824876328,
+          "mixed_auroc": 0.09748427962648265
+        },
+        "vqp_delta_vs_qp": {
+          "mixed_pair_weighted": 0.011827836152160431,
+          "mixed_ap": -0.00173324283108367,
+          "mixed_auroc": -0.004254406690018642
+        },
+        "thresholds": {
+          "success_concordance": 0.02,
+          "success_ap_or_auroc": 0.01,
+          "fail_concordance": 0.01,
+          "fail_ap_and_auroc": 0.005
+        }
+      }
+    }
+  }
+}

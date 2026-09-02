@@ -25,5 +25,6 @@ This directory contains only small review artifacts (JSON, JSONL and YAML) suita
 - `s9/training`: paper-additive three-epoch metrics, resolved configuration, runtime/data/cache/environment receipts and training diagnostics.
 - `s9/control`: exact candidate prepare/verification, launch/worker state and independent training artifact audit.
 - `s9/posthoc`: full A–E paper-additive diagnostic, formal posthoc integrity/scientific audit and byte-identical independent re-audit.
+- `frozen_feature_probe`: read-only S8-primary/S9-trajectory QP/VQP/AQP probe results, per-split feature identities and the aggregate pre-registered outcome. The large `.npy` feature memmaps remain on the 5090.
 
-The corresponding datasets, teacher cache, timm weight files, student checkpoints, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3, S4, S7, zero-training, S8 and S9 JSONs were copied here only after their independent artifact audits passed.
+The corresponding datasets, teacher cache, timm weight files, student checkpoints, feature memmaps, prediction NPZ files, bundles and progress logs remain on the 5090 and are not in Git. The receipts record their relevant identities without pretending that the large assets are web-recomputable. The S3, S4, S7, zero-training, S8, S9 and frozen-probe JSONs were copied here only after their independent artifact audits passed.
