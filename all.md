@@ -3407,3 +3407,30 @@
 - 一次使用中文路径字面量的 Python 复核因 Windows 控制台编码导致路径乱码并退出；没有产生文件变化。改用目录 glob 重新执行成功：19 个 JSON、2 个 JSONL 在 `utf-8-sig`/`allow_nan=false` 下全部解析通过。
 - 推送后账本再次确认逐字节一致：725,970 bytes，SHA256 `053434e063861f73e71636834c8f3956a6491b1717f958d22f89439c11cd76f8`；S9 镜像报告存在且 SHA256 `3a67100428001876ac5770f7e2c6be4e145d1ed0618c26c438c401401e70aad9`。
 - 报告、交接、审计、证据和 runtime 文档共 6 个入口存在；S9 package 共 232 个文件且大于 5 MiB 的文件数为 0。远端 ref 已核对为 `6197186`，工作树保持 clean。
+
+### 765. 2026-09-02：网页端 S9 裁决复核与冻结 probe 审计预注册
+
+- 完整读取用户提供的网页端裁决 `4d7c44f6-a1bc-4ad2-871f-97858e31542a/pasted-text.txt`，并与本地 S8/S9 A–E、post-hoc、training diagnostics 和模型源码逐项交叉核对。裁决所列视觉 backbone/projected temporal std 轨迹、S9 step-1200 additive Jacobian `0.814824/0.814824/1.629648`、step-400/800 视觉与音频 encoder 梯度比例均与已发布原始证据一致。
+- 客观结论更新为：S9 不仅拒绝“concat MLP 是单一根因”，还显示 bare additive 在 fixed-gate/identity 条件下改变了上游优化动力学，并在 step 1200 重新诱发严重视觉时间表示坍缩；additive Jacobian 的结构性非零不能替代真实数据上的表示方差或标签对齐证据。该结论不外推到论文完整的 additive + post-sum temporal Transformer，也不解禁 Visual-only、Full、第二 seed、长 schedule、canonical loss 修改或 full-run guard。
+- 预注册唯一下一项为只读冻结表征 probe 审计，不是 student training experiment。主裁决对象为 S8 step 1200；S9 step 400/800/1200 仅形成 collapse trajectory。student/backbone/projection/checkpoint/teacher cache 全部冻结，不构造 student optimizer、不调用 backward、不写 checkpoint。
+- 三种 probe 均使用同一 1536 维设计与同一单层 L2 logistic 容量：QP=`[0,q,0,p]`，VQP=`[v,q,v*q,p]`，AQP=`[a,q,a*q,p]`；其中每块维度均为 fusion dim 384，`p` 是该 checkpoint 的 learned positional token。训练特征强制关闭 augmentation、固定顺序并锁定官方 `T=10`。
+- 正则预先固定为 `alpha in {1e-5,1e-4,1e-3,1e-2}`；每个 probe 只在 train split 拟合，在 validation mixed-label pair-weighted concordance 上选择 alpha，平局依次用 validation mixed AP、mixed AUROC、较强正则打破；选择完成后 test 只评估一次。报告 mixed-label AP、AUROC、pairwise concordance 及 100 次视频内时间 shuffle。
+- AQP 正控制和 VQP 视觉成功使用对称门槛：相对 QP 的 `delta_C >= 0.020`，且 `delta_AP >= 0.010` 或 `delta_AUROC >= 0.010`。若 AQP 未通过则裁决 `INVALID_POSITIVE_CONTROL`；AQP 通过且 VQP 通过则为 `VISUAL_INFORMATION_DECODABLE`；AQP 通过但 VQP 的三项增量均低于 `0.010/0.005/0.005` 或至少两项不为正，则为 `VISUAL_INFORMATION_NOT_DECODABLE`；其余为 `INCONCLUSIVE`。任何分类均不自动授权正式训练。
+- 当前 Git 工作树在 `repro/student-shortcut-recovery`，HEAD 与 origin 均为 `4ed427076718a8a2adc0816a5239831c419330e6`，初始状态 clean。接下来严格采用 RED→GREEN→独立复查→5090 精确提交候选验证→可恢复后台执行的顺序。
+
+### 766. 2026-09-02：冻结 probe TDD RED
+
+- 先加入 `tests/test_frozen_feature_probe.py`，覆盖等容量零填充设计、输入校验、mixed-label 指标和确定性 shuffle、正则平局规则及正控制门槛。
+- 按 TDD 先运行目标测试；当前预期 RED 已复现：`ModuleNotFoundError: No module named 'src.utils.frozen_feature_probe'`，pytest exit `1`。此失败由生产模块尚不存在引起，未修改既有 scientific code。
+
+### 767. 2026-09-02：冻结 probe 实现与独立代码复查
+
+- 新增 `src/utils/frozen_feature_probe.py`：实现四块等容量 `[zero/q/visual/audio interaction/position]` 设计、finite/shape 校验、mixed-label AP/AUROC/pairwise concordance、确定性视频内 shuffle、固定 alpha 选择、只读 sklearn logistic probe 和预注册结果门槛。
+- 新增 `scripts/audit_frozen_feature_probes.py`：按 S8 step1200 主状态和 S9 400/800/1200 轨迹逐 checkpoint 提取 projected visual/audio/query/position；强制 `T=10`、无增强、固定 manifest 顺序、eval+inference_mode、源 student state SHA 前后相等；使用 per-split `.npy` memmap 与 per-checkpoint JSON 原子产物，已完成 split 可跳过，异常中断不会覆盖已完成 JSON。
+- 新增并锁定 `configs/diagnostics/recovery/ov_orthkd_frozen_feature_probe.yaml`；脚本启动时校验该协议的 alpha、shuffle、guards 和 gate，Windows checkpoint CLI 使用 `|` 分隔以避免 `E:` 驱动器解析错误。
+- 独立审查确认脚本没有 student optimizer、`backward`、`.train()` 或 checkpoint write；test 设计只在所有 validation alpha 选择完成后调用一次。为支持本地无 timm 环境，模型和数据依赖延迟导入，协议校验仍可独立运行。
+- GREEN 验证结果：新增目标测试 `6 passed`，pytest exit `0`；`python -m compileall -q src scripts tests` exit `0`；`git diff --check` exit `0`。其中新增测试含配置文件与运行时 guards 的一致性检查。
+
+### 768. 2026-09-02：冻结 probe 代码提交
+
+- 将上述代码、配置、测试和账本提交为 `f78fd7452dd6b00168a3e09eab373e35be5e7ec9`（subject: `audit frozen feature decodability probes`）。提交前 `git diff --cached --check` exit `0`，提交后工作树仅因本条账本追加暂时变更；尚未推送或启动远端运行。

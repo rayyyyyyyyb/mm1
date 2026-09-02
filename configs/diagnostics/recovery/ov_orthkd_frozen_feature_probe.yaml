@@ -1,0 +1,45 @@
+schema_version: 1
+name: ov_orthkd_frozen_feature_probe_audit
+claim_level: read_only_frozen_feature_probe_audit
+task_segments: 10
+temporal_conversion: forbidden
+feature_blocks: 4
+fusion_dim: 384
+feature_designs:
+  qp: '[zero,q,zero,p]'
+  vqp: '[v,q,v*q,p]'
+  aqp: '[a,q,a*q,p]'
+alpha_grid:
+  - 0.00001
+  - 0.0001
+  - 0.001
+  - 0.01
+validation_selection:
+  primary_metric: mixed_pair_weighted_concordance
+  tie_break: [mixed_ap, mixed_auroc, stronger_regularization]
+  fit_split: train
+  selection_split: validation
+test_evaluation_count: 1
+shuffle:
+  scope: within_video_temporal_scores
+  repeats: 100
+  seed: 42
+checkpoints:
+  primary: s8_step1200
+  trajectory: [s9_step400, s9_step800, s9_step1200]
+guards:
+  train_augmentation: false
+  loader_shuffle: false
+  student_mode: eval_inference_mode
+  student_optimizer_steps: 0
+  student_backward_calls: 0
+  checkpoint_writes: 0
+  formal_student_training_started: false
+  formal_full_authorized: false
+outcome_gates:
+  success:
+    delta_concordance: 0.02
+    delta_ap_or_auroc: 0.01
+  fail:
+    delta_concordance: 0.01
+    delta_ap_and_auroc: 0.005
