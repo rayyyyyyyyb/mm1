@@ -3624,3 +3624,8 @@
 
 - The corrected single-worker run completed static hashing (teacher cache hash at 02:12:29) but failed before the first scientific batch with the same PyTorch shared-file-mapping error 1455. The worker was actively reading cache; no checkpoint/history or scientific metric was produced.
 - Exact command-line matched processes were stopped; the failed output and error transcript are retained. This confirms the limit is caused by multiprocessing shared mappings under the real dataset, not simply worker count four. The next runtime-only retry will set `data.num_workers: 0` (main-process loading), with a new output identity and no incompatible resume.
+
+### 805. 2026-09-03: no-worker runtime retry launched
+
+- Archived commit `9e7a6308677614a54e94d12125065cd86fa3c15f` to `tmp/visual_sum_control_9e7a630.tar` (SHA256 `79FAA8C01C32EB0EDC4A81465C4013936F9812D4B2C9AC740ABC485697B19D09`, 11,888,640 bytes), uploaded it to 5090, and deployed isolated tree commit `b1419fbf6ad5a3e908f3e50b4428b09f9d796988` at `E:\OV-OrthKD-R3\visual_sum_control_9e7a630` with shared assets junctioned read-only.
+- Verified the canonical guard without `--allow-blocked-reproduction`: Python exited `1` with the expected unresolved-archival-facts `RuntimeError`. Then launched the non-canonical bounded visual-only mean-to-sum control with `data.num_workers: 0` in persistent SSH session `20986` at 02:47:58. The run has not changed the scientific variable or canonical protocol.
