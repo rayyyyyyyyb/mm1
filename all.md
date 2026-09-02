@@ -3615,3 +3615,8 @@
 ### 802. 2026-09-03: single-worker retry remains active
 
 - The retry session `82365` is still attached; remote process tree shows the isolated `train_ov_orthkd.py` process and no process from the failed four-worker run. At 01:47 it was in the initial static evidence/hash stage, with no scientific artifacts yet; shared data/cache junctions remain read-only from the run's perspective.
+### 803. 2026-09-03: retry identity corrected before scientific execution
+
+- A read-back of the first single-worker deployment found its variant/log directory still named the generic sum control (the worker override was present, but the output identity was ambiguous). The process was stopped by exact command-line match during static hashing; no epoch/checkpoint or shared-asset mutation occurred.
+- Patched the retry config metadata/output namespace to `bounded_visual_only_sum_feature_seed42_single_worker`, reran the 8-test contract/compile checks (exit `0`), amended/pushed commit to `b270e039d9cce77a85df1ec3cc853f5261138d5e`, and deployed a fresh isolated tree with clean commit `61e7348d2a8710fad0f6e19ae79e27dd179db5b6`.
+- The corrected run is now active in persistent SSH session `97394`, started 01:53:13 with `Using device: cuda`; it is the only active process for this control.
