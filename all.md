@@ -3702,3 +3702,13 @@
 
 - A fresh 5090 poll at approximately `14:22` confirmed Python PID `24028` is still alive and the no-worker run still has exactly one completed history record (epoch `0`, global step `400`); no new checkpoint or exception was observed.
 - Switching this run to parallel loading would change `data.num_workers`, therefore the reproduction fingerprint and DataLoader/RNG execution behavior. Resuming would require `--allow-incompatible-resume`, which would make the continuation non-canonical. In addition, the previously tested `num_workers=4` and `num_workers=1` real-data runs both failed with Windows shared-file-mapping error `1455` during validation. The canonical controlled run therefore remains no-worker; a separate parallel probe, if ever desired, must be explicitly treated as exploratory and not merged into this result.
+
+### 822. 2026-09-03: resumed run stopped before epoch-2 checkpoint
+
+- A direct 5090 check at `15:17:44` found no Python training process and `nvidia-smi` reported `0%` GPU utilization. `history.jsonl` still contains only epoch `0`; `best.pt` and `last.pt` retain the previous epoch-1 checkpoint timestamps. The persistent SSH session then reported `Connection reset`.
+- The captured session output had reached epoch `2/30` training batch `400/3296`, but no epoch-2 validation record or checkpoint was written. `train.log` contains no traceback. The run is therefore classified as interrupted before epoch-2 checkpointing, not as a completed epoch or a scientific result.
+
+### 823. 2026-09-03: same-checkpoint restart made persistent
+
+- A detached `Start-Process` wrapper was tested and found to pass a quoted `--help` invocation, but the first training argument-list form exited immediately without output; it was not counted as a run or result. A harmless Python/cmd persistence probe confirmed the remote process mechanism itself works.
+- The unchanged no-worker training command was then relaunched directly in a new persistent SSH session (`84202`) from the existing `last.pt`, with the same config and `--allow-blocked-reproduction`. At `15:23:19` it logged `Using device: cuda`; a follow-up poll found Python PID `6240` alive (about `959 MB` resident) and the 5090 in P1 state. It is currently in startup/cache auditing, with no new epoch record yet. No data, code, schedule, seed, or worker-count change was made.
