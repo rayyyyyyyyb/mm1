@@ -3674,3 +3674,8 @@
 
 - Relative to the immediately preceding mean-reduction Visual-only run at the same validation epoch/step, the latest sum control improved AP `+0.138417` and AUROC `+0.119598`; this is a real partial scientific improvement in ranking behavior.
 - Relative to the earlier completed Full/Visual-only final test results, no overall improvement can yet be claimed because the sum run has no completed final test evaluation and was interrupted after epoch 2. The remaining all-positive/F1 failure is not fixed. Thus the latest task improved evidence quality and a candidate loss behavior, but has not established a better final reproduction result.
+
+### 816. 2026-09-03: 5090 restored and sum-control checkpoint verified
+
+- A fresh connection check succeeded: Tailscale reports `desktop-lpn6mt3` active via relay `lax`, TCP/22 succeeds, and batch SSH returns `CONNECTED`.
+- The isolated no-worker deployment is reachable with no active training process. Its `history.jsonl` has one completed epoch record; `best.pt` and `last.pt` are both `562,481,185` bytes and load as `epoch=0`, `global_step=400`, `best_metric=0.7417794173236361`. The deployment Git commit is `b1419fbf6ad5a3e908f3e50b4428b09f9d796988`. This is a compatible checkpoint resume point; no new scientific variant is introduced.
