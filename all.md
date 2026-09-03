@@ -3651,3 +3651,8 @@
 ### 810. 2026-09-03: provenance report materialized
 
 - Added `reports/formal_reproduction/student_shortcut_recovery/PROVENANCE_RECOVERY_AUDIT.md` and mirrored it under `扩刊/复现/student_shortcut_recovery/`. The report records the exact refs, dangling commits, checkpoint metadata, absent histories/loggers, and the resulting decision to keep canonical Full blocked.
+
+### 811. 2026-09-03: no-worker control reached epoch 2 before 5090 went offline
+
+- Persistent session `20986` later yielded epoch-1 evidence: 400 optimizer steps; train total/BCE/strong-feature/text-align losses `5.0013746880888939/0.6704764002938366/9.650444590002298/0.6038657020777464`; full 5,798-sample validation AP/AUROC/OV-AVEL segment F1/event F1 `0.7417794173236361/0.64377222373802154/0.5377574807678815/0.5770955501897206`; predicted-positive rate remained `1.0`. A best checkpoint was logged.
+- Epoch 2 then completed its configured 400 training updates, but the SSH session ended with exit `1` before an epoch-2 validation record was returned. Direct SSH and TCP/22 checks timed out, `tailscale ping` returned no reply, and `tailscale status` reported `desktop-lpn6mt3` offline (last seen approximately three hours earlier). Therefore the post-disconnection process/checkpoint state is unknown; this is classified as an infrastructure-connectivity interruption, not yet as a confirmed training-code failure. No restart or configuration change was attempted while the host was unreachable.
