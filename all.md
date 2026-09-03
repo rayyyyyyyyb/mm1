@@ -3687,3 +3687,8 @@
 ### 818. 2026-09-03: resumed process health confirmed
 
 - A follow-up 5090 poll found the resumed Python process alive and responsive (PID `24028`, about 1.03 GB resident memory) with no exception or new output mutation; it remains in startup/cache auditing before the next epoch. The prior epoch-1 history/checkpoints remain intact.
+
+### 819. 2026-09-03: resumed-run duration estimate
+
+- At remote time `14:16:36`, the resumed Python process had run for about `6.1` minutes with one history record and remained in cache auditing. A transient SSH timeout was followed by successful direct Tailscale ping (`26 ms`) and SSH reconnection; the training process remained alive.
+- The first no-worker run measured approximately 19 minutes of startup/cache audit and `2672.90` seconds (44.55 minutes) for one 400-step epoch plus full validation. With 29 epochs remaining, the evidence-based uninterrupted estimate is about 22 hours from resume; a 24-hour check is recommended for completion, while a one-hour check can confirm the next epoch checkpoint.
