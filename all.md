@@ -3679,3 +3679,7 @@
 
 - A fresh connection check succeeded: Tailscale reports `desktop-lpn6mt3` active via relay `lax`, TCP/22 succeeds, and batch SSH returns `CONNECTED`.
 - The isolated no-worker deployment is reachable with no active training process. Its `history.jsonl` has one completed epoch record; `best.pt` and `last.pt` are both `562,481,185` bytes and load as `epoch=0`, `global_step=400`, `best_metric=0.7417794173236361`. The deployment Git commit is `b1419fbf6ad5a3e908f3e50b4428b09f9d796988`. This is a compatible checkpoint resume point; no new scientific variant is introduced.
+
+### 817. 2026-09-03: compatible sum-control resume launched
+
+- Resumed the same isolated run from `outputs/diagnostic/bounded_visual_only_sum_feature_seed42_no_workers/last.pt` with the unchanged no-worker configuration and `--allow-blocked-reproduction`. The remote process is alive in persistent SSH session `13204`; no new scientific variant, seed, schedule, or output namespace was introduced. Startup is currently in the cache/runtime audit stage.
