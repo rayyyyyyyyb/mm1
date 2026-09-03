@@ -3697,3 +3697,8 @@
 
 - Code/config inspection confirms this is not an accidental 3,296-batch epoch: the loader reports 3,296 available batches, but `train_ov_orthkd.py` breaks after `training.max_batches_per_epoch=400`. Each epoch still performs uncapped full validation (`5,798` samples / `57,980` official T=10 segments) because `max_eval_batches` is unset.
 - Earlier four-worker runs completed an epoch in about 11--12 minutes. The final runtime retry deliberately uses `data.num_workers=0` after workers 4 and 1 both hit Windows shared-file-mapping error 1455; serial cache/image/audio reads make full validation much slower (measured `2672.90` seconds per epoch). The long duration is therefore a documented runtime trade-off to bypass the resource failure, not a new scientific computation or unintended schedule change.
+
+### 821. 2026-09-03: parallel-resume decision
+
+- A fresh 5090 poll at approximately `14:22` confirmed Python PID `24028` is still alive and the no-worker run still has exactly one completed history record (epoch `0`, global step `400`); no new checkpoint or exception was observed.
+- Switching this run to parallel loading would change `data.num_workers`, therefore the reproduction fingerprint and DataLoader/RNG execution behavior. Resuming would require `--allow-incompatible-resume`, which would make the continuation non-canonical. In addition, the previously tested `num_workers=4` and `num_workers=1` real-data runs both failed with Windows shared-file-mapping error `1455` during validation. The canonical controlled run therefore remains no-worker; a separate parallel probe, if ever desired, must be explicitly treated as exploratory and not merged into this result.
