@@ -3660,3 +3660,7 @@
 ### 812. 2026-09-03: epoch-1 scientific comparison calculated
 
 - Against the original mean-reduction Visual-only run at the same epoch/step, the sum control improved validation AP by `+0.1384170193351156` (`0.6033623979885205 -> 0.7417794173236361`) and AUROC by `+0.11959784189105844` (`0.5241743818469631 -> 0.64377222373802154`). Its no-worker epoch-1 AP/AUROC are within `0.0017192178108892/0.00181786808971606` of the earlier four-worker sum run, supporting repeatability of the ranking effect. However predicted-positive rate stayed `1.0` and fixed-threshold segment F1 stayed `0.5377574807678815`, so this is promising causal evidence, not a completed recovery or paper-level result.
+
+### 813. 2026-09-03: 5090 connectivity rechecked
+
+- A fresh three-path check still found `desktop-lpn6mt3` unreachable: Tailscale reports `100.119.122.101` offline (last seen about three hours earlier), TCP port 22 and ICMP probes time out, and batch-mode SSH times out. No remote state was changed.
