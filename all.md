@@ -3692,3 +3692,8 @@
 
 - At remote time `14:16:36`, the resumed Python process had run for about `6.1` minutes with one history record and remained in cache auditing. A transient SSH timeout was followed by successful direct Tailscale ping (`26 ms`) and SSH reconnection; the training process remained alive.
 - The first no-worker run measured approximately 19 minutes of startup/cache audit and `2672.90` seconds (44.55 minutes) for one 400-step epoch plus full validation. With 29 epochs remaining, the evidence-based uninterrupted estimate is about 22 hours from resume; a 24-hour check is recommended for completion, while a one-hour check can confirm the next epoch checkpoint.
+
+### 820. 2026-09-03: runtime duration explained
+
+- Code/config inspection confirms this is not an accidental 3,296-batch epoch: the loader reports 3,296 available batches, but `train_ov_orthkd.py` breaks after `training.max_batches_per_epoch=400`. Each epoch still performs uncapped full validation (`5,798` samples / `57,980` official T=10 segments) because `max_eval_batches` is unset.
+- Earlier four-worker runs completed an epoch in about 11--12 minutes. The final runtime retry deliberately uses `data.num_workers=0` after workers 4 and 1 both hit Windows shared-file-mapping error 1455; serial cache/image/audio reads make full validation much slower (measured `2672.90` seconds per epoch). The long duration is therefore a documented runtime trade-off to bypass the resource failure, not a new scientific computation or unintended schedule change.
