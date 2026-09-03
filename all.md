@@ -3712,3 +3712,8 @@
 
 - A detached `Start-Process` wrapper was tested and found to pass a quoted `--help` invocation, but the first training argument-list form exited immediately without output; it was not counted as a run or result. A harmless Python/cmd persistence probe confirmed the remote process mechanism itself works.
 - The unchanged no-worker training command was then relaunched directly in a new persistent SSH session (`84202`) from the existing `last.pt`, with the same config and `--allow-blocked-reproduction`. At `15:23:19` it logged `Using device: cuda`; a follow-up poll found Python PID `6240` alive (about `959 MB` resident) and the 5090 in P1 state. It is currently in startup/cache auditing, with no new epoch record yet. No data, code, schedule, seed, or worker-count change was made.
+
+### 824. 2026-09-03: live epoch-2 health check and residual interruption risk
+
+- At remote time `15:39:45`, Python PID `6240` remained alive with increasing CPU time, about `3.65 GB` working set, and approximately `8.5 GB` 5090 memory in use. The persistent session produced active epoch `2/30` progress through approximately batch `117/400` of the configured cap; this is normal training behavior. `history.jsonl` still has one completed record because epoch 2 has not yet reached validation/checkpointing.
+- A future transport interruption cannot be ruled out: this Windows training process is still attached to a persistent SSH execution session, and the preceding session reset terminated the remote child. Checkpoints are written at completed epoch boundaries, so a mid-epoch interruption would replay that epoch from the last compatible checkpoint rather than corrupting earlier completed evidence.
