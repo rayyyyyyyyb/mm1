@@ -3717,3 +3717,8 @@
 
 - At remote time `15:39:45`, Python PID `6240` remained alive with increasing CPU time, about `3.65 GB` working set, and approximately `8.5 GB` 5090 memory in use. The persistent session produced active epoch `2/30` progress through approximately batch `117/400` of the configured cap; this is normal training behavior. `history.jsonl` still has one completed record because epoch 2 has not yet reached validation/checkpointing.
 - A future transport interruption cannot be ruled out: this Windows training process is still attached to a persistent SSH execution session, and the preceding session reset terminated the remote child. Checkpoints are written at completed epoch boundaries, so a mid-epoch interruption would replay that epoch from the last compatible checkpoint rather than corrupting earlier completed evidence.
+
+### 825. 2026-09-03: epoch-2 checkpoint saved; epoch-3 validation active
+
+- At remote time `16:25:43`, both training Python processes remained alive (worker PID `6240`), the 5090 held about `8.5 GB` memory with observed `28%` utilization, and no exception was present. The persistent session showed epoch `3/30` training reached the configured `400`-batch cap and entered full validation.
+- Epoch 2 completed and appended history at global step `800`; `last.pt` was updated at `16:09:13`. Its validation metrics are AP `0.7195224276950223`, AUROC `0.6188235417116364`, OV-AVEBench segment F1 `0.5377574807678815`, event F1 `0.5770955501897206`, and predicted-positive rate `1.0`. This is a valid intermediate checkpoint, not a final scientific verdict; `best.pt` remains the epoch-1 AP `0.7417794173236361` checkpoint.
