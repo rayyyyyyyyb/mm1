@@ -3683,3 +3683,7 @@
 ### 817. 2026-09-03: compatible sum-control resume launched
 
 - Resumed the same isolated run from `outputs/diagnostic/bounded_visual_only_sum_feature_seed42_no_workers/last.pt` with the unchanged no-worker configuration and `--allow-blocked-reproduction`. The remote process is alive in persistent SSH session `13204`; no new scientific variant, seed, schedule, or output namespace was introduced. Startup is currently in the cache/runtime audit stage.
+
+### 818. 2026-09-03: resumed process health confirmed
+
+- A follow-up 5090 poll found the resumed Python process alive and responsive (PID `24028`, about 1.03 GB resident memory) with no exception or new output mutation; it remains in startup/cache auditing before the next epoch. The prior epoch-1 history/checkpoints remain intact.
