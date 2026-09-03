@@ -3733,3 +3733,7 @@
 
 - A status check at `20:09:53` found the first scheduled-task action back in `Ready`, no Python process, and task result code `1`; `train.log` had only a new `Using device: cuda` line and no traceback. The completed data evidence remained intact: three history records, `5798` validation samples and `57980` official T=10 segments per completed validation, with `last.pt` at epoch 3/global step 1200.
 - The direct-Python task action was replaced by an equivalent `cmd.exe /d /c` action with explicit quoted paths and stdout/stderr redirection. It was started at `20:11:18`; an independent SSH check at `20:11:49` found the task `Running`, Python parent/child processes alive, 5090 memory allocated, and `history_lines=3`. The run is currently in startup/cache auditing from the same epoch-3 checkpoint; no config, seed, data, worker count, or scientific objective changed.
+
+### 828. 2026-09-03: post-handoff liveness confirmed
+
+- At `20:12:45`, the Task Scheduler job `OVOrthKD_VisualSum_Seed42_NoWorkers` was still `Running` with Python parent/child processes (`9436`/`17160`) alive. `history_lines=3` and `last.pt` remained at the valid epoch-3/global-step-1200 checkpoint while the resumed process continued startup/cache work. No new data error, missing-sample indication, or configuration change was observed.
