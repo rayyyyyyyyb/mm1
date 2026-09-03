@@ -3669,3 +3669,8 @@
 
 - The preparation and audit layer is materially repaired: official T=10 protocol, shape/lock/evaluator checks, teacher/cache provenance records, canonical Full guard, isolated runtime deployment, and regression tests are in place. The current Student-only control exceeds the paper Student-only row (test AP `0.748745` vs `0.714`, AUROC `0.636135` vs `0.612`), ruling out a globally broken data/evaluator/forward path.
 - The scientific failure is not repaired yet: learned-gate saturation, near-constant T=10 logits, trainable target-projector collapse, and near-all-positive predictions remain; current Visual-only/Full test AP (`0.725309/0.741946`) remain below paper rows (`0.778/0.816`). The mean-to-sum control shows promising epoch-1 ranking recovery (AP `0.741779`, AUROC `0.643772`) but fixed-threshold F1 remains `0.537757` and the 30-epoch run was interrupted by 5090 connectivity loss.
+
+### 815. 2026-09-03: clarified relative improvement across the two tasks
+
+- Relative to the immediately preceding mean-reduction Visual-only run at the same validation epoch/step, the latest sum control improved AP `+0.138417` and AUROC `+0.119598`; this is a real partial scientific improvement in ranking behavior.
+- Relative to the earlier completed Full/Visual-only final test results, no overall improvement can yet be claimed because the sum run has no completed final test evaluation and was interrupted after epoch 2. The remaining all-positive/F1 failure is not fixed. Thus the latest task improved evidence quality and a candidate loss behavior, but has not established a better final reproduction result.
