@@ -3737,3 +3737,8 @@
 ### 828. 2026-09-03: post-handoff liveness confirmed
 
 - At `20:12:45`, the Task Scheduler job `OVOrthKD_VisualSum_Seed42_NoWorkers` was still `Running` with Python parent/child processes (`9436`/`17160`) alive. `history_lines=3` and `last.pt` remained at the valid epoch-3/global-step-1200 checkpoint while the resumed process continued startup/cache work. No new data error, missing-sample indication, or configuration change was observed.
+
+### 829. 2026-09-03: permission root cause fixed for overnight run
+
+- The first `cmd.exe`-wrapped scheduled task entered `Ready` with result code `1` because `task_stderr.log` contained a complete `PermissionError: [WinError 5]` traceback while `Path.exists()` read `train/video/playing harp/ZbPrsPmws94/00000001.jpg`. ACL inspection showed the official data tree grants `SYSTEM`, `BUILTIN\\Administrators`, and `OWNER RIGHTS`, but not the unelevated user token directly. `whoami /groups` confirmed `desktop-lpn6mt3\\lxt` is an administrator with a high-integrity token under SSH; the task had been registered with `RunLevel Limited`, explaining the mismatch.
+- The same task was re-registered with `RunLevel Highest`, explicit `cmd.exe /d /c` output/error redirection, `StartWhenAvailable`, a 72-hour execution limit, and three two-minute automatic restarts. At `20:16:57`, an independent SSH check reported principal `LXT / Interactive / Highest`, task `Running`, Python parent/child processes (`15400`/`5036`) alive, and `history_lines=3` from the valid epoch-3 checkpoint. The stderr log contained only `Using device: cuda` and no permission error. This fixes the identified data-access failure without changing data, model, seed, worker count, or scientific protocol.
