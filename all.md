@@ -3664,3 +3664,8 @@
 ### 813. 2026-09-03: 5090 connectivity rechecked
 
 - A fresh three-path check still found `desktop-lpn6mt3` unreachable: Tailscale reports `100.119.122.101` offline (last seen about three hours earlier), TCP port 22 and ICMP probes time out, and batch-mode SSH times out. No remote state was changed.
+
+### 814. 2026-09-03: stage assessment — partial fixes confirmed
+
+- The preparation and audit layer is materially repaired: official T=10 protocol, shape/lock/evaluator checks, teacher/cache provenance records, canonical Full guard, isolated runtime deployment, and regression tests are in place. The current Student-only control exceeds the paper Student-only row (test AP `0.748745` vs `0.714`, AUROC `0.636135` vs `0.612`), ruling out a globally broken data/evaluator/forward path.
+- The scientific failure is not repaired yet: learned-gate saturation, near-constant T=10 logits, trainable target-projector collapse, and near-all-positive predictions remain; current Visual-only/Full test AP (`0.725309/0.741946`) remain below paper rows (`0.778/0.816`). The mean-to-sum control shows promising epoch-1 ranking recovery (AP `0.741779`, AUROC `0.643772`) but fixed-threshold F1 remains `0.537757` and the 30-epoch run was interrupted by 5090 connectivity loss.
