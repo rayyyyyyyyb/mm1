@@ -4357,3 +4357,7 @@
 ### 961. 2026-09-05: commit and branch push
 
 - Created clean commit `bec3464` (`Add evidence-based static target coupling audit`): 30 files changed, 2,788 insertions, 14 deletions. Pushed successfully to `origin/repro/student-shortcut-recovery` (`1eb5a0f..bec3464`). Large runtime artifacts remain untracked under `tmp/` and were not included.
+
+### 962. 2026-09-05: remote branch and ledger identity check
+
+- The ledger-only handoff commit `03fff3b06e257a1ff2e7820a2645c5413a635b41` is present locally and on `origin/repro/student-shortcut-recovery`; the two repository ledgers remain byte-identical (`850586` bytes). Working-tree output contains only the intentionally untracked `tmp/` directory; no staged or tracked artifact drift is present.
