@@ -3832,3 +3832,9 @@
 - Fresh local verification exited `0`: raw-teacher geometry suite `10 passed`, compileall `0`, Ruff `0`, and `git diff --check` `0`. Independent JSON assertions and report-text/link assertions both exited `0`; report and stdout hashes are equal and stderr is empty.
 - Independent 5090 post-run check found task `OVOrthKD_RawTeacherGeometry_Seed42` `Ready`, `LastTaskResult=0`, no audit Python process, idle GPU, remote report SHA256 equal to local `e800999d77864b1d27800ce39650351eebc5d7471f41d80809551213682dbd26`, and zero-byte stderr. Generated logs were force-added because the repository ignore rules exclude `*.log`; no large dataset or checkpoint was added.
 - Staged diff check exits `0`; staged artifacts are the corrected runner/test, final report/JSON/stdout/stderr, rejected first-run JSON, and the two byte-identical ledgers. Formal Full remains paused.
+
+### 845. 2026-09-04: commit and post-push verification
+
+- Commit `d09f8dc6414e00b4a417db5d8223015ddcd71900` (`audit raw teacher geometry collapse`) was pushed to `origin/repro/student-shortcut-recovery`. The remote branch ref exactly matches local HEAD.
+- Post-push report guard exited `0` (`POST_PUSH_REPORT_GUARD=PASS`): T=10, no optimizer/step/checkpoint mutation, no Full authorization, step400 explicitly unavailable, and best/last probe AP values distinct. Worktree is clean.
+- Both ledger files remain byte-identical with SHA256 `3b19902f1a238281e8ff6662431f1b9796b77970c43290d90d5b911b9419632c`. This entry itself will be committed and pushed as the final ledger-only follow-up.
