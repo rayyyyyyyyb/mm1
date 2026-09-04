@@ -3784,3 +3784,51 @@
 
 - Commit `a07358f7be257f0670f00dec30cd7dc0f1142c99` (`docs: record visual sum posthoc attribution`) contains the attribution report, machine-readable JSON, stdout evidence, and ledger entries through 835. Push to `origin/repro/student-shortcut-recovery` completed successfully; the post-push check matched local `HEAD` and the remote branch ref, and the worktree was clean at that point. This entry records that verification and is committed separately below. The report JSON SHA256 at that check was `32C2D11E33DA2E0C4390CF81DDA33E03D398C1D67120D36F223C411C5D11DA56`.
 - Follow-up ledger commit `00b4324be827a8b7185586bdc51e56bc888cef07` was pushed successfully. The final post-push check matched local and remote refs, found a clean worktree, verified both `all.md` files byte-identical (ledger SHA256 `7DE60AA5C214E74D8F516564D9D9897C626AFA9C8F414B81C09460D4CC6FF38C`), and revalidated the report guard (`status=PASS`, T=10, no optimizer/step/checkpoint mutation, no Full authorization). The report JSON SHA256 remained `32C2D11E33DA2E0C4390CF81DDA33E03D398C1D67120D36F223C411C5D11DA56`.
+- External stage裁决 was read in full and accepted with one correction: `visual_zero` keeps `frame_valid=1`, so it tests content dependence rather than deleting the visual branch; it cannot by itself prove that the visual teacher loss had zero training effect. The approved bounded design is a read-only raw-teacher geometry audit; formal Full remains paused.
+- Isolation check confirmed `扩刊/OV-OrthKD-R2` is already a linked worktree on `repro/student-shortcut-recovery`, clean at the start, so no additional worktree was created. Remote checks found raw `strong_teacher_features.npy` cache arrays with shape `[10,512]` in all three splits and an existing locked cache SHA256; only `best.pt` and `last.pt` exist, with no `step_000400.pt`.
+- TDD RED phase for `tests/test_raw_teacher_geometry.py` completed: the new four-test module failed at collection with the expected `ModuleNotFoundError` because `scripts/diagnose_raw_teacher_geometry.py` does not yet exist. No production code was written before this failure.
+
+### 837. 2026-09-04: raw-teacher geometry runner corrected and locally verified
+
+- Independent review of the first implementation found three concrete defects before any 5090 execution: projector input-dimension validation was unreachable, GPU projector inputs were not moved to the projector device, and pairwise-correlation weights included degenerate videos that had been excluded from the correlation list. These were fixed in `scripts/diagnose_raw_teacher_geometry.py`.
+- Added regression coverage for the input-dimension and degenerate-weight bugs; device placement, checkpoint/cache receipts, worker validation, mask/label invariance, and projector train/eval restoration are explicit runtime checks. The focused suite at that checkpoint exited `0` with `6 passed`; `compileall` exited `0`; Ruff exited `0` with all checks passed.
+- No training, optimizer construction, checkpoint write, or Full authorization occurred during this correction; the 5090 audit has not yet been launched.
+
+### 838. 2026-09-04: raw-teacher geometry audit launched persistently on 5090
+
+- The corrected runner and tests were copied to the deployment tree; local and remote SHA256 matched (`runner ef59e8499efccbd4cb8642e34e7db102f7abb7e7c208ddf345b42217dbf661bd`, `test d8a54415cf61c722debd3882ccbcdad971a8a78718b3c4297f65704841ad856e`). The locked 5090 environment passed the focused remote suite with exit `0` (`6 passed in 15.49s`).
+- Task Scheduler task `OVOrthKD_RawTeacherGeometry_Seed42` was registered with the logged-in SID, `Interactive`/`Highest`, 24-hour limit, `StartWhenAvailable`, `IgnoreNew`, and three two-minute restarts. It started in `Running` state. The command uses the resolved config, best/last checkpoints, saved test predictions, explicit teacher-cache lock, CUDA, and 16 cache workers; output is atomic under `outputs\diagnostic\raw_teacher_geometry_seed42`.
+- This is a read-only audit. It does not construct an optimizer, execute an update, write a checkpoint, or authorize formal Full. SSH disconnection is not expected to terminate the scheduled job.
+
+### 839. 2026-09-04: first remote attempt caught NumPy/Tensor boundary bug
+
+- The first remote audit process ran through model/data initialization but exited before report creation with `ValueError: projector inputs must have shape [N,D]`; `_state_report` passed the NumPy output of `_flatten_valid` into a Tensor-only projector-spectrum helper. No checkpoint, cache, or training process was modified, and the scheduled task ended with the expected nonzero result.
+- The boundary was corrected with an explicit `torch.from_numpy` conversion. A regression test for the full state-report path will be added before redeployment; the corrected runner will be re-hashed, remotely tested, and relaunched as a fresh atomic audit.
+
+### 840. 2026-09-04: corrected raw-teacher audit relaunched
+
+- Added the promised state-report regression test. Local verification exits were `pytest=0` (`10 passed`), `ruff=0`, and `compileall=0`; the updated remote runner/test hashes matched local (`runner 249a2ed0ac8a0cd7889f63ce3f686775e3e078f3746e5b0424452e189e5c2826`) and the locked 5090 environment passed `10 tests` with exit `0` (`10 passed in 5.75s`).
+- The failed-run report was absent, so no overwrite was needed. Task `OVOrthKD_RawTeacherGeometry_Seed42` was started again at `15:11:46` with the same read-only command and atomic output path; it is `Running` with empty fresh logs. No training or checkpoint mutation occurred.
+
+### 841. 2026-09-04: report audit found incorrect last-probe state selection
+
+- The completed remote report passed shape, lock, checkpoint, and no-mutation checks, but independent inspection found that the `last` linear probe reused the `best` projector: after the best probe loaded `best.pt`, the loop did not explicitly reload `last.pt`. The resulting best/last probe metrics were identical and are rejected as invalid, although the per-state geometry used the correct checkpoint loads.
+- The runner was corrected so every `best`/`last` probe explicitly strict-loads its own checkpoint. The fetched report is retained as rejected evidence only; no scientific conclusion will use its duplicated probe rows. A fresh remote run is required.
+
+### 842. 2026-09-04: per-state probe fix passed both environments and rerun started
+
+- After the fix, local verification exited `0` (`10 passed`, Ruff `0`, compileall `0`); the updated runner hash matched on 5090 (`c05e2333ef8ad7d3ad6a530c1501c13e14de2bfa2a4709a988f12d5c7f49dd03`), and the remote suite exited `0` (`10 passed in 5.70s`).
+- The invalid prior JSON was preserved locally as `raw_teacher_geometry_report_rejected_best_probe_reuse.json`. Its remote generated report/log files were deleted explicitly from the audit output directory, then task `OVOrthKD_RawTeacherGeometry_Seed42` was run again with the corrected code and the same locked inputs. This rerun is still read-only and does not alter training checkpoints.
+
+### 843. 2026-09-04: corrected raw-teacher geometry audit completed
+
+- The corrected 5090 task completed with `LastTaskResult=0`; stderr is `0` bytes. The fetched report and stdout are byte-identical and have SHA256 `e800999d77864b1d27800ce39650351eebc5d7471f41d80809551213682dbd26`.
+- Independent JSON audit passed: official `T=10`, 1,941 mixed-label samples / 19,410 segments, raw/projected/decision shapes `[1941,10,512]`, `[1941,10,256]`, `[1941,10,256]` for initialization/best/last, best/last probe metrics are distinct, step400 is explicitly unavailable, teacher-cache lock is `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`, and all no-mutation/Full guards are false.
+- Scientific evidence: raw temporal std remains `0.252719638`, while projected target falls `0.166309534 → 0.004978480 → 0.001356926` and student decision falls `0.0533049144 → 0.000276187498 → 0.00000205679` from initialization to best/last. Projector bias-to-input RMS rises to `1.87158730` / `2.31845551` at best/last; raw probe AP/AUROC is `0.666471618/0.604069902`, projected best `0.656138737/0.601364496`, projected last `0.616660079/0.551476073`.
+- The audit supports a high-priority moving-target projector/shared-path co-collapse hypothesis but does not prove unique causality. Student-decision train-split probe remains explicitly `not_run`; no step400 value was guessed. Formal Full remains paused and current scientific state is `BLOCKED_BEFORE_R2`.
+
+### 844. 2026-09-04: pre-commit verification completed
+
+- Fresh local verification exited `0`: raw-teacher geometry suite `10 passed`, compileall `0`, Ruff `0`, and `git diff --check` `0`. Independent JSON assertions and report-text/link assertions both exited `0`; report and stdout hashes are equal and stderr is empty.
+- Independent 5090 post-run check found task `OVOrthKD_RawTeacherGeometry_Seed42` `Ready`, `LastTaskResult=0`, no audit Python process, idle GPU, remote report SHA256 equal to local `e800999d77864b1d27800ce39650351eebc5d7471f41d80809551213682dbd26`, and zero-byte stderr. Generated logs were force-added because the repository ignore rules exclude `*.log`; no large dataset or checkpoint was added.
+- Staged diff check exits `0`; staged artifacts are the corrected runner/test, final report/JSON/stdout/stderr, rejected first-run JSON, and the two byte-identical ledgers. Formal Full remains paused.
