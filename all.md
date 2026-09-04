@@ -3779,3 +3779,7 @@
 
 - The focused local regression suite was rerun with the documented OpenMP compatibility override: exit `0`, `28 passed, 1 skipped` across the new post-hoc tests and prior modality/zero-training audits. `python -m compileall -q scripts/diagnose_visual_sum_posthoc.py` exited `0`; Ruff on the runner and its tests exited `0` with `All checks passed!`.
 - The locked 5090 environment reran `tests/test_visual_sum_posthoc.py`: exit `0`, `5 passed in 5.60s`. The report markdown was independently checked against its JSON values and required guard text; link targets exist and `git diff --check` exited `0`.
+
+### 836. 2026-09-04: evidence commit pushed and post-push verification
+
+- Commit `a07358f7be257f0670f00dec30cd7dc0f1142c99` (`docs: record visual sum posthoc attribution`) contains the attribution report, machine-readable JSON, stdout evidence, and ledger entries through 835. Push to `origin/repro/student-shortcut-recovery` completed successfully; the post-push check matched local `HEAD` and the remote branch ref, and the worktree was clean at that point. This entry records that verification and is committed separately below. The report JSON SHA256 at that check was `32C2D11E33DA2E0C4390CF81DDA33E03D398C1D67120D36F223C411C5D11DA56`.
