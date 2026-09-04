@@ -48,6 +48,8 @@ def summarize_tensor_geometry(
             "norm": _distribution(rows),
             "per_dimension_variance_mean": None,
             "effective_rank": 0.0,
+            "within_sample_temporal_std_mean": None,
+            "centered_to_total_l2_ratio": None,
         }
     centered = rows - rows.mean(dim=0, keepdim=True)
     singular_values = torch.linalg.svdvals(centered)
@@ -60,6 +62,32 @@ def summarize_tensor_geometry(
         positive = probabilities > 0
         entropy = -(probabilities[positive] * probabilities[positive].log()).sum()
         effective_rank = float(entropy.exp())
+    temporal_stats: dict[str, float | None] = {
+        "within_sample_temporal_std_mean": None,
+        "centered_to_total_l2_ratio": None,
+    }
+    if tensor.ndim == 3 and mask is not None and mask.ndim == 2:
+        valid_temporal = mask.detach().to(device=tensor.device).bool()
+        counts = valid_temporal.sum(dim=1)
+        if bool((counts > 0).any()):
+            values = tensor.detach().to(dtype=torch.float64)
+            safe_counts = counts.clamp_min(1).to(dtype=values.dtype)
+            means = (values * valid_temporal[..., None]).sum(dim=1) / safe_counts[..., None]
+            centered_temporal = values - means[:, None, :]
+            centered_valid = centered_temporal[valid_temporal]
+            raw_valid = values[valid_temporal]
+            per_sample_std = torch.sqrt(
+                (centered_temporal.square() * valid_temporal[..., None]).sum(dim=(1, 2))
+                / (safe_counts * values.shape[-1])
+            )
+            active = counts > 0
+            temporal_stats = {
+                "within_sample_temporal_std_mean": float(per_sample_std[active].mean()),
+                "centered_to_total_l2_ratio": float(
+                    centered_valid.square().sum()
+                    / raw_valid.square().sum().clamp_min(1e-24)
+                ),
+            }
     return {
         "shape": list(tensor.shape),
         "valid_rows": int(rows.shape[0]),
@@ -67,6 +95,7 @@ def summarize_tensor_geometry(
         "norm": _distribution(torch.linalg.vector_norm(rows, dim=-1)),
         "per_dimension_variance_mean": float(rows.var(dim=0, unbiased=False).mean()),
         "effective_rank": effective_rank,
+        **temporal_stats,
     }
 
 

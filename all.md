@@ -3931,6 +3931,11 @@
 
 - Added `AMP_APPLIED_STEP_AUDIT.md` with the independently computed C0 receipt totals, clipping coverage, strong-projector gradient share, post-hook semantics, and a clearly marked pending section for final C0/C1 metrics. No test or canonical artifacts are included.
 
+### 868. 2026-09-04: code/control checkpoint committed and pushed
+
+- Committed the verified code, controls, unit tests, plans, and provisional audit reports as `a70ba61` (`diagnostic: add static projector target controls`) and pushed branch `repro/student-shortcut-recovery` to `https://github.com/rayyyyyyyyb/mm1/tree/repro/student-shortcut-recovery`.
+- This checkpoint intentionally contains no dataset, teacher cache, model checkpoint, or prediction archive; final C0/C1 result evidence will be a separate follow-up commit.
+
 ### 866. 2026-09-04: C0 second epoch validation recorded
 
 - C0 history now has epoch 1 at global step `795`: AP `0.7195224277`, AUROC `0.6188235417`; thresholded predicted-positive rate remains `1.0`. This is below epoch 0 AP `0.7417794173`; best checkpoint therefore remains epoch 0. C0 still performs the final post-budget validation pass before clean exit.
@@ -3938,3 +3943,28 @@
 ### 867. 2026-09-04: C0 final validation still active
 
 - At the latest read-only poll (`18:09` local), C0 process `13920` remains responsive; `history.jsonl` is unchanged at two completed epochs and `optimizer_step_summary.json`/`final_metrics.json` are not yet written. This is the expected final validation pass after 800 applied updates.
+
+### 869. 2026-09-04: C0 phase clarification
+
+- A subsequent receipt check confirmed the `805/800` budget had already been reached; because the 400-batch epoch boundary left global step `795`, the trainer entered a short third epoch and is now validating that epoch before writing the optimizer summary. The process remains responsive; no data or test artifact is affected.
+
+### 870. 2026-09-04: gradient conflict audit report initialized
+
+- Added `GRADIENT_CONFLICT_AND_CLIP_AUDIT.md` with the C0 strong-projector gradient-share statistics, universal clipping observation, AMP-overflow handling, and the pre-registered interpretation boundary that this is pathway evidence rather than a single-cause claim. C1 receipts remain pending.
+
+### 871. 2026-09-04: bounded-control result report initialized
+
+- Added `STATIC_TARGET_800STEP_RESULTS.md`, recording the preregistered C0/C1 one-variable difference, C0 receipts and first two validation metrics, and an explicit pending section for C0 clean exit/C1 and gate results. No values were inferred.
+
+### 872. 2026-09-04: C0 third validation monitoring
+
+- C0 remains responsive in the third-epoch validation after the five-step completion of the exact 800-applied budget. `history.jsonl` still has two rows, and `optimizer_step_summary.json`/`final_metrics.json` are pending; no test data is evaluated.
+
+### 873. 2026-09-04: temporal geometry receipts extended
+
+- Extended `summarize_tensor_geometry` to emit valid-segment-only `within_sample_temporal_std_mean` and `centered_to_total_l2_ratio`, matching the preregistered gate definitions without changing model/loss behavior. Added two unit tests; focused suite now `22 passed in 2.93s`, exit `0`; Ruff exit `0`.
+- Uploaded the diagnostics utility and test to the remote source tree for C1. C0 remains numerically unaffected by this instrumentation-only change.
+
+### 874. 2026-09-04: C0 third epoch validation recorded
+
+- C0 completed its short third epoch at global step `800`; validation AP `0.7213457392`, AUROC `0.6199481023`, predicted-positive rate `1.0`, and 57,980 valid segments. It did not improve the epoch-0 best checkpoint. Final post-loop validation and summary writing are still active.
