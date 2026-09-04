@@ -7,6 +7,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from src.models.ov_orthkd import ProjectionHead
+from src.utils.projector_update_modes import (
+    apply_projector_update_modes,
+    resolve_projector_update_modes,
+)
 
 
 def _masked_mean(values: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -69,7 +73,10 @@ class OVOrthKDLoss(nn.Module):
         confidence_weighting: bool = True,
         confidence_scale: float = 2.0,
         visual_l2_reduction: str = "mean_feature_then_masked_mean_segments",
-        teacher_target_projector_trainable: bool = True,
+        teacher_target_projector_trainable: bool | None = None,
+        strong_teacher_projector_update_mode: str | None = None,
+        weak_teacher_projector_update_mode: str | None = None,
+        text_teacher_projector_update_mode: str | None = None,
         query_anchor_mode: str = "independent_loss_projection",
     ) -> None:
         super().__init__()
@@ -94,8 +101,16 @@ class OVOrthKDLoss(nn.Module):
                 f"Unsupported visual_l2_reduction: {visual_l2_reduction}"
             )
         self.visual_l2_reduction = visual_l2_reduction
-        self.teacher_target_projector_trainable = bool(
-            teacher_target_projector_trainable
+        mode_config = {
+            "teacher_target_projector_trainable": teacher_target_projector_trainable,
+            "strong_teacher_projector_update_mode": strong_teacher_projector_update_mode,
+            "weak_teacher_projector_update_mode": weak_teacher_projector_update_mode,
+            "text_teacher_projector_update_mode": text_teacher_projector_update_mode,
+        }
+        mode_config = {key: value for key, value in mode_config.items() if value is not None}
+        self.projector_update_modes = resolve_projector_update_modes(mode_config)
+        self.teacher_target_projector_trainable = all(
+            mode == "trainable" for mode in self.projector_update_modes.values()
         )
         if query_anchor_mode not in {
             "independent_loss_projection",
@@ -111,14 +126,7 @@ class OVOrthKDLoss(nn.Module):
             self.text_teacher_proj = ProjectionHead(text_dim, projection_dim)
         else:
             self.text_teacher_proj = None
-        if not self.teacher_target_projector_trainable:
-            for projector in (
-                self.strong_teacher_proj,
-                self.weak_teacher_proj,
-                self.text_teacher_proj,
-            ):
-                if projector is not None:
-                    projector.requires_grad_(False)
+        apply_projector_update_modes(self, self.projector_update_modes)
 
     def forward(
         self,

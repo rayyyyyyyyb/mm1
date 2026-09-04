@@ -65,6 +65,16 @@ from src.evaluation.ovavel_metrics import (
     compute_thresholded_ovavel_metrics,
 )
 from src.losses import OVOrthKDLoss, OVOrthKDLegacyLoss
+from src.utils.projector_update_modes import (
+    apply_projector_update_modes,
+    build_named_optimizer_groups,
+    optimizer_group_receipts,
+    resolve_projector_update_modes,
+)
+from src.utils.optimizer_receipts import (
+    OptimizerStepTracker,
+    clip_gradients_with_receipt,
+)
 from src.models import OVOrthKDStudent
 from src.utils.atomic_artifacts import canonical_tree_hash
 from src.utils.canonical_readiness import validate_canonical_readiness
@@ -397,6 +407,7 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
     query_anchor_mode = str(
         loss_cfg.get("query_anchor_mode", "independent_loss_projection")
     )
+    projector_update_modes = resolve_projector_update_modes(loss_cfg)
 
     student = OVOrthKDStudent(
         visual_backbone=student_cfg["visual_backbone"],
@@ -466,9 +477,9 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
                     "mean_feature_then_masked_mean_segments",
                 )
             ),
-            teacher_target_projector_trainable=bool(
-                loss_cfg.get("teacher_target_projector_trainable", True)
-            ),
+            strong_teacher_projector_update_mode=projector_update_modes["strong_teacher"],
+            weak_teacher_projector_update_mode=projector_update_modes["weak_teacher"],
+            text_teacher_projector_update_mode=projector_update_modes["text_teacher"],
             query_anchor_mode=query_anchor_mode,
         ).to(device)
     else:
@@ -477,6 +488,7 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
             **common_loss_kwargs,
             text_temperature=float(loss_cfg.get("text_temperature", 0.07)),
         ).to(device)
+    apply_projector_update_modes(loss_module, projector_update_modes)
     return student, loss_module
 
 
@@ -551,6 +563,13 @@ def runtime_implementation_behavior(
             ),
             "query_anchor_mode": getattr(loss_module, "query_anchor_mode", None),
             "teacher_target_projector_trainable": projectors_trainable,
+            "projector_update_modes": dict(
+                getattr(
+                    loss_module,
+                    "projector_update_modes",
+                    {name: ("trainable" if projectors_trainable else "frozen_no_grad") for name in ("strong_teacher", "weak_teacher", "text_teacher")},
+                )
+            ),
             "target_projectors": target_projectors,
         },
         "parameters": {
@@ -1518,6 +1537,8 @@ def main() -> None:
     write_runtime_metadata(output_dir, config, device)
     write_static_run_evidence(output_dir, config)
     train_loader, val_loader, test_loader = create_ov_avel_data_loaders(config)
+    if not bool(config.get("evaluation", {}).get("run_test", True)):
+        test_loader = None
 
     loader_generators = {
         name: loader.generator
@@ -1572,12 +1593,34 @@ def main() -> None:
         return
 
     train_cfg = config["training"]
+    base_learning_rate = float(train_cfg.get("learning_rate", 2e-4))
+    base_weight_decay = float(train_cfg.get("weight_decay", 1e-4))
+    projector_modes = dict(
+        getattr(
+            loss_module,
+            "projector_update_modes",
+            resolve_projector_update_modes(config.get("loss", {})),
+        )
+    )
+    optimizer_groups = build_named_optimizer_groups(
+        student,
+        loss_module,
+        learning_rate=base_learning_rate,
+        weight_decay=base_weight_decay,
+        modes=projector_modes,
+    )
     parameters = trainable_model_and_loss_parameters(student, loss_module)
     optimizer = AdamW(
-        parameters,
-        lr=float(train_cfg.get("learning_rate", 2e-4)),
-        weight_decay=float(train_cfg.get("weight_decay", 1e-4)),
+        optimizer_groups,
+        lr=base_learning_rate,
+        weight_decay=base_weight_decay,
     )
+    (output_dir / "optimizer_groups.json").write_text(
+        json.dumps(optimizer_group_receipts(optimizer_groups), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    optimizer_step_tracker = OptimizerStepTracker(optimizer)
+    optimizer_receipt_path = output_dir / "optimizer_receipts.jsonl"
     epochs = int(train_cfg.get("epochs", 30))
     scheduler, scheduler_interval = build_scheduler(
         optimizer,
@@ -1694,19 +1737,46 @@ def main() -> None:
                     batch_index=batch_idx,
                     global_step=global_step,
                 )
-            torch.nn.utils.clip_grad_norm_(parameters, grad_clip)
+            (
+                pre_clip_norm,
+                clip_coefficient,
+                group_norms,
+                group_contributions,
+                clipped,
+            ) = clip_gradients_with_receipt(parameters, optimizer_groups, grad_clip)
+            amp_scale_before = float(scaler.get_scale()) if hasattr(scaler, "get_scale") else None
+            attempted_step = optimizer_step_tracker.record_attempt()
+            applied_before = optimizer_step_tracker.applied_steps
             scaler.step(optimizer)
             scaler.update()
+            applied = optimizer_step_tracker.applied_steps > applied_before
+            amp_scale_after = float(scaler.get_scale()) if hasattr(scaler, "get_scale") else None
+            receipt = {
+                "attempted_step": attempted_step,
+                "applied_step": optimizer_step_tracker.applied_steps,
+                "applied": applied,
+                "overflow": not applied,
+                "pre_clip_global_norm": pre_clip_norm,
+                "clip_coefficient": clip_coefficient,
+                "clipped": clipped,
+                "amp_scale_before": amp_scale_before,
+                "amp_scale_after": amp_scale_after,
+                "group_norms": group_norms,
+                "group_contributions": group_contributions,
+            }
+            with optimizer_receipt_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(receipt, ensure_ascii=False) + "\n")
             if diagnostic_record is not None:
                 with diagnostic_path.open("a", encoding="utf-8") as handle:
                     handle.write(
                         json.dumps(diagnostic_record, ensure_ascii=False) + "\n"
                     )
-            if scheduler_interval == "optimizer_step":
+            if applied and scheduler_interval == "optimizer_step":
                 scheduler.step()
 
-            step_count += 1
-            global_step += 1
+            if applied:
+                step_count += 1
+                global_step += 1
             for name, value in stats.items():
                 running_stats[name] = running_stats.get(name, 0.0) + value
             progress.set_postfix(loss=f"{stats['total']:.4f}", orth=f"{stats['orth']:.6f}")
@@ -1824,6 +1894,22 @@ def main() -> None:
         if stop_training:
             break
 
+    optimizer_step_tracker.close()
+    (output_dir / "optimizer_step_summary.json").write_text(
+        json.dumps(
+            {
+                "attempted_steps": int(optimizer_step_tracker.attempted_steps),
+                "applied_steps": int(optimizer_step_tracker.applied_steps),
+                "overflow_or_skipped_steps": int(
+                    optimizer_step_tracker.attempted_steps
+                    - optimizer_step_tracker.applied_steps
+                ),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     final_metrics: Dict[str, Any] = {}
     if (output_dir / "best.pt").exists():
         best_checkpoint = torch.load(output_dir / "best.pt", map_location=device, weights_only=True)

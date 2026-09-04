@@ -3838,3 +3838,103 @@
 - Commit `d09f8dc6414e00b4a417db5d8223015ddcd71900` (`audit raw teacher geometry collapse`) was pushed to `origin/repro/student-shortcut-recovery`. The remote branch ref exactly matches local HEAD.
 - Post-push report guard exited `0` (`POST_PUSH_REPORT_GUARD=PASS`): T=10, no optimizer/step/checkpoint mutation, no Full authorization, step400 explicitly unavailable, and best/last probe AP values distinct. Worktree is clean.
 - Both ledger files remain byte-identical with SHA256 `3b19902f1a238281e8ff6662431f1b9796b77970c43290d90d5b911b9419632c`. This entry itself will be committed and pushed as the final ledger-only follow-up.
+
+### 846. 2026-09-04: projector-collapse/static-target plan and provenance audit started
+
+- Read the new external projector-collapse/static-target diagnosis and saved `docs/superpowers/plans/2026-09-04-projector-collapse-static-target.md`. The plan preserves T=10, forbids Full/second seed/test-for-selection/canonical overwrite, and stages provenance, read-only audits, explicit projector modes, applied-step receipts, and paired C0/C1 gates.
+- Added and locally tested `scripts/audit_projector_provenance.py` plus `tests/test_projector_provenance.py`; the scan is read-only, treats task books/current diagnostic configs as non-historical, redacts credential-like values, and classifies conflicting historical candidates as `AMBIGUOUS`.
+- Ran the local provenance scan; `reports/formal_reproduction/student_shortcut_recovery/PROVENANCE_AUDIT.{json,md}` was generated. All eight requested facts are `AMBIGUOUS` because multiple candidate values exist; no value was guessed.
+
+### 847. 2026-09-04: loss decomposition, projector modes, and receipts implemented
+
+- Added pure `src/utils/feature_loss.py` decomposition with exact mean/centered identity, optional `k=0..10/overall` grouping, and `scripts/audit_feature_loss_decomposition.py`.
+- Added `src/utils/projector_update_modes.py` with `trainable`, `frozen_no_grad`, and `static_zero_lr_keep_grad`; partial/conflicting legacy/new configs fail closed. Added deterministic named optimizer groups and parameter hashes.
+- Added `src/utils/optimizer_receipts.py`; training now records hook-backed attempted/applied/overflow steps, pre-clip norm, clip coefficient, per-group norms/contributions, and AMP scales. `global_step` increments only for an applied optimizer step. Evaluation honors `evaluation.run_test=false` for bounded controls.
+- Added read-only root-cause audit utilities, C0/C1 overlay configs, and bounded runner. New focused suite passed locally with `11` tests (then `13` after root-cause audit utilities); remote 5090 focused suite passed `17` tests and existing faithfulness/model/config/student suites passed `60` tests.
+
+### 848. 2026-09-04: remote C0/C1 launch status
+
+- 5090 connectivity and environment were verified: `NVIDIA GeForce RTX 5090`, remote Python is `E:\\OV-OrthKD-R0\\env\\.venv\\Scripts\\python.exe`; system `python` is only a disabled WindowsApps alias.
+- First two launches were safely rejected before model/data work because the output path lacked an exact `diagnostic` namespace (both exit `1`, no checkpoint mutation). The corrected launch uses `E:\\OV-OrthKD-R3\\diagnostic\\static_target_control_20260904`.
+- C0 is currently running in that new noncanonical directory. It has produced hook receipts (latest observed `112` attempts / `107` applied, `5` AMP overflows, clip coefficient about `0.019` on the sampled latest row); GPU memory is about `8.2 GiB`, with no Full/test evaluation. C1 will be started only after C0 completes and will use the already materialized static overlay.
+
+### 849. 2026-09-04: C0 live progress checkpoint
+
+- Independent remote receipt fetch observed C0 at `356` attempted / `351` applied steps with `5` AMP skips total; the process remains alive and no test artifacts are present. The applied-step counter, not attempted count, is the control budget.
+
+### 850. 2026-09-04: independent local verification and C0 validation wait
+
+- Re-ran the six new focused test modules with MKL-compatible settings: `18 passed in 3.10s`, pytest exit `0`. `compileall` and `git diff --check` also exited `0`.
+- The temporary receipt fetch was removed; the remote C0 process remains alive at the first epoch validation boundary (latest receipt observed `400` attempts / `395` applied / `5` AMP overflows). No test evaluation or canonical artifact overwrite is enabled.
+
+### 851. 2026-09-04: independent review after lint correction
+
+- Removed an unused feature-loss import found by Ruff, then reran focused tests: `18 passed in 2.65s`, exit `0`; Ruff on all changed files with pre-existing E402 ignored: exit `0`.
+- Uploaded the corrected loss module and current control/audit utilities to the 5090 source tree before C1. The local full legacy suite remains environment-blocked here by missing `timm` (collection exit `2`), while the same suite had already passed remotely in the locked venv.
+
+### 852. 2026-09-04: remote provenance scan containment
+
+- A remote provenance scan command exceeded the local SSH wait and left several duplicate scanner children running without producing output. Process command lines were inspected; only the six exact `audit_projector_provenance.py` PIDs were terminated. The C0 training process and paired-control wrapper were left untouched.
+
+### 853. 2026-09-04: optimizer hook semantic hardening
+
+- Independent code review changed applied-step accounting from the pre-hook to the optimizer post-hook. This ensures only a successfully returned `optimizer.step()` counts as applied; GradScaler overflow skips both hooks. Focused receipt/control tests: `9 passed in 2.46s`, exit `0`; Ruff exit `0`.
+- Uploaded the hook correction to the remote source tree for C1. C0 remains an already-running, safely isolated control using the earlier equivalent hook behavior.
+
+### 854. 2026-09-04: control configuration verification
+
+- Independently validated both C0/C1 overlay schemas and confirmed the gate evaluator fails closed when metrics are missing (`False`); CLI help exits `0`. No training or test evaluation was triggered by this check.
+
+### 855. 2026-09-04: C0 first epoch completed
+
+- Remote C0 completed epoch index `0`: `411` attempted / `406` applied / `5` AMP overflows at the latest receipt fetch; `best.pt` and `last.pt` were written (each about 562.5 MB), and no test artifact exists.
+- First validation is recorded as AP `0.7417794173`, AUROC `0.6437222374`, official 10-segment count `57,980`; thresholded predicted-positive rate is `1.0`, an explicit shortcut warning. Epoch elapsed time was `1,875.8 s` (about 31.3 min), explaining the long runtime.
+
+### 856. 2026-09-04: C0 second epoch progress
+
+- Latest remote poll: `499` attempted / `494` applied / `5` AMP overflows. C0 is actively training the second epoch; the first-epoch checkpoints remain intact and no test outputs exist.
+
+### 857. 2026-09-04: provenance scanner independent audit correction
+
+- Independent review found the first provenance JSON was inflated by binary checkpoint decoding and by treating `all.md`, current configs, source code, and generated receipts as historical evidence. The scanner now restricts text suffixes, skips `.git`/`__pycache__`, classifies current artifacts as nonhistorical, and fails closed when a hit has no extracted value.
+- Added regression tests for current-diagnostic classification and binary checkpoint exclusion. Provenance tests: `6 passed in 0.05s`, exit `0`; Ruff exit `0`. Regenerated report is 1,813 bytes and reports all eight facts `NOT_FOUND` (student-pretrained has a nonhistorical git hit but no value), without guessing.
+
+### 858. 2026-09-04: C0 reached 800-attempt budget
+
+- Remote receipts now contain exactly `800` attempts, `795` applied, and `5` AMP overflows. C0 has entered its second full validation/finalization phase; first-epoch checkpoints and AP `0.7417794173` remain recorded. C1 has not started yet.
+
+### 859. 2026-09-04: post-correction full focused verification
+
+- After the provenance and post-hook corrections, the complete new focused suite passed: `20 passed in 3.33s`, exit `0`; Ruff (changed files, ignoring pre-existing E402), compileall, and diff-check all exited `0`.
+
+### 860. 2026-09-04: C0 budget reached, final validation pending
+
+- C0 reached exactly `800` attempted updates (`795` applied, `5` AMP overflows) and is alive in the second full validation/finalization pass. The first validation AP `0.7417794173` / AUROC `0.6437222374` and predicted-positive rate `1.0` were independently recorded. C1 remains queued behind C0.
+
+### 861. 2026-09-04: implementation and loss audit reports added
+
+- Added `PROJECTOR_CONTROL_IMPLEMENTATION_RECEIPT.md` and `FEATURE_LOSS_DECOMPOSITION.md`, documenting named projector modes, post-hook applied-step semantics, receipt fields, exact mean/centered loss identity, and the noncanonical/no-Full boundaries. These are code/audit documentation only; no dataset or checkpoint was copied into the repository.
+
+### 862. 2026-09-04: remote resolved-config check
+
+- Read-only fetch of the remote C0 resolved config confirmed all three explicit projector modes are `trainable`, `max_optimizer_steps: 800`, and `evaluation.run_test: false`. The temporary YAML was deleted locally after inspection.
+
+### 863. 2026-09-04: static tensor immutability test strengthened
+
+- Extended the static-mode unit test to execute a real AdamW step: the strong projector receives gradients and optimizer moments while its parameter hash remains bit-identical under `lr=0` and `weight_decay=0`. Test exit `0` (`4 passed`); Ruff exit `0`.
+
+### 864. 2026-09-04: C0 applied budget and gradient receipts
+
+- Remote receipt analysis now shows `805` attempts / `800` applied / `5` overflows exactly; all 800 applied rows were clipped, and the strong-projector gradient contribution mean was `0.510517` (median `0.512074`). C0 is in final validation/final artifact writing; C1 is still queued.
+
+### 865. 2026-09-04: AMP audit report initialized
+
+- Added `AMP_APPLIED_STEP_AUDIT.md` with the independently computed C0 receipt totals, clipping coverage, strong-projector gradient share, post-hook semantics, and a clearly marked pending section for final C0/C1 metrics. No test or canonical artifacts are included.
+
+### 866. 2026-09-04: C0 second epoch validation recorded
+
+- C0 history now has epoch 1 at global step `795`: AP `0.7195224277`, AUROC `0.6188235417`; thresholded predicted-positive rate remains `1.0`. This is below epoch 0 AP `0.7417794173`; best checkpoint therefore remains epoch 0. C0 still performs the final post-budget validation pass before clean exit.
+
+### 867. 2026-09-04: C0 final validation still active
+
+- At the latest read-only poll (`18:09` local), C0 process `13920` remains responsive; `history.jsonl` is unchanged at two completed epochs and `optimizer_step_summary.json`/`final_metrics.json` are not yet written. This is the expected final validation pass after 800 applied updates.

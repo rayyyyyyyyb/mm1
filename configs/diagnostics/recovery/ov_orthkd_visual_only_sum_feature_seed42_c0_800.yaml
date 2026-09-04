@@ -1,0 +1,12 @@
+# Noncanonical paired-control overlay.  The runner resolves this against the
+# locked no-worker Visual-only sum config and changes only the explicit mode.
+base_config: configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_no_workers.yaml
+control:
+  name: C0_trainable_strong_projector_800
+  applied_optimizer_steps: 800
+  evaluate_test: false
+overrides:
+  loss:
+    strong_teacher_projector_update_mode: trainable
+    weak_teacher_projector_update_mode: trainable
+    text_teacher_projector_update_mode: trainable

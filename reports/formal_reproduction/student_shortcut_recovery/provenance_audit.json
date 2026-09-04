@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "repo_root": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2",
+  "search_roots": [
+    "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2"
+  ],
+  "facts": {
+    "strong_projector_update": {
+      "status": "NOT_FOUND",
+      "historical_evidence": false,
+      "values": [],
+      "evidence": []
+    },
+    "visual_l2_reduction": {
+      "status": "NOT_FOUND",
+      "historical_evidence": false,
+      "values": [],
+      "evidence": []
+    },
+    "schedule_step400": {
+      "status": "NOT_FOUND",
+      "historical_evidence": false,
+      "values": [],
+      "evidence": []
+    },
+    "early_stop": {
+      "status": "NOT_FOUND",
+      "historical_evidence": false,
+      "values": [],
+      "evidence": []
+    },
+    "student_pretrained": {
+      "status": "NOT_FOUND",
+      "historical_evidence": true,
+      "values": [],
+      "evidence": [
+        {
+          "path": "<git-history>",
+          "source_type": "git",
+          "value": null,
+          "excerpt": "f739399 feat: add pretrained student recovery control"
+        }
+      ]
+    },
+    "query_anchor_mode": {
+      "status": "NOT_FOUND",
+      "historical_evidence": false,
+      "values": [],
+      "evidence": []
+    },
+    "teacher_sampling": {
+      "status": "NOT_FOUND",
+      "historical_evidence": false,
+      "values": [],
+      "evidence": []
+    },
+    "reported_targets": {
+      "status": "NOT_FOUND",
+      "historical_evidence": false,
+      "values": [],
+      "evidence": []
+    }
+  },
+  "git_refs_count": 24,
+  "git_reflog_lines": 200,
+  "policy": {
+    "task_books_are_non_historical": true,
+    "missing_values_are_unknown": true,
+    "secrets_redacted": true
+  }
+}
