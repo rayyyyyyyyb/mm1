@@ -4144,3 +4144,9 @@
 ### 914. 2026-09-04: staged diff scope recorded
 
 - Staged change set is `49 files changed, 9636 insertions, 24 deletions`; no checkpoint, dataset, cache, prediction NPZ, archive, or other large binary is staged. This is the final pre-commit scope.
+
+### 915. 2026-09-04: repository commit and push completed
+
+- Committed the verified C0/C1 control evidence and code as `5fcc7634823f321936a5fb23a9cf5c2fd14eb092` (`49 files changed, 9636 insertions, 24 deletions`) and pushed it to `origin/repro/student-shortcut-recovery`.
+- The branch is clean after commit. The review URL is `https://github.com/rayyyyyyyyb/mm1/tree/repro/student-shortcut-recovery`.
+- Final scientific state remains `BLOCKED_BY_GRADIENT_CONFLICT`; the locked 5090 focused suite is `32 passed`, exit `0`, while local compile/Ruff/diff/JSON checks are all exit `0`. Official data, archival, evaluator, preprocessing, teacher locks and teacher-cache SHA256 are preserved in the machine-readable summary.
