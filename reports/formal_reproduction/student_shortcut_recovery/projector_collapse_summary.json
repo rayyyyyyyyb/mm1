@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "final_state": "BLOCKED_BY_GRADIENT_CONFLICT",
+  "final_state": "STATIC_TARGET_NOT_SUFFICIENT",
   "authorization": {
     "formal_full_training": false,
     "additional_schedule_extension": false,
@@ -14,7 +14,8 @@
     "seed": 42,
     "controls": [
       "C0_trainable_strong_projector_800",
-      "C1_static_zero_lr_keep_grad_800"
+      "C1_static_zero_lr_keep_grad_800",
+      "C2_static_positive_lr_clip_800"
     ],
     "applied_optimizer_steps": 800
   },
@@ -43,6 +44,30 @@
     "c1_minus_c0": {
       "ap": -0.005168316832350972,
       "mixed_pair_weighted_concordance": -0.0509785575856145
+    },
+    "c2_best": {
+      "global_step": 795,
+      "ap": 0.7336090805290894,
+      "auroc": 0.6348366790117872,
+      "predicted_positive_rate": 1.0,
+      "samples": 5798,
+      "segments": 57980,
+      "mixed_videos": 1967,
+      "mixed_pairs": 36329,
+      "mixed_pair_weighted_concordance": 0.5093313881472102,
+      "mixed_video_macro_concordance": 0.5087684896022466
+    },
+    "c2_last": {
+      "global_step": 800,
+      "ap": 0.7291997990871013,
+      "auroc": 0.6266441093793944,
+      "predicted_positive_rate": 1.0,
+      "samples": 5798,
+      "segments": 57980
+    },
+    "c2_minus_c0_best": {
+      "ap": -0.0081703367945467,
+      "mixed_pair_weighted_concordance": -0.100470698340169
     }
   },
   "geometry_gates_at_c1_best": {
@@ -53,6 +78,18 @@
     "decision_centered_to_total_l2_ratio": 0.0036688604310426923,
     "unexplained_amp_skips": 0,
     "clip_receipts_complete": true
+  },
+  "geometry_gates_at_c2_best": {
+    "strong_projector_hash_unchanged": true,
+    "projected_target_temporal_std": 0.16820588860646918,
+    "decision_temporal_std": 0.001476752159028226,
+    "projected_to_decision_distance_correlation": 0.3539093182416516,
+    "decision_centered_to_total_l2_ratio": 0.0039245120277748525,
+    "mixed_validation_concordance_gain_over_c0": -0.100470698340169,
+    "validation_ap_not_more_than_0.02_below_c0": true,
+    "unexplained_amp_skips": 0,
+    "clip_receipts_complete": true,
+    "all_passed": false
   },
   "gate_thresholds": {
     "projected_target_temporal_std": ">=0.15",
@@ -86,7 +123,15 @@
     "c1_strong_projector_share_median": 0.8193539171727697,
     "c1_student_share_mean": 0.1884285503239727,
     "c1_text_projector_share_mean": 0.00007723137681309029,
-    "c1_weak_projector_share_mean": 0.0
+    "c1_weak_projector_share_mean": 0.0,
+    "c2_attempts": 805,
+    "c2_applied": 800,
+    "c2_overflow_or_skipped": 5,
+    "c2_clipping_scope": "optimizer_groups_with_positive_lr",
+    "c2_clipping_parameter_count": 607,
+    "c2_positive_scope_norm_mean": 49.78200641411791,
+    "c2_positive_scope_clip_coefficient_mean": 0.020991220771963248,
+    "c2_strong_projector_share_all_norm_mean": 0.8136400323403845
   },
   "locks": {
     "data_lock_sha256": "d45eeb120c1793cdda9ffa69021fe9b9055c5528d91a4ce0cc6230ca673aba57",
@@ -103,7 +148,12 @@
     "c1_geometry": "raw_teacher_geometry_c1_validation.json",
     "implementation_receipt": "PROJECTOR_CONTROL_IMPLEMENTATION_RECEIPT.md",
     "step_receipt": "AMP_APPLIED_STEP_AUDIT.md",
-    "gradient_audit": "GRADIENT_CONFLICT_AND_CLIP_AUDIT.md"
+    "gradient_audit": "GRADIENT_CONFLICT_AND_CLIP_AUDIT.md",
+    "c2_final": "STATIC_TARGET_COUPLING_FINAL.md",
+    "c2_geometry": "C2_GEOMETRY_SUMMARY.json",
+    "c2_receipts": "C2_RUNTIME_RECEIPT_SUMMARY.json",
+    "c2_feature_loss": "phase_a/A2_C2_best.json (remote receipt summarized in STATIC_TARGET_COUPLING_FINAL.md)",
+    "c2_gradient_conflict": "phase_a/A3_C2_best.json (remote receipt summarized in STATIC_TARGET_COUPLING_FINAL.md)"
   },
-  "interpretation": "C1 preserves temporally varying projected teacher targets, but student decision temporal variation and mixed-label concordance fail the preregistered gates while strong-projector gradients dominate and every applied step is clipped. This supports BLOCKED_BY_GRADIENT_CONFLICT; it does not establish a projector-only causal claim."
+  "interpretation": "A3 does not identify an intrinsic same-parameter loss-direction conflict. A5 and C2 directly observe global clipping coupling: excluding the zero-LR projector increases the positive-LR clip coefficient, while the static projector remains in receipts. Nevertheless, C2 fails the student temporal-geometry and mixed-label concordance gates at 800 applied steps. The evidence-based final state is STATIC_TARGET_NOT_SUFFICIENT; CLIP_COUPLING_CAUSAL is not supported."
 }

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "source_remote": "E:/OV-OrthKD-R3/visual_sum_control_9e7a630/diagnostic/phase_c2_static_positive_lr_clip_800",
+  "attempted_steps": 805,
+  "applied_steps": 800,
+  "overflow_or_skipped_steps": 5,
+  "clipping_scope": "optimizer_groups_with_positive_lr",
+  "clipping_parameter_count": 607,
+  "all_applied_rows_clipped": true,
+  "scope_values": ["optimizer_groups_with_positive_lr"],
+  "positive_scope_norm_mean": 49.78200641411791,
+  "positive_scope_clip_coefficient_mean": 0.020991220771963248,
+  "reconstructed_all_group_norm_mean": 114.36045814250971,
+  "strong_projector_share_all_norm_mean": 0.8136400323403845,
+  "student_share_all_norm_mean": 0.18628433798226135,
+  "strong_projector_receipt_present": true,
+  "authorization": {
+    "test_evaluation": false,
+    "second_seed": false,
+    "schedule_extension": false,
+    "formal_full": false
+  }
+}

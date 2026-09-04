@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source_remote": "E:/OV-OrthKD-R3/visual_sum_control_9e7a630/diagnostic/phase_c2_static_positive_lr_clip_800/phase_a/C2_geometry_validation.json",
+  "source_sha256": "f340552259f2533415e6fb11c8b4a78de6adea5ac59eaddd5ad9fa73ba2ec2b9",
+  "status": "PASS",
+  "evaluation_split": "validation",
+  "task_segments": 10,
+  "mixed_samples": 1967,
+  "mixed_segments": 19670,
+  "states": {
+    "best_step795": {
+      "projected_target_temporal_std": 0.16820588860646918,
+      "decision_temporal_std": 0.001476752159028226,
+      "projected_to_decision_distance_correlation": 0.3539093182416516,
+      "decision_centered_to_total_l2_ratio": 0.0039245120277748525,
+      "projector_hash_unchanged": true,
+      "student_probe_ap": 0.6657048152646936,
+      "student_probe_auroc": 0.6032743929477011
+    },
+    "last_step800": {
+      "projected_target_temporal_std": 0.16820588860646918,
+      "decision_temporal_std": 0.0013139303403639055,
+      "projected_to_decision_distance_correlation": 0.3510774481973461,
+      "decision_centered_to_total_l2_ratio": 0.0034990050049795007,
+      "projector_hash_unchanged": true,
+      "student_probe_ap": 0.6657048152646936,
+      "student_probe_auroc": 0.6032743929477011
+    }
+  },
+  "protocol": {
+    "temporal_conversion": "forbidden",
+    "optimizer_constructed": false,
+    "optimizer_step_executed": false,
+    "checkpoint_written": false,
+    "source_mutation_detected": false
+  }
+}

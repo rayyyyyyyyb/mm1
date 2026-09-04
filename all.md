@@ -4136,6 +4136,42 @@
 
 - After the final code wording correction, the locked 5090 focused suite was rerun once: `32 passed in 6.15s`, exit code `0`.
 
+### 916. 2026-09-04: external review re-evaluated against repository reality
+
+- Verified the new review's distinction: C1 directly demonstrates preserved projected-target geometry and direct global-clip coupling from a zero-LR projector, but the existing `0.811/0.188` receipts are parameter-group norm shares, not same-student-parameter loss-direction cosines. Therefore `BLOCKED_BY_GRADIENT_CONFLICT` is downgraded to a provisional label pending A3; the evidence-level labels are `GLOBAL_CLIP_COUPLING_DIRECTLY_OBSERVED` and `GRADIENT_CONFLICT_NOT_YET_IDENTIFIED`.
+- Confirmed C1 best-vs-best is retained as the preregistered model-selection result, while next read-only comparison must use C0 last@800 versus C1 last@800. Formal Full, 3200-step extension, second seed, and test evaluation remain blocked.
+
+### 917. 2026-09-04: A1 fixed-budget audit started with TDD
+
+- Added the A1 test first and observed the expected RED collection failure (`ModuleNotFoundError` for the not-yet-created audit module).
+- Implemented `scripts/audit_static_target_fixed_budget.py` as a read-only official-T=10 summary using the existing validator, mixed-label concordance, and deterministic temporal-shuffle utility. After correcting the test fixture to exact sigmoid probabilities and ten segments, the focused test is GREEN: `2 passed`, exit `0`.
+
+### 918. 2026-09-04: A2-A5 read-only audit primitives implemented
+
+- Added runtime feature-loss decomposition (`audit_feature_loss_runtime.py`), same-student-parameter per-loss gradient receipts (`audit_per_loss_gradient_conflict.py`), official-label boundary/alignment helpers (`audit_teacher_label_alignment.py`), and in-memory AdamW virtual replay (`audit_optimizer_virtual_replay.py`).
+- Added focused tests first for each primitive; after correcting numerical identity tolerance, all five focused files are GREEN: `10 passed`, exit `0`. No optimizer step, checkpoint, data-cache mutation, test evaluation, or Full training was performed by these audits.
+- C0 last@800 eval-only validation completed on 5090 with diagnostic override; observed AP `0.7213457391547435`, AUROC `0.6199481022928106`, predicted-positive rate `1.0`, `5798` samples / `57980` segments. C1 last@800 eval-only export remains running; both runs are read-only and retain official T=10 validation semantics.
+
+### 919. 2026-09-04: locked 5090 focused audit suite passed
+
+- Deployed the A2–A5 audit scripts/tests to the isolated 5090 source tree and ran the locked Python 3.11 venv suite. Result: `10 passed in 6.06s`, exit `0`. The suite covers exact decomposition identity, no-mutation gradient receipts, intrinsic-conflict thresholding, boundary derivation, and AdamW replay equivalence.
+- C1 last@800 eval-only then completed with AP `0.7323133188001373`, AUROC `0.6242927240753511`, predicted-positive rate `1.0`; A1 report and summary were generated locally from the fetched validation NPZ. No formal test evaluation or Full run was started.
+
+### 920. 2026-09-04: Phase-A runtime receipts completed
+
+- A2 ran one identical four-sample/40-row train batch at initialization, C0 best/last, and C1 best/last. Normalized mean/centered feature losses were `167.6225/8.8858` at initialization, `74.2526/8.0477` at C0 best, `74.8982/8.0479` at C0 last, `33.8047/8.0479` at C1 best, and `33.1166/8.0476` at C1 last; decomposition residual stayed within float32 round-off. Reports and compact receipts were fetched.
+- A3 same-student-parameter cosines were measured for all four states. BCE–visual medians were `0.06695/0.34935/0.26606/0.29290` (C0 best/last, C1 best/last); text–visual medians were `0.00699/-0.09302/-0.08586/-0.10826`. Every state classified `GRADIENT_CONFLICT_NOT_YET_IDENTIFIED` under the preregistered `< -0.2` median rule.
+- A4 loaded the official validation manifest and all `1,967` mixed-label samples at T=10. C0 centered-static-plus-query AP gain was `+0.078356`; C1 gain was `+0.015217`; onset/offset AUROC stayed low and the manifest supplied no raw-video hash, which was reported as unavailable rather than guessed. A4 therefore does not block a clipping-scope control by itself.
+- A5 virtual AdamW replay on C1 best measured all-group norm `104.552886` / clip coefficient `0.00956454` versus positive-LR-only norm `42.956841` / coefficient `0.02327918`; student delta cosines remained high (`0.8999` visual encoder, `0.9114` decision projection, `0.9219` temporal encoder). This directly observes global clipping coupling.
+- Reports created: `FEATURE_LOSS_RUNTIME_DECOMPOSITION.md`, `PER_LOSS_GRADIENT_CONFLICT_AUDIT.md`, `TEACHER_LABEL_ALIGNMENT_AUDIT.md`, and `OPTIMIZER_VIRTUAL_REPLAY_AUDIT.md`. Formal Full, second seed, 3,200-step extension, and test evaluation remain blocked.
+
+### 921. 2026-09-04: positive-LR clipping scope and C2 launch
+
+- Added `resolve_clipping_scope_parameters`, explicit `training.gradient_clipping.scope`, and `clip_parameters` support while preserving all-group receipts. Focused clipping tests passed (`4 passed`, exit `0`); unknown scopes fail closed.
+- Added the ten-step equivalence checker and ran it in the locked 5090 environment against C1 best: `pass=true`, all target/loss/pre-clip/post-clip student differences `0.0`, student parameter hashes equal for all ten steps, and only projector receipts differed. Equivalence output is under remote `diagnostic/phase_a/C2_equivalence/static_clip_equivalence.json`.
+- The first detached C2 launch attempt exposed a working-directory materialization error (`No module named scripts.materialize_static_control`) and exited before producing artifacts; this was recorded and corrected by setting the remote repo location. The corrected launch materialized `C2_static_positive_lr_clip_800` and started one hidden PID `5328` with stdout/stderr receipts under `diagnostic/phase_a/c2_worker`.
+- C2 is exactly the conditional 800-applied-step validation-only control; no test evaluation, second seed, 3,200-step extension, or Full run is enabled.
+
 ### 913. 2026-09-04: pre-commit verification snapshot
 
 - Fresh local checks passed: `compileall=0`, Ruff (`E402` ignored for project import layout) `0`, `git diff --check=0`, and JSON/geometry assertions `0`.
@@ -4150,3 +4186,170 @@
 - Committed the verified C0/C1 control evidence and code as `5fcc7634823f321936a5fb23a9cf5c2fd14eb092` (`49 files changed, 9636 insertions, 24 deletions`) and pushed it to `origin/repro/student-shortcut-recovery`.
 - The branch is clean after commit. The review URL is `https://github.com/rayyyyyyyyb/mm1/tree/repro/student-shortcut-recovery`.
 - Final scientific state remains `BLOCKED_BY_GRADIENT_CONFLICT`; the locked 5090 focused suite is `32 passed`, exit `0`, while local compile/Ruff/diff/JSON checks are all exit `0`. Official data, archival, evaluator, preprocessing, teacher locks and teacher-cache SHA256 are preserved in the machine-readable summary.
+
+### 922. 2026-09-04: C2 foreground training status
+
+- The corrected C2 launch is running in the foreground SSH PTY on the 5090 with the resolved positive-LR-only clipping config. The process is live, CUDA is selected, and the first epoch has reached approximately batch `108/3296` (about 108 optimizer attempts); no interruption or exception has been observed.
+- The run remains validation-only with `max_optimizer_steps=800`; no test evaluation, second seed, 3,200-step extension, or Full training was started. Checkpoint and receipt artifacts will be audited after the 800-applied-step guard completes.
+
+### 923. 2026-09-04: independent local focused regression
+
+- Ran the complete new audit/control test set locally: `python -m pytest -q tests/test_static_target_fixed_budget.py tests/test_feature_loss_runtime.py tests/test_per_loss_gradient_conflict.py tests/test_teacher_label_alignment.py tests/test_optimizer_virtual_replay.py tests/test_positive_lr_clip_scope.py tests/test_static_clip_equivalence.py`.
+- Result: `14 passed in 7.60s`, exit `0`. This check was read-only with respect to datasets and checkpoints; the remote C2 PTY continued running independently.
+
+### 924. 2026-09-04: independent lint cleanup and rerun
+
+- A changed-file Ruff audit initially exposed four unused imports introduced in the new audit/equivalence files; these were removed without changing runtime behavior.
+- Re-ran Ruff on every changed source/test file (`--ignore E402`): `All checks passed`, exit `0`; re-ran the same focused tests: `14 passed in 6.27s`, exit `0`; compile and diff checks remain clean. Existing unrelated repository-wide lint findings were not modified.
+
+### 925. 2026-09-04: C2 first validation boundary reached
+
+- Remote receipt audit reports exactly `400` optimizer receipt rows, confirming the first bounded epoch reached its configured batch cap without an observed exception. The process has entered validation; no checkpoint or final history file was present yet at this boundary.
+- The foreground SSH PTY remains live. C2 still has the exact `800`-applied-step validation-only limit and all formal/test runs remain disabled.
+
+### 926. 2026-09-04: C2 validation monitoring
+
+- A subsequent remote check still showed `400` receipt rows and no terminal checkpoint/history artifacts, while `nvidia-smi` reported `28%` GPU utilization and `8216 MiB` memory in use. This is consistent with the first full validation pass still running, not a stopped process.
+
+### 927. 2026-09-04: C2 process liveness rechecked
+
+- Remote process inspection found the training Python process (PID `22556`) still alive from `22:36:21` with substantial CPU time and resident memory, while the CUDA helper process remained present. The validation pass is therefore slow but live; no restart or duplicate run was issued.
+
+### 928. 2026-09-04: C2 long validation remains responsive
+
+- At the next liveness check the same PID reported `Responding=True`, with CPU time increasing to about `29430 s`; GPU memory remained allocated. Receipt count stayed at `400` and no checkpoint had appeared, so the run is still in the first validation pass rather than silently stopped.
+
+### 929. 2026-09-04: C2 epoch-1 validation completed
+
+- The first validation completed at `22:58:50`. Because five AMP-overflow attempts were skipped, epoch 1 ended at `global_step=395` from 400 receipt rows; this matches the established C0/C1 overflow pattern and is not counted as an applied update.
+- Validation metrics were AP `0.7272114138765534`, AUROC `0.6197519904543515`, predicted-positive rate `0.9917730251810969`, OV-AVEBench segment F1@0.5 `0.5338076748868023`, and event F1@0.5 `0.5718926066459699` on `5798` samples / `57980` segments. A new best checkpoint was written, and epoch 2 began normally.
+
+### 930. 2026-09-04: C2 epoch-1 artifact audit
+
+- Remote output now contains `best.pt`, `last.pt`, `best_validation_predictions.npz`, and one `history.jsonl` record. The recorded epoch elapsed time is `1268.512667300005 s`; the receipt count remains `400` and the resolved run metadata is intact.
+- The stored validation AP/AUROC exactly match the PTY receipt (`0.7272114138765534` / `0.6197519904543515`); this check did not alter the run or copy large artifacts locally.
+
+### 931. 2026-09-04: epoch-1 metric transcription corrected
+
+- An earlier ledger line transcribed the PTY's wrapped AUROC digits incorrectly as `0.661975...`; independent reading of `history.jsonl` and the evaluator output confirms the exact value is `0.6197519904543515`. Both ledgers were corrected byte-for-byte; no experiment state changed.
+
+### 932. 2026-09-04: C2 second training boundary reached
+
+- Remote receipt count reached exactly `800` attempted updates after epoch 2's 400-batch cap; `history.jsonl` still has one completed epoch, so the process is now in the second full validation before the final five-or-more attempts needed to reach `800` applied steps. No run duplication or interruption was issued.
+
+### 933. 2026-09-04: C2 second validation liveness
+
+- A follow-up check still showed `800` receipts and one completed history row, with PID `22556` responsive and CPU time continuing to increase. The second validation remains active; no forced termination or resume was attempted.
+
+### 934. 2026-09-04: C2 validation process remains active
+
+- The remote PID `22556` remains responsive and its CPU time increased substantially; `history.jsonl` has not yet received the epoch-2 row. The second validation is slow because it scans the full official validation split with `num_workers=0`, but it is progressing rather than hung.
+
+### 935. 2026-09-04: C2 epoch-2 validation completed
+
+- Epoch 2 finished at `global_step=795` after the 800th receipt attempt and produced a new best checkpoint. Validation AP was `0.7336090805290894`, AUROC `0.63488366790117872`, predicted-positive rate `1.0`, segment F1@0.5 `0.5377574807678815`, and event F1@0.5 `0.5770955501897206` on `5798`/`57980`.
+- Epoch 3 began and is limited to the remaining five applied updates needed to reach the exact 800-step guard; the final validation/export remains pending.
+
+### 936. 2026-09-04: C2 800-applied-step boundary reached
+
+- Remote receipts now contain `805` attempts and `history.jsonl` contains two completed epoch rows, consistent with `800` applied updates and five AMP-overflow skips. The third/final validation and compact artifact export are still running; the process has not been restarted.
+
+### 937. 2026-09-04: C2 final export liveness
+
+- During the post-boundary validation/export, both remote Python processes remain responsive and the main process CPU time continues to increase. The output directory still has the two history rows and 805 receipts but not yet the terminal optimizer summary; no interruption or duplicate run was initiated.
+
+### 938. 2026-09-04: C2 800-step training and summary completed
+
+- The third epoch reached `global_step=800`; remote `optimizer_step_summary.json` now records exactly `attempted_steps=805`, `applied_steps=800`, and `overflow_or_skipped_steps=5`. The 800-step validation (last checkpoint) is AP `0.7291997990871013`, AUROC `0.6266441093793944`, predicted-positive rate `1.0`, segment F1@0.5 `0.5377574807678815`, event F1@0.5 `0.5770955501897206`, on `5798`/`57980`.
+- Epoch-2 remains the C2 best by validation AP (`0.7336090805290894`); the process is completing its final best-checkpoint export before exit. No test evaluation or further optimizer step is allowed.
+
+### 939. 2026-09-04: non-mutating status probe quoting correction
+
+- One remote status probe used an unescaped PowerShell `$_` inside the local shell and emitted a `Where-Object` quoting error; it did not touch the run or output files. The main process remained responsive in the preceding check, and subsequent probes use encoded commands without that filter.
+
+### 940. 2026-09-04: final best export still active
+
+- The C2 main process remains `Responding=True`; CPU time increased from the prior check while terminal `final_metrics.json`/evaluation artifacts are still absent. This is continued final best-checkpoint prediction export, not additional training.
+
+### 941. 2026-09-04: C2 process exited and compact artifacts fetched
+
+- The foreground SSH PTY exited normally after writing `final_metrics.json`. Remote output contains `history.jsonl` (3 rows), `optimizer_receipts.jsonl` (805 rows), `optimizer_step_summary.json`, both checkpoints, validation prediction NPZs, and runtime metadata. Only compact metrics, receipts, config, lock metadata, diagnostics, and one validation NPZ were copied to `tmp/c2`; the two ~562 MB checkpoints remain solely on 5090 and are not staged.
+
+### 942. 2026-09-04: C2 A1 last-archive fetch correction
+
+- The first attempt to summarize `tmp/c2/validation_predictions.npz` failed with `FileNotFoundError` because only `best_validation_predictions.npz` had been copied. The missing validation NPZ was then fetched from the completed remote run; the failed command was read-only and did not affect training artifacts.
+
+### 943. 2026-09-04: C2 fixed-budget concordance audit
+
+- A1 on the C2 best archive (and the final validation archive, which is the best checkpoint re-export) passed official T=10 validation: `5798` samples / `57980` segments, `1967` mixed samples, `36329` mixed pairs, pair-weighted concordance `0.5093313881472102`, video-macro concordance `0.5087684896022466`, sample-offset lock `b0bc0652d2391cb06c8c96305bd2d1e212ecc75a2fee6e3b825678e6a83b44b9`. Temporal shuffle drops were AP `+0.00014010556799237683` and AUROC `-0.00027319618381216326`, i.e. no meaningful temporal signal recovery.
+
+### 944. 2026-09-04: C2 runtime-gradient and clipping receipt audit
+
+- C2 best A2 runtime decomposition on the fixed 4-sample/40-row batch was normalized mean `34.15927734375`, centered `8.037702178955078`, total `42.19697875976563`, with identity residual `3.05e-05`; strong-projector gradients remain nonzero in the static mode.
+- C2 best A3 same-student gradient cosines classified `GRADIENT_CONFLICT_NOT_YET_IDENTIFIED`: BCE-versus-visual median `0.013278636150062084`, text-versus-visual median `-0.08586530014872551`; no preregistered intrinsic conflict threshold was met.
+- Independent parsing of all `805` C2 receipts confirmed `800` applied / `5` overflow, scope exclusively `optimizer_groups_with_positive_lr`, `607` clipped parameters, all applied rows clipped, positive-scope norm mean `49.78200641411791`, and positive-scope coefficient mean `0.020991220771963248`. Reconstructed all-group norm mean was `114.36045814250971`; the excluded static strong projector still represented `0.8136400323403845` of all-gradient square mass, showing clipping coupling persisted in receipts while the student received the larger positive-scope coefficient.
+
+### 945. 2026-09-04: C2 post-run geometry audit started
+
+- C2 finished normally with best AP `0.7336090805290894` and last-at-800 AP `0.7291997990871013`; no test data were evaluated. A read-only `diagnose_raw_teacher_geometry` run was started on 5090 for C2 best/last using official validation T=10 predictions, with no optimizer construction or checkpoint writes.
+
+### 946. 2026-09-04: C2 geometry audit liveness
+
+- The geometry audit spawned the expected main Python process plus one helper process; both remain responsive and CPU time increases. Its output JSON is not yet written, so no geometry gate has been inferred prematurely.
+
+### 947. 2026-09-04: C2 geometry audit continues
+
+- The geometry process remains responsive with CPU time increasing and no exception output; its JSON is still pending. Memory allocation reflects the loaded CUDA model and worker-backed official validation scan; no files outside the designated diagnostic output are being modified.
+
+### 948. 2026-09-05: C2 geometry audit overnight continuation
+
+- After midnight local time, the same read-only geometry process remains responsive with CPU time increasing; no output JSON or exception has appeared. This is an overnight continuation of the single authorized audit, with no training or test evaluation added.
+
+### 949. 2026-09-05: geometry audit resource status
+
+- The read-only geometry audit continues with approximately `21.7 GB` CUDA memory allocated and no new training process. It is processing the mixed validation states and subsequent train-split raw/projected probes; the output JSON remains pending and no scientific gate is inferred before completion.
+
+### 950. 2026-09-05: C2 geometry audit completed
+
+- The read-only geometry audit exited normally with status `PASS`; its source JSON SHA256 is `f340552259f2533415e6fb11c8b4a78de6adea5ac59eaddd5ad9fa73ba2ec2b9`. It covered the official validation mixed subset (`1967` samples / `19670` segments), both C2 best/last checkpoints, projector hash checks, and train-split raw/projected probes without optimizer steps or state mutation.
+- C2 best geometry is projected-target temporal std `0.16820588860646918`, decision temporal std `0.001476752159028226`, projected-to-decision correlation `0.3539093182416516`, and decision centered/total L2 ratio `0.0039245120277748525`; projector hash unchanged. Thus the decision-variation and centered-ratio gates fail while the target-variation and correlation gates pass.
+
+### 951. 2026-09-05: final C2 report and compact receipts written
+
+- Added `STATIC_TARGET_COUPLING_FINAL.md`, `C2_GEOMETRY_SUMMARY.json`, and `C2_RUNTIME_RECEIPT_SUMMARY.json`; updated `projector_collapse_summary.json` and README. The evidence-based final classification is `STATIC_TARGET_NOT_SUFFICIENT`; `BLOCKED_BY_GRADIENT_CONFLICT` is removed from the active summary because A3 found no intrinsic conflict.
+
+### 952. 2026-09-05: non-mutating receipt-parser check corrected
+
+- One exploratory PowerShell/Python receipt-parser command printed one line per applied receipt because of an indentation mistake. It did not modify any file, checkpoint, or runtime state. The parser was immediately rerun with the corrected aggregation and the compact C2 receipt summary was verified; no scientific result changed.
+
+### 953. 2026-09-05: focused local verification
+
+- Ran the seven focused audit/control test modules covering fixed-budget comparison, runtime feature-loss decomposition, per-loss gradients, teacher alignment, optimizer replay, positive-LR clipping scope, and static-clip equivalence. Result: `14 passed in 14.86s`, process exit code `0`.
+
+### 954. 2026-09-05: syntax, diff, and changed-file lint verification
+
+- `python -m compileall -q scripts src tests` exited `0`; `git diff --check` exited `0`; Ruff over all changed Python files (with the repository's pre-existing `E402` import-order findings ignored) exited `0`.
+
+### 955. 2026-09-05: locked 5090 regression verification
+
+- The first remote test invocation used the WindowsApps `python` alias and exited `1` (`Python was not found`); no experiment or file was changed. Rerunning with the locked interpreter `E:\\OV-OrthKD-R0\\env\\.venv\\Scripts\\python.exe` passed the positive-LR clipping and static-equivalence tests: `4 passed in 2.68s`, exit code `0`.
+
+### 956. 2026-09-05: complete focused suite on locked 5090
+
+- Reran all seven focused audit/control modules on 5090 with the locked Python 3.11 venv. Result: `14 passed in 6.06s`, exit code `0`.
+
+### 957. 2026-09-05: implementation plan closed
+
+- Updated the static-target coupling plan checklist: A1–A5 audits, C2 equivalence/control, evidence-based naming, guard preservation, and verification/commit scope are all complete. The scientific handoff remains `STATIC_TARGET_NOT_SUFFICIENT`; this does not authorize Full training.
+
+### 958. 2026-09-05: staged-report whitespace correction
+
+- Independent staged diff checking found two intentional Markdown line-break spaces in the new C2 report. They were removed; no content or numeric evidence changed.
+
+### 959. 2026-09-05: pre-commit artifact-scope audit
+
+- Staged only source changes, the C2 config, compact JSON/report evidence, tests, plan, README, and this ledger. No `tmp/` paths, datasets, caches, checkpoints, prediction arrays, archives, or progress logs are staged; the staged-file size scan found no file above 20 MB.
+
+### 960. 2026-09-05: final pre-commit verification
+
+- After staging, the focused suite again passed (`14 passed in 7.05s`, pytest exit `0`); compileall exit `0`; changed-file Ruff exit `0`; staged `git diff --check` exit `0`; and all three compact JSON files parsed with final state `STATIC_TARGET_NOT_SUFFICIENT` (JSON exit `0`).

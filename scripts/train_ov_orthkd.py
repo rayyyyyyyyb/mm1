@@ -74,6 +74,7 @@ from src.utils.projector_update_modes import (
 from src.utils.optimizer_receipts import (
     OptimizerStepTracker,
     clip_gradients_with_receipt,
+    resolve_clipping_scope_parameters,
 )
 from src.models import OVOrthKDStudent
 from src.utils.atomic_artifacts import canonical_tree_hash
@@ -1659,6 +1660,13 @@ def main() -> None:
         best_metric = float("-inf")
 
     grad_clip = float(train_cfg.get("grad_clip", 1.0))
+    clip_parameters = resolve_clipping_scope_parameters(parameters, optimizer_groups, config)
+    clipping_cfg = train_cfg.get("gradient_clipping", {})
+    clipping_scope = (
+        str(clipping_cfg.get("scope", "all_parameters"))
+        if isinstance(clipping_cfg, Mapping)
+        else "all_parameters"
+    )
     early_stop_patience, early_stop_min_delta = resolve_early_stopping(
         train_cfg,
         args.early_stop_patience,
@@ -1755,7 +1763,12 @@ def main() -> None:
                 group_norms,
                 group_contributions,
                 clipped,
-            ) = clip_gradients_with_receipt(parameters, optimizer_groups, grad_clip)
+            ) = clip_gradients_with_receipt(
+                parameters,
+                optimizer_groups,
+                grad_clip,
+                clip_parameters=clip_parameters,
+            )
             amp_scale_before = float(scaler.get_scale()) if hasattr(scaler, "get_scale") else None
             attempted_step = optimizer_step_tracker.record_attempt()
             applied_before = optimizer_step_tracker.applied_steps
@@ -1775,6 +1788,8 @@ def main() -> None:
                 "amp_scale_after": amp_scale_after,
                 "group_norms": group_norms,
                 "group_contributions": group_contributions,
+                "clipping_scope": clipping_scope,
+                "clipping_parameter_count": len(clip_parameters),
             }
             with optimizer_receipt_path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(receipt, ensure_ascii=False) + "\n")

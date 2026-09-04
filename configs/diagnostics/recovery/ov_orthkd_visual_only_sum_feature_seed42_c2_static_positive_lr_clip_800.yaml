@@ -1,0 +1,16 @@
+# Conditional C2: identical to C1, but global gradient clipping excludes
+# optimizer groups whose learning rate is exactly zero.  This is authorized
+# only after the read-only A4 and ten-step equivalence gates pass.
+base_config: configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_no_workers.yaml
+control:
+  name: C2_static_positive_lr_clip_800
+  applied_optimizer_steps: 800
+  evaluate_test: false
+overrides:
+  loss:
+    strong_teacher_projector_update_mode: static_zero_lr_keep_grad
+    weak_teacher_projector_update_mode: trainable
+    text_teacher_projector_update_mode: trainable
+  training:
+    gradient_clipping:
+      scope: optimizer_groups_with_positive_lr

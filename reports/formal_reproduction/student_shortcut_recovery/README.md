@@ -15,10 +15,16 @@ The official `T_task=10` metric timeline is preserved; `T_max=16` is positional 
 The preregistered C0/C1 800-applied-step control is documented in
 [STATIC_TARGET_800STEP_RESULTS.md](STATIC_TARGET_800STEP_RESULTS.md), with
 machine-readable evidence in
-[projector_collapse_summary.json](projector_collapse_summary.json). C1 keeps the
-strong projected teacher target static with gradient flow. The target remains
-temporally varying, but student decision variation and mixed-label concordance
-fail the gates; the final state is **BLOCKED_BY_GRADIENT_CONFLICT**. Full,
-second-seed, schedule extension, and test evaluation remain blocked.
+[projector_collapse_summary.json](projector_collapse_summary.json). C1 kept the
+strong projected teacher target static with gradient flow, while C2 additionally
+excluded the zero-learning-rate projector from global clipping. The ten-step C2
+equivalence passed, and the 800-applied-step validation run completed with
+exact receipts. C2 still failed the student temporal-geometry and mixed-label
+concordance gates; the evidence-based final state is
+**STATIC_TARGET_NOT_SUFFICIENT** (not an intrinsic gradient-conflict claim).
+Full, second-seed, schedule extension, and test evaluation remain blocked.
+
+The complete C2 result is in
+[STATIC_TARGET_COUPLING_FINAL.md](STATIC_TARGET_COUPLING_FINAL.md).
 
 Git contains source, configuration, runtime controls and compact review evidence only. Datasets, caches, checkpoints, prediction arrays, archives, bundles and progress logs remain on the 5090.

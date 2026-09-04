@@ -9,6 +9,31 @@ import torch
 from torch import nn
 
 
+def resolve_clipping_scope_parameters(
+    parameters: list[nn.Parameter],
+    groups: list[dict[str, Any]],
+    config: dict[str, Any] | None,
+) -> list[nn.Parameter]:
+    """Resolve explicit clipping scope and fail closed on unknown values."""
+
+    training_cfg = config.get("training", {}) if isinstance(config, dict) else {}
+    clipping_cfg = training_cfg.get("gradient_clipping", {}) if isinstance(training_cfg, dict) else {}
+    scope = str(clipping_cfg.get("scope", "all_parameters")) if isinstance(clipping_cfg, dict) else "all_parameters"
+    if scope == "all_parameters":
+        return parameters
+    if scope != "optimizer_groups_with_positive_lr":
+        raise ValueError(f"unsupported gradient clipping scope: {scope}")
+    selected = [
+        parameter
+        for group in groups
+        if float(group.get("lr", 0.0)) > 0.0
+        for parameter in group["params"]
+    ]
+    if not selected:
+        raise ValueError("positive-LR clipping scope selected no parameters")
+    return selected
+
+
 def _norm(parameters: Iterable[nn.Parameter]) -> float:
     squared = 0.0
     for parameter in parameters:
@@ -66,11 +91,20 @@ def clip_gradients_with_receipt(
     parameters: list[nn.Parameter],
     groups: list[dict[str, Any]],
     max_norm: float,
+    clip_parameters: list[nn.Parameter] | None = None,
 ) -> tuple[float, float, dict[str, float], dict[str, float], bool]:
-    """Clip once globally and return pre-norm, coefficient, and group shares."""
+    """Clip once and return pre-norm, coefficient, and all-group shares.
+
+    ``clip_parameters`` is an explicit scope override.  Group receipts still
+    include every supplied group so a zero-LR projector remains auditable even
+    when it is excluded from the clipping norm.
+    """
     if max_norm <= 0:
         raise ValueError("max_norm must be positive")
-    pre_norm = _norm(parameters)
+    active_parameters = parameters if clip_parameters is None else clip_parameters
+    if not active_parameters:
+        raise ValueError("clip_parameters must not be empty")
+    pre_norm = _norm(active_parameters)
     coefficient = min(1.0, max_norm / max(pre_norm, 1e-12))
     group_norms = {
         str(group["group_name"]): _norm(group["params"])
@@ -81,5 +115,5 @@ def clip_gradients_with_receipt(
         name: float(value * value / denominator)
         for name, value in group_norms.items()
     }
-    torch.nn.utils.clip_grad_norm_(parameters, max_norm)
+    torch.nn.utils.clip_grad_norm_(active_parameters, max_norm)
     return pre_norm, coefficient, group_norms, group_contributions, pre_norm > max_norm
