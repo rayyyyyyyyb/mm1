@@ -1,0 +1,70 @@
+{
+  "validation": {
+    "threshold": 0.5,
+    "metrics": {
+      "total": {
+        "threshold": 0.5,
+        "ap": 0.7417794173236361,
+        "auroc": 0.6437222373802154,
+        "binary_micro_f1_at_0_5": 0.7618651035160212,
+        "query_fg_f1_macro_at_0_5": 0.656577396858288,
+        "ovavel_segment_f1_at_0_5": 0.5377574807678815,
+        "ovavel_event_f1_at_0_5": 0.5770955501897206,
+        "binary_micro_f1_at_threshold": 0.7618651035160212,
+        "query_fg_f1_macro_at_threshold": 0.656577396858288,
+        "ovavel_segment_f1_at_threshold": 0.5377574807678815,
+        "ovavel_event_f1_at_threshold": 0.5770955501897206,
+        "accuracy": 0.6153328734046223,
+        "binary_precision_at_threshold": 0.6153328734046223,
+        "binary_recall_at_threshold": 1.0,
+        "auroc_available": true,
+        "positive_rate": 0.6153328734046223,
+        "predicted_positive_rate": 1.0,
+        "sample_count": 5798,
+        "segment_count": 57980
+      },
+      "seen": {
+        "threshold": 0.5,
+        "ap": 0.7625658867086819,
+        "auroc": 0.6933307426337428,
+        "binary_micro_f1_at_0_5": 0.7513235516563304,
+        "query_fg_f1_macro_at_0_5": 0.6403840816547816,
+        "ovavel_segment_f1_at_0_5": 0.5324876192647016,
+        "ovavel_event_f1_at_0_5": 0.5676357762971936,
+        "binary_micro_f1_at_threshold": 0.7513235516563304,
+        "query_fg_f1_macro_at_threshold": 0.6403840816547816,
+        "ovavel_segment_f1_at_threshold": 0.5324876192647016,
+        "ovavel_event_f1_at_threshold": 0.5676357762971936,
+        "accuracy": 0.6016959418534221,
+        "binary_precision_at_threshold": 0.6016959418534221,
+        "binary_recall_at_threshold": 1.0,
+        "auroc_available": true,
+        "positive_rate": 0.6016959418534221,
+        "predicted_positive_rate": 1.0,
+        "sample_count": 1651,
+        "segment_count": 16510
+      },
+      "unseen": {
+        "threshold": 0.5,
+        "ap": 0.7276861754546387,
+        "auroc": 0.6220534378535704,
+        "binary_micro_f1_at_0_5": 0.7660125273384613,
+        "query_fg_f1_macro_at_0_5": 0.6630242652935399,
+        "ovavel_segment_f1_at_0_5": 0.5398555134039437,
+        "ovavel_event_f1_at_0_5": 0.5808616670685636,
+        "binary_micro_f1_at_threshold": 0.7660125273384613,
+        "query_fg_f1_macro_at_threshold": 0.6630242652935399,
+        "ovavel_segment_f1_at_threshold": 0.5398555134039437,
+        "ovavel_event_f1_at_threshold": 0.5808616670685636,
+        "accuracy": 0.6207619966240656,
+        "binary_precision_at_threshold": 0.6207619966240656,
+        "binary_recall_at_threshold": 1.0,
+        "auroc_available": true,
+        "positive_rate": 0.6207619966240656,
+        "predicted_positive_rate": 1.0,
+        "sample_count": 4147,
+        "segment_count": 41470
+      }
+    }
+  }
+}

@@ -482,19 +482,19 @@ def _state_report(
 
 
 def _mixed_ids_and_loader(
-    test_loader: DataLoader, test_predictions: Mapping[str, np.ndarray]
+    evaluation_loader: DataLoader, evaluation_predictions: Mapping[str, np.ndarray]
 ) -> tuple[list[str], DataLoader]:
-    mixed_archive_indices = select_mixed_sample_indices(test_predictions)
-    archive_ids = [str(value) for value in np.asarray(test_predictions["ids"]).tolist()]
-    records = getattr(test_loader.dataset, "records", None)
+    mixed_archive_indices = select_mixed_sample_indices(evaluation_predictions)
+    archive_ids = [str(value) for value in np.asarray(evaluation_predictions["ids"]).tolist()]
+    records = getattr(evaluation_loader.dataset, "records", None)
     if not isinstance(records, list) or len(records) != len(archive_ids):
-        raise ValueError("test dataset records do not match prediction archive")
+        raise ValueError("evaluation dataset records do not match prediction archive")
     dataset_ids = [str(record.get("id", index)) for index, record in enumerate(records)]
     if set(dataset_ids) != set(archive_ids) or len(set(dataset_ids)) != len(dataset_ids):
-        raise ValueError("test dataset IDs and prediction IDs differ")
+        raise ValueError("evaluation dataset IDs and prediction IDs differ")
     index_by_id = {value: index for index, value in enumerate(dataset_ids)}
     mixed_ids = [archive_ids[index] for index in mixed_archive_indices]
-    return mixed_ids, _make_mixed_loader(test_loader, [index_by_id[value] for value in mixed_ids])
+    return mixed_ids, _make_mixed_loader(evaluation_loader, [index_by_id[value] for value in mixed_ids])
 
 
 def build_raw_teacher_report(
@@ -509,6 +509,7 @@ def build_raw_teacher_report(
     probe_seed: int,
     step400_checkpoint_path: Path | None = None,
     teacher_cache_lock_path: Path | None = None,
+    evaluation_split: str = "test",
 ) -> dict[str, Any]:
     if int(workers) < 1:
         raise ValueError("workers must be at least one")
@@ -524,10 +525,13 @@ def build_raw_teacher_report(
     student, loss_module = build_model_and_loss(config, device)
     initial_student_hash = _state_dict_sha256(student)
     initial_loss_hash = _state_dict_sha256(loss_module)
-    train_loader, _validation_loader, test_loader = create_ov_avel_data_loaders(config)
-    del train_loader, _validation_loader
-    saved_test = load_prediction_npz(test_predictions_path)
-    mixed_ids, mixed_loader = _mixed_ids_and_loader(test_loader, saved_test)
+    if evaluation_split not in {"validation", "test"}:
+        raise ValueError("evaluation_split must be 'validation' or 'test'")
+    train_loader, validation_loader, test_loader = create_ov_avel_data_loaders(config)
+    del train_loader
+    evaluation_loader = validation_loader if evaluation_split == "validation" else test_loader
+    evaluation_predictions = load_prediction_npz(test_predictions_path)
+    mixed_ids, mixed_loader = _mixed_ids_and_loader(evaluation_loader, evaluation_predictions)
 
     states: dict[str, dict[str, Any]] = {}
     initial_raw, initial_decision, initial_mask, initial_labels = _collect_state_geometry(
@@ -656,6 +660,7 @@ def build_raw_teacher_report(
         "protocol": {
             "task_segments": TASK_SEGMENTS,
             "temporal_conversion": "forbidden",
+            "evaluation_split": evaluation_split,
             "mixed_label_subset": "0 < positive labels < 10",
             "mixed_sample_count": len(mixed_ids),
             "mixed_segment_count": int(initial_mask.sum()),
@@ -705,6 +710,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--test-predictions", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--teacher-cache-lock", type=Path, default=None)
+    parser.add_argument("--evaluation-split", choices=("validation", "test"), default="test")
     parser.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
     parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--probe-seed", type=int, default=42)
@@ -727,6 +733,7 @@ def main() -> None:
         workers=args.workers,
         probe_seed=args.probe_seed,
         teacher_cache_lock_path=args.teacher_cache_lock,
+        evaluation_split=args.evaluation_split,
     )
 
 

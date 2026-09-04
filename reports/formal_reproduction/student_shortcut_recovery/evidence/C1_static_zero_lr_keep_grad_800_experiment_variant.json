@@ -1,0 +1,7 @@
+{
+  "variant": "C1_static_zero_lr_keep_grad_800",
+  "declared_claim_level": "noncanonical_diagnostic",
+  "effective_claim_level": "noncanonical_diagnostic",
+  "git_dirty": false,
+  "diagnostic_override": true
+}

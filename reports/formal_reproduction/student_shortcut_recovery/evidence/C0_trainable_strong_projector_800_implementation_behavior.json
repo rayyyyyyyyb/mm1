@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "student": {
+    "class": "OVOrthKDStudent",
+    "path_mode": "explicit_projected",
+    "fusion_mode": "concat_mlp_query_conditioned",
+    "temporal_path_mode": "transformer",
+    "gate_mode": "learned_softmax",
+    "query_anchor_mode": "independent_loss_projection",
+    "fusion_dim": 384,
+    "projection_dim": 256,
+    "modality_gate_present": true,
+    "token_fusion_present": true
+  },
+  "loss": {
+    "class": "OVOrthKDLoss",
+    "visual_l2_reduction": "sum_feature_then_masked_mean_segments",
+    "query_anchor_mode": "independent_loss_projection",
+    "teacher_target_projector_trainable": true,
+    "projector_update_modes": {
+      "strong_teacher": "trainable",
+      "weak_teacher": "trainable",
+      "text_teacher": "trainable"
+    },
+    "target_projectors": {
+      "strong_teacher_proj": {
+        "present": true,
+        "parameters": 197632,
+        "trainable_parameters": 197632
+      },
+      "weak_teacher_proj": {
+        "present": true,
+        "parameters": 263168,
+        "trainable_parameters": 263168
+      },
+      "text_teacher_proj": {
+        "present": true,
+        "parameters": 328704,
+        "trainable_parameters": 328704
+      }
+    }
+  },
+  "parameters": {
+    "student": {
+      "parameters": 46278129,
+      "trainable_parameters": 46278129
+    },
+    "loss": {
+      "parameters": 789504,
+      "trainable_parameters": 789504
+    }
+  }
+}

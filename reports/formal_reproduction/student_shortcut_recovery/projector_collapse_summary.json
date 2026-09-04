@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "final_state": "BLOCKED_BY_GRADIENT_CONFLICT",
+  "authorization": {
+    "formal_full_training": false,
+    "additional_schedule_extension": false,
+    "test_evaluation": false,
+    "student_training_beyond_800_applied_steps": false,
+    "canonical_cache_overwrite": false
+  },
+  "protocol": {
+    "task_segments": 10,
+    "model_capacity_max_position_segments": 16,
+    "seed": 42,
+    "controls": [
+      "C0_trainable_strong_projector_800",
+      "C1_static_zero_lr_keep_grad_800"
+    ],
+    "applied_optimizer_steps": 800
+  },
+  "validation": {
+    "c0": {
+      "ap": 0.7417794173236361,
+      "auroc": 0.6437222373802154,
+      "predicted_positive_rate": 1.0,
+      "samples": 5798,
+      "segments": 57980,
+      "mixed_videos": 1967,
+      "mixed_pairs": 36329,
+      "mixed_pair_weighted_concordance": 0.6098020864873792
+    },
+    "c1_best": {
+      "global_step": 795,
+      "ap": 0.7366111004912851,
+      "auroc": 0.6349032370425133,
+      "predicted_positive_rate": 1.0,
+      "samples": 5798,
+      "segments": 57980,
+      "mixed_videos": 1967,
+      "mixed_pairs": 36329,
+      "mixed_pair_weighted_concordance": 0.5588235294117647
+    },
+    "c1_minus_c0": {
+      "ap": -0.005168316832350972,
+      "mixed_pair_weighted_concordance": -0.0509785575856145
+    }
+  },
+  "geometry_gates_at_c1_best": {
+    "strong_projector_hash_unchanged": true,
+    "projected_target_temporal_std": 0.16820588860646918,
+    "decision_temporal_std": 0.00139092326338174,
+    "projected_to_decision_distance_correlation": 0.3277767298631435,
+    "decision_centered_to_total_l2_ratio": 0.0036688604310426923,
+    "unexplained_amp_skips": 0,
+    "clip_receipts_complete": true
+  },
+  "gate_thresholds": {
+    "projected_target_temporal_std": ">=0.15",
+    "decision_temporal_std": ">=0.003",
+    "projected_to_decision_distance_correlation": ">=0.20",
+    "decision_centered_to_total_l2_ratio": ">=0.005",
+    "mixed_validation_concordance_gain_over_c0": ">=0.02",
+    "validation_ap_not_more_than_0.02_below_c0": ">=-0.02"
+  },
+  "gate_result": {
+    "strong_projector_hash_unchanged": true,
+    "projected_target_temporal_std": true,
+    "decision_temporal_std": false,
+    "projected_to_decision_distance_correlation": true,
+    "decision_centered_to_total_l2_ratio": false,
+    "mixed_validation_concordance_gain_over_c0": false,
+    "validation_ap_not_more_than_0.02_below_c0": true,
+    "unexplained_amp_skips": true,
+    "clip_receipts_complete": true,
+    "all_passed": false
+  },
+  "gradient_receipts": {
+    "c0_attempts": 805,
+    "c0_applied": 800,
+    "c0_overflow_or_skipped": 5,
+    "c1_attempts": 805,
+    "c1_applied": 800,
+    "c1_overflow_or_skipped": 5,
+    "c1_applied_rows_clipped": 800,
+    "c1_strong_projector_share_mean": 0.811494218299215,
+    "c1_strong_projector_share_median": 0.8193539171727697,
+    "c1_student_share_mean": 0.1884285503239727,
+    "c1_text_projector_share_mean": 0.00007723137681309029,
+    "c1_weak_projector_share_mean": 0.0
+  },
+  "locks": {
+    "data_lock_sha256": "d45eeb120c1793cdda9ffa69021fe9b9055c5528d91a4ce0cc6230ca673aba57",
+    "archival_lock_sha256": "1dd2037ddff5413a9c23600da9ac16246cbe3760567602f3c83329791af14730",
+    "download_lock_sha256": "5ca0109b931b55c1fb1fb4c9e723996f36040b3392c20713bb7257e88062cc2a",
+    "evaluator_lock_sha256": "e2b67bae839c81ba16721236172d698be100695313be6b3a8a38fd70e558928d",
+    "preprocessing_lock_sha256": "6eaa7aee15135a740af8deec58c90e37858c300243cad13b144d89f6a3b5c9e7",
+    "teacher_lock_sha256": "1dd082bfca7e045ee493b35578697fda7c678056c33765437d5a59fbda84d337",
+    "teacher_cache_root_sha256": "6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244",
+    "official_evaluator_source_sha256": "013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19"
+  },
+  "evidence": {
+    "c0_geometry": "raw_teacher_geometry_c0_validation.json",
+    "c1_geometry": "raw_teacher_geometry_c1_validation.json",
+    "implementation_receipt": "PROJECTOR_CONTROL_IMPLEMENTATION_RECEIPT.md",
+    "step_receipt": "AMP_APPLIED_STEP_AUDIT.md",
+    "gradient_audit": "GRADIENT_CONFLICT_AND_CLIP_AUDIT.md"
+  },
+  "interpretation": "C1 preserves temporally varying projected teacher targets, but student decision temporal variation and mixed-label concordance fail the preregistered gates while strong-projector gradients dominate and every applied step is clipped. This supports BLOCKED_BY_GRADIENT_CONFLICT; it does not establish a projector-only causal claim."
+}

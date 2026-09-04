@@ -1341,6 +1341,22 @@ def write_static_run_evidence(output_dir: Path, config: Dict[str, Any]) -> None:
         encoding="utf-8",
     )
 
+    def resolve_repository_relative_source(raw_value: Any) -> Path | None:
+        if not raw_value:
+            return None
+        candidate = Path(str(raw_value)).expanduser()
+        if candidate.is_absolute():
+            return candidate.resolve()
+        # Lock ``source_file`` values are repository-relative to the checked
+        # out project (for example ``external/OV-AVEL/...``), whereas data
+        # manifests are rooted at ``data.path_root``. Prefer the project root
+        # and retain the data-root fallback for legacy lock layouts.
+        project_candidate = (PROJECT_ROOT / candidate).resolve()
+        data_candidate = (path_root / candidate).resolve()
+        if project_candidate.is_file() or not data_candidate.is_file():
+            return project_candidate
+        return data_candidate
+
     cache_value = config.get("teacher_export", {}).get("artifact_dir")
     cache_path = Path(cache_value).expanduser() if cache_value else None
     if cache_path is not None and not cache_path.is_absolute():
@@ -1380,11 +1396,7 @@ def write_static_run_evidence(output_dir: Path, config: Dict[str, Any]) -> None:
         evaluator_lock_path = Path(evaluator_lock_info["path"])
         evaluator_lock = yaml.safe_load(evaluator_lock_path.read_text(encoding="utf-8")) or {}
         source_value = evaluator_lock.get("source_file")
-        source_path = Path(source_value).expanduser() if source_value else None
-        if source_path is not None and not source_path.is_absolute():
-            source_path = path_root / source_path
-        if source_path is not None:
-            source_path = source_path.resolve()
+        source_path = resolve_repository_relative_source(source_value)
         expected_sha = evaluator_lock.get("source_sha256")
         actual_sha = sha256_file(source_path) if source_path is not None and source_path.is_file() else None
         evaluator_summary = {

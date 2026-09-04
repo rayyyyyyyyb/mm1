@@ -3968,3 +3968,179 @@
 ### 874. 2026-09-04: C0 third epoch validation recorded
 
 - C0 completed its short third epoch at global step `800`; validation AP `0.7213457392`, AUROC `0.6199481023`, predicted-positive rate `1.0`, and 57,980 valid segments. It did not improve the epoch-0 best checkpoint. Final post-loop validation and summary writing are still active.
+
+### 875. 2026-09-04: temporal-geometry extension committed
+
+- Committed and pushed the temporal geometry receipt extension and the gradient/static-control reports as `bdc4c72` (`diagnostic: extend temporal geometry receipts`). The branch remains `repro/student-shortcut-recovery`; the worktree was clean at commit time while remote C0 continued.
+
+### 876. 2026-09-04: C0 final collection monitoring
+
+- At `18:23` the C0 process remains responsive in final validation/collection; the third-epoch history row is present, while summary and final metrics are still absent. This read-only check did not interact with the run.
+
+### 877. 2026-09-04: C0 final artifact collection continues
+
+- C0 third-epoch validation is complete at applied step `800` (AP `0.7213457392`); the trainer is now in its post-loop final validation artifact collection. Parameters are no longer updated, and the process remains responsive.
+
+### 878. 2026-09-04: remote syntax verification
+
+- Ran remote `py_compile` over all changed training, control, audit, loss, optimizer, and diagnostics modules in the locked venv; command exited `0`. This was read-only and did not touch the running C0 process.
+
+### 879. 2026-09-04: C0 post-loop collection still active
+
+- At `18:27`, C0 process `13920` remains responsive; only `best_validation_predictions.npz` is present among final outputs, so the post-loop summary/metrics write has not completed yet. GPU memory remains allocated and no test evaluation is enabled.
+
+### 881. 2026-09-04: C0 result report updated
+
+- Updated `STATIC_TARGET_800STEP_RESULTS.md` with the observed third validation (step `800`, AP `0.7213457392`, AUROC `0.6199481023`, predicted-positive rate `1.0`). The post-loop summary/final collection remains explicitly pending.
+
+### 882. 2026-09-04: C0 runtime lock rechecked
+
+- Read-only remote runtime receipt confirms C0 is using CUDA (`torch 2.10.0+cu128`, CUDA 12.8, cuDNN 9.1) on a single RTX 5090 with deterministic seed 42. The final summary file is still absent; the temporary runtime copy was deleted locally.
+
+### 883. 2026-09-04: C0 finalized and C1 began
+
+- Retrieved C0 `final_metrics.json`: total AP `0.7417794173`, AUROC `0.6437222374`, predicted-positive rate `1.0`, official segment count `57980`; seen/unseen AP `0.7625658867`/`0.7276861755`.
+- The paired wrapper completed C0 and launched C1 (`static_zero_lr_keep_grad`) sequentially. C1 is running on the RTX 5090; at the latest read-only check it had `182` receipt records, `177` applied steps and `5` AMP overflows. No duplicate independent C1 run was started; the two Python processes are the wrapper/child process pair.
+
+### 884. 2026-09-04: C1 configuration and runtime integrity check
+
+- Read-only inspection of C1 `resolved_config.yaml` confirms seed `42`, official `num_segments: 10`, model capacity `max_position_segments: 16`, strong projector mode `static_zero_lr_keep_grad`, weak/text modes `trainable`, `max_optimizer_steps: 800`, and `evaluation.run_test: false`.
+- C1 remote receipts show the initial five AMP overflows followed by finite applied updates; C1 remains the single paired-control run and is not being duplicated or interrupted.
+
+### 885. 2026-09-04: focused verification during C1
+
+- Re-ran the new diagnostic focused suite locally with MKL-safe settings: exit code `0`, `22 passed in 4.83s`.
+- A later read-only 5090 check reports C1 `311` attempts, `306` applied steps and `5` AMP overflows; no validation history or final metrics has been emitted yet, so no scientific gate is evaluated prematurely.
+
+### 886. 2026-09-04: independent code verification
+
+- Ran Ruff over all changed Python modules with the repository's permitted `E402` ignore: exit code `0` (`All checks passed`).
+- Ran `python -m compileall -q src scripts tests`: exit code `0`; ran `git diff --check`: exit code `0`.
+- The focused suite remains `22 passed`; no code or configuration change was made during this verification.
+
+### 887. 2026-09-04: teacher-boundary audit receipt added
+
+- Added `TEACHER_BOUNDARY_SIGNAL_AUDIT.md`. It records that current artifacts provide shape-checked official `[B,10]` labels/logits and teacher/student geometry, but no serialized per-segment raw/projected teacher arrays or explicit transition annotations; boundary-specific metrics therefore remain `UNKNOWN` and are not guessed.
+- The report explicitly keeps `max_position_segments=16` separate from the task timeline and does not authorize any schedule extension or formal Full.
+
+### 888. 2026-09-04: full local pytest collection check
+
+- Ran `python -m pytest tests -q` with MKL-safe environment variables. Exit code was `1` during collection: `23` modules require the locked runtime dependency `timm`, which is absent from the local Anaconda environment. No test body was run from those modules; this is an environment limitation, not a code-result claim.
+
+### 889. 2026-09-04: C0 final-artifact report correction
+
+- Corrected `STATIC_TARGET_800STEP_RESULTS.md`: C0 `final_metrics.json` exists and contains the epoch-0 best validation metrics with no test artifact; `optimizer_step_summary.json` is absent, so the report now labels this as a runtime-integrity caveat and uses the complete JSONL receipts for the independent `805`/`800` count.
+
+### 890. 2026-09-04: validation-split geometry audit support
+
+- Extended `scripts/diagnose_raw_teacher_geometry.py` with an explicit `--evaluation-split {validation,test}` option. Validation mode reuses the official validation loader and its prediction archive for mixed-label projected-target/decision geometry, avoiding any test evaluation during C0/C1 gate selection; the default test behavior remains unchanged.
+- Independent checks after the edit: raw-geometry/static-control/temporal-geometry tests exit `0` (`15 passed`), Ruff exit `0`, `py_compile` exit `0`, and `git diff --check` exit `0`. Uploaded the script to the 5090 source tree and remote `py_compile` also exited `0`; this change does not affect the already running C1 trainer process.
+
+### 891. 2026-09-04: remote full-suite attempt stopped safely
+
+- Two accidental duplicate remote `pytest tests -q` process trees were observed while C1 was active; their exact wrapper/child PIDs were `9392/21356` and `5416/22776`. They were terminated explicitly to prevent resource contention with C1. This attempt did not yield a valid suite exit code; the previously recorded locked-environment legacy suite result (`60 passed`, exit `0`) remains the last complete remote baseline, while current focused suites are independently passing.
+
+### 892. 2026-09-04: C1 first validation recorded
+
+- C1 completed epoch 0 at `395` applied steps after `400` attempts. Validation AP is `0.7331055729`, AUROC `0.6206926359`, predicted-positive rate `1.0`, and `57980` official segments; C1 proceeds to the next bounded epoch. Relative to C0's best AP `0.7417794173`, this first C1 AP delta is `-0.0086738444` (within the preregistered `-0.02` tolerance), but no final gate is evaluated until C1 reaches 800 applied steps and all receipts are checked.
+
+### 893. 2026-09-04: evaluator source-resolution defect corrected
+
+- Independent inspection found `official_evaluator_hash.json` reported `source_exists=false` because the lock's repository-relative `source_file` was incorrectly resolved against `data.path_root` instead of the checked-out project root (`external/OV-AVEL/...`).
+- Patched `write_static_run_evidence` to prefer `PROJECT_ROOT/source_file` and retain a legacy data-root fallback, without changing evaluator code or metric logic. Ruff, compile and diff checks all exit `0`; the corrected source was uploaded and remote `py_compile` exited `0`. The already-running C1 process retains its startup receipt and will be re-audited after completion; no result is retroactively rewritten.
+
+### 894. 2026-09-04: C1 gradient-share monitoring
+
+- A read-only C1 receipt sample (`586` attempts, `581` applied, `5` overflows) shows mean pre-clip squared-norm shares of student `0.194491`, static strong projector `0.805426`, weak projector `0`, and text projector `0.0000828`. This supports the preregistered gradient-conflict audit; it is not treated as a final scientific gate until all 800 steps and geometry receipts are complete.
+
+### 895. 2026-09-04: C1 second diagnostic snapshot
+
+- The second C1 training-diagnostic row (epoch 1, before update at global step `395`) reports strong-target within-sample temporal std `0.0888101`, decision temporal std `0.0301391`, decision centered/total L2 ratio `0.00648257`, static strong-projector relative drift `0`, and segment-head relative drift `0.238833`. Because the loader batch differs by epoch, these values are recorded as snapshots rather than substituted for the fixed validation geometry gates.
+
+### 896. 2026-09-04: evaluator source cross-check
+
+- Independently checked the locked external evaluator file on 5090: `E:\OV-OrthKD-R3\visual_sum_control_9e7a630\external\OV-AVEL\proposed_method\ImageBind-main\utils\eval_metrics.py` exists, is `4494` bytes, and hashes to the lock's expected `013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19`. The startup `actual_sha256=null` was therefore a path-resolution receipt defect, not missing evaluator bytes.
+
+### 897. 2026-09-04: C0 mixed-validation baseline recomputed
+
+- Independently recomputed from C0 `best_validation_predictions.npz` using the existing T=10 utility: `1967` mixed videos, `19670` segments, mixed AP `0.6265517823`, mixed AUROC `0.5639058579`, pair-weighted concordance `0.6098020865` (`36329` positive/negative pairs). This is the preregistered C1 comparison baseline; no test split was read.
+
+### 898. 2026-09-04: receipts and implementation report clarified
+
+- Updated `PROJECTOR_CONTROL_IMPLEMENTATION_RECEIPT.md` with the corrected evaluator source path/hash and preserved the original startup receipt as immutable provenance.
+- Updated `AMP_APPLIED_STEP_AUDIT.md` to distinguish C0's independently verified JSONL count from its missing separate summary file; C1 remains active and no test evaluation is enabled.
+
+### 899. 2026-09-04: C0 prediction archive integrity check
+
+- Independently validated C0 `best_validation_predictions.npz`: labels/logits/probabilities are aligned finite arrays, `5798` samples and `57980` segments, offsets are exactly ten per sample, and probabilities are within `[0,1]`. The check passed; no test archive was read.
+
+### 900. 2026-09-04: benign monitoring-command formatting miss
+
+- A remote time-display probe used an incorrectly escaped `Get-Date -Format` argument and exited `1`; it did not touch files, processes, or the C1 run. Subsequent status checks continue to use the validated encoded PowerShell form.
+
+### 901. 2026-09-04: C1 final training snapshot before validation
+
+- C1 has reached `805 attempts / 800 applied / 5 overflow`; `best.pt` and `last.pt` were saved at global step `800`, and the trainer is in final validation collection. The third diagnostic snapshot (before the last 5-step update) reports strong-target temporal std `0.207341`, decision temporal std `0.0256430`, decision centered/total ratio `0.00416839`, strong-projector drift `0`, and segment-head relative drift `0.429318`. These are logged as fixed-batch diagnostics, not substituted for aggregate gates.
+
+### 902. 2026-09-04: C1 800-step receipts completed
+
+- C1 now has a third validation history row at global step `800`: AP `0.7323133188`, AUROC `0.6242927241`, predicted-positive rate `1.0`, and `57980` official segments. `optimizer_step_summary.json` is present and independently confirms `805` attempts, `800` applied steps, and `5` overflow/skips; final best-checkpoint artifact collection is still running and no test evaluation is enabled.
+
+### 903. 2026-09-04: C1 final epoch receipt closure
+
+- The third history row and `optimizer_step_summary.json` were observed on 5090 at `19:29:16`; the trainer has closed the 800-applied-step loop and entered its separate best-checkpoint final validation collection. Final metrics remain pending, with no test evaluation or additional training authorized.
+
+### 904. 2026-09-04: C1 final metrics and independent validation recomputation
+
+- C1 final best-checkpoint validation completed successfully with AP `0.7366111005`, AUROC `0.6349032370`, predicted-positive rate `1.0`, and `5798` samples / `57980` official T=10 segments. No test artifact was produced.
+- Independent NPZ recomputation matched the trainer exactly. On the fixed mixed-label subset (`1967` videos, `36329` positive/negative pairs), C0 concordance was `0.6098020865` and C1 was `0.5588235294`, a gain of `-0.0509785576`.
+- C1 summary and JSONL receipts independently agree: `805` attempts, `800` applied updates, `5` AMP overflow/skips. The paired-control wrapper reports exit code `0` for both C0 and C1.
+
+### 905. 2026-09-04: C0/C1 validation geometry audit completed
+
+- Read-only geometry audits completed on 5090 for initialization, best, and last checkpoints using the mixed validation subset (`1967` videos / `19670` T=10 segments); both reports returned `status=PASS`, constructed no optimizer, executed no update, and wrote no checkpoint.
+- C0 best projected-target temporal std is `0.0185737044`, decision std `0.0001804756`, centered/total row-L2 ratio `0.0004824817`, projected-to-decision distance correlation `0.2955706494`; its last values are `0.0106758697`, `0.0000850695`, `0.0002343727`, `0.3370191358`.
+- C1 best projected-target temporal std is `0.1682058886`, decision std `0.0013909233`, centered/total row-L2 ratio `0.0036688604`, projected-to-decision distance correlation `0.3277767299`; its last values are `0.1682058886`, `0.0011678901`, `0.0030746154`, `0.3419778306`. C1 strong-projector hash is identical to deterministic initialization.
+
+### 906. 2026-09-04: preregistered gate evaluation
+
+- The exact nine-gate evaluator returned `all_passed=false`: PASS for unchanged strong-projector hash, projected-target std, projected-to-decision correlation, AP tolerance, AMP explanation, and receipt completeness; FAIL for decision std, centered/total ratio, and mixed-validation concordance gain.
+- C1 strong-projector gradient share is mean `0.8114942183` / median `0.8193539172`, versus student mean `0.1884285503`; all applied rows were clipped. The evidence supports `BLOCKED_BY_GRADIENT_CONFLICT`, not a projector-only causal claim.
+- No 3200-step extension, second seed, Full run, T change, or test evaluation was started or authorized.
+
+### 907. 2026-09-04: final evidence materialized for repository review
+
+- Added C0/C1 resolved configs, lock/runtime manifests, histories, diagnostics, optimizer groups and receipts, final metrics, validation geometry JSON, and `projector_collapse_summary.json` under `reports/formal_reproduction/student_shortcut_recovery/`; checkpoints, NPZ prediction archives, teacher cache, and datasets remain excluded.
+- The summary records final state `BLOCKED_BY_GRADIENT_CONFLICT`, official T=10 protocol, all lock hashes, and the explicit no-Full/no-test guard.
+
+### 908. 2026-09-04: independent final verification
+
+- Locked 5090 focused regression suite passed: `31 passed in 6.06s`, exit code `0`.
+- Local static verification passed: Ruff exit `0`, `compileall` exit `0`, and `git diff --check` exit `0`. The local full pytest remains an environment-limited collection failure because Anaconda lacks `timm`; no changed test body failed.
+- Rechecked the geometry script after correcting validation-split error wording; the script still compiles and the remote source remains read-only for geometry audits.
+
+### 909. 2026-09-04: review entrypoint updated
+
+- Updated the student-shortcut-recovery README to point reviewers to the C0/C1 bounded-control report and machine-readable summary, while preserving the official T=10 / T_max=16 distinction and the no-Full guard.
+
+### 910. 2026-09-04: artifact-scope guard rechecked
+
+- Remote static-control directories contain validation prediction archives only; a recursive `*test*` artifact query returned no files. No checkpoint, dataset, teacher cache, or prediction NPZ is staged for Git; repository evidence files are below the large-artifact threshold.
+- The two required ledgers remain byte-identical (SHA256 `5F342812FBAC84043AC36A387622CD8E55FD9009607E81514B8A4F1D3799ECEF` at this pre-append checkpoint).
+
+### 911. 2026-09-04: ledger equality rechecked after correction
+
+- Corrected the mirrored pre-append hash wording in the parent ledger; both `all.md` files are byte-identical again. The pre-append hash was `FC8AB2F36D0D34D99888A6045AF06B9A176C587926A0A7CFFA08586AAF16459F`.
+
+### 912. 2026-09-04: fresh locked regression verification
+
+- After the final code wording correction, the locked 5090 focused suite was rerun once: `32 passed in 6.15s`, exit code `0`.
+
+### 913. 2026-09-04: pre-commit verification snapshot
+
+- Fresh local checks passed: `compileall=0`, Ruff (`E402` ignored for project import layout) `0`, `git diff --check=0`, and JSON/geometry assertions `0`.
+- The two ledgers were byte-identical at this verification point. No test evaluation, Full training, or large artifact entered the working tree.
+
+### 914. 2026-09-04: staged diff scope recorded
+
+- Staged change set is `49 files changed, 9636 insertions, 24 deletions`; no checkpoint, dataset, cache, prediction NPZ, archive, or other large binary is staged. This is the final pre-commit scope.

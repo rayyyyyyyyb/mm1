@@ -1,0 +1,7 @@
+{
+  "variant": "C0_trainable_strong_projector_800",
+  "declared_claim_level": "noncanonical_diagnostic",
+  "effective_claim_level": "noncanonical_diagnostic",
+  "git_dirty": false,
+  "diagnostic_override": true
+}

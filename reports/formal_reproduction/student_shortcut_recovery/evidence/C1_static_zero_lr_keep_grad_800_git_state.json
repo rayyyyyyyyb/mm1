@@ -1,0 +1,42 @@
+{
+  "head": {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "returncode": null,
+    "stdout": "",
+    "stderr": "[WinError 2] 系统找不到指定的文件。"
+  },
+  "branch": {
+    "command": [
+      "git",
+      "branch",
+      "--show-current"
+    ],
+    "returncode": null,
+    "stdout": "",
+    "stderr": "[WinError 2] 系统找不到指定的文件。"
+  },
+  "status": {
+    "command": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "returncode": null,
+    "stdout": "",
+    "stderr": "[WinError 2] 系统找不到指定的文件。"
+  },
+  "diff_stat": {
+    "command": [
+      "git",
+      "diff",
+      "--stat"
+    ],
+    "returncode": null,
+    "stdout": "",
+    "stderr": "[WinError 2] 系统找不到指定的文件。"
+  }
+}

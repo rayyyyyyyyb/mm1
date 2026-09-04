@@ -17,3 +17,13 @@ This is evidence of a large, competing projector/ student gradient pathway, not
 proof that the projector alone is causal. C1 uses the same loss and data with
 only the strong projector changed to `static_zero_lr_keep_grad`; its receipts
 will determine whether the signal survives without parameter motion.
+
+For C1, the strong projector is static in parameter space (zero learning rate)
+but remains in the autograd graph. Across 800 applied updates its gradient
+contribution share is mean `0.811494`, median `0.819354`, while the student
+share is mean `0.188429`; all applied updates are clipped and five warm-up
+overflows are excluded. The C1 validation geometry confirms that the projected
+target retains temporal variation (`0.1682058886`), but student decision
+variation is only `0.0013909233` at best and the mixed validation concordance
+drops by `0.0509785576` relative to C0. This isolates a remaining gradient
+conflict/optimization bottleneck rather than proving a projector-only cause.

@@ -10,4 +10,15 @@ The subsequent read-only frozen-feature audit compared equal-capacity QP, VQP an
 
 The official `T_task=10` metric timeline is preserved; `T_max=16` is positional capacity only. Neither the S9 result nor the frozen probe authorizes another experiment or formal Full training.
 
+## Latest bounded projector control
+
+The preregistered C0/C1 800-applied-step control is documented in
+[STATIC_TARGET_800STEP_RESULTS.md](STATIC_TARGET_800STEP_RESULTS.md), with
+machine-readable evidence in
+[projector_collapse_summary.json](projector_collapse_summary.json). C1 keeps the
+strong projected teacher target static with gradient flow. The target remains
+temporally varying, but student decision variation and mixed-label concordance
+fail the gates; the final state is **BLOCKED_BY_GRADIENT_CONFLICT**. Full,
+second-seed, schedule extension, and test evaluation remain blocked.
+
 Git contains source, configuration, runtime controls and compact review evidence only. Datasets, caches, checkpoints, prediction arrays, archives, bundles and progress logs remain on the 5090.

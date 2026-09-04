@@ -42,3 +42,15 @@ Focused tests covering mode resolution, fail-closed validation, static tensor
 semantics, named groups, clipping, and applied-step hooks passed locally. Full
 runtime tests require the locked 5090 environment because the local Anaconda
 environment does not provide `timm`.
+
+## Evaluator receipt correction
+
+The first remote startup receipts resolved the lock's repository-relative
+`source_file` against the data root, yielding `source_exists=false`. The locked
+file is present under the checked-out project at
+`external/OV-AVEL/proposed_method/ImageBind-main/utils/eval_metrics.py`, with
+the expected SHA256
+`013949f6371dc11a93f4e5b1df448601b98cf5590e7651d103600f981a4ded19` and 4494
+bytes. The runtime resolver is now corrected to prefer the project root and
+retain a legacy data-root fallback. The original startup receipt remains
+unchanged as provenance; subsequent audits use the corrected path resolution.
