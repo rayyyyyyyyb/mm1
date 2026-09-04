@@ -4365,3 +4365,7 @@
 ### 963. 2026-09-05: final verification commit pushed
 
 - Recorded the branch/ledger check in commit `1161e4a` (`Record final branch verification`) and pushed it successfully (`03fff3b..1161e4a`). This is the final repository state for the current diagnostic stage.
+
+### 964. 2026-09-05: cumulative handoff diff recorded
+
+- The cumulative source-to-handoff diff from R2 base `1eb5a0f` through the pushed verification state is `30 files changed, 2,800 insertions, 14 deletions`; this includes ledger-only verification commits. The final branch URL and SHA are reported to the user below; no runtime artifact is part of this diff.
