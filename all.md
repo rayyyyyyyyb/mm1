@@ -4353,3 +4353,7 @@
 ### 960. 2026-09-05: final pre-commit verification
 
 - After staging, the focused suite again passed (`14 passed in 7.05s`, pytest exit `0`); compileall exit `0`; changed-file Ruff exit `0`; staged `git diff --check` exit `0`; and all three compact JSON files parsed with final state `STATIC_TARGET_NOT_SUFFICIENT` (JSON exit `0`).
+
+### 961. 2026-09-05: commit and branch push
+
+- Created clean commit `bec3464` (`Add evidence-based static target coupling audit`): 30 files changed, 2,788 insertions, 14 deletions. Pushed successfully to `origin/repro/student-shortcut-recovery` (`1eb5a0f..bec3464`). Large runtime artifacts remain untracked under `tmp/` and were not included.
