@@ -4489,3 +4489,7 @@
 ### 986. 2026-09-08: teacher-signal closure implementation committed
 
 - Created main commit `6fce8fa2f6560aa07ecfab9df7abddf7a376d637` (`repro: close teacher signal and shortcut diagnostics`). Diff stat: 35 files changed, 4,194 insertions, 20 deletions. The only remaining working-tree item is the intentionally untracked `tmp/` directory containing local/remote verification helpers and compact runtime receipts.
+
+### 987. 2026-09-08: GitHub handoff verified
+
+- Created ledger commit `a0071f5e0d684661dd78e45463594065529899db`, pushed `f21645e..a0071f5` to `origin/repro/student-shortcut-recovery`, and verified with `git ls-remote` that local and GitHub heads were identical. This final ledger entry is committed separately so the public branch preserves the full chronological audit trail.
