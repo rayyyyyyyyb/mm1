@@ -4485,3 +4485,7 @@
 
 - Confirmed branch `repro/student-shortcut-recovery` at starting HEAD `f21645e64a9f34fe559d47804e0088f7d784985c`. Staged 35 source/config/test/compact-report/plan/ledger files; no `tmp`, cache, checkpoint, model archive, dataset archive, or file at or above 50 MiB is staged.
 - Staged diff-check exited `0`; both JSON receipts parsed; the summary state is `NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY`; D1 records exactly 800 applied updates, no test evaluation, and absent test predictions. The repository and parent `all.md` files remain byte-identical.
+
+### 986. 2026-09-08: teacher-signal closure implementation committed
+
+- Created main commit `6fce8fa2f6560aa07ecfab9df7abddf7a376d637` (`repro: close teacher signal and shortcut diagnostics`). Diff stat: 35 files changed, 4,194 insertions, 20 deletions. The only remaining working-tree item is the intentionally untracked `tmp/` directory containing local/remote verification helpers and compact runtime receipts.
