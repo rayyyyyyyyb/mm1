@@ -1,4 +1,9 @@
-# Teacher label/boundary alignment audit (A4)
+# Legacy teacher label/boundary alignment audit (A4; superseded)
+
+> **Scientific classification:** `NORM_HEURISTIC_ONLY` / `QUERY_ALIGNMENT_NOT_TESTED`.
+> The historical numbers below are retained for provenance only and must not
+> be used as a teacher-health gate. The corrected train-fit/validation-eval
+> audit is reported in `TEACHER_SIGNAL_CLOSURE_AUDIT.md`.
 
 This read-only audit loaded the official exported validation manifest and
 selected its 1,967 mixed-label samples (`0 < k < 10`), preserving all ten
@@ -22,9 +27,9 @@ for the explicitly labelled `representation+query` probes.
 
 The C0 centered-static-plus-query AP gain over centered static is `+0.078356`
 and the C1 gain is `+0.015217`; the corresponding raw gain is only `+0.001374`.
-This is measurable query/teacher alignment evidence, so A4 does not by itself
-block a clean clipping-scope control.  It is not sufficient to claim healthy
-localization: onset/offset AUROC remains low (C0 `0.321338/0.291592`, C1
+This is a norm-based descriptive comparison, not query/teacher alignment
+evidence. It is not sufficient to claim healthy localization: onset/offset
+AUROC remains low (C0 `0.321338/0.291592`, C1
 `0.322040/0.292706`) and the query multiplicity hash is unavailable because
 the official manifest has no raw-video hash field.  That absence is reported,
 not guessed.

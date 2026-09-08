@@ -78,6 +78,7 @@ class OVOrthKDLoss(nn.Module):
         weak_teacher_projector_update_mode: str | None = None,
         text_teacher_projector_update_mode: str | None = None,
         query_anchor_mode: str = "independent_loss_projection",
+        visual_feature_centering: str = "none",
     ) -> None:
         super().__init__()
         self.temperature = float(temperature)
@@ -101,6 +102,9 @@ class OVOrthKDLoss(nn.Module):
                 f"Unsupported visual_l2_reduction: {visual_l2_reduction}"
             )
         self.visual_l2_reduction = visual_l2_reduction
+        if visual_feature_centering not in {"none", "per_sample_temporal"}:
+            raise ValueError(f"Unsupported visual_feature_centering: {visual_feature_centering}")
+        self.visual_feature_centering = visual_feature_centering
         mode_config = {
             "teacher_target_projector_trainable": teacher_target_projector_trainable,
             "strong_teacher_projector_update_mode": strong_teacher_projector_update_mode,
@@ -199,7 +203,16 @@ class OVOrthKDLoss(nn.Module):
             ).to(dtype=student_segment_logits.dtype)
             strong_target = self.strong_teacher_proj(strong_features.detach())
             if self.alpha_strong_feat > 0:
-                squared_error = (student_decision_features - strong_target).pow(2)
+                student_visual = student_decision_features
+                target_visual = strong_target
+                if self.visual_feature_centering == "per_sample_temporal":
+                    valid = (sequence_mask * strong_mask_for_orth).to(dtype=student_visual.dtype)
+                    denominator = valid.sum(dim=1, keepdim=True).clamp_min(1.0)
+                    student_mean = (student_visual * valid.unsqueeze(-1)).sum(dim=1, keepdim=True) / denominator.unsqueeze(-1)
+                    target_mean = (target_visual * valid.unsqueeze(-1)).sum(dim=1, keepdim=True) / denominator.unsqueeze(-1)
+                    student_visual = student_visual - student_mean
+                    target_visual = target_visual - target_mean
+                squared_error = (student_visual - target_visual).pow(2)
                 if (
                     self.visual_l2_reduction
                     == "mean_feature_then_masked_mean_segments"

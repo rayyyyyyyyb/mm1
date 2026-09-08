@@ -472,6 +472,54 @@ class InternVideo2ClipB14Teacher:
                 "Raw-video export is diagnostic-only and must be selected explicitly"
             )
         batch = self._load_video_tensor(video_path).to(self.device)
+        return self._encode_multiframe_batch(batch, query)
+
+    def export_frame_array(
+        self, frames: np.ndarray, query: str
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Encode an already decoded diagnostic frame tensor.
+
+        The caller owns decoding and must provide exactly the same
+        ``[10,8,H,W,3]`` uniform-center frames used for the temporary Phase B
+        cache.  Keeping decoding outside the teacher makes the sampled bytes
+        hashable while reusing this teacher's locked transform, checkpoint and
+        query encoder.
+        """
+
+        if self.input_mode != "raw_multiframe_diagnostic":
+            raise RuntimeError(
+                "Raw frame-array export is diagnostic-only and must be selected explicitly"
+            )
+        array = np.asarray(frames)
+        if array.ndim != 5 or array.shape[:2] != (self.intervals, self.num_frames) or array.shape[-1] != 3:
+            raise ValueError(
+                f"Raw frame-array encoder expects [{self.intervals},{self.num_frames},H,W,3], "
+                f"got {list(array.shape)}"
+            )
+        if (
+            not np.issubdtype(array.dtype, np.integer)
+            or not np.isfinite(array).all()
+            or np.any(array < 0)
+            or np.any(array > 255)
+        ):
+            raise ValueError("Raw frame-array encoder expects finite integer RGB frames")
+        transformed = []
+        for frame in array.reshape(-1, *array.shape[2:]):
+            tensor = torch.from_numpy(np.asarray(frame, dtype=np.uint8).copy()).permute(2, 0, 1)
+            transformed.append(self.model.transform(tensor))
+        batch = torch.stack(transformed, dim=0).reshape(
+            self.intervals, self.num_frames, *transformed[0].shape
+        ).to(self.device)
+        return self._encode_multiframe_batch(batch, query)
+
+    def _encode_multiframe_batch(
+        self, batch: torch.Tensor, query: str
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if batch.ndim != 5 or tuple(batch.shape[:2]) != (self.intervals, self.num_frames):
+            raise ValueError(
+                f"InternVideo2 diagnostic batch must have [{self.intervals},{self.num_frames},C,H,W], "
+                f"got {list(batch.shape)}"
+            )
         text_tokens = self.model.tokenizer([query] * self.intervals).to(self.device)
 
         with torch.no_grad():

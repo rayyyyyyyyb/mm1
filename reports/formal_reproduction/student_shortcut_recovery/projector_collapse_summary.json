@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
-  "final_state": "STATIC_TARGET_NOT_SUFFICIENT",
+  "final_state": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+  "prior_stage_final_state": "STATIC_TARGET_NOT_SUFFICIENT",
   "authorization": {
     "formal_full_training": false,
     "additional_schedule_extension": false,
@@ -153,7 +154,10 @@
     "c2_geometry": "C2_GEOMETRY_SUMMARY.json",
     "c2_receipts": "C2_RUNTIME_RECEIPT_SUMMARY.json",
     "c2_feature_loss": "phase_a/A2_C2_best.json (remote receipt summarized in STATIC_TARGET_COUPLING_FINAL.md)",
-    "c2_gradient_conflict": "phase_a/A3_C2_best.json (remote receipt summarized in STATIC_TARGET_COUPLING_FINAL.md)"
+    "c2_gradient_conflict": "phase_a/A3_C2_best.json (remote receipt summarized in STATIC_TARGET_COUPLING_FINAL.md)",
+    "teacher_signal_closure": "TEACHER_SIGNAL_CLOSURE_AUDIT.md",
+    "teacher_signal_closure_summary": "TEACHER_SIGNAL_CLOSURE_SUMMARY.json",
+    "d1_control": "TEACHER_SIGNAL_CONTROL_D1_RESULT.json"
   },
-  "interpretation": "A3 does not identify an intrinsic same-parameter loss-direction conflict. A5 and C2 directly observe global clipping coupling: excluding the zero-LR projector increases the positive-LR clip coefficient, while the static projector remains in receipts. Nevertheless, C2 fails the student temporal-geometry and mixed-label concordance gates at 800 applied steps. The evidence-based final state is STATIC_TARGET_NOT_SUFFICIENT; CLIP_COUPLING_CAUSAL is not supported."
+  "interpretation": "A3 does not identify an intrinsic same-parameter loss-direction conflict. A5 and C2 directly observe global clipping coupling: excluding the zero-LR projector increases the positive-LR clip coefficient, while the static projector remains in receipts. The teacher-signal closure confirms healthy cached teacher boundaries but a visual shortcut; D1 centered visual loss at exactly 800 applied steps fails mixed concordance and temporal-variation gates. The evidence-based closure state is NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY; CLIP_COUPLING_CAUSAL is not supported."
 }

@@ -1,0 +1,15 @@
+seed: 42
+diagnostic:
+  name: teacher_sampling_closure
+  split: validation
+  selected_mixed_records: 512
+  temporary_cache_root: reports/runtime/teacher_sampling_closure_seed42
+  canonical_cache_overwrite: false
+protocol:
+  task_segments: 10
+  segment_seconds: 1
+  repeat_policy: canonical_single_keyframe_repeated_8
+  multiframe_policy: uniform_center_within_each_one_second_segment
+  frame_count: 8
+  raw_video_required: true
+  missing_raw_video_status: BLOCKED_BY_TEACHER_FRAME_SAMPLING

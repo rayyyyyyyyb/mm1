@@ -1,0 +1,15 @@
+seed: 42
+diagnostic:
+  name: visual_pretrained_zero_training_probe
+  base_config: configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_c2_static_positive_lr_clip_800.yaml
+  training: forbidden
+  evaluation_split: validation
+student:
+  visual_backbone: convnextv2_tiny.fcmae_ft_in22k_in1k
+  audio_backbone: tf_efficientnetv2_b2.in1k
+  visual_pretrained: true
+  audio_pretrained: false
+protocol:
+  task_segments: 10
+  zero_training_only: true
+  full_run: false

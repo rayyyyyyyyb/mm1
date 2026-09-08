@@ -71,6 +71,8 @@ class OVOrthKDStudent(nn.Module):
         fusion_mode: str = "concat_mlp_query_conditioned",
         gate_mode: str = "learned_softmax",
         query_anchor_mode: str = "independent_loss_projection",
+        visual_pretrained: bool | None = None,
+        audio_pretrained: bool | None = None,
     ) -> None:
         super().__init__()
         if path_mode not in {"explicit_projected", "legacy_shared"}:
@@ -98,8 +100,14 @@ class OVOrthKDStudent(nn.Module):
                 "path_mode explicit_projected"
             )
 
-        self.visual_encoder = SequenceImageEncoder(visual_backbone, pretrained=pretrained)
-        self.audio_encoder = SequenceImageEncoder(audio_backbone, pretrained=pretrained)
+        # Direct legacy calls remain compatible; config-level resolution uses
+        # explicit visual/audio fields and therefore never silently mixes them.
+        resolved_visual_pretrained = bool(pretrained) if visual_pretrained is None else bool(visual_pretrained)
+        resolved_audio_pretrained = bool(pretrained) if audio_pretrained is None else bool(audio_pretrained)
+        self.visual_pretrained = resolved_visual_pretrained
+        self.audio_pretrained = resolved_audio_pretrained
+        self.visual_encoder = SequenceImageEncoder(visual_backbone, pretrained=resolved_visual_pretrained)
+        self.audio_encoder = SequenceImageEncoder(audio_backbone, pretrained=resolved_audio_pretrained)
         self.visual_dim = self.visual_encoder.feature_dim
         self.audio_dim = self.audio_encoder.feature_dim
         self.text_dim = text_dim

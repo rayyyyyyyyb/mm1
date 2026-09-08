@@ -1,0 +1,15 @@
+base_config: configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_no_workers.yaml
+control:
+  name: D1_centered_visual_800
+  registered_change: loss.visual_feature_centering
+  applied_optimizer_steps: 800
+  evaluate_test: false
+overrides:
+  loss:
+    strong_teacher_projector_update_mode: static_zero_lr_keep_grad
+    weak_teacher_projector_update_mode: trainable
+    text_teacher_projector_update_mode: trainable
+    visual_feature_centering: per_sample_temporal
+  training:
+    gradient_clipping:
+      scope: optimizer_groups_with_positive_lr

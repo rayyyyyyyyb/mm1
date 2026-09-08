@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "phase_a": {
+    "status": "PASS",
+    "scientific_status": "TEACHER_BOUNDARY_SIGNAL_HEALTHY",
+    "direct_mixed_video_macro_concordance": 0.6297159984990437,
+    "direct_shuffle_auroc_drop": 0.025588576145019526,
+    "direct_best_temporal_shift": 0,
+    "teacher_gate_pass": true,
+    "train_samples": 13182,
+    "validation_samples": 5798,
+    "projector_sha256": "1b997952d2f9bb89b3783352655b044671a72a84ed76dcd6c4b8be6bf29cecf0"
+  },
+  "phase_b": {
+    "status": "BLOCKED_BY_TEACHER_FRAME_SAMPLING",
+    "selected_validation_records": 512,
+    "raw_video_fields": 0,
+    "supported_video_paths": 0,
+    "positive_path_implemented": true,
+    "positive_path_unit_tested": true,
+    "real_frame_comparison_executed": false,
+    "canonical_cache_overwrite": false
+  },
+  "phase_c": {
+    "status": "PASS",
+    "scientific_status": "SHORTCUT_AGREEMENT_CONFIRMED",
+    "strata": ["k0", "kmid", "k10", "mixed_only"],
+    "batches_per_stratum": 32,
+    "total_batches": 128,
+    "mixed_visual_mean_to_centered_gradient_ratio": 5.27553252413358,
+    "mixed_clip_coefficient_mean": 0.020539992102779014,
+    "parameter_state_unchanged": true,
+    "rng_state_unchanged": true
+  },
+  "phase_d": {
+    "status": "BLOCKED_BY_PRETRAINED_BACKBONE_ASSET",
+    "scientific_status": "VISUAL_PRETRAINING_CONTROL_NOT_PASS",
+    "sample_count_per_split": 256,
+    "random_visual_vqp_mixed_concordance": 0.5230277185501067,
+    "current_c2_visual_vqp_mixed_concordance": 0.4886993603411514,
+    "random_audio_control_vqp_mixed_concordance": 0.4554371002132196,
+    "timm_pretrained_visual_vqp_mixed_concordance": null,
+    "reason": "convnextv2_tiny.fcmae_ft_in22k_in1k weights absent from local cache and Hugging Face requests timed out",
+    "optimizer_step_executed": false,
+    "checkpoint_written": false
+  },
+  "phase_d1": {
+    "status": "FAIL",
+    "scientific_status": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+    "name": "D1_centered_visual_800",
+    "seed": 42,
+    "attempted_steps": 803,
+    "applied_steps": 800,
+    "overflow_or_skipped_steps": 3,
+    "validation_samples": 5798,
+    "validation_segments": 57980,
+    "validation_ap": 0.7083034562979383,
+    "validation_auroc": 0.6031084907111033,
+    "mixed_validation_tie_aware_concordance": 0.49946912750865474,
+    "mean_decision_temporal_std": 0.00004779926562178817,
+    "mixed_concordance_gate_pass": false,
+    "decision_temporal_std_gate_pass": false,
+    "test_evaluation": false,
+    "checkpoint_remote_only": true
+  },
+  "final_state": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+  "authorization": {
+    "formal_full": false,
+    "second_seed": false,
+    "schedule_extension": false,
+    "test_evaluation": false,
+    "bounded_controls": "D1_completed_D2_D3_fail_closed"
+  }
+}

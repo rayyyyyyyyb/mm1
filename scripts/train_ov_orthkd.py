@@ -71,6 +71,7 @@ from src.utils.projector_update_modes import (
     optimizer_group_receipts,
     resolve_projector_update_modes,
 )
+from src.utils.pretrained_config import resolve_modality_pretrained
 from src.utils.optimizer_receipts import (
     OptimizerStepTracker,
     clip_gradients_with_receipt,
@@ -409,6 +410,7 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
         loss_cfg.get("query_anchor_mode", "independent_loss_projection")
     )
     projector_update_modes = resolve_projector_update_modes(loss_cfg)
+    visual_pretrained, audio_pretrained = resolve_modality_pretrained(student_cfg)
 
     student = OVOrthKDStudent(
         visual_backbone=student_cfg["visual_backbone"],
@@ -424,12 +426,14 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
             student_cfg.get("temporal_path_mode", "transformer")
         ),
         max_position_segments=max_position_segments_from_config(config),
-        pretrained=bool(student_cfg.get("pretrained", False)),
+        pretrained=False,
         fusion_mode=str(
             student_cfg.get("fusion_mode", "concat_mlp_query_conditioned")
         ),
         gate_mode=str(student_cfg.get("gate_mode", "learned_softmax")),
         query_anchor_mode=query_anchor_mode,
+        visual_pretrained=visual_pretrained,
+        audio_pretrained=audio_pretrained,
     ).to(device)
 
     common_loss_kwargs = {
@@ -478,6 +482,7 @@ def build_model_and_loss(config: Dict[str, Any], device: torch.device) -> Tuple[
                     "mean_feature_then_masked_mean_segments",
                 )
             ),
+            visual_feature_centering=str(loss_cfg.get("visual_feature_centering", "none")),
             strong_teacher_projector_update_mode=projector_update_modes["strong_teacher"],
             weak_teacher_projector_update_mode=projector_update_modes["weak_teacher"],
             text_teacher_projector_update_mode=projector_update_modes["text_teacher"],
@@ -550,6 +555,8 @@ def runtime_implementation_behavior(
             "query_anchor_mode": getattr(student, "query_anchor_mode", None),
             "fusion_dim": getattr(student, "fusion_dim", None),
             "projection_dim": getattr(student, "projection_dim", None),
+            "visual_pretrained": getattr(student, "visual_pretrained", None),
+            "audio_pretrained": getattr(student, "audio_pretrained", None),
             "modality_gate_present": isinstance(
                 getattr(student, "modality_gate", None), nn.Module
             ),
@@ -561,6 +568,9 @@ def runtime_implementation_behavior(
             "class": type(loss_module).__name__,
             "visual_l2_reduction": getattr(
                 loss_module, "visual_l2_reduction", None
+            ),
+            "visual_feature_centering": getattr(
+                loss_module, "visual_feature_centering", None
             ),
             "query_anchor_mode": getattr(loss_module, "query_anchor_mode", None),
             "teacher_target_projector_trainable": projectors_trainable,

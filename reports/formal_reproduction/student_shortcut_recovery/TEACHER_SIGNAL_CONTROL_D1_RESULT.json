@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "name": "D1_centered_visual_800",
+  "status": "FAIL",
+  "scientific_status": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+  "source_remote": "E:/OV-OrthKD-R3/visual_sum_control_9e7a630/diagnostic/teacher_signal_closure_20260906/controls/D1_centered_visual_800",
+  "protocol": {
+    "task_segments": 10,
+    "seed": 42,
+    "validation_only": true,
+    "test_evaluation": false,
+    "visual_feature_centering": "per_sample_temporal",
+    "projector_update_modes": {
+      "strong": "static_zero_lr_keep_grad",
+      "weak": "trainable",
+      "text": "trainable"
+    }
+  },
+  "steps": {
+    "attempted": 803,
+    "applied": 800,
+    "overflow_or_skipped": 3
+  },
+  "metrics": {
+    "validation_ap": 0.7083034562979383,
+    "validation_auroc": 0.6031084907111033,
+    "mixed_validation_tie_aware_concordance": 0.49946912750865474,
+    "mean_decision_temporal_std": 0.00004779926562178817,
+    "mixed_sample_count": 1967,
+    "validation_samples": 5798,
+    "validation_segments": 57980
+  },
+  "gates": {
+    "applied_steps_exactly_800": true,
+    "attempted_steps_at_least_800": true,
+    "test_predictions_absent": true,
+    "mixed_concordance_ge_0.60": false,
+    "decision_temporal_std_ge_0.003": false
+  },
+  "authorization": {
+    "teacher_gate": true,
+    "shortcut_gate": true,
+    "d2_pretrained_gate": false,
+    "d3_visual_logit_gate": false
+  }
+}

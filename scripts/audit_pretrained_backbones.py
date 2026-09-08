@@ -140,6 +140,62 @@ def audit_backbone_initialization(
     }
 
 
+def _audit_backbone_request(
+    model_name: str,
+    *,
+    requested_pretrained: bool,
+    seed: int,
+    encoder_factory: EncoderFactory,
+) -> dict[str, Any]:
+    """Receipt the exact requested state, comparing a random reference only when useful."""
+
+    requested = _construct_and_receipt(
+        model_name,
+        pretrained=bool(requested_pretrained),
+        seed=seed,
+        encoder_factory=encoder_factory,
+    )
+    result: dict[str, Any] = {
+        "status": "PASS",
+        "requested_pretrained": bool(requested_pretrained),
+        "requested_state_sha256": requested["state_sha256"],
+        "parameter_count": requested["parameter_count"],
+        "feature_dim": requested["feature_dim"],
+        "resolved_pretrained_cfg": requested["resolved_pretrained_cfg"],
+    }
+    if requested_pretrained:
+        random_reference = _construct_and_receipt(
+            model_name,
+            pretrained=False,
+            seed=seed,
+            encoder_factory=encoder_factory,
+        )
+        if requested["state_sha256"] == random_reference["state_sha256"]:
+            raise RuntimeError(f"Pretrained and random state hashes are identical for {model_name}")
+        if requested["parameter_count"] != random_reference["parameter_count"]:
+            raise RuntimeError(f"Pretrained and random parameter counts differ for {model_name}")
+        if requested["feature_dim"] != random_reference["feature_dim"]:
+            raise RuntimeError(f"Pretrained and random feature dimensions differ for {model_name}")
+        result.update(
+            {
+                "random_reference_requested": True,
+                "random_reference_state_sha256": random_reference["state_sha256"],
+                "state_hashes_differ": True,
+                "random_reference_pretrained_cfg": random_reference["resolved_pretrained_cfg"],
+            }
+        )
+    else:
+        result.update(
+            {
+                "random_reference_requested": False,
+                "random_reference_state_sha256": None,
+                "state_hashes_differ": None,
+                "random_reference_pretrained_cfg": None,
+            }
+        )
+    return result
+
+
 def build_pretrained_backbone_report(
     config_path: str | Path,
     *,
@@ -154,8 +210,11 @@ def build_pretrained_backbone_report(
     student = config.get("student")
     if not isinstance(student, dict):
         raise ValueError("Config is missing student mapping")
-    if student.get("pretrained") is not True:
-        raise ValueError("Pretrained receipt requires student.pretrained=true")
+    from src.utils.pretrained_config import resolve_modality_pretrained
+
+    visual_pretrained, audio_pretrained = resolve_modality_pretrained(student)
+    if not visual_pretrained and not audio_pretrained:
+        raise ValueError("Pretrained receipt requires student.pretrained=true or an explicit modality field true")
     seed = int(config.get("seed", 42))
     model_names = {
         "visual": student.get("visual_backbone"),
@@ -173,13 +232,16 @@ def build_pretrained_backbone_report(
             "sha256": _sha256(source),
         },
         "seed": seed,
-        "comparison": (
-            "same_seed_pretrained_true_vs_pretrained_false_constructed_encoder_state"
-        ),
+        "comparison": "exact_requested_visual_audio_state_with_random_reference_when_pretrained",
+        "resolved_modality_pretrained": {
+            "visual": visual_pretrained,
+            "audio": audio_pretrained,
+        },
         "fallback_policy": "construction_or_download_failure_propagates_and_blocks",
         "backbones": {
-            role: audit_backbone_initialization(
+            role: _audit_backbone_request(
                 str(model_name),
+                requested_pretrained={"visual": visual_pretrained, "audio": audio_pretrained}[role],
                 seed=seed,
                 encoder_factory=encoder_factory,
             )

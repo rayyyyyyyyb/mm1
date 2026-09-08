@@ -470,6 +470,27 @@ def test_loss_rejects_unknown_visual_l2_reduction() -> None:
         make_camera_ready_loss(visual_l2_reduction="invented")
 
 
+def test_visual_feature_centering_removes_per_sample_mean_component() -> None:
+    batch = make_loss_batch()
+    batch["student_segment_logits"] = torch.zeros(1, 2, requires_grad=True)
+    batch["student_decision_features"] = torch.tensor(
+        [[[1.0, 2.0], [3.0, 4.0]]], requires_grad=True
+    )
+    batch["strong_teacher_features"] = torch.zeros(1, 2, 2)
+    batch["strong_teacher_feature_mask"] = torch.ones(1, 2)
+    loss_module = make_camera_ready_loss(
+        alpha_bce=0.0,
+        alpha_strong_feat=1.0,
+        visual_l2_reduction="sum_feature_then_masked_mean_segments",
+        visual_feature_centering="per_sample_temporal",
+    )
+    loss_module.strong_teacher_proj = torch.nn.Identity()
+    loss, stats = loss_module(**batch)
+    assert loss.item() == pytest.approx(2.0)
+    assert stats["strong_feat"] == pytest.approx(2.0)
+    assert loss_module.visual_feature_centering == "per_sample_temporal"
+
+
 def test_shared_fusion_query_anchor_reuses_exact_fusion_text_projection() -> None:
     model = build_tiny_test_student(
         path_mode="explicit_projected",

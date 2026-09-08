@@ -4369,3 +4369,119 @@
 ### 964. 2026-09-05: cumulative handoff diff recorded
 
 - The cumulative source-to-handoff diff from R2 base `1eb5a0f` through the pushed verification state is `30 files changed, 2,800 insertions, 14 deletions`; this includes ledger-only verification commits. The final branch URL and SHA are reported to the user below; no runtime artifact is part of this diff.
+
+### 965. 2026-09-06: teacher-signal closure review accepted for implementation
+
+- Read the new external review/task book completely and inspected the current branch `repro/student-shortcut-recovery` at `f21645e64a9f34fe559d47804e0088f7d784985c`. The checkout is already an isolated linked worktree; only the intentionally untracked `tmp/` directory is present.
+- The review's central A4 criticism is confirmed directly in `scripts/audit_teacher_label_alignment.py`: representations are scored by `np.linalg.norm`, query embeddings are passed to a helper requiring one-dimensional query IDs, ties receive zero credit, and boundary derivation retains only first/last positive positions. Therefore the old A4 evidence is not a learned query-conditioned probe and cannot authorize training.
+- Registered an eight-step execution plan covering corrected Phase A, temporary-cache Phase B, stratified Phase C, zero-training Phase D, conditional bounded controls, and final verification. Formal Full, second seed, 3,200-step extension, test evaluation, canonical cache overwrite, and any T=10 to T=16 conversion remain forbidden.
+
+### 966. 2026-09-06: Phase A TDD red/green and input reconnaissance
+
+- Added the Phase A probe tests first. The initial test run failed at collection with the expected missing-module error (`ModuleNotFoundError: src.utils.teacher_signal_probe`).
+- Added `teacher_signal_probe.py` and corrected the legacy A4 evaluator's status labels. The first integration run on 5090 exposed a real shape bug in the QP construction: the zero visual block was still one-dimensional after query mapping. Fixed it so QP uses a zero block with the mapped common dimension.
+- Local focused A4/probe tests then passed (`6 passed, 1 skipped in 1.32s`); the locked 5090 run passed all seven tests (`7 passed in 6.68s`). The one local skip is the environment-only `timm` integration test; 5090 exercised it successfully.
+- Read-only manifest reconnaissance on 5090 confirmed train `13182` rows (`k0=3211`, `kmid=4091`, `k10=5880`, positive rate `0.621347`) and validation `5798` rows (`k0=1402`, `kmid=1967`, `k10=2429`, positive rate `0.615333`); query embeddings are `[1024]`, raw teacher features `[10,512]`, and official records expose no raw-video hash field.
+- A broad recursive raw-asset scan was started but stopped before output because it traversed the large dataset tree; no files or runtime state were changed. A restricted phase-file scan completed and confirmed only C2 best/last checkpoints and compact diagnostics are available in that run directory.
+
+### 967. 2026-09-06: Phase A launch parser failure and correction
+
+- The first 5090 Phase A launch exited `1` before loading data because the CLI accidentally registered `--workers` twice (`argparse.ArgumentError: conflicting option string`). No output artifact or checkpoint was written.
+- Removed the duplicate legacy argument registration, rechecked the local/remote focused tests, and relaunched with the single explicit worker setting. This was a code-path issue only, not an experiment result.
+
+### 968. 2026-09-06: Phase A corrected teacher-signal audit completed
+
+- The locked 5090 run completed with exit code `0` and produced the read-only `TEACHER_BOUNDARY_SIGNAL_HEALTHY` receipt. Train-fit/validation-eval used 13,182/5,798 samples, all eight registered probes, 100 within-video shuffles, tie-aware concordance, all transitions, and a direct-logit shift sweep.
+- Cached direct logits achieved validation AP/AUROC `0.771935/0.707681`, mixed video-macro concordance `0.629716`, direct shuffle AUROC drop `0.025589`, and best temporal shift `0`. No optimizer or checkpoint write occurred.
+- Fetched the compact receipt to `tmp/phase_a_teacher_signal.json`; the full runtime JSON remains remote-only and is not staged.
+
+### 969. 2026-09-06: Phase B raw-video availability audit completed
+
+- Added deterministic mixed-record selection, exact one-second timestamp helpers, raw-video validation, and a disposable-cache-only audit with tests. Local tests passed `3/3` (exit `0`); locked 5090 tests passed `3/3` (exit `0`).
+- The 5090 audit selected 512 validation records and found zero raw-video fields, zero existing non-empty supported video paths, and 512 records marked unavailable. It exited `0` with scientific status `BLOCKED_BY_TEACHER_FRAME_SAMPLING`; no JPG fallback or fabricated multiframe feature was used.
+
+### 970. 2026-09-06: Phase C stratified shortcut-agreement audit completed
+
+- Added disjoint stratified batch construction, differentiable mean/centered decomposition, tie-aware aggregation, read-only autograd gradient collection, clipping receipts, and virtual AdamW deltas. Local tests passed `4/4` (exit `0`); locked 5090 tests passed `4/4` (exit `0`).
+- The 5090 run completed with exit code `0`: four disjoint pools (`k0`, `kmid`, `k10`, `mixed_only`), 32 independent batches per pool, 128 batches total. Mixed-only mean/centered visual gradient ratio was `5.275533`, loss ratio `4.098132`, and clip coefficient mean `0.020540`; every batch preserved parameter and RNG state. Scientific status is `SHORTCUT_AGREEMENT_CONFIRMED`.
+
+### 971. 2026-09-06: independent pretrained-field implementation and audit
+
+- Added fail-closed `visual_pretrained`/`audio_pretrained` resolution, independent encoder construction and runtime receipts, a visual-pretrained diagnostic config, and zero-training QP/VQP probe code. Legacy `pretrained` is accepted only when both new fields are absent.
+- Local pretrained suites passed `14 passed, 1 skipped` (exit `0`); locked 5090 suites passed `15 passed` (exit `0`). The first remote probe attempt was allowed to expose the actual Hugging Face cache/network failure; the corrected runner now records it without substituting random weights.
+- The 5090 zero-training probe used 256 mixed records per split. Random visual VQP mixed concordance was `0.523028`, current C2 visual `0.488699`, and random audio control `0.455437`. The requested timm visual weights were absent and repeated Hugging Face requests timed out, so the receipt is `BLOCKED_BY_PRETRAINED_BACKBONE_ASSET` / `VISUAL_PRETRAINING_CONTROL_NOT_PASS`; no optimizer or checkpoint write occurred.
+
+### 972. 2026-09-06: closure evidence and reports recorded
+
+- Added separate Phase B/C/D reports, the combined `TEACHER_SIGNAL_CLOSURE_AUDIT.md`, compact `TEACHER_SIGNAL_CLOSURE_SUMMARY.json`, the temporary sampling config, and the Phase D visual-pretrained probe config. The canonical T=10 timeline, teacher cache, checkpoints, Full guard, test guard, second-seed guard, and schedule-extension guard remain unchanged.
+
+### 973. 2026-09-06: D1 control authorization and path-guard correction
+
+- D1 (`per_sample_temporal` visual-feature centering, seed 42, exactly 800 optimizer steps, validation-only) was authorized by the Phase A teacher gate and Phase C shortcut gate.
+- The first invocation exited `1` before model construction because its output namespace did not contain the required `diagnostic/noncanonical` marker; no optimizer step or checkpoint was written. The output root was corrected to `diagnostic/teacher_signal_closure_20260906/controls`, and the run was relaunched on the 5090.
+- The corrected run is active on the 5090. Its materialized configuration and receipts are being written under the D1 diagnostic directory; no canonical output or test evaluation is touched.
+
+### 974. 2026-09-07: D1 centered visual control completed and independently audited
+
+- The only authorized D1 run completed on the 5090 with exit code `0`: `803` attempts, exactly `800` applied updates, and `3` AMP skips. It used seed `42`, validation-only evaluation, and produced no test prediction artifact.
+- Independent audit of the fetched `[57980]` validation logits confirmed AP `0.7083034563`, AUROC `0.6031084907`, mixed tie-aware concordance `0.4994691275` over `1,967` mixed samples, and mean temporal logit standard deviation `0.0000477993`.
+- The preregistered boundary gates (`mixed concordance >= 0.60`, temporal decision std `>= 0.003`) both failed. D1 scientific status is `NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY`; the large checkpoint remains remote-only.
+
+### 975. 2026-09-07: independent review fixes applied
+
+- The code-review pass identified zero-valued metric truthiness, train/validation ID overlap, unbounded control-wrapper overrides, incomplete positive raw-video sampling branch, and a misleading missing `mixed_only` count. All were corrected with focused regression tests.
+- `run_teacher_signal_controls.py` now compares each materialized control against a fixed C2 scientific baseline and requires an explicit single registered change; the result receipt verifies exactly 800 applied steps and absence of test predictions.
+- `audit_teacher_sampling.py` now decodes and hashes all 80 true uniform-center frames per record when raw videos are available and exposes `compare_sampling_receipts` without fitting on selected validation rows. Current locked manifests still have no raw-video paths, so the measured Phase B status remains `BLOCKED_BY_TEACHER_FRAME_SAMPLING`.
+
+### 976. 2026-09-07: verification exit codes recorded
+
+- Local focused closure suite: `36 passed, 2 skipped`, exit `0`; local compileall exit `0`; local Ruff on changed files with baseline `E402` ignored exit `0`; local full pytest exit `1` during collection because local Anaconda lacks `timm`.
+- Locked 5090 closure suite including paper-faithfulness tests: `82 passed`, exit `0`; locked compileall exit `0`. Locked full pytest: `613 passed, 36 failed`, exit `1`; all 36 failures are test fixtures invoking `git` subprocesses, and the 5090 environment has no `git.exe`. The same full suite excluding the four Git-dependent fixture files passed `598`, exit `0`.
+- JSON reports parse successfully; D1 result independently confirms exact 800 applied steps and no test predictions. Large data, teacher cache, and checkpoints remain unstaged and remote-only.
+
+### 977. 2026-09-07: remote lock and manifest hashes rechecked
+
+- Remote CRLF-byte hashes for data, archival, download, evaluator, preprocessing and teacher locks match the recorded values: `d45eeb120c1793cdda9ffa69021fe9b9055c5528d91a4ce0cc6230ca673aba57`, `1dd2037ddff5413a9c23600da9ac16246cbe3760567602f3c83329791af14730`, `5ca0109b931b55c1fb1fb4c9e723996f36040b3392c20713bb7257e88062cc2a`, `e2b67bae839c81ba16721236172d698be100695313be6b3a8a38fd70e558928d`, `6eaa7aee15135a740af8deec58c90e37858c300243cad13b144d89f6a3b5c9e7`, `1dd082bfca7e045ee493b35578697fda7c678056c33765437d5a59fbda84d337`.
+- Remote train/val/test manifest hashes match the teacher lock (`cb30035c...c7666`, `df2e8979...97160`, `ae8bd54c...a2ea3`). The canonical teacher-cache tree lock remains `6707900b5d4acb39752baeea11cd1e90d8d3394600b1fa3a6cc3984223860244`; a full rescan was intentionally stopped after confirming no phase writes and preserving the locked receipt.
+
+### 978. 2026-09-07: final independent verification before handoff
+
+- Re-ran the local closure suite: `36 passed, 2 skipped`, exit `0`; compileall exit `0`; Ruff on all changed Python files with the repository's existing `E402` bootstrap pattern ignored exit `0`; working-tree and staged `git diff --check` both exit `0`.
+- The staged set contains only source, tests, compact JSON/Markdown reports, diagnostic configs, the plan, and ledgers; no file is at or above 50 MiB and `tmp/` remains intentionally untracked. The locked-5090 exit codes and full-suite environment limitation are recorded in entry 976.
+- The final scientific state remains `NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY`; Full training, a second seed, schedule extension, test evaluation, canonical-cache overwrite, and any T=10→16 conversion remain forbidden pending external provenance or a new explicit authorization.
+
+### 979. 2026-09-07: final full-suite environment recheck
+
+- A final local `python -m pytest` invocation aborted during NumPy/MKL initialization while importing Torch (exit `3`), before assertions ran. This is a host-runtime failure; the focused closure suite remained green, and the locked 5090 full-suite evidence is unchanged (598 tests pass when the four `git.exe`-dependent fixtures are excluded).
+
+### 980. 2026-09-08: external closure review evaluated and bounded scope preserved
+
+- Re-read the complete external review that invalidated the old A4 norm heuristic and requested the Teacher-Signal and Shortcut-Agreement Closure. Its technical diagnosis was accepted after direct source inspection: the old norm score was not a train-fit feature probe, repeated query concatenation could not alter within-video ranking, ties and transitions were mishandled, and the fixed A3 batch did not cover mixed boundaries.
+- The requested phases were executed under the existing hard boundary: official T=10 only, validation-only selection, no formal Full, no second seed, no 3,200-step extension, no test evaluation, no canonical-cache overwrite, and no fabricated historical parameters or raw frames.
+
+### 981. 2026-09-08: second independent review defects fixed with regression tests
+
+- A second independent code-review pass found two remaining implementation defects: the raw-video-positive Phase B path decoded and hashed frames without producing the registered comparison metrics, and Phase C reused the wrong mixed-pool slice when both `kmid` and `mixed_only` consumed it.
+- Added a public signal-scoring helper and completed Phase B end-to-end: true `[10,8,H,W,3]` raw frame arrays pass through the locked InternVideo2 transform/model, then receive direct-logit, 100-shuffle, all-transition, query-conditioned train-fit/validation-eval, temporal-shift, and geometry diagnostics. Missing teacher identity or a separate canonical train receipt fails closed.
+- Replaced Phase C special-case slicing with per-pool cursors so `kmid` and `mixed_only` consume disjoint capacity. Added exact-capacity and positive raw-decoder/teacher regression tests. The final independent reviewer returned PASS with no required fixes.
+
+### 982. 2026-09-08: focused local and locked-5090 verification
+
+- Final local focused suite passed `43 passed, 2 skipped` (pytest exit `0`); the skips are optional pretrained integrations unavailable locally. Local compileall exit `0` and changed-file Ruff exit `0` with the repository's established `E402` bootstrap pattern ignored.
+- Including `test_paper_faithfulness.py` in the local invocation caused collection exit `1` solely because local Python 3.13 lacks `timm`; the same code path is covered on the locked 5090. The first incremental remote rerun also exposed a missing deployed dependency in the older remote copy; after copying the tracked dependency, the focused remote suites passed, ending with `24 passed`, exit `0`.
+
+### 983. 2026-09-08: corrected full-suite isolation on the 5090
+
+- The first non-Git full-suite helper compared absolute paths against relative exclusions, so it accidentally reran all 403 tests in the incomplete old remote copy: `368 passed, 35 failed`, exit `1`; all 35 failures were the known missing-`git.exe` fixtures. The exclusion was corrected to compare file names.
+- Packed the current 839 tracked files into an unstaged temporary tar, SHA256 `5277EA51A028C9DC9E7986F560774ECFBBFDE484B1D14D10897368CB1D970EC3`, transferred it to the 5090, verified the same remote hash, and extracted it into the isolated `E:\OV-OrthKD-R3\teacher-signal-closure-5277ea5` tree. No canonical cache, data, checkpoint, or prior report was modified.
+- In that fresh complete tree, remote compileall exited `0`; 94 test files excluding exactly the four `git.exe`-dependent fixtures collected 601 tests, and all `601 passed in 120.16s` with pytest exit `0`.
+
+### 984. 2026-09-08: final reports reconciled with reviewed implementation
+
+- Updated the Phase B audit, closure audit, machine-readable summary, implementation plan, and final handoff to state precisely that the actual official-data result remains `BLOCKED_BY_TEACHER_FRAME_SAMPLING`, while the positive raw-video comparison path is implemented and independently tested rather than silently incomplete.
+- Replaced superseded verification counts in the final handoff with the current local `43 passed, 2 skipped` and fresh-5090 `601 passed` evidence. The scientific result remains `NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY`; no new training or test evaluation was performed during these fixes.
+
+### 985. 2026-09-08: pre-commit scope and receipt audit
+
+- Confirmed branch `repro/student-shortcut-recovery` at starting HEAD `f21645e64a9f34fe559d47804e0088f7d784985c`. Staged 35 source/config/test/compact-report/plan/ledger files; no `tmp`, cache, checkpoint, model archive, dataset archive, or file at or above 50 MiB is staged.
+- Staged diff-check exited `0`; both JSON receipts parsed; the summary state is `NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY`; D1 records exactly 800 applied updates, no test evaluation, and absent test predictions. The repository and parent `all.md` files remain byte-identical.
