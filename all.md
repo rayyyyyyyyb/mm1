@@ -4573,3 +4573,9 @@
 ### 1004. 2026-09-09: remote target preflight
 
 - Read-only SSH confirmed `DESKTOP-LPN6MT3`, RTX 5090, 32,607 MiB, driver 610.88, and Python 3.11.9. Earlier transient RTX 4070 output remains treated as a no-mutation stop; no remote files, cache, checkpoint, or training process were changed in this entry.
+
+### 1005. 2026-09-09: zero-training D2 readiness auditor
+
+- Added `scripts/audit_d2_readiness.py` to verify target GPU identity, load the locked timm safetensors twice, compare exact state fingerprints, construct C2 and D2 from the same seed/random path, replace only D2's visual backbone after construction, and check every non-visual student/loss state tensor bit-for-bit. Its receipt explicitly fixes all loader/optimizer/scheduler/forward/backward/step/checkpoint/test/scientific-gate flags to false.
+- Added fail-closed unit tests for the READY path, wrong-GPU block, and non-visual initialization drift. The first collection attempt exposed a local optional-`timm` import dependency; imports were made lazy without changing remote behavior. Final focused run: `38 passed, 1 skipped`, exit `0`; Ruff, compileall, and diff-check exit `0`.
+- Published the preceding sample-alignment/offline-loader commit to GitHub as `81607ebddc1c8e32f7d535b984ccaad437a581f6`; `git ls-remote` matched it exactly.

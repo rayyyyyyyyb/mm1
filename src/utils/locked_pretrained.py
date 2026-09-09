@@ -136,6 +136,7 @@ def load_locked_timm_encoder(
             "locked timm state load was not exact: "
             f"missing={load_result.missing_keys}, unexpected={load_result.unexpected_keys}"
         )
+    loaded_state = backbone.state_dict()
     receipt = {
         "model_id": locked_id,
         "revision": str(lock["model"]["revision"]),
@@ -144,8 +145,8 @@ def load_locked_timm_encoder(
         "weights_sha256": _sha256_file(files["model.safetensors"]),
         "source_state_key_sha256": _state_key_sha256(source_state),
         "source_state_tensor_sha256": _state_tensor_sha256(source_state),
-        "loaded_backbone_key_sha256": _state_key_sha256(target_state),
-        "loaded_backbone_tensor_sha256": _state_tensor_sha256(target_state),
+        "loaded_backbone_key_sha256": _state_key_sha256(loaded_state),
+        "loaded_backbone_tensor_sha256": _state_tensor_sha256(loaded_state),
         "missing_keys": list(load_result.missing_keys),
         "unexpected_head_keys": sorted(allowed_unexpected),
         "parameter_count": int(sum(parameter.numel() for parameter in backbone.parameters())),
