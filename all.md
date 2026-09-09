@@ -4536,3 +4536,7 @@
 ### 996. 2026-09-09: fail-closed D2 config validation tightened
 
 - Tightened the nested D2 probe resolver to reject a missing or non-mapping `protocol` before reading `zero_training_only`, preserving fail-closed behavior. Independent post-edit checks again passed: focused pytest `35 passed, 2 skipped`, Ruff, compileall, and diff-check all exited `0`.
+
+### 997. 2026-09-09: final GitHub synchronization check
+
+- Pushed the final fail-closed validation commit; local HEAD and `origin/repro/student-shortcut-recovery` are both `0cea4bfbb51e872c3e5e8d2d80be290ef7a17d33`. `git status --porcelain` is empty, and parent/R2 `all.md` SHA256 values remain identical.
