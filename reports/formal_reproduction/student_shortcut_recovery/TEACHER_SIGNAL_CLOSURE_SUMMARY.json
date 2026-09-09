@@ -38,14 +38,16 @@
     "rng_state_unchanged": true
   },
   "phase_d": {
-    "status": "BLOCKED_BY_PRETRAINED_BACKBONE_ASSET",
-    "scientific_status": "D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED",
+    "status": "D2_PROBE_READY_FOR_ZERO_TRAINING_GATE",
+    "scientific_status": "D2_ZERO_TRAINING_GATE_NOT_EXECUTED",
     "sample_count_per_split": 256,
     "random_visual_vqp_mixed_concordance": 0.5230277185501067,
     "current_c2_visual_vqp_mixed_concordance": 0.4886993603411514,
     "random_audio_control_vqp_mixed_concordance": 0.4554371002132196,
     "timm_pretrained_visual_vqp_mixed_concordance": null,
-    "reason": "exact convnextv2_tiny.fcmae_ft_in22k_in1k asset is locally verified and the target RTX 5090 is reachable again; cache installation and offline load remain pending",
+    "reason": "exact convnextv2_tiny.fcmae_ft_in22k_in1k asset passed two offline loads and non-visual initialization parity on the target RTX 5090; corrected zero-training gate remains intentionally unexecuted",
+    "readiness_receipt": "d2_e0_1_readiness.json",
+    "scientific_gate_executed": false,
     "optimizer_step_executed": false,
     "checkpoint_written": false
   },
@@ -84,6 +86,6 @@
     "schedule_extension": false,
     "test_evaluation": false,
     "formal_full_status": "FORMAL_FULL_HOLD",
-    "bounded_controls": "D1_failed_D2_asset_blocked_D3_repaired_weight_unresolved_not_executed"
+    "bounded_controls": "D1_failed_D2_probe_ready_gate_not_executed_D3_repaired_weight_unresolved_not_executed"
   }
 }

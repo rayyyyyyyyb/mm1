@@ -53,6 +53,7 @@ def _patch_dependencies(
         "diagnostic": {"pretrained_asset_lock": str(lock_path)},
         "student": {
             "visual_backbone": "fake.visual",
+            "pretrained": False,
             "visual_pretrained": True,
             "audio_pretrained": False,
         },
@@ -61,6 +62,7 @@ def _patch_dependencies(
         "tag": "c2",
         "student": {
             "visual_backbone": "fake.visual",
+            "pretrained": False,
             "visual_pretrained": False,
             "audio_pretrained": False,
         },
@@ -82,6 +84,9 @@ def _patch_dependencies(
 
     def fake_builder(config, device):
         del device
+        assert "pretrained" not in config["student"]
+        assert config["student"]["visual_pretrained"] is False
+        assert config["student"]["audio_pretrained"] is False
         student = _Student(
             alter_nonvisual=alter_nonvisual and config.get("tag") == "d2"
         )
@@ -97,6 +102,8 @@ def test_d2_readiness_is_zero_training_and_checks_nonvisual_parity(
 ) -> None:
     lock = tmp_path / "lock.yaml"
     lock.write_text("placeholder", encoding="utf-8")
+    (tmp_path / "c2.yaml").write_text("placeholder", encoding="utf-8")
+    (tmp_path / "d2.yaml").write_text("placeholder", encoding="utf-8")
     _patch_dependencies(monkeypatch, lock)
     output = tmp_path / "readiness.json"
 
@@ -122,6 +129,8 @@ def test_d2_readiness_rejects_wrong_gpu_before_asset_load(
 ) -> None:
     lock = tmp_path / "lock.yaml"
     lock.write_text("placeholder", encoding="utf-8")
+    (tmp_path / "c2.yaml").write_text("placeholder", encoding="utf-8")
+    (tmp_path / "d2.yaml").write_text("placeholder", encoding="utf-8")
     _patch_dependencies(monkeypatch, lock, gpu_name="NVIDIA GeForce RTX 4070")
     result = audit.audit_d2_readiness(
         c2_config_path=tmp_path / "c2.yaml",
@@ -138,6 +147,8 @@ def test_d2_readiness_rejects_nonvisual_initialization_drift(
 ) -> None:
     lock = tmp_path / "lock.yaml"
     lock.write_text("placeholder", encoding="utf-8")
+    (tmp_path / "c2.yaml").write_text("placeholder", encoding="utf-8")
+    (tmp_path / "d2.yaml").write_text("placeholder", encoding="utf-8")
     _patch_dependencies(monkeypatch, lock, alter_nonvisual=True)
     result = audit.audit_d2_readiness(
         c2_config_path=tmp_path / "c2.yaml",

@@ -20,6 +20,7 @@ from scripts.audit_pretrained_representations import (  # noqa: E402
     _resolve_config_file,
 )
 from src.utils.locked_pretrained import (  # noqa: E402
+    _sha256_file,
     _state_tensor_sha256,
     compare_nonvisual_initialization,
     load_locked_timm_encoder,
@@ -116,6 +117,17 @@ def audit_d2_readiness(
             )
             _write_result(output_path, result)
             return result
+        result["status"] = "BLOCKED_BY_ASSET_IDENTITY"
+        input_paths = {
+            "script": Path(__file__).resolve(),
+            "c2_config": Path(c2_config_path).resolve(),
+            "d2_config": Path(d2_config_path).resolve(),
+            "asset_lock": Path(asset_lock_path).resolve(),
+        }
+        result["inputs"] = {
+            name: {"path": str(path), "sha256": _sha256_file(path)}
+            for name, path in input_paths.items()
+        }
 
         d2_config = _load_probe_config(d2_config_path)
         c2_config = _resolve_config_file(c2_config_path)
@@ -178,10 +190,15 @@ def audit_d2_readiness(
             "repeat_load_equal": True,
             "repeat_compared_fields": list(repeat_fields),
         }
+        result["status"] = "BLOCKED_BY_INITIALIZATION_PARITY"
 
         device = torch.device("cpu")
+        c2_initialization_config = copy.deepcopy(c2_config)
+        c2_initialization_config["student"].pop("pretrained", None)
+        c2_initialization_config["student"]["visual_pretrained"] = False
+        c2_initialization_config["student"]["audio_pretrained"] = False
         _set_seed(int(seed))
-        c2_student, c2_loss = _build_model_and_loss(copy.deepcopy(c2_config), device)
+        c2_student, c2_loss = _build_model_and_loss(c2_initialization_config, device)
         reference_state = _combined_state(c2_student, c2_loss)
         reference_visual_sha = _state_tensor_sha256(
             {
@@ -198,6 +215,7 @@ def audit_d2_readiness(
         # directly testable and prevents pretrained loading from changing RNG
         # consumption for the audio/fusion/temporal/loss parameters.
         d2_initialization_config = copy.deepcopy(d2_config)
+        d2_initialization_config["student"].pop("pretrained", None)
         d2_initialization_config["student"]["visual_pretrained"] = False
         d2_initialization_config["student"]["audio_pretrained"] = False
         _set_seed(int(seed))

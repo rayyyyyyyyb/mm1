@@ -12,7 +12,9 @@ from scripts.audit_pretrained_backbones import build_pretrained_backbone_report
 from scripts.audit_pretrained_representations import (
     _align_encoded_split,
     _load_probe_config,
+    _probe_pair,
 )
+from src.utils.teacher_signal_probe import build_common_space_maps
 
 
 class _FakeEncoder(nn.Module):
@@ -182,3 +184,27 @@ def test_alignment_rejects_duplicate_missing_or_mismatched_identity_fields(
     candidate_mutation(candidate)
     with pytest.raises(ValueError, match=message):
         _align_encoded_split(reference, candidate, pass_name="candidate")
+
+
+def test_probe_pair_groups_macro_metrics_by_real_query_strings() -> None:
+    train = _encoded_rows(["a", "b", "c"])
+    validation = _encoded_rows(["a", "b", "c"])
+    maps, receipt = build_common_space_maps([1], 2, output_dim=2, seed=42)
+
+    result = _probe_pair(
+        train["features"],
+        train,
+        validation["features"],
+        validation,
+        name="identity_test",
+        seed=42,
+        maps=maps,
+        maps_receipt=receipt,
+    )
+
+    grouping = result["macro_grouping"]
+    assert grouping["source"] == "batch.query"
+    assert grouping["validation_query_counts"] == {"q-a": 2, "q-b": 1}
+    assert grouping["unique_query_count"] == 2
+    assert grouping["validation_query_ids_sha256"] == grouping["qp_query_ids_sha256"]
+    assert grouping["validation_query_ids_sha256"] == grouping["vqp_query_ids_sha256"]

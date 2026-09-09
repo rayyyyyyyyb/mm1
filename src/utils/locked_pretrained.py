@@ -36,7 +36,7 @@ def _state_tensor_sha256(state: Mapping[str, Any]) -> str:
         digest.update(str(key).encode("utf-8"))
         digest.update(str(tensor.dtype).encode("ascii"))
         digest.update(json.dumps(list(tensor.shape), separators=(",", ":")).encode("ascii"))
-        digest.update(tensor.view(torch.uint8).numpy().tobytes(order="C"))
+        digest.update(tensor.reshape(-1).view(torch.uint8).numpy().tobytes(order="C"))
     return digest.hexdigest()
 
 
@@ -137,10 +137,31 @@ def load_locked_timm_encoder(
             f"missing={load_result.missing_keys}, unexpected={load_result.unexpected_keys}"
         )
     loaded_state = backbone.state_dict()
+    pretrained_cfg = getattr(backbone, "pretrained_cfg", {})
+    stable_pretrained_cfg = {
+        key: pretrained_cfg[key]
+        for key in (
+            "architecture",
+            "tag",
+            "custom_load",
+            "input_size",
+            "fixed_input_size",
+            "interpolation",
+            "crop_pct",
+            "mean",
+            "std",
+            "num_classes",
+            "first_conv",
+            "classifier",
+            "hf_hub_id",
+        )
+        if isinstance(pretrained_cfg, Mapping) and key in pretrained_cfg
+    }
     receipt = {
         "model_id": locked_id,
         "revision": str(lock["model"]["revision"]),
         "config_path": str(files["config.json"]),
+        "config_sha256": _sha256_file(files["config.json"]),
         "weights_path": str(files["model.safetensors"]),
         "weights_sha256": _sha256_file(files["model.safetensors"]),
         "source_state_key_sha256": _state_key_sha256(source_state),
@@ -153,6 +174,8 @@ def load_locked_timm_encoder(
         "feature_dim": int(getattr(backbone, "num_features", 0)),
         "pretrained_lookup_disabled": True,
         "offline_only": True,
+        "load_api": "safetensors.torch.load_file",
+        "resolved_pretrained_cfg": stable_pretrained_cfg,
     }
     return backbone, receipt
 

@@ -98,15 +98,19 @@ authorize a Full run.
 The code now resolves `visual_pretrained` and `audio_pretrained` independently;
 legacy `pretrained` is accepted only when both new fields are absent. The
 random visual, current C2 visual, and random audio controls completed on 256
-mixed records per split. The timm-pretrained visual branch was blocked because
-the requested Hugging Face weights were not cached and repeated downloads
-timed out; this is recorded as `BLOCKED_BY_PRETRAINED_BACKBONE_ASSET`, never as
-a random-weight substitute. No optimizer is constructed by any Phase A–D
-audit, and no bounded control is authorized because the Phase D frozen-
-representation gate cannot be evaluated. The exact D2 status is
-`D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED`, not a negative pretraining result.
-Formal Full, second seed, 3,200-step extension, test evaluation, and
-canonical-cache overwrite remain forbidden.
+mixed records per split. Those historical metrics are retained, but the prior
+pretrained branch is rejected because its repeated loader passes were not
+aligned by real sample ID. E0.1 now aligns every pass by ID, verifies all
+non-feature identity fields, shares one projection map family, and groups
+per-query macro by real query strings.
+
+The exact asset passed byte verification, two identical offline timm loads,
+and bitwise non-visual initialization parity on the RTX 5090. The resulting
+readiness status is `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`; the corrected
+zero-training gate itself was deliberately not executed. Therefore D2 still
+has no scientific result and no bounded training is authorized. Formal Full,
+second seed, 3,200-step extension, test evaluation, and canonical-cache
+overwrite remain forbidden.
 
 ## Phase D1 — centered visual-feature control
 
@@ -133,7 +137,8 @@ concordance from `0.509331` to `0.499469`, and decision temporal std from
 diagnostic under the current reconstructed protocol; it does not reject every
 centered-supervision design or the paper's absolute-geometry feature loss.
 
-D2 remained asset-blocked and unexecuted. Independent review also found that
+D2 800-step training remains unexecuted; only its corrected zero-training probe
+is now ready. Independent review also found that
 D3 had incorrectly registered `student.path_mode` and read a nonexistent
 Phase D gate. E0 repairs D3 to use `loss.alpha_strong_logit` and the Phase A
 direct-logit gate, while preserving `student.path_mode=explicit_projected` and

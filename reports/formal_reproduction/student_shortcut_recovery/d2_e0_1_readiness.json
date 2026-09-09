@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "status": "D2_PROBE_READY_FOR_ZERO_TRAINING_GATE",
+  "allowed_statuses": [
+    "BLOCKED_BY_ASSET_IDENTITY",
+    "BLOCKED_BY_INITIALIZATION_PARITY",
+    "BLOCKED_BY_SAMPLE_ALIGNMENT",
+    "BLOCKED_BY_TARGET_5090_ENVIRONMENT",
+    "D2_PROBE_READY_FOR_ZERO_TRAINING_GATE"
+  ],
+  "protocol": {
+    "seed": 42,
+    "zero_training_only": true,
+    "scientific_gate_executed": false,
+    "data_loader_constructed": false,
+    "optimizer_constructed": false,
+    "scheduler_constructed": false,
+    "forward_executed": false,
+    "backward_executed": false,
+    "optimizer_step_executed": false,
+    "checkpoint_written": false,
+    "test_evaluation": false
+  },
+  "runtime": {
+    "python": "3.11.9",
+    "torch": "2.10.0+cu128",
+    "timm": "1.0.28",
+    "safetensors": "0.8.0",
+    "cuda_available": true,
+    "cuda_runtime": "12.8",
+    "gpu_name": "NVIDIA GeForce RTX 5090"
+  },
+  "inputs": {
+    "script": {
+      "path": "E:\\OV-OrthKD-R3\\d2-e0-1-81607eb\\repo\\scripts\\audit_d2_readiness.py",
+      "sha256": "9f7bc4969a77fa98464c030d163b991b89fd7203a2ef0d8aca44bc4823ab9f89"
+    },
+    "c2_config": {
+      "path": "E:\\OV-OrthKD-R3\\d2-e0-1-81607eb\\repo\\configs\\diagnostics\\recovery\\ov_orthkd_visual_only_sum_feature_seed42_c2_static_positive_lr_clip_800.yaml",
+      "sha256": "bddbdc33de6cc9bfb317e965e5fe094cf2a8225a492a793b20b311618ad8e264"
+    },
+    "d2_config": {
+      "path": "E:\\OV-OrthKD-R3\\d2-e0-1-81607eb\\repo\\configs\\diagnostics\\recovery\\ov_orthkd_visual_only_c2_visual_pretrained_probe.yaml",
+      "sha256": "b9c32df24aef4c30e2ca5869b52c5dbc16a4c517ab46fe35332f2e548110643d"
+    },
+    "asset_lock": {
+      "path": "E:\\OV-OrthKD-R3\\d2-e0-1-81607eb\\repo\\configs\\locks\\diagnostics\\convnextv2_tiny_pretrained_asset.yaml",
+      "sha256": "b50207f0e3b34536ab73c152c1762f8c6ec5a904710f7364ceb10b009d9cdf07"
+    }
+  },
+  "locked_load": {
+    "model_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k",
+    "revision": "b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817",
+    "config_path": "E:\\OV-OrthKD-R3\\d2-e0-1-81607eb\\repo\\tmp\\d2_pretrained_asset\\b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817\\config.json",
+    "config_sha256": "a9adf5b660f85c08af085b19a80a47b942f574e62211f7af6c3c7b6fe2a88eb6",
+    "weights_path": "E:\\OV-OrthKD-R3\\d2-e0-1-81607eb\\repo\\tmp\\d2_pretrained_asset\\b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817\\model.safetensors",
+    "weights_sha256": "6652fd90fc9c23977659e58515778e16fbbcd43f0b01fc693089cebe6d64c2a9",
+    "source_state_key_sha256": "dcae30d4a74adba8a659830e14f2f3ffa02dee51afcdf873480bbc5e2f56ff51",
+    "source_state_tensor_sha256": "bd92db7f811465a831aad5ec369139ab438d6794c5cdd5cb16d4c4db320a972b",
+    "loaded_backbone_key_sha256": "3c91d2e3a30ca535610670209165fcb6237153e892d420266f6092f91eaa2b3d",
+    "loaded_backbone_tensor_sha256": "d8bcbc7225bedef0202e5f47613a4232eab9a7bbeef2be571831266361bafe90",
+    "missing_keys": [],
+    "unexpected_head_keys": [
+      "head.fc.bias",
+      "head.fc.weight"
+    ],
+    "parameter_count": 27866496,
+    "feature_dim": 768,
+    "pretrained_lookup_disabled": true,
+    "offline_only": true,
+    "load_api": "safetensors.torch.load_file",
+    "resolved_pretrained_cfg": {
+      "architecture": "convnextv2_tiny",
+      "tag": "fcmae_ft_in22k_in1k",
+      "custom_load": false,
+      "input_size": [
+        3,
+        224,
+        224
+      ],
+      "fixed_input_size": false,
+      "interpolation": "bicubic",
+      "crop_pct": 0.875,
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ],
+      "num_classes": 1000,
+      "first_conv": "stem.0",
+      "classifier": "head.fc",
+      "hf_hub_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k"
+    },
+    "repeat_load_equal": true,
+    "repeat_compared_fields": [
+      "source_state_key_sha256",
+      "source_state_tensor_sha256",
+      "loaded_backbone_key_sha256",
+      "loaded_backbone_tensor_sha256",
+      "parameter_count",
+      "feature_dim"
+    ]
+  },
+  "initialization_parity": {
+    "pass": true,
+    "excluded_prefix": "student.visual_encoder.",
+    "compared_key_count": 643,
+    "reference_nonvisual_sha256": "d157e5086dd7bb33141e3e787a7f9bebd2bcfd3bd99776164b34a1d1e5122272",
+    "candidate_nonvisual_sha256": "d157e5086dd7bb33141e3e787a7f9bebd2bcfd3bd99776164b34a1d1e5122272",
+    "construction": "same_seed_random_model_then_locked_visual_state_replace",
+    "reference_visual_sha256": "f09afc6aa2c664bcbf1728a3c9d98a92999713caf92b659d43040dc179288e61",
+    "candidate_visual_sha256": "46c0d38d3a361b3f3f72440ebae05b4a658f1325572b125e0a4b41fb00e4aee4",
+    "visual_state_changed": true
+  }
+}

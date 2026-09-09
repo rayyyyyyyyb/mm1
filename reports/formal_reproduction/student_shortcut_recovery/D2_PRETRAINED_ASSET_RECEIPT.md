@@ -24,20 +24,21 @@ only; it does not change the model ID or revision.
 ## Deployment state
 
 The verified bytes are intentionally under ignored `tmp/` and are not staged
-or uploaded to GitHub. Installation into the isolated 5090 Hugging Face cache,
-offline `timm` load, state-dict fingerprint, and the zero-training VQP gate are
-still pending. An earlier query reported an RTX 4070 Laptop GPU and therefore
+or uploaded to GitHub. They were copied to an isolated ignored directory on
+the 5090 and reverified byte-for-byte. Two explicit offline loads succeeded
+with an identical loaded-backbone state SHA256 of
+`d8bcbc7225bedef0202e5f47613a4232eab9a7bbeef2be571831266361bafe90`.
+An earlier query reported an RTX 4070 Laptop GPU and therefore
 correctly caused a no-mutation stop. A fresh direct SSH query now reports
 `DESKTOP-LPN6MT3` with `NVIDIA GeForce RTX 5090, 32607 MiB`; the target is
 reachable again. The D2 probe now requires the tracked lock to be passed into
 an explicit offline safetensors load; it will not call `timm` with
-`pretrained=True` or silently use a cache hit. No D2 training had been started
-at the time of this identity recheck.
+`pretrained=True` or silently use a cache hit. No D2 training was started.
 
 ## Scientific interpretation
 
-This receipt is an asset lock, not evidence that D2 improves the boundary. The
-E0.1 remains `BLOCKED_BY_TARGET_5090_ENVIRONMENT` until the remote target has
-run the locked offline load and initialization-parity audit. The scientific D2
+This receipt is an asset lock, not evidence that D2 improves the boundary.
+E0.1 is now `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`: the remote locked load and
+bitwise non-visual initialization-parity audit both passed. The scientific D2
 status remains untested until the separately authorized zero-training VQP gate
-is executed. Asset integrity is not scientific evidence.
+is executed. Asset integrity and readiness are not scientific evidence.

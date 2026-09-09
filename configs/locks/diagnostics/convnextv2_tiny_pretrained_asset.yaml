@@ -37,9 +37,15 @@ remote_receipt:
   observed_hostname: DESKTOP-LPN6MT3
   observed_gpu: NVIDIA GeForce RTX 5090
   observed_memory_mib: 32607
-  cache_root: null
-  model_sha256_verified: null
-  status: target_rtx5090_reachable_install_pending
+  cache_root: E:/OV-OrthKD-R3/d2-e0-1-81607eb/repo/tmp/d2_pretrained_asset/b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817
+  config_sha256_verified: true
+  model_sha256_verified: true
+  pretrained_lookup_disabled: true
+  offline_repeat_load_equal: true
+  loaded_backbone_parameter_count: 27866496
+  loaded_backbone_feature_dim: 768
+  loaded_backbone_state_sha256: d8bcbc7225bedef0202e5f47613a4232eab9a7bbeef2be571831266361bafe90
+  status: d2_probe_ready_for_zero_training_gate
 guardrails:
   visual_pretrained: true
   audio_pretrained: false

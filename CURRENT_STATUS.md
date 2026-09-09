@@ -20,7 +20,7 @@
 - 教师 feature：可解码，但 `TABLE2_FEATURE_PROBE_PROTOCOL_UNRESOLVED`
 - Phase C：`VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED`
 - D1：`D1_CENTERED_VISUAL_CONTROL_FAIL`
-- D2：`D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED`
+- D2 E0.1：`D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`（精确离线权重与初始化一致性已通过；科学 gate 尚未运行）
 - D3：编排已修复，正权重 provenance 未恢复，尚未执行
 - 正式 Full：`FORMAL_FULL_HOLD`
 - evaluator 覆盖：原运行缺失；post-hoc 官方 segment 公式已补算，未来输出代码已修复

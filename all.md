@@ -4579,3 +4579,28 @@
 - Added `scripts/audit_d2_readiness.py` to verify target GPU identity, load the locked timm safetensors twice, compare exact state fingerprints, construct C2 and D2 from the same seed/random path, replace only D2's visual backbone after construction, and check every non-visual student/loss state tensor bit-for-bit. Its receipt explicitly fixes all loader/optimizer/scheduler/forward/backward/step/checkpoint/test/scientific-gate flags to false.
 - Added fail-closed unit tests for the READY path, wrong-GPU block, and non-visual initialization drift. The first collection attempt exposed a local optional-`timm` import dependency; imports were made lazy without changing remote behavior. Final focused run: `38 passed, 1 skipped`, exit `0`; Ruff, compileall, and diff-check exit `0`.
 - Published the preceding sample-alignment/offline-loader commit to GitHub as `81607ebddc1c8e32f7d535b984ccaad437a581f6`; `git ls-remote` matched it exactly.
+
+### 1006. 2026-09-09: isolated 5090 source and asset deployment
+
+- Created a tracked-files-only source archive for commit `81607eb`, 14,346,240 bytes, SHA256 `C7BD401FD3CE28D639BD5D3CFDB4EA81B8FE1D3B1EA5FB794021959B211879DE`, and extracted it into isolated `E:\OV-OrthKD-R3\d2-e0-1-81607eb\repo` after the remote hash matched. No dataset, teacher cache, checkpoint, or prior result directory was included or changed.
+- Copied the locked D2 `config.json` and 114,561,694-byte `model.safetensors` to the isolated ignored `tmp` directory. The SCP process remained alive during the initial 0-byte destination placeholder and completed normally; remote SHA256 values matched `a9adf5b...88eb6` and `6652fd90...4c2a9` exactly.
+- A first two-file SCP command placed the readiness script and utility at the isolated repo root as well as the intended transfer destination. After confirming the exact two root filenames and successful copies to `scripts/` and `src/utils/`, removed only those two unintended duplicate files. Final remote hashes matched local production files.
+
+### 1007. 2026-09-09: no-training readiness defects exposed and repaired
+
+- First 5090 audit loaded the exact ConvNeXtV2 twice successfully, then failed before parity with `legacy pretrained conflicts with explicit visual/audio pretrained fields`. The audit now removes only the inherited legacy `pretrained:false` during paired C2/D2 initialization normalization, declares explicit false/false construction for both sides, and classifies post-asset failures as initialization rather than target-environment failures.
+- Second no-training audit again passed exact offline loading, then exposed a deterministic fingerprint bug on scalar Long buffers (`self.dim() cannot be 0 to view Long as Byte`). State hashing now flattens before byte view, with a scalar-long regression test. Neither failed attempt constructed a data loader/optimizer/scheduler, executed forward/backward/step/test/scientific gate, or wrote a checkpoint.
+- Added real-query macro grouping receipts and an integration test. That test independently caught and fixed a stale three-value unpack against the new two-value shared-map API. Focused tests now pass `39 passed, 1 skipped`; Ruff, compileall, and diff-check pass.
+
+### 1008. 2026-09-09: E0.1 readiness passed on RTX 5090
+
+- Final 5090 audit exited `0` with `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`. Runtime: Python 3.11.9, torch 2.10.0+cu128, timm 1.0.28, safetensors 0.8.0, CUDA 12.8, RTX 5090.
+- Two offline loads matched: exact revision `b1dd4623...53a817`, source state-key SHA256 `dcae30d4...6ff51`, source tensor SHA256 `bd92db7f...a972b`, loaded backbone SHA256 `d8bcbc72...afe90`, 27,866,496 parameters, feature dim 768, no missing keys, and only classifier keys `head.fc.weight/bias` intentionally unused.
+- Same-seed initialization parity passed for all 643 non-visual student/loss state entries; reference and D2 SHA256 both equal `d157e508...2272`. The random and locked visual SHA256 values differed as required. The collected JSON matched remote/local SHA256 `784F1CB06ACE0DF5E2810A13DAE91D0CB83760267BFDE7E393C62744AE4BF8AB`.
+- The receipt explicitly records no data loader, optimizer, scheduler, forward, backward, optimizer step, checkpoint, test evaluation, or scientific gate. D2 800-step training and formal Full remain unauthorized.
+
+### 1009. 2026-09-09: final local review before publication
+
+- Independently reread the changed loader, alignment, shared-map, D3 scientific-view, and readiness code. Fixed the only integration issue found in review: `_probe_pair` had retained a stale three-value unpack after `apply_common_space_maps` was intentionally reduced to two outputs; the real-query grouping test now exercises that path.
+- Final local checks: focused suite `39 passed, 1 skipped` (exit `0`); changed-file Ruff exit `0`; `python -m compileall -q scripts src tests` exit `0`; JSON/YAML parser accepted 318 JSON and 73 YAML documents (BOM-aware); `git diff --check` exit `0`. Both ledgers remain byte-identical.
+- Updated the D2 lock remote receipt, closure summary, current-status pages, and Phase D reports to distinguish `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE` from the still-unexecuted scientific gate. No datasets, caches, weights, checkpoints, or training outputs were added to Git.

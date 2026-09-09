@@ -58,8 +58,16 @@ def test_resolve_locked_asset_verifies_size_and_sha256(tmp_path: Path) -> None:
 
 
 def test_state_fingerprints_are_key_order_invariant() -> None:
-    first = {"b": torch.tensor([2.0]), "a": torch.tensor([1.0])}
-    second = {"a": first["a"].clone(), "b": first["b"].clone()}
+    first = {
+        "b": torch.tensor([2.0]),
+        "a": torch.tensor([1.0]),
+        "scalar_long_buffer": torch.tensor(0, dtype=torch.long),
+    }
+    second = {
+        "scalar_long_buffer": first["scalar_long_buffer"].clone(),
+        "a": first["a"].clone(),
+        "b": first["b"].clone(),
+    }
     assert _state_key_sha256(first) == _state_key_sha256(second)
     assert _state_tensor_sha256(first) == _state_tensor_sha256(second)
 

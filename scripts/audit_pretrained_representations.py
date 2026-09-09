@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -307,7 +308,7 @@ def _probe_pair(
         val_queries[:, None, :],
         (val_queries.shape[0], val_visual.shape[1], val_queries.shape[1]),
     ).copy()
-    train_v, train_q, _ = apply_common_space_maps(train_visual, train_query, maps)
+    train_v, train_q = apply_common_space_maps(train_visual, train_query, maps)
     val_v, val_q = apply_common_space_maps(val_visual, val_query, maps)
     train_zero = np.zeros_like(train_v)
     val_zero = np.zeros_like(val_v)
@@ -344,6 +345,8 @@ def _probe_pair(
         seed=seed,
         shuffle_repeats=100,
     )
+    validation_query_ids = [str(value) for value in val_split["query_ids"]]
+    query_counts = dict(sorted(Counter(validation_query_ids).items()))
     return {
         "name": name,
         "qp": qp["metrics"],
@@ -357,6 +360,18 @@ def _probe_pair(
             "validation_query_id_hash": _sha256_strings(val_split["query_ids"]),
         },
         "projection_maps": dict(maps_receipt),
+        "macro_grouping": {
+            "source": "batch.query",
+            "validation_sample_count": len(validation_query_ids),
+            "unique_query_count": len(query_counts),
+            "validation_query_counts": query_counts,
+            "validation_query_ids_sha256": _sha256_strings(validation_query_ids),
+            "qp_query_ids_sha256": qp["query_ids_sha256"],
+            "vqp_query_ids_sha256": vqp["query_ids_sha256"],
+            "validation_sample_ids_sha256": _sha256_strings(val_split["ids"]),
+            "qp_sample_ids_sha256": qp["sample_ids_sha256"],
+            "vqp_sample_ids_sha256": vqp["sample_ids_sha256"],
+        },
     }
 
 
