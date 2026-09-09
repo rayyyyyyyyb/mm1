@@ -4604,3 +4604,14 @@
 - Independently reread the changed loader, alignment, shared-map, D3 scientific-view, and readiness code. Fixed the only integration issue found in review: `_probe_pair` had retained a stale three-value unpack after `apply_common_space_maps` was intentionally reduced to two outputs; the real-query grouping test now exercises that path.
 - Final local checks: focused suite `39 passed, 1 skipped` (exit `0`); changed-file Ruff exit `0`; `python -m compileall -q scripts src tests` exit `0`; JSON/YAML parser accepted 318 JSON and 73 YAML documents (BOM-aware); `git diff --check` exit `0`. Both ledgers remain byte-identical.
 - Updated the D2 lock remote receipt, closure summary, current-status pages, and Phase D reports to distinguish `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE` from the still-unexecuted scientific gate. No datasets, caches, weights, checkpoints, or training outputs were added to Git.
+
+### 1010. 2026-09-09: full 5090 test verification
+
+- Ran the exact `d7b29ca` tracked-files snapshot in a fresh isolated remote tree. The first full pytest exited `1` with `673 passed, 2 failed`; both failures were environmental: the intentionally code-only snapshot lacked `.git` metadata and the non-repository dataset/teacher-weight paths. No assertion failure implicated the production changes.
+- Added only read-only junctions in the disposable test tree to the already existing remote `data`, `weights`, `external`, and `proposed_method` stores, initialized an isolated MinGit repository with those junctions excluded, and set the verified MinGit 2.55.0.5 PATH. No source, cache, checkpoint, or canonical result tree was overwritten.
+- Re-ran the same full suite with the same Python 3.11.9 environment: `675 passed in 346.25s (0:05:46)`, exit `0`. This is the complete remote verification exit code for `d7b29ca`.
+
+### 1011. 2026-09-09: publication synchronization
+
+- Added the final E0.1 readiness report, refreshed Phase D/closure/current-status wording, and recorded the complete-test receipt. These are documentation/evidence updates only; no training, gate, cache, data, checkpoint, or model bytes changed.
+- Rechecked the final source boundary: the only large model bytes remain ignored under local/remote `tmp`; Git staging contains code, compact receipts, locks, tests, and reports only. The next public commit will be the clean handoff after one final ledger/hash check.

@@ -84,6 +84,12 @@ ledger: the first exposed the legacy/explicit-pretrained config conflict, and
 the second exposed scalar-buffer hashing. Both defects were corrected and
 covered before this successful receipt.
 
+The final `d7b29ca` snapshot also passed the complete remote suite: `675 passed
+in 346.25s (0:05:46)`, pytest exit `0`, using the verified Python 3.11.9/MinGit
+environment. A preliminary code-only run was `673 passed, 2 failed` because the
+disposable tree intentionally lacked `.git` and non-repository assets; the
+rerun supplied only excluded read-only junctions and passed all 675 tests.
+
 ## Next authorized boundary
 
 The next action, only when requested, is the preregistered validation-only,
