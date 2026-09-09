@@ -4631,3 +4631,8 @@
 
 - Commit `499dd7737f0c00e7d984788e763987a15a985e59` is present locally and on `origin/repro/student-shortcut-recovery`; `git status --porcelain` is empty.
 - After Git's normal working-tree line-ending normalization, both ledgers still match byte-for-byte at SHA256 `48B566A64F5C85115AC7A89A78D01579DF4122B0EC7DF57272C4DF842B4A6601`.
+
+### 1015. 2026-09-09: final handoff record
+
+- The post-push read-only verification observed commit `8de3a80efbbd6496670e779368efbd5098fdb936` on both local and origin, an empty worktree, and identical parent/repository ledger hashes `CFA9E6A68A4F75305EA7673E66B1B07F644F2986D3ED5039E4D295C0B3916C90` before this record was appended.
+- No further scientific or destructive action is authorized in this phase; the repository remains stopped at `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`.
