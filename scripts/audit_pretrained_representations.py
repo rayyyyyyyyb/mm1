@@ -12,12 +12,80 @@ from typing import Any, Mapping
 
 import numpy as np
 import torch
+import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.audit_teacher_sampling import select_stratified_mixed_records
-from src.utils.teacher_signal_probe import build_common_space, build_interaction_design, fit_probe_and_score
+from scripts.audit_teacher_sampling import select_stratified_mixed_records  # noqa: E402
+from src.utils.teacher_signal_probe import (  # noqa: E402
+    build_common_space,
+    build_interaction_design,
+    fit_probe_and_score,
+)
+
+
+def _overlay(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(dict(base))
+    for key, value in override.items():
+        if isinstance(value, Mapping) and isinstance(result.get(key), Mapping):
+            result[key] = _overlay(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
+
+
+def _resolve_config_file(path: str | Path, stack: tuple[Path, ...] = ()) -> dict[str, Any]:
+    """Resolve project-root-relative diagnostic wrappers and their overrides."""
+
+    source = Path(path).resolve()
+    if source in stack:
+        raise ValueError("cyclic base_config chain: " + " -> ".join(str(item) for item in (*stack, source)))
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    if not isinstance(document, Mapping):
+        raise ValueError(f"config must be a mapping: {source}")
+    current = copy.deepcopy(dict(document))
+    diagnostic = current.get("diagnostic")
+    base_ref = current.pop("base_config", None)
+    if base_ref is None and isinstance(diagnostic, Mapping):
+        diagnostic_copy = copy.deepcopy(dict(diagnostic))
+        base_ref = diagnostic_copy.pop("base_config", None)
+        current["diagnostic"] = diagnostic_copy
+    if base_ref is not None:
+        base_path = Path(str(base_ref))
+        if not base_path.is_absolute():
+            base_path = PROJECT_ROOT / base_path
+        if not base_path.is_file():
+            raise FileNotFoundError(f"config base is missing: {base_path}")
+        base = _resolve_config_file(base_path, (*stack, source))
+        overrides = current.pop("overrides", None)
+        if overrides is not None:
+            if not isinstance(overrides, Mapping):
+                raise ValueError(f"config overrides must be a mapping: {source}")
+            base = _overlay(base, overrides)
+        current = _overlay(base, current)
+    return current
+
+
+def _load_probe_config(path: str | Path) -> dict[str, Any]:
+    """Resolve the diagnostic wrapper over its locked full C2 base config."""
+
+    source = Path(path).resolve()
+    wrapper = yaml.safe_load(source.read_text(encoding="utf-8"))
+    if not isinstance(wrapper, Mapping):
+        raise ValueError("pretrained probe config must be a mapping")
+    diagnostic = wrapper.get("diagnostic")
+    if not isinstance(diagnostic, Mapping) or not diagnostic.get("base_config"):
+        raise ValueError("pretrained probe config requires diagnostic.base_config")
+    resolved = _resolve_config_file(source)
+    student = resolved.get("student")
+    if not isinstance(student, Mapping):
+        raise ValueError("resolved pretrained probe config requires student settings")
+    if student.get("visual_pretrained") is not True or student.get("audio_pretrained") is not False:
+        raise ValueError("D2 zero-training probe requires visual_pretrained=true and audio_pretrained=false")
+    if resolved.get("protocol", {}).get("zero_training_only") is not True:
+        raise ValueError("D2 representation probe must remain zero-training-only")
+    return resolved
 
 
 def _load_records(path: str | Path) -> list[dict[str, Any]]:
@@ -127,9 +195,9 @@ def audit_zero_training_representations(
     sample_count: int = 512,
     seed: int = 42,
 ) -> dict[str, Any]:
-    from scripts.train_ov_orthkd import create_ov_avel_data_loaders, load_config, set_seed
+    from scripts.train_ov_orthkd import create_ov_avel_data_loaders, set_seed
 
-    config = load_config(str(config_path))
+    config = _load_probe_config(config_path)
     set_seed(seed, deterministic=bool(config.get("training", {}).get("deterministic", True)))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_records = select_stratified_mixed_records(_load_records(train_manifest), sample_count, seed)
@@ -204,7 +272,13 @@ def audit_zero_training_representations(
     result = {
         "schema_version": 1,
         "status": "PASS" if pretrained_error is None else "BLOCKED_BY_PRETRAINED_BACKBONE_ASSET",
-        "scientific_status": "VISUAL_PRETRAINING_CONTROL_PASS" if gate else "VISUAL_PRETRAINING_CONTROL_NOT_PASS",
+        "scientific_status": (
+            "D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED"
+            if pretrained_error is not None
+            else "VISUAL_PRETRAINING_CONTROL_PASS"
+            if gate
+            else "VISUAL_PRETRAINING_CONTROL_FAIL"
+        ),
         "protocol": {
             "task_segments": 10,
             "sample_count_per_split": sample_count,

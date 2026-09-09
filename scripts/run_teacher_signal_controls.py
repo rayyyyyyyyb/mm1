@@ -12,11 +12,13 @@ from typing import Any, Mapping
 
 import yaml
 
+from src.utils.teacher_signal_probe import evaluate_direct_visual_logit_gate
+
 
 _CONTROL_REGISTERED_CHANGES = {
     "D1_centered_visual_800": "loss.visual_feature_centering",
     "D2_visual_pretrained_800": "student.visual_pretrained",
-    "D3_visual_logit_800": "student.path_mode",
+    "D3_visual_logit_800": "loss.alpha_strong_logit",
 }
 _C2_LOSS_OVERRIDES = {
     "strong_teacher_projector_update_mode": "static_zero_lr_keep_grad",
@@ -55,6 +57,22 @@ def validate_control_wrapper(wrapper: Mapping[str, Any]) -> None:
         raise ValueError("all three explicit projector update modes are required")
     if name == "D1_centered_visual_800" and loss.get("visual_feature_centering") != "per_sample_temporal":
         raise ValueError("D1 must change only visual_feature_centering to per_sample_temporal")
+    if name == "D2_visual_pretrained_800":
+        student = overrides.get("student")
+        if not isinstance(student, Mapping) or student.get("visual_pretrained") is not True:
+            raise ValueError("D2 must enable only student.visual_pretrained")
+    if name == "D3_visual_logit_800":
+        student = overrides.get("student")
+        if not isinstance(student, Mapping) or student.get("path_mode") != "explicit_projected":
+            raise ValueError("D3 must preserve student.path_mode=explicit_projected")
+        if loss.get("confidence_weighting") is not False:
+            raise ValueError("D3 must preserve confidence_weighting=false")
+        try:
+            alpha_strong_logit = float(loss.get("alpha_strong_logit"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("D3 requires a locked positive alpha_strong_logit") from exc
+        if not alpha_strong_logit > 0:
+            raise ValueError("D3 requires a locked positive alpha_strong_logit")
 
 
 def _scientific_view(config: Mapping[str, Any]) -> dict[str, Any]:
@@ -110,24 +128,50 @@ def _assert_single_registered_change(config: Mapping[str, Any], name: str, repo_
         raise ValueError(f"{name} must differ from fixed C2 baseline only at {'.'.join(allowed)}; changed={changed}")
 
 
+def _direct_visual_logit_gate(phase_a: Mapping[str, Any]) -> dict[str, Any]:
+    """Recompute the D3 gate from Phase A direct-logit evidence."""
+    result = evaluate_direct_visual_logit_gate(
+        mixed_concordance=phase_a.get("direct_mixed_video_macro_concordance"),
+        best_temporal_shift=phase_a.get("direct_best_temporal_shift"),
+        shuffle_ap_drop=phase_a.get("direct_shuffle_ap_drop"),
+        shuffle_auroc_drop=phase_a.get("direct_shuffle_auroc_drop"),
+    )
+    declared = phase_a.get("visual_logit_gate_pass")
+    if declared is not None and bool(declared) != result["pass"]:
+        raise ValueError(
+            "phase_a.visual_logit_gate_pass disagrees with the direct-logit evidence"
+        )
+    return result
+
+
 def authorize_control(name: str, evidence: Mapping[str, Any]) -> dict[str, Any]:
     phase_a = evidence.get("phase_a", {})
     phase_c = evidence.get("phase_c", {})
     phase_d = evidence.get("phase_d", {})
     teacher = phase_a.get("teacher_gate_pass") is True
-    shortcut = phase_c.get("scientific_status") == "SHORTCUT_AGREEMENT_CONFIRMED"
+    mean_dominance = (
+        phase_c.get("scientific_status")
+        == "VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED"
+    )
+    visual_logit_gate = _direct_visual_logit_gate(phase_a)
     if name == "D1_centered_visual_800":
-        authorized = teacher and shortcut
-        reason = "Phase A teacher gate and Phase C shortcut-agreement gate"
+        authorized = teacher and mean_dominance
+        reason = "Phase A teacher gate and Phase C visual-mean-dominance gate"
     elif name == "D2_visual_pretrained_800":
         authorized = teacher and phase_d.get("scientific_status") == "VISUAL_PRETRAINING_CONTROL_PASS"
         reason = "Phase A teacher gate and frozen pretrained-visual superiority gate"
     elif name == "D3_visual_logit_800":
-        authorized = teacher and phase_d.get("visual_logit_gate_pass") is True
-        reason = "Phase A teacher gate and preregistered visual-logit gate"
+        authorized = visual_logit_gate["pass"]
+        reason = "Phase A direct-logit concordance, shift, and shuffle gate"
     else:
         raise ValueError(f"unsupported control name: {name}")
-    return {"authorized": bool(authorized), "reason": reason, "teacher_gate": teacher, "shortcut_gate": shortcut}
+    return {
+        "authorized": bool(authorized),
+        "reason": reason,
+        "teacher_gate": teacher,
+        "visual_mean_dominance_gate": mean_dominance,
+        "visual_logit_gate": visual_logit_gate,
+    }
 
 
 def _overlay(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:

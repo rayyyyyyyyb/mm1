@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 import torch
 from torch import nn
@@ -7,6 +9,7 @@ import yaml
 
 from src.utils.pretrained_config import resolve_modality_pretrained
 from scripts.audit_pretrained_backbones import build_pretrained_backbone_report
+from scripts.audit_pretrained_representations import _load_probe_config
 
 
 class _FakeEncoder(nn.Module):
@@ -107,3 +110,17 @@ def test_student_constructs_visual_and_audio_encoders_independently(monkeypatch)
     assert calls == [("visual.fake", True), ("audio.fake", False)]
     assert model.visual_pretrained is True
     assert model.audio_pretrained is False
+
+
+def test_zero_training_probe_config_resolves_its_locked_c2_base() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    config = _load_probe_config(
+        repo_root
+        / "configs/diagnostics/recovery/ov_orthkd_visual_only_c2_visual_pretrained_probe.yaml"
+    )
+
+    assert config["data"]["num_segments"] == 10
+    assert config["student"]["visual_pretrained"] is True
+    assert config["student"]["audio_pretrained"] is False
+    assert config["loss"]["alpha_strong_logit"] == 0.0
+    assert config["reproduction"]["full_run_blocked"] is True

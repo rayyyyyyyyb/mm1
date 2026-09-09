@@ -4493,3 +4493,38 @@
 ### 987. 2026-09-08: GitHub handoff verified
 
 - Created ledger commit `a0071f5e0d684661dd78e45463594065529899db`, pushed `f21645e..a0071f5` to `origin/repro/student-shortcut-recovery`, and verified with `git ls-remote` that local and GitHub heads were identical. This final ledger entry is committed separately so the public branch preserves the full chronological audit trail.
+
+### 988. 2026-09-09: independent closure review assessed
+
+- Read the complete new web review and rechecked branch `repro/student-shortcut-recovery` at `56a0c3c5efe44efa0a96d8c3bb5e7eddd98dc26c`; only the intentionally untracked `tmp/` directory was present.
+- Confirmed the central criticism directly in source: D3 incorrectly registered `student.path_mode` although visual-logit KD is controlled by `loss.alpha_strong_logit`, and its authorization read a nonexistent `phase_d.visual_logit_gate_pass`. Also accepted the narrower scientific naming: only D1 was executed and failed; D2 was asset-blocked; Phase B was unanswered; Phase C proves visual mean-component dominance and clipping, not multi-loss directional agreement; the feature-probe protocol is not archival-exact.
+- Started a no-training E0 correction package covering status semantics, Phase A direct-logit gating, the D3 single-variable/control receipt path, regression tests, and root/current/recovery status documentation. Formal Full, D2, D3, second seed, schedule extension, and test evaluation remain paused during this repair.
+
+### 989. 2026-09-09: E0 implementation and independent verification
+
+- Corrected D3 registration and authorization: the single registered variable is `loss.alpha_strong_logit`; authorization now derives from the Phase A direct visual-logit gate and no longer reads the nonexistent `phase_d.visual_logit_gate_pass`. Narrowed D1, Phase C, D2, and final scientific statuses accordingly.
+- Added shared direct-logit gate evaluation, resolved the nested D2 zero-training wrapper over the locked C2 base, and added regression tests for gate consistency, exact single-diff materialization, nonzero strong-logit loss, and gradient flow.
+- Independent local verification with MKL compatibility variables: `35 passed, 2 skipped`, exit `0`; `compileall` exit `0`. The initial no-compatibility pytest attempt aborted in NumPy/MKL initialization (environment failure), then the same suite passed with no code/test changes beyond the config resolver fix.
+
+### 990. 2026-09-09: ConvNeXtV2 D2 asset locked and locally verified
+
+- Locked official `timm/convnextv2_tiny.fcmae_ft_in22k_in1k` at revision `b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817` in `configs/locks/diagnostics/convnextv2_tiny_pretrained_asset.yaml`.
+- Downloaded `config.json` (901 bytes, SHA256 `a9adf5b660f85c08af085b19a80a47b942f574e62211f7af6c3c7b6fe2a88eb6`) and `model.safetensors` (114,561,694 bytes, SHA256 `6652fd90fc9c23977659e58515778e16fbbcd43f0b01fc693089cebe6d64c2a9`). Direct official transport timed out; eight exact byte-range requests through `hf-mirror.com` were concatenated and matched the official API metadata. Bytes remain ignored under `tmp/` and were not staged.
+- Added `D2_PRETRAINED_ASSET_RECEIPT.md`; the asset is not yet scientific D2 evidence. Remote cache installation, offline load, and the zero-training VQP gate remain pending.
+
+### 991. 2026-09-09: 5090 connectivity check
+
+- Retried `ssh -o BatchMode=yes -o ConnectTimeout=15 LXT@100.119.122.101`; port 22 timed out. No remote command, upload, cache mutation, or training was performed. D2 remains `D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED` until connectivity returns.
+
+### 992. 2026-09-09: endpoint identity rechecked
+
+- A later SSH retry reached `DESKTOP-LPN6MT3`, but `nvidia-smi` identified the machine as `NVIDIA GeForce RTX 4070 Laptop GPU` (8,188 MiB), not the requested RTX 5090. The endpoint therefore was not used for upload, cache installation, tests, or training; the D2 receipt records `endpoint_reachable_but_not_target_rtx5090`.
+
+### 993. 2026-09-09: final local verification and transient-data guard
+
+- Independent post-edit checks passed: focused pytest `35 passed, 2 skipped` (exit `0`), changed-file Ruff exit `0`, compileall exit `0`, and 279 report JSON plus lock/config YAML documents parsed successfully (exit `0`). The unmodified full local collection was attempted and exited `2` because the host lacks `timm`; no source failure was inferred and no local environment was changed.
+- Added root `tmp/` to `.gitignore` so the verified 114 MB model, byte-range parts, and transient inspection files cannot be staged accidentally. Both ledger files remain byte-identical.
+
+### 994. 2026-09-09: isolated strong-logit contract verification
+
+- Because the local host lacks the optional `timm` package, ran only the new positive visual-logit loss/gradient test with a temporary import-only stub (which forbade model construction). It passed `1 passed, 44 deselected`, exit `0`; the stub was removed immediately and no production import or model path was exercised.

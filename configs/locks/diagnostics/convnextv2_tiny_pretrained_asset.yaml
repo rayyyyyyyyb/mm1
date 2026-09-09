@@ -1,0 +1,46 @@
+schema_version: 1
+status: local_verified_remote_install_pending
+purpose: D2_visual_pretrained_zero_training_probe_and_bounded_control
+model:
+  id: timm/convnextv2_tiny.fcmae_ft_in22k_in1k
+  revision: b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817
+  repository_url: https://huggingface.co/timm/convnextv2_tiny.fcmae_ft_in22k_in1k
+  files:
+    config.json:
+      size_bytes: 901
+      sha256: a9adf5b660f85c08af085b19a80a47b942f574e62211f7af6c3c7b6fe2a88eb6
+      architecture: convnextv2_tiny
+      num_classes: 1000
+      num_features: 768
+    model.safetensors:
+      size_bytes: 114561694
+      sha256: 6652fd90fc9c23977659e58515778e16fbbcd43f0b01fc693089cebe6d64c2a9
+      source: official_huggingface_blob_at_locked_revision
+      lfs_sha256: 6652fd90fc9c23977659e58515778e16fbbcd43f0b01fc693089cebe6d64c2a9
+  official_api_receipt:
+    endpoint: https://huggingface.co/api/models/timm/convnextv2_tiny.fcmae_ft_in22k_in1k/revision/b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817?blobs=true
+    config_size_bytes: 901
+    model_blob: 6652fd90fc9c23977659e58515778e16fbbcd43f0b01fc693089cebe6d64c2a9
+transport:
+  preferred: official_huggingface
+  fallback_used: hf-mirror.com
+  fallback_policy: exact_locked_revision_only_then_sha256_verify
+  direct_official_status: timeout_from_local_windows_host
+  resume_strategy: parallel_http_range_parts_then_byte_exact_concatenation
+local_receipt:
+  directory: tmp/d2_pretrained_asset/b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817
+  model_sha256_verified: true
+  config_sha256_verified: true
+  uploaded_to_git: false
+remote_receipt:
+  host: LXT@100.119.122.101
+  observed_hostname: DESKTOP-LPN6MT3
+  observed_gpu: NVIDIA GeForce RTX 4070 Laptop GPU
+  cache_root: null
+  model_sha256_verified: null
+  status: endpoint_reachable_but_not_target_rtx5090
+guardrails:
+  visual_pretrained: true
+  audio_pretrained: false
+  zero_training_probe_only: true
+  canonical_full_run_blocked: true

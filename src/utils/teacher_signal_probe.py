@@ -10,6 +10,46 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 from src.utils.frozen_feature_probe import fit_logistic_probe, predict_probe_scores
 
 
+def evaluate_direct_visual_logit_gate(
+    *,
+    mixed_concordance: float | None,
+    best_temporal_shift: int | float | None,
+    shuffle_ap_drop: float | None,
+    shuffle_auroc_drop: float | None,
+) -> dict[str, Any]:
+    """Apply the preregistered D3 gate to direct visual-teacher logits."""
+
+    def finite_or(value: float | int | None, default: float) -> float:
+        try:
+            result = float(value)
+        except (TypeError, ValueError):
+            return default
+        return result if np.isfinite(result) else default
+
+    concordance = finite_or(mixed_concordance, float("-inf"))
+    shift = finite_or(best_temporal_shift, float("inf"))
+    ap_drop = finite_or(shuffle_ap_drop, float("-inf"))
+    auroc_drop = finite_or(shuffle_auroc_drop, float("-inf"))
+    conditions = {
+        "direct_mixed_concordance_ge_0.60": concordance >= 0.60,
+        "direct_best_temporal_shift_eq_0": shift == 0,
+        "direct_shuffle_ap_or_auroc_drop_ge_0.02": max(ap_drop, auroc_drop)
+        >= 0.02,
+    }
+    return {
+        "pass": all(conditions.values()),
+        "conditions": conditions,
+        "direct_mixed_video_macro_concordance": None
+        if concordance == float("-inf")
+        else concordance,
+        "direct_best_temporal_shift": None if shift == float("inf") else shift,
+        "direct_shuffle_ap_drop": None if ap_drop == float("-inf") else ap_drop,
+        "direct_shuffle_auroc_drop": None
+        if auroc_drop == float("-inf")
+        else auroc_drop,
+    }
+
+
 def _finite_array(name: str, value: np.ndarray, ndim: int | None = None) -> np.ndarray:
     array = np.asarray(value)
     if ndim is not None and array.ndim != ndim:

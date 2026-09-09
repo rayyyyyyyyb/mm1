@@ -353,7 +353,11 @@ def summarize_shortcut_agreement(receipts: Mapping[str, Mapping[str, Any]]) -> d
         and all(float(value) >= 0.5 for value in clip)
     )
     return {
-        "classification": "SHORTCUT_AGREEMENT_CONFIRMED" if gate else "SHORTCUT_AGREEMENT_UNRESOLVED",
+        "classification": (
+            "VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED"
+            if gate
+            else "VISUAL_MEAN_COMPONENT_DOMINANCE_UNRESOLVED"
+        ),
         "preregistered_gate": {
             "four_strata_present": len(evidence) == 4,
             "mean_to_centered_gradient_ratio_ge_2": [None if value is None else bool(float(value) >= 2.0) for value in ratios],

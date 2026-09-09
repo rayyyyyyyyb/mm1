@@ -1,10 +1,10 @@
 # OV-OrthKD 当前正式复现状态
 
-更新日期：2026-08-26
+更新日期：2026-09-09
 
 结果发布分支：`repro/canonical-seed42-results`
 
-当前诊断分支：`repro/root-cause-diagnostics`
+当前诊断分支：`repro/student-shortcut-recovery`
 
 正式运行代码起点：`31b86c0d60c4bf2ed028edf1385ed5d2c9e89153`
 
@@ -14,8 +14,17 @@
 
 - 运行与产物：`CANONICAL_RUN_COMPLETED_AND_ARTIFACT_AUDIT_PASSED`
 - 论文数值：`PAPER_NUMERICAL_REPRODUCTION_NOT_ACHIEVED`
+- 最新诊断工程状态：`ENGINEERING_INTEGRITY_PASS`
+- 最新诊断科学状态：`NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY`
+- 教师 direct logits：`DIRECT_VISUAL_LOGIT_SIGNAL_HEALTHY_CURRENT_T10`
+- 教师 feature：可解码，但 `TABLE2_FEATURE_PROBE_PROTOCOL_UNRESOLVED`
+- Phase C：`VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED`
+- D1：`D1_CENTERED_VISUAL_CONTROL_FAIL`
+- D2：`D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED`
+- D3：编排已修复，正权重 provenance 未恢复，尚未执行
+- 正式 Full：`FORMAL_FULL_HOLD`
 - evaluator 覆盖：原运行缺失；post-hoc 官方 segment 公式已补算，未来输出代码已修复
-- 同管线控制：Student-only / Visual-only 配置已机械锁定，尚未启动
+- 早期同管线控制及后续有界诊断的完整证据见 student-shortcut-recovery 报告目录
 
 canonical OV-OrthKD seed42 已在 RTX 5090 上完成 30/30 epochs、12,000 optimizer steps，worker exit code 0；最终 artifact audit 为 `PASS`、errors=0。数据、教师缓存、T=10 shape、Git、evaluator、checkpoint 元数据和正式小型文件均通过机械审计。
 
@@ -102,4 +111,12 @@ GitHub 包含完整代码、配置、locks、测试以及本次运行的小型�
 
 ## 下一步边界
 
-下一道门是先运行严格同源 Student-only，再运行保留 text 的 Visual-feature-only。根因未明确前，不改默认 fusion、预训练、scheduler 或 loss 权重，不启动第二 seed 或大规模消融。
+下一道门是把已从官方来源锁定并在本地验证的
+`convnextv2_tiny.fcmae_ft_in22k_in1k` 精确 pretrained 权重部署到目标 5090，
+记录 model ID、revision、文件名、字节数和 SHA256，并验证不是随机 fallback；
+当前配置的 SSH endpoint 实际识别为 RTX 4070 主机，因此尚未上传或运行。
+只有零训练 superiority gate 通过后才允许 D2 的 800-step validation-only
+控制。D3 已修正为 `loss.alpha_strong_logit` 单变量，但正权重未公开，必须
+先恢复 provenance，或另行预注册 train-only 梯度匹配并锁值；不得用
+validation sweep 猜权重。正式 Full、test、第二 seed 和 schedule 延长继续
+禁止。

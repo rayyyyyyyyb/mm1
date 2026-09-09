@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task with verification checkpoints. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the invalid norm-based teacher-alignment audit with a train-fit/validation-eval, query-conditioned probe; audit teacher sampling, shortcut agreement, and pretrained representations; run only preregistered bounded controls whose gates pass.
+**Goal:** Replace the invalid norm-based teacher-alignment audit with a train-fit/validation-eval, query-conditioned probe; audit teacher sampling, visual mean-component dominance, and pretrained representations; run only preregistered bounded controls whose gates pass.
 
 **Architecture:** Keep the official T=10 loader, labels, evaluator, canonical teacher cache, and Full guard unchanged. Put the corrected teacher metrics and probe design in small pure utilities, use disposable sklearn readouts and temporary feature arrays for read-only phases, and isolate every optional control behind explicit validation-only configuration and receipt checks.
 
@@ -69,12 +69,12 @@
 **Interfaces:**
 - `stratified_batches(records, strata, batches_per_stratum, batch_size, seed) -> list[batch]` selects at least 32 independent batches for `k=0`, `1<=k<=9`, and `k=10`.
 - `collect_loss_components(...) -> dict` records BCE, weighted visual/text losses, mean/centered decomposition, per-module gradient norms, same-parameter cosines, pre/post-clip norms, and virtual AdamW deltas without state mutation.
-- `summarize_shortcut_agreement(receipts) -> dict` separately reports all-strata and mixed-only results and classifies `SHORTCUT_AGREEMENT_CONFIRMED` only from preregistered evidence.
+- `summarize_shortcut_agreement(receipts) -> dict` separately reports all-strata and mixed-only results and classifies `VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED` only from the measured mean/centered and clipping gate; it does not infer multi-loss directional agreement.
 
 - [x] Write tests for stratum disjointness, mean-plus-centered identity, no parameter/RNG mutation, and tie-aware mixed aggregation.
 - [x] Implement read-only collection with all required receipts and no optimizer step/checkpoint write.
 - [x] Run on 5090 with mixed-label batches included; compare mean versus centered gradient ratios and update clipping across strata.
-- [x] Record whether the evidence supports shortcut agreement, unresolved, or another allowed final state.
+- [x] Record visual mean-component dominance without overclaiming multi-loss directional agreement.
 
 ### Task 4: Separate visual/audio pretrained fields and zero-training audit (Phase D)
 
@@ -105,8 +105,22 @@
 - Update: `reports/formal_reproduction/student_shortcut_recovery/projector_collapse_summary.json`
 - Update: both `all.md` ledgers
 
-- [x] Add fail-closed authorization checks for D1 centered visual loss, D2 visual-pretrained, and D3 visual-logit path; each control changes exactly one registered variable relative to C2.
+- [x] Add fail-closed authorization checks for D1 centered visual loss, D2 visual-pretrained, and D3 `loss.alpha_strong_logit`; each control changes exactly one registered variable relative to C2.
 - [x] Run only eligible controls, each at seed 42, 800 applied updates, validation-only, with step receipts and no automatic extension.
 - [x] Apply the allowed final-state naming table and keep Full/test/second-seed/3200 guards active regardless of outcomes.
 - [x] Independently run local and locked-5090 tests, compileall, Ruff on changed files, JSON/report consistency, staged artifact-size checks, and `git diff --check`.
 - [x] Commit and push only source, compact evidence, configs, reports, and ledgers; leave large data/cache/checkpoint artifacts on 5090.
+
+### 2026-09-09 E0 scientific-state and D3 correction
+
+- [x] Narrow Phase A to current-T10 direct-logit health, feature decodability,
+  and unresolved archival Table 2 probe equivalence.
+- [x] Rename Phase C to visual mean-component dominance.
+- [x] Register D3 at `loss.alpha_strong_logit` and authorize it only from the
+  Phase A direct-logit concordance/shift/shuffle gate.
+- [x] Add positive authorization, exact single-diff, nonzero loss/gradient,
+  and 800-applied-step/no-test receipt tests.
+- [x] Mark D1 failed, D2 asset-blocked/unexecuted, and D3 repaired but
+  positive-weight-provenance-blocked/unexecuted.
+- [x] Replace the overbroad final state with
+  `NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY` and keep formal Full on hold.

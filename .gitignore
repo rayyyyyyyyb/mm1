@@ -47,6 +47,7 @@ runs/
 evaluation_results/
 # R3 transient download/authentication state (never commit secrets or partial bytes)
 *.aria2
+tmp/
 data/downloads/secrets/
 data/downloads/state/
 data/downloads/logs/

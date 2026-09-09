@@ -361,6 +361,25 @@ def test_disabled_logit_kd_does_not_require_teacher_logits() -> None:
     assert stats["weak_logit"] == 0.0
 
 
+def test_positive_visual_logit_kd_has_nonzero_loss_and_student_logit_gradient() -> None:
+    loss_module = make_camera_ready_loss(
+        alpha_bce=0.0,
+        alpha_strong_logit=0.25,
+        confidence_weighting=False,
+    )
+    batch = make_loss_batch()
+    student_logits = batch["student_segment_logits"]
+    assert isinstance(student_logits, torch.Tensor)
+
+    loss, stats = loss_module(**batch)
+    loss.backward()
+
+    assert stats["strong_logit"] > 0.0
+    assert student_logits.grad is not None
+    assert torch.isfinite(student_logits.grad).all()
+    assert torch.count_nonzero(student_logits.grad).item() > 0
+
+
 @pytest.mark.parametrize(
     ("loss_overrides", "missing_field", "message"),
     [

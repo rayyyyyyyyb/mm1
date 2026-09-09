@@ -8,6 +8,7 @@ import torch
 
 from scripts.audit_shortcut_agreement import (
     mean_centered_decomposition,
+    summarize_shortcut_agreement,
     stratified_batches,
     tie_aware_mixed_concordance,
     virtual_adamw_delta,
@@ -80,3 +81,15 @@ def test_ties_receive_half_credit_in_mixed_aggregation() -> None:
     scores = np.asarray([[0.5, 0.5, 0.5, 0.0]])
     result = tie_aware_mixed_concordance(labels, scores)
     assert result["pair_weighted_concordance"] == pytest.approx(0.75)
+
+
+def test_summary_names_only_the_mean_dominance_that_its_gate_measures() -> None:
+    receipt = {
+        "visual_mean_to_centered_gradient_ratio": 3.0,
+        "clip_engaged_fraction": 1.0,
+    }
+    summary = summarize_shortcut_agreement(
+        {name: dict(receipt) for name in ("k0", "kmid", "k10", "mixed_only")}
+    )
+
+    assert summary["classification"] == "VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED"

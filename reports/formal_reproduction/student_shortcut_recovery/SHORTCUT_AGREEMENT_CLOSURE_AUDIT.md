@@ -1,4 +1,4 @@
-# Stratified shortcut-agreement closure audit (Phase C)
+# Stratified visual mean-component dominance audit (Phase C)
 
 The locked C2 best checkpoint was evaluated without constructing an optimizer
 or mutating parameters. The validation manifest was partitioned into disjoint
@@ -15,8 +15,17 @@ independent batches of four samples (128 batches total).
 The mean-plus-centered squared-error identity held for every batch. All
 parameter snapshots and RNG snapshots were unchanged. The preregistered gate
 (ratio ≥2 and clipping in ≥50% of batches in every pool) passed, so the
-diagnostic classification is `SHORTCUT_AGREEMENT_CONFIRMED`.
+diagnostic classification is
+`VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED`.
+
+The implementation also records same-parameter BCE–visual and text–visual
+gradient cosines, but those cosines were not part of this classification gate.
+Consequently this phase establishes visual mean-component dominance and strong
+clipping pressure; it does not establish that BCE, text, and visual objectives
+all update shared parameters in one shortcut direction. The earlier
+`SHORTCUT_AGREEMENT_CONFIRMED` name was too broad and is superseded.
 
 This is an attribution result, not a training authorization. Full training,
 second seed, schedule extension, test evaluation, and canonical-cache writes
-remain forbidden; D1–D3 controls require their own explicit gates.
+remain forbidden; each bounded control requires its own explicit gate and a
+fully specified single-variable wrapper.

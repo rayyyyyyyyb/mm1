@@ -7,6 +7,7 @@ from src.utils.teacher_signal_probe import (
     build_interaction_design,
     derive_all_transitions,
     direct_logit_shift_sweep,
+    evaluate_direct_visual_logit_gate,
     fit_probe_and_score,
     score_signal_metrics,
 )
@@ -102,3 +103,22 @@ def test_direct_score_metrics_include_shuffle_and_all_transition_types() -> None
     assert result["transitions"]["transition_count"] == 4
     assert result["transitions"]["onset_auroc"] is not None
     assert result["transitions"]["offset_auroc"] is not None
+
+
+def test_direct_visual_logit_gate_uses_concordance_shift_and_either_shuffle_drop() -> None:
+    passed = evaluate_direct_visual_logit_gate(
+        mixed_concordance=0.63,
+        best_temporal_shift=0,
+        shuffle_ap_drop=0.01,
+        shuffle_auroc_drop=0.026,
+    )
+    failed = evaluate_direct_visual_logit_gate(
+        mixed_concordance=0.59,
+        best_temporal_shift=0,
+        shuffle_ap_drop=0.03,
+        shuffle_auroc_drop=0.03,
+    )
+
+    assert passed["pass"] is True
+    assert passed["conditions"]["direct_shuffle_ap_or_auroc_drop_ge_0.02"] is True
+    assert failed["pass"] is False

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "name": "D1_centered_visual_800",
   "status": "FAIL",
-  "scientific_status": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+  "scientific_status": "D1_CENTERED_VISUAL_CONTROL_FAIL",
   "source_remote": "E:/OV-OrthKD-R3/visual_sum_control_9e7a630/diagnostic/teacher_signal_closure_20260906/controls/D1_centered_visual_800",
   "protocol": {
     "task_segments": 10,
@@ -39,8 +39,10 @@
   },
   "authorization": {
     "teacher_gate": true,
-    "shortcut_gate": true,
+    "visual_mean_dominance_gate": true,
     "d2_pretrained_gate": false,
-    "d3_visual_logit_gate": false
+    "d3_visual_logit_gate": true,
+    "d2_executed": false,
+    "d3_executed": false
   }
 }

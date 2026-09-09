@@ -72,7 +72,7 @@ def audit_control_result(
     return {
         "schema_version": 1,
         "status": "PASS" if passed else "FAIL",
-        "scientific_status": "CENTERED_VISUAL_CONTROL_PASS" if passed else "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+        "scientific_status": "CENTERED_VISUAL_CONTROL_PASS" if passed else "D1_CENTERED_VISUAL_CONTROL_FAIL",
         "protocol": {"task_segments": 10, "validation_only": True, "test_evaluation": False},
         "steps": {"attempted": attempted_steps, "applied": applied_steps, "overflow_or_skipped": attempted_steps - applied_steps},
         "metrics": {

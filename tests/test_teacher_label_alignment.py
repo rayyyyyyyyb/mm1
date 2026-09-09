@@ -105,3 +105,9 @@ def test_train_fit_audit_uses_separate_query_ids_and_emits_json_safe_summary(tmp
     assert result["query_fields"]["validation_unique_query_ids"] == 2
     assert result["transitions"]["validation"]["total_transitions"] == 36
     assert result["probes"]["raw_teacher"]["metrics"]["shuffle"]["repeats"] == 2
+    assert "visual_logit_gate_pass" in result
+    assert result["feature_signal_status"] == "TEACHER_FEATURE_SIGNAL_DECODABLE"
+    assert (
+        result["feature_probe_protocol_status"]
+        == "TABLE2_FEATURE_PROBE_PROTOCOL_UNRESOLVED"
+    )

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "final_state": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+  "final_state": "NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
   "prior_stage_final_state": "STATIC_TARGET_NOT_SUFFICIENT",
   "authorization": {
     "formal_full_training": false,
@@ -159,5 +159,5 @@
     "teacher_signal_closure_summary": "TEACHER_SIGNAL_CLOSURE_SUMMARY.json",
     "d1_control": "TEACHER_SIGNAL_CONTROL_D1_RESULT.json"
   },
-  "interpretation": "A3 does not identify an intrinsic same-parameter loss-direction conflict. A5 and C2 directly observe global clipping coupling: excluding the zero-LR projector increases the positive-LR clip coefficient, while the static projector remains in receipts. The teacher-signal closure confirms healthy cached teacher boundaries but a visual shortcut; D1 centered visual loss at exactly 800 applied steps fails mixed concordance and temporal-variation gates. The evidence-based closure state is NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY; CLIP_COUPLING_CAUSAL is not supported."
+  "interpretation": "A3 does not identify an intrinsic same-parameter loss-direction conflict. A5 and C2 directly observe global clipping coupling: excluding the zero-LR projector increases the positive-LR clip coefficient, while the static projector remains in receipts. The closure confirms healthy current-T10 direct visual logits and visual mean-component dominance under strong clipping; it does not establish archival-exact feature-probe equivalence or multi-loss directional agreement. D1 centered visual loss at exactly 800 applied steps fails mixed concordance and temporal-variation gates, while D2 and corrected D3 remain unexecuted. The evidence-based closure state is NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY; CLIP_COUPLING_CAUSAL is not supported."
 }

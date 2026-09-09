@@ -22,6 +22,6 @@ def test_control_result_audit_fails_boundary_gate_for_static_logits(tmp_path) ->
     summary_path.write_text(json.dumps({"attempted_steps": 803, "applied_steps": 800}), encoding="utf-8")
     result = audit_control_result(prediction_path, summary_path)
     assert result["status"] == "FAIL"
-    assert result["scientific_status"] == "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY"
+    assert result["scientific_status"] == "D1_CENTERED_VISUAL_CONTROL_FAIL"
     assert result["gates"]["applied_steps_exactly_800"] is True
     assert result["metrics"]["mixed_validation_tie_aware_concordance"] == 0.5

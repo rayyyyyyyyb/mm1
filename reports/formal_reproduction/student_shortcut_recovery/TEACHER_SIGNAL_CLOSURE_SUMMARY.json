@@ -1,11 +1,15 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "engineering_status": "ENGINEERING_INTEGRITY_PASS",
   "phase_a": {
     "status": "PASS",
-    "scientific_status": "TEACHER_BOUNDARY_SIGNAL_HEALTHY",
+    "scientific_status": "DIRECT_VISUAL_LOGIT_SIGNAL_HEALTHY_CURRENT_T10",
+    "feature_signal_status": "TEACHER_FEATURE_SIGNAL_DECODABLE",
+    "feature_probe_protocol_status": "TABLE2_FEATURE_PROBE_PROTOCOL_UNRESOLVED",
     "direct_mixed_video_macro_concordance": 0.6297159984990437,
     "direct_shuffle_auroc_drop": 0.025588576145019526,
     "direct_best_temporal_shift": 0,
+    "visual_logit_gate_pass": true,
     "teacher_gate_pass": true,
     "train_samples": 13182,
     "validation_samples": 5798,
@@ -13,6 +17,7 @@
   },
   "phase_b": {
     "status": "BLOCKED_BY_TEACHER_FRAME_SAMPLING",
+    "scientific_status": "B1_BLOCKED_BY_RAW_VIDEO_ASSET",
     "selected_validation_records": 512,
     "raw_video_fields": 0,
     "supported_video_paths": 0,
@@ -23,7 +28,7 @@
   },
   "phase_c": {
     "status": "PASS",
-    "scientific_status": "SHORTCUT_AGREEMENT_CONFIRMED",
+    "scientific_status": "VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED",
     "strata": ["k0", "kmid", "k10", "mixed_only"],
     "batches_per_stratum": 32,
     "total_batches": 128,
@@ -34,19 +39,19 @@
   },
   "phase_d": {
     "status": "BLOCKED_BY_PRETRAINED_BACKBONE_ASSET",
-    "scientific_status": "VISUAL_PRETRAINING_CONTROL_NOT_PASS",
+    "scientific_status": "D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED",
     "sample_count_per_split": 256,
     "random_visual_vqp_mixed_concordance": 0.5230277185501067,
     "current_c2_visual_vqp_mixed_concordance": 0.4886993603411514,
     "random_audio_control_vqp_mixed_concordance": 0.4554371002132196,
     "timm_pretrained_visual_vqp_mixed_concordance": null,
-    "reason": "convnextv2_tiny.fcmae_ft_in22k_in1k weights absent from local cache and Hugging Face requests timed out",
+    "reason": "exact convnextv2_tiny.fcmae_ft_in22k_in1k asset is locally verified but the configured endpoint currently resolves to an RTX 4070 host, so target 5090 cache installation and offline load remain pending",
     "optimizer_step_executed": false,
     "checkpoint_written": false
   },
   "phase_d1": {
     "status": "FAIL",
-    "scientific_status": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+    "scientific_status": "D1_CENTERED_VISUAL_CONTROL_FAIL",
     "name": "D1_centered_visual_800",
     "seed": 42,
     "attempted_steps": 803,
@@ -63,12 +68,22 @@
     "test_evaluation": false,
     "checkpoint_remote_only": true
   },
-  "final_state": "NO_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
+  "phase_d3": {
+    "status": "NOT_EXECUTED",
+    "scientific_status": "D3_ORCHESTRATION_REPAIRED_WEIGHT_UNRESOLVED_NOT_EXECUTED",
+    "registered_change": "loss.alpha_strong_logit",
+    "visual_logit_gate_pass": true,
+    "positive_weight_archival_provenance_available": false,
+    "optimizer_step_executed": false,
+    "test_evaluation": false
+  },
+  "final_state": "NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY",
   "authorization": {
     "formal_full": false,
     "second_seed": false,
     "schedule_extension": false,
     "test_evaluation": false,
-    "bounded_controls": "D1_completed_D2_D3_fail_closed"
+    "formal_full_status": "FORMAL_FULL_HOLD",
+    "bounded_controls": "D1_failed_D2_asset_blocked_D3_repaired_weight_unresolved_not_executed"
   }
 }

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -11,15 +12,14 @@ import numpy as np
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-import sys
-
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.utils.teacher_signal_probe import (
+from src.utils.teacher_signal_probe import (  # noqa: E402
     build_common_space,
     build_interaction_design,
     derive_all_transitions,
     direct_logit_shift_sweep,
+    evaluate_direct_visual_logit_gate,
     fit_probe_and_score,
 )
 
@@ -449,11 +449,14 @@ def audit_train_fit(
     direct_shuffle = probes["cached_visual_direct_logits"]["metrics"]["shuffle"]
     qp_mixed = probes["qp"]["metrics"]["mixed"]
     vqp_mixed = probes["raw_teacher_query_interaction"]["metrics"]["mixed"]
+    visual_logit_gate = evaluate_direct_visual_logit_gate(
+        mixed_concordance=direct_mixed["pair_weighted_concordance"],
+        best_temporal_shift=direct_shift.get("best_shift"),
+        shuffle_ap_drop=direct_shuffle["shuffle_ap_drop"],
+        shuffle_auroc_drop=direct_shuffle["shuffle_auroc_drop"],
+    )
     teacher_gate = {
-        "direct_mixed_concordance_ge_0.60": bool(_metric_or_missing(direct_mixed["pair_weighted_concordance"]) >= 0.60),
-        "direct_shuffle_drop_ge_0.02": bool(
-            max(_metric_or_missing(direct_shuffle["shuffle_ap_drop"]), _metric_or_missing(direct_shuffle["shuffle_auroc_drop"])) >= 0.02
-        ),
+        **visual_logit_gate["conditions"],
         "teacher_query_delta_c_ge_0.02": bool(
             _metric_or_missing(vqp_mixed["pair_weighted_concordance"]) - _metric_or_missing(qp_mixed["pair_weighted_concordance"]) >= 0.02
         ),
@@ -464,11 +467,17 @@ def audit_train_fit(
             ) >= 0.01
         ),
     }
-    teacher_healthy = all(teacher_gate.values()) and direct_shift["status"] == "PASS"
+    teacher_healthy = all(teacher_gate.values())
     return {
         "schema_version": 2,
         "status": "PASS",
-        "scientific_status": "TEACHER_BOUNDARY_SIGNAL_HEALTHY" if teacher_healthy else "BLOCKED_BY_TEACHER_LABEL_ALIGNMENT",
+        "scientific_status": (
+            "DIRECT_VISUAL_LOGIT_SIGNAL_HEALTHY_CURRENT_T10"
+            if visual_logit_gate["pass"]
+            else "BLOCKED_BY_TEACHER_LABEL_ALIGNMENT"
+        ),
+        "feature_signal_status": "TEACHER_FEATURE_SIGNAL_DECODABLE",
+        "feature_probe_protocol_status": "TABLE2_FEATURE_PROBE_PROTOCOL_UNRESOLVED",
         "claim_level": "train_fit_validation_eval_teacher_signal_probe",
         "protocol": {
             "task_segments": 10,
@@ -496,6 +505,8 @@ def audit_train_fit(
         "probes": probes,
         "transitions": transitions,
         "direct_logit_shift_sweep": direct_shift,
+        "visual_logit_gate": visual_logit_gate,
+        "visual_logit_gate_pass": bool(visual_logit_gate["pass"]),
         "teacher_gate": teacher_gate,
         "teacher_gate_pass": bool(teacher_healthy),
     }
