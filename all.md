@@ -4528,3 +4528,7 @@
 ### 994. 2026-09-09: isolated strong-logit contract verification
 
 - Because the local host lacks the optional `timm` package, ran only the new positive visual-logit loss/gradient test with a temporary import-only stub (which forbade model construction). It passed `1 passed, 44 deselected`, exit `0`; the stub was removed immediately and no production import or model path was exercised.
+
+### 995. 2026-09-09: E0 commit created
+
+- Committed the reviewed E0/state correction and D2 asset-lock package as `d0ca144` (`repro: correct bounded-control status and lock D2 asset`), 29 files changed, 738 insertions, 109 deletions. The staged artifact audit excluded all transient `tmp/` bytes and large assets.
