@@ -26,6 +26,15 @@ _C2_LOSS_OVERRIDES = {
     "text_teacher_projector_update_mode": "trainable",
 }
 
+# These fields describe the diagnostic runner/output rather than the
+# scientific configuration.  Keep this list deliberately narrow: in
+# particular, implementation_mode must remain in the comparison so a control
+# cannot silently change the execution semantics while claiming one variable.
+_REPRODUCTION_METADATA_KEYS = frozenset(
+    {"variant", "claim_level", "diagnostic_only", "full_run_blocked", "project_root"}
+)
+_LOGGING_METADATA_KEYS = frozenset({"log_dir"})
+
 
 def validate_control_wrapper(wrapper: Mapping[str, Any]) -> None:
     control = wrapper.get("control")
@@ -79,8 +88,14 @@ def _scientific_view(config: Mapping[str, Any]) -> dict[str, Any]:
     """Remove runner metadata before comparing a control with the C2 baseline."""
 
     result = copy.deepcopy(dict(config))
-    result.pop("reproduction", None)
-    result.pop("logging", None)
+    reproduction = result.get("reproduction")
+    if isinstance(reproduction, dict):
+        for key in _REPRODUCTION_METADATA_KEYS:
+            reproduction.pop(key, None)
+    logging = result.get("logging")
+    if isinstance(logging, dict):
+        for key in _LOGGING_METADATA_KEYS:
+            logging.pop(key, None)
     training = result.get("training")
     if isinstance(training, dict):
         training.pop("max_optimizer_steps", None)

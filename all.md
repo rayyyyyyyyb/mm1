@@ -4552,3 +4552,24 @@
 ### 1000. 2026-09-09: target GPU identity revalidated
 
 - Ran a fresh read-only Tailscale/SSH identity check. `100.119.122.101` is online as `DESKTOP-LPN6MT3`, and the direct remote `nvidia-smi` result is now `NVIDIA GeForce RTX 5090, 32607 MiB`. This supersedes the earlier transient 4070 observation for current-state decisions; no upload, cache mutation, or experiment was performed during the check.
+
+### 1001. 2026-09-09: E0.1 sample-alignment and projection-map TDD
+
+- Implemented real-ID alignment for every independently encoded D2 pass. The probe now records sample IDs, query strings, labels, sequence masks, and selected segment indices; each non-feature field is checked after reordering by ID, with duplicate, missing/extra ID, label, query, and selected-index mismatches failing closed.
+- Added reusable shared visual/query projection maps. QP and VQP now use one query map and one visual map per input dimension, with deterministic matrix SHA256 receipts; the probe no longer regenerates maps with `seed+17` or groups validation rows by synthetic `arange` IDs.
+- Independent tests initially exposed that the shuffled-pass fixture itself encoded order-dependent query embeddings; the fixture was corrected to keep query values identity-stable. Re-run: `35 passed, 1 skipped`, exit `0`; changed-file Ruff, compileall, and `git diff --check` all exit `0`.
+
+### 1002. 2026-09-09: D3 scientific-view guard narrowed
+
+- Replaced whole-section removal of `reproduction`/`logging` from the bounded-control scientific diff with a bounded metadata allowlist (`variant`, `claim_level`, `diagnostic_only`, `full_run_blocked`, `project_root`, and `logging.log_dir`). `reproduction.implementation_mode` and other scientific fields now remain visible and cannot be smuggled into a one-variable control.
+- Added a regression test that mutating `reproduction.implementation_mode` is rejected. Teacher-control tests: `10 passed`, exit `0`.
+
+### 1003. 2026-09-09: exact offline D2 loader and initialization-parity utility
+
+- Added `src/utils/locked_pretrained.py`: strict lock parsing, byte-size/SHA256 verification, exact model-ID/revision binding, offline `timm.create_model(pretrained=False)` construction, safetensors state-key validation (only classifier-head keys may be unused), source/loaded state fingerprints, and bitwise non-visual initialization comparison.
+- Bound the D2 wrapper to `configs/locks/diagnostics/convnextv2_tiny_pretrained_asset.yaml`; `audit_pretrained_representations.py` now refuses a pretrained visual load without that lock and emits the asset receipt. Its status is `BLOCKED_BY_ASSET_IDENTITY` on any identity/load failure and `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE` only after the offline load and alignment path succeeds; no scientific gate or training was run.
+- Added unit coverage for lock size/hash failure, order-invariant state fingerprints, and visual-excluded bitwise parity. The verified 114 MB model remains ignored under `tmp/` and is not staged or uploaded.
+
+### 1004. 2026-09-09: remote target preflight
+
+- Read-only SSH confirmed `DESKTOP-LPN6MT3`, RTX 5090, 32,607 MiB, driver 610.88, and Python 3.11.9. Earlier transient RTX 4070 output remains treated as a no-mutation stop; no remote files, cache, checkpoint, or training process were changed in this entry.

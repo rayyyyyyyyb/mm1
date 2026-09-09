@@ -9,7 +9,10 @@ import yaml
 
 from src.utils.pretrained_config import resolve_modality_pretrained
 from scripts.audit_pretrained_backbones import build_pretrained_backbone_report
-from scripts.audit_pretrained_representations import _load_probe_config
+from scripts.audit_pretrained_representations import (
+    _align_encoded_split,
+    _load_probe_config,
+)
 
 
 class _FakeEncoder(nn.Module):
@@ -124,3 +127,58 @@ def test_zero_training_probe_config_resolves_its_locked_c2_base() -> None:
     assert config["student"]["audio_pretrained"] is False
     assert config["loss"]["alpha_strong_logit"] == 0.0
     assert config["reproduction"]["full_run_blocked"] is True
+    assert config["diagnostic"]["pretrained_asset_lock"] == (
+        "configs/locks/diagnostics/convnextv2_tiny_pretrained_asset.yaml"
+    )
+
+
+def _encoded_rows(order: list[str]) -> dict[str, object]:
+    index = {sample_id: position for position, sample_id in enumerate(order)}
+    identity = {sample_id: position for position, sample_id in enumerate(("a", "b", "c"))}
+    return {
+        "features": torch.tensor(
+            [[[float(index[sample_id])], [float(index[sample_id]) + 0.5]] for sample_id in order]
+        ).numpy(),
+        "queries": torch.tensor(
+            [[float(identity[sample_id]), 1.0] for sample_id in order]
+        ).numpy(),
+        "labels": torch.tensor([[0, 1] for _ in order]).numpy(),
+        "sequence_masks": torch.ones(len(order), 2).numpy(),
+        "ids": list(order),
+        "query_ids": ["q-a" if sample_id != "b" else "q-b" for sample_id in order],
+        "selected_segment_indices": [[0, 1] for _ in order],
+    }
+
+
+def test_shuffled_encoder_pass_is_aligned_by_real_sample_id() -> None:
+    reference = _encoded_rows(["a", "b", "c"])
+    candidate = _encoded_rows(["c", "a", "b"])
+    aligned, receipt = _align_encoded_split(reference, candidate, pass_name="pretrained/train")
+
+    assert aligned["ids"] == ["a", "b", "c"]
+    assert aligned["features"][:, 0, 0].tolist() == [1.0, 2.0, 0.0]
+    assert receipt["pre_alignment_id_hash"] != receipt["canonical_post_alignment_id_hash"]
+    assert receipt["label_hash"]
+    assert receipt["query_string_hash"]
+    assert receipt["query_embedding_hash"]
+    assert receipt["sequence_mask_hash"]
+    assert receipt["selected_segment_indices_hash"]
+
+
+@pytest.mark.parametrize(
+    ("candidate_mutation", "message"),
+    [
+        (lambda value: value.update(ids=["a", "a", "c"]), "duplicate sample IDs"),
+        (lambda value: value.update(ids=["a", "b", "d"]), "sample ID set mismatch"),
+        (lambda value: value["labels"].__setitem__((1, 0), 1), "labels mismatch"),
+        (lambda value: value["query_ids"].__setitem__(1, "q-other"), "query string mismatch"),
+    ],
+)
+def test_alignment_rejects_duplicate_missing_or_mismatched_identity_fields(
+    candidate_mutation, message: str
+) -> None:
+    reference = _encoded_rows(["a", "b", "c"])
+    candidate = _encoded_rows(["a", "b", "c"])
+    candidate_mutation(candidate)
+    with pytest.raises(ValueError, match=message):
+        _align_encoded_split(reference, candidate, pass_name="candidate")

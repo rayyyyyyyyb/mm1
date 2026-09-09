@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+import hashlib
+import json
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 from sklearn.metrics import average_precision_score, roc_auc_score
@@ -70,6 +72,87 @@ def _projection_matrix(input_dim: int, output_dim: int, seed: int, salt: int) ->
     return matrix
 
 
+def projection_matrix_sha256(matrix: np.ndarray) -> str:
+    """Hash a projection matrix including dtype and shape metadata."""
+
+    array = np.asarray(matrix)
+    if array.ndim != 2 or not np.isfinite(array).all():
+        raise ValueError("projection matrix must be finite and two-dimensional")
+    digest = hashlib.sha256()
+    contiguous = np.ascontiguousarray(array)
+    digest.update(str(contiguous.dtype).encode("ascii"))
+    digest.update(json.dumps(list(contiguous.shape)).encode("ascii"))
+    digest.update(contiguous.tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def build_common_space_maps(
+    visual_input_dims: int | Sequence[int],
+    query_input_dim: int,
+    *,
+    output_dim: int = 128,
+    seed: int = 42,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Create reusable visual/query maps once for a probe family.
+
+    All visual passes with the same input dimension share one matrix, and all
+    QP/VQP variants share one query matrix.  The returned receipt hashes every
+    matrix so a probe cannot silently compare different coordinate systems.
+    """
+
+    if isinstance(visual_input_dims, (int, np.integer)):
+        dimensions = [int(visual_input_dims)]
+    else:
+        dimensions = sorted({int(value) for value in visual_input_dims})
+    if not dimensions or any(value <= 0 for value in dimensions):
+        raise ValueError("visual_input_dims must contain positive dimensions")
+    if int(query_input_dim) <= 0:
+        raise ValueError("query_input_dim must be positive")
+    visual_maps = {
+        dimension: _projection_matrix(dimension, int(output_dim), int(seed), 1)
+        for dimension in dimensions
+    }
+    query_map = _projection_matrix(int(query_input_dim), int(output_dim), int(seed), 2)
+    receipt = {
+        "seed": int(seed),
+        "output_dim": int(output_dim),
+        "visual_map_sha256": {
+            str(dimension): projection_matrix_sha256(matrix)
+            for dimension, matrix in visual_maps.items()
+        },
+        "query_map_sha256": projection_matrix_sha256(query_map),
+    }
+    return {"visual": visual_maps, "query": query_map}, receipt
+
+
+def apply_common_space_maps(
+    visual: np.ndarray,
+    query: np.ndarray,
+    maps: Mapping[str, Any],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Apply a previously created map family without regenerating any map."""
+
+    visual_array = _finite_array("visual", visual, 3).astype(np.float32, copy=False)
+    query_array = _finite_array("query", query, 3).astype(np.float32, copy=False)
+    if visual_array.shape[:2] != query_array.shape[:2]:
+        raise ValueError("visual and query must share [B,T]")
+    visual_maps = maps.get("visual")
+    query_map = maps.get("query")
+    if not isinstance(visual_maps, Mapping) or not isinstance(query_map, np.ndarray):
+        raise ValueError("maps must contain visual mapping and query matrix")
+    visual_map = visual_maps.get(int(visual_array.shape[-1]))
+    if not isinstance(visual_map, np.ndarray):
+        raise ValueError(
+            f"no shared visual map for input dimension {visual_array.shape[-1]}"
+        )
+    if query_map.shape[0] != query_array.shape[-1]:
+        raise ValueError("shared query map input dimension does not match query")
+    return (
+        np.matmul(visual_array, visual_map).astype(np.float32),
+        np.matmul(query_array, query_map).astype(np.float32),
+    )
+
+
 def build_common_space(
     visual: np.ndarray,
     query: np.ndarray,
@@ -89,10 +172,15 @@ def build_common_space(
     query_array = _finite_array("query", query, 3).astype(np.float32, copy=False)
     if visual_array.shape[:2] != query_array.shape[:2]:
         raise ValueError("visual and query must share [B,T]")
-    visual_map = _projection_matrix(visual_array.shape[-1], int(output_dim), seed, 1)
-    query_map = _projection_matrix(query_array.shape[-1], int(output_dim), seed, 2)
-    visual_common = np.matmul(visual_array, visual_map)
-    query_common = np.matmul(query_array, query_map)
+    maps, maps_receipt = build_common_space_maps(
+        int(visual_array.shape[-1]),
+        int(query_array.shape[-1]),
+        output_dim=int(output_dim),
+        seed=int(seed),
+    )
+    visual_common, query_common = apply_common_space_maps(
+        visual_array, query_array, maps
+    )
     return visual_common.astype(np.float32), query_common.astype(np.float32), {
         "seed": int(seed),
         "output_dim": int(output_dim),
@@ -101,6 +189,7 @@ def build_common_space(
         "visual_map": "identity" if visual_array.shape[-1] == output_dim else "seeded_gaussian",
         "query_map": "identity" if query_array.shape[-1] == output_dim else "seeded_gaussian",
         "query_id_source": "separate_categorical_field",
+        "projection_maps": maps_receipt,
     }
 
 

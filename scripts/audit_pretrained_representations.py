@@ -8,7 +8,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 import torch
@@ -19,10 +19,12 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.audit_teacher_sampling import select_stratified_mixed_records  # noqa: E402
 from src.utils.teacher_signal_probe import (  # noqa: E402
-    build_common_space,
+    apply_common_space_maps,
+    build_common_space_maps,
     build_interaction_design,
     fit_probe_and_score,
 )
+from src.utils.locked_pretrained import load_locked_timm_encoder  # noqa: E402
 
 
 def _overlay(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
@@ -86,6 +88,15 @@ def _load_probe_config(path: str | Path) -> dict[str, Any]:
     protocol = resolved.get("protocol")
     if not isinstance(protocol, Mapping) or protocol.get("zero_training_only") is not True:
         raise ValueError("D2 representation probe must remain zero-training-only")
+    diagnostic_resolved = resolved.get("diagnostic")
+    lock_ref = diagnostic_resolved.get("pretrained_asset_lock") if isinstance(diagnostic_resolved, Mapping) else None
+    if not isinstance(lock_ref, str) or not lock_ref:
+        raise ValueError("D2 representation probe requires diagnostic.pretrained_asset_lock")
+    lock_path = Path(lock_ref)
+    if not lock_path.is_absolute():
+        lock_path = PROJECT_ROOT / lock_path
+    if not lock_path.is_file():
+        raise FileNotFoundError(f"D2 pretrained asset lock is missing: {lock_path}")
     return resolved
 
 
@@ -93,11 +104,130 @@ def _load_records(path: str | Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def _load_visual_encoder(model_name: str, pretrained: bool, checkpoint: str | Path | None, seed: int):
+def _sha256_array(value: np.ndarray) -> str:
+    array = np.ascontiguousarray(np.asarray(value))
+    digest = hashlib.sha256()
+    digest.update(str(array.dtype).encode("ascii"))
+    digest.update(json.dumps(list(array.shape)).encode("ascii"))
+    digest.update(array.tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def _sha256_strings(values: Sequence[str]) -> str:
+    return hashlib.sha256("\n".join(str(value) for value in values).encode("utf-8")).hexdigest()
+
+
+def _sha256_indices(values: Sequence[Sequence[int]]) -> str:
+    payload = json.dumps(
+        [[int(index) for index in row] for row in values],
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _validate_encoded_split(split: Mapping[str, Any], name: str) -> None:
+    required = {
+        "features",
+        "queries",
+        "labels",
+        "sequence_masks",
+        "ids",
+        "query_ids",
+        "selected_segment_indices",
+    }
+    missing = sorted(required - set(split))
+    if missing:
+        raise ValueError(f"{name} encoded split is missing fields: {missing}")
+    ids = [str(value) for value in split["ids"]]
+    if len(ids) != len(set(ids)):
+        duplicates = sorted({value for value in ids if ids.count(value) > 1})
+        raise ValueError(f"{name} encoded split has duplicate sample IDs: {duplicates}")
+    size = len(ids)
+    for field in ("queries", "labels", "sequence_masks", "query_ids", "selected_segment_indices"):
+        if len(split[field]) != size:
+            raise ValueError(f"{name} field {field} has {len(split[field])} rows, expected {size}")
+    features = np.asarray(split["features"])
+    if features.ndim != 3 or features.shape[0] != size:
+        raise ValueError(f"{name} features must have shape [N,T,D], got {features.shape}")
+
+
+def _alignment_receipt(split: Mapping[str, Any], *, pre_alignment_ids: Sequence[str]) -> dict[str, Any]:
+    return {
+        "pre_alignment_id_hash": _sha256_strings(pre_alignment_ids),
+        "canonical_post_alignment_id_hash": _sha256_strings(split["ids"]),
+        "label_hash": _sha256_array(np.asarray(split["labels"])),
+        "query_string_hash": _sha256_strings(split["query_ids"]),
+        "query_embedding_hash": _sha256_array(np.asarray(split["queries"])),
+        "sequence_mask_hash": _sha256_array(np.asarray(split["sequence_masks"])),
+        "selected_segment_indices_hash": _sha256_indices(split["selected_segment_indices"]),
+    }
+
+
+def _align_encoded_split(
+    reference: Mapping[str, Any], candidate: Mapping[str, Any], *, pass_name: str
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Align an encoder pass by real sample ID and verify all non-feature fields."""
+
+    _validate_encoded_split(reference, "reference")
+    _validate_encoded_split(candidate, pass_name)
+    reference_ids = [str(value) for value in reference["ids"]]
+    candidate_ids = [str(value) for value in candidate["ids"]]
+    if set(reference_ids) != set(candidate_ids):
+        missing = sorted(set(reference_ids) - set(candidate_ids))
+        extra = sorted(set(candidate_ids) - set(reference_ids))
+        raise ValueError(f"{pass_name} sample ID set mismatch: missing={missing}, extra={extra}")
+    candidate_index = {sample_id: index for index, sample_id in enumerate(candidate_ids)}
+    order = [candidate_index[sample_id] for sample_id in reference_ids]
+    aligned = {
+        "features": np.asarray(candidate["features"])[order].copy(),
+        "queries": np.asarray(candidate["queries"])[order].copy(),
+        "labels": np.asarray(candidate["labels"])[order].copy(),
+        "sequence_masks": np.asarray(candidate["sequence_masks"])[order].copy(),
+        "ids": list(reference_ids),
+        "query_ids": [str(candidate["query_ids"][index]) for index in order],
+        "selected_segment_indices": [
+            [int(value) for value in candidate["selected_segment_indices"][index]]
+            for index in order
+        ],
+    }
+    for field in ("labels", "sequence_masks", "queries"):
+        if not np.array_equal(np.asarray(aligned[field]), np.asarray(reference[field])):
+            raise ValueError(f"{pass_name} {field} mismatch for aligned sample IDs")
+    if aligned["query_ids"] != [str(value) for value in reference["query_ids"]]:
+        raise ValueError(f"{pass_name} query string mismatch for aligned sample IDs")
+    if aligned["selected_segment_indices"] != [
+        [int(value) for value in row] for row in reference["selected_segment_indices"]
+    ]:
+        raise ValueError(f"{pass_name} selected segment indices mismatch for aligned sample IDs")
+    return aligned, _alignment_receipt(aligned, pre_alignment_ids=candidate_ids)
+
+
+def _load_visual_encoder(
+    model_name: str,
+    pretrained: bool,
+    checkpoint: str | Path | None,
+    seed: int,
+    *,
+    pretrained_asset_lock: str | Path | None = None,
+    pretrained_asset_root: str | Path | None = None,
+):
     from src.models.ov_orthkd import SequenceImageEncoder
 
     torch.manual_seed(int(seed))
-    encoder = SequenceImageEncoder(model_name, pretrained=bool(pretrained))
+    asset_receipt = None
+    if pretrained:
+        if pretrained_asset_lock is None:
+            raise ValueError("pretrained visual encoder requires an exact asset lock")
+        backbone, asset_receipt = load_locked_timm_encoder(
+            model_name,
+            pretrained_asset_lock,
+            asset_root=pretrained_asset_root,
+        )
+        encoder = SequenceImageEncoder(model_name, pretrained=False)
+        encoder.backbone.load_state_dict(backbone.state_dict(), strict=True)
+    else:
+        encoder = SequenceImageEncoder(model_name, pretrained=False)
     checkpoint_sha = None
     if checkpoint is not None:
         path = Path(checkpoint)
@@ -115,14 +245,17 @@ def _load_visual_encoder(model_name: str, pretrained: bool, checkpoint: str | Pa
         encoder.load_state_dict(visual_state, strict=True)
         checkpoint_sha = hashlib.sha256(path.read_bytes()).hexdigest()
     encoder.eval()
-    return encoder, checkpoint_sha
+    return encoder, checkpoint_sha, asset_receipt
 
 
-def _encode_split(loader, encoder, device: torch.device) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def _encode_split(loader, encoder, device: torch.device) -> dict[str, Any]:
     features: list[np.ndarray] = []
     queries: list[np.ndarray] = []
     labels: list[np.ndarray] = []
+    sequence_masks: list[np.ndarray] = []
     ids: list[str] = []
+    query_ids: list[str] = []
+    selected_segment_indices: list[list[int]] = []
     with torch.inference_mode():
         for batch in loader:
             frame = batch["frame"].to(device)
@@ -130,50 +263,84 @@ def _encode_split(loader, encoder, device: torch.device) -> tuple[np.ndarray, np
             features.append(encoded)
             queries.append(batch["text_embedding"].cpu().numpy().astype(np.float32))
             labels.append(batch["segment_label"].cpu().numpy().astype(np.int64))
+            sequence_masks.append(batch["sequence_mask"].cpu().numpy().astype(np.float32))
             ids.extend(str(value) for value in batch["id"])
-    return np.concatenate(features), np.concatenate(queries), np.concatenate(labels), np.asarray(ids, dtype=str)
+            query_ids.extend(str(value) for value in batch["query"])
+            selected_segment_indices.extend(
+                [[int(index) for index in row] for row in batch["selected_segment_indices"]]
+            )
+    split = {
+        "features": np.concatenate(features),
+        "queries": np.concatenate(queries),
+        "labels": np.concatenate(labels),
+        "sequence_masks": np.concatenate(sequence_masks),
+        "ids": ids,
+        "query_ids": query_ids,
+        "selected_segment_indices": selected_segment_indices,
+    }
+    _validate_encoded_split(split, "encoded")
+    return split
 
 
 def _probe_pair(
     train_visual: np.ndarray,
-    train_queries: np.ndarray,
-    train_labels: np.ndarray,
+    train_split: Mapping[str, Any],
     val_visual: np.ndarray,
-    val_queries: np.ndarray,
-    val_labels: np.ndarray,
+    val_split: Mapping[str, Any],
     *,
     name: str,
     seed: int,
+    maps: Mapping[str, Any],
+    maps_receipt: Mapping[str, Any],
 ) -> dict[str, Any]:
-    train_query = np.broadcast_to(train_queries[:, None, :], (train_queries.shape[0], 10, train_queries.shape[1])).copy()
-    val_query = np.broadcast_to(val_queries[:, None, :], (val_queries.shape[0], 10, val_queries.shape[1])).copy()
-    train_zero = np.zeros((train_visual.shape[0], 10, 1), dtype=np.float32)
-    val_zero = np.zeros((val_visual.shape[0], 10, 1), dtype=np.float32)
-    _, train_q, _ = build_common_space(train_zero, train_query, output_dim=128, seed=seed)
-    _, val_q, _ = build_common_space(val_zero, val_query, output_dim=128, seed=seed)
+    train_queries = np.asarray(train_split["queries"], dtype=np.float32)
+    val_queries = np.asarray(val_split["queries"], dtype=np.float32)
+    train_labels = np.asarray(train_split["labels"], dtype=np.int64)
+    val_labels = np.asarray(val_split["labels"], dtype=np.int64)
+    train_mask = np.asarray(train_split["sequence_masks"]).astype(bool)
+    val_mask = np.asarray(val_split["sequence_masks"]).astype(bool)
+    train_query = np.broadcast_to(
+        train_queries[:, None, :],
+        (train_queries.shape[0], train_visual.shape[1], train_queries.shape[1]),
+    ).copy()
+    val_query = np.broadcast_to(
+        val_queries[:, None, :],
+        (val_queries.shape[0], val_visual.shape[1], val_queries.shape[1]),
+    ).copy()
+    train_v, train_q, _ = apply_common_space_maps(train_visual, train_query, maps)
+    val_v, val_q = apply_common_space_maps(val_visual, val_query, maps)
+    train_zero = np.zeros_like(train_v)
+    val_zero = np.zeros_like(val_v)
+    train_valid = train_mask.reshape(-1)
+    train_labels_flat = train_labels.reshape(-1)
+    def offsets_for(mask: np.ndarray) -> np.ndarray:
+        return np.concatenate(([0], np.cumsum(mask.sum(axis=1), dtype=np.int64)))
+
+    train_qp_design = build_interaction_design(train_zero, train_q, mode="qp")
+    val_qp_design = build_interaction_design(val_zero, val_q, mode="qp")
     qp = fit_probe_and_score(
-        build_interaction_design(np.zeros_like(train_q), train_q, mode="qp"),
-        train_labels,
-        build_interaction_design(np.zeros_like(val_q), val_q, mode="qp"),
+        train_qp_design.reshape(-1, train_qp_design.shape[-1])[train_valid],
+        train_labels_flat[train_valid],
+        val_qp_design,
         val_labels,
-        np.ones_like(val_labels, dtype=bool),
-        sample_ids=np.arange(val_labels.shape[0]).astype(str),
-        query_ids=np.arange(val_labels.shape[0]).astype(str),
-        offsets=np.arange(0, val_labels.shape[0] * 10 + 1, 10),
+        val_mask,
+        sample_ids=np.asarray(val_split["ids"], dtype=str),
+        query_ids=np.asarray(val_split["query_ids"], dtype=str),
+        offsets=offsets_for(val_mask),
         seed=seed,
         shuffle_repeats=100,
     )
-    train_v, train_q2, _ = build_common_space(train_visual, train_query, output_dim=128, seed=seed + 17)
-    val_v, val_q2, _ = build_common_space(val_visual, val_query, output_dim=128, seed=seed + 17)
+    train_vqp_design = build_interaction_design(train_v, train_q, mode="interaction")
+    val_vqp_design = build_interaction_design(val_v, val_q, mode="interaction")
     vqp = fit_probe_and_score(
-        build_interaction_design(train_v, train_q2, mode="interaction"),
-        train_labels,
-        build_interaction_design(val_v, val_q2, mode="interaction"),
+        train_vqp_design.reshape(-1, train_vqp_design.shape[-1])[train_valid],
+        train_labels_flat[train_valid],
+        val_vqp_design,
         val_labels,
-        np.ones_like(val_labels, dtype=bool),
-        sample_ids=np.arange(val_labels.shape[0]).astype(str),
-        query_ids=np.arange(val_labels.shape[0]).astype(str),
-        offsets=np.arange(0, val_labels.shape[0] * 10 + 1, 10),
+        val_mask,
+        sample_ids=np.asarray(val_split["ids"], dtype=str),
+        query_ids=np.asarray(val_split["query_ids"], dtype=str),
+        offsets=offsets_for(val_mask),
         seed=seed,
         shuffle_repeats=100,
     )
@@ -183,6 +350,13 @@ def _probe_pair(
         "vqp": vqp["metrics"],
         "visual_shape": list(val_visual.shape),
         "query_shape": list(val_queries.shape),
+        "alignment": {
+            "train_id_hash": _sha256_strings(train_split["ids"]),
+            "validation_id_hash": _sha256_strings(val_split["ids"]),
+            "train_query_id_hash": _sha256_strings(train_split["query_ids"]),
+            "validation_query_id_hash": _sha256_strings(val_split["query_ids"]),
+        },
+        "projection_maps": dict(maps_receipt),
     }
 
 
@@ -219,40 +393,108 @@ def audit_zero_training_representations(
     train_loader, val_loader, _ = create_ov_avel_data_loaders(local_config)
     visual_name = str(config["student"]["visual_backbone"])
     audio_name = str(config["student"]["audio_backbone"])
+    diagnostic_config = config.get("diagnostic", {})
+    asset_lock_ref = diagnostic_config.get("pretrained_asset_lock")
+    if not isinstance(asset_lock_ref, str):
+        raise ValueError("resolved D2 config has no diagnostic.pretrained_asset_lock")
+    asset_lock_path = Path(asset_lock_ref)
+    if not asset_lock_path.is_absolute():
+        asset_lock_path = PROJECT_ROOT / asset_lock_path
     results: dict[str, Any] = {}
+    alignment: dict[str, Any] = {}
+    pretrained_asset_receipt: dict[str, Any] | None = None
     try:
-        random_encoder, _ = _load_visual_encoder(visual_name, False, None, seed)
+        random_encoder, _, _ = _load_visual_encoder(visual_name, False, None, seed)
         random_encoder.to(device)
-        train_visual, train_query, train_labels, train_ids = _encode_split(train_loader, random_encoder, device)
-        val_visual, val_query, val_labels, val_ids = _encode_split(val_loader, random_encoder, device)
-        results["random_visual"] = _probe_pair(train_visual, train_query, train_labels, val_visual, val_query, val_labels, name="random_visual", seed=seed)
+        random_train = _encode_split(train_loader, random_encoder, device)
+        random_val = _encode_split(val_loader, random_encoder, device)
         del random_encoder
+        alignment["random_visual"] = {
+            "train": _alignment_receipt(random_train, pre_alignment_ids=random_train["ids"]),
+            "validation": _alignment_receipt(random_val, pre_alignment_ids=random_val["ids"]),
+        }
+        aligned_passes: dict[str, tuple[dict[str, Any], dict[str, Any]]] = {
+            "random_visual": (random_train, random_val)
+        }
         pretrained_error = None
         try:
-            pretrained_encoder, _ = _load_visual_encoder(visual_name, True, None, seed)
+            pretrained_encoder, _, pretrained_asset_receipt = _load_visual_encoder(
+                visual_name,
+                True,
+                None,
+                seed,
+                pretrained_asset_lock=asset_lock_path,
+            )
             pretrained_encoder.to(device)
-            train_pre, _, _, _ = _encode_split(train_loader, pretrained_encoder, device)
-            val_pre, _, _, _ = _encode_split(val_loader, pretrained_encoder, device)
-            results["timm_pretrained_visual"] = _probe_pair(train_pre, train_query, train_labels, val_pre, val_query, val_labels, name="timm_pretrained_visual", seed=seed)
+            pretrained_train_raw = _encode_split(train_loader, pretrained_encoder, device)
+            pretrained_val_raw = _encode_split(val_loader, pretrained_encoder, device)
+            pretrained_train, train_receipt = _align_encoded_split(
+                random_train, pretrained_train_raw, pass_name="timm_pretrained_visual/train"
+            )
+            pretrained_val, val_receipt = _align_encoded_split(
+                random_val, pretrained_val_raw, pass_name="timm_pretrained_visual/validation"
+            )
+            alignment["timm_pretrained_visual"] = {
+                "train": train_receipt,
+                "validation": val_receipt,
+            }
+            aligned_passes["timm_pretrained_visual"] = (pretrained_train, pretrained_val)
             del pretrained_encoder
         except Exception as exc:  # pragma: no cover - depends on remote asset/network state
             pretrained_error = f"{type(exc).__name__}: {exc}"
-            results["timm_pretrained_visual"] = {"name": "timm_pretrained_visual", "status": "BLOCKED_BY_PRETRAINED_BACKBONE_ASSET", "error": pretrained_error}
-        current_encoder, current_checkpoint_sha = _load_visual_encoder(visual_name, False, current_checkpoint, seed)
+            results["timm_pretrained_visual"] = {"name": "timm_pretrained_visual", "status": "BLOCKED_BY_ASSET_IDENTITY", "error": pretrained_error}
+        current_encoder, current_checkpoint_sha, _ = _load_visual_encoder(visual_name, False, current_checkpoint, seed)
         current_encoder.to(device)
-        train_current, _, _, _ = _encode_split(train_loader, current_encoder, device)
-        val_current, _, _, _ = _encode_split(val_loader, current_encoder, device)
-        results["current_c2_visual"] = _probe_pair(train_current, train_query, train_labels, val_current, val_query, val_labels, name="current_c2_visual", seed=seed)
+        current_train_raw = _encode_split(train_loader, current_encoder, device)
+        current_val_raw = _encode_split(val_loader, current_encoder, device)
+        current_train, train_receipt = _align_encoded_split(
+            random_train, current_train_raw, pass_name="current_c2_visual/train"
+        )
+        current_val, val_receipt = _align_encoded_split(
+            random_val, current_val_raw, pass_name="current_c2_visual/validation"
+        )
+        alignment["current_c2_visual"] = {"train": train_receipt, "validation": val_receipt}
+        aligned_passes["current_c2_visual"] = (current_train, current_val)
         del current_encoder
-        audio_encoder, _ = _load_visual_encoder(audio_name, False, None, seed)
+        audio_encoder, _, _ = _load_visual_encoder(audio_name, False, None, seed)
         audio_encoder.to(device)
-        train_audio, _, _, _ = _encode_split(
+        audio_train_raw = _encode_split(
             ((batch | {"frame": batch["spectrogram"]}) for batch in train_loader), audio_encoder, device
         )
-        val_audio, _, _, _ = _encode_split(
+        audio_val_raw = _encode_split(
             ((batch | {"frame": batch["spectrogram"]}) for batch in val_loader), audio_encoder, device
         )
-        results["random_audio_control"] = _probe_pair(train_audio, train_query, train_labels, val_audio, val_query, val_labels, name="random_audio_control", seed=seed)
+        audio_train, train_receipt = _align_encoded_split(
+            random_train, audio_train_raw, pass_name="random_audio_control/train"
+        )
+        audio_val, val_receipt = _align_encoded_split(
+            random_val, audio_val_raw, pass_name="random_audio_control/validation"
+        )
+        alignment["random_audio_control"] = {"train": train_receipt, "validation": val_receipt}
+        aligned_passes["random_audio_control"] = (audio_train, audio_val)
+        visual_dims = sorted(
+            {
+                int(train_split["features"].shape[-1])
+                for train_split, _ in aligned_passes.values()
+            }
+        )
+        maps, maps_receipt = build_common_space_maps(
+            visual_dims,
+            int(random_train["queries"].shape[-1]),
+            output_dim=128,
+            seed=seed,
+        )
+        for pass_name, (train_split, val_split) in aligned_passes.items():
+            results[pass_name] = _probe_pair(
+                train_split["features"],
+                train_split,
+                val_split["features"],
+                val_split,
+                name=pass_name,
+                seed=seed,
+                maps=maps,
+                maps_receipt=maps_receipt,
+            )
     finally:
         for path in (train_path, val_path):
             path.unlink(missing_ok=True)
@@ -272,9 +514,9 @@ def audit_zero_training_representations(
     )
     result = {
         "schema_version": 1,
-        "status": "PASS" if pretrained_error is None else "BLOCKED_BY_PRETRAINED_BACKBONE_ASSET",
+        "status": "D2_PROBE_READY_FOR_ZERO_TRAINING_GATE" if pretrained_error is None else "BLOCKED_BY_ASSET_IDENTITY",
         "scientific_status": (
-            "D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED"
+            "BLOCKED_BY_ASSET_IDENTITY"
             if pretrained_error is not None
             else "VISUAL_PRETRAINING_CONTROL_PASS"
             if gate
@@ -296,6 +538,10 @@ def audit_zero_training_representations(
         },
         "checkpoint_sha256": hashlib.sha256(Path(current_checkpoint).read_bytes()).hexdigest(),
         "backbones": {"visual": visual_name, "audio": audio_name},
+        "pretrained_asset_lock": str(asset_lock_path),
+        "pretrained_asset_receipt": pretrained_asset_receipt,
+        "alignment": alignment,
+        "projection_maps": maps_receipt,
         "probes": results,
         "gate": {
             "random_vqp_mixed_concordance": random_mixed,

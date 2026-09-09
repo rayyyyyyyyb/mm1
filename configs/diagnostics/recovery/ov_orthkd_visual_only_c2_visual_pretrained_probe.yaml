@@ -2,6 +2,7 @@ seed: 42
 diagnostic:
   name: visual_pretrained_zero_training_probe
   base_config: configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_c2_static_positive_lr_clip_800.yaml
+  pretrained_asset_lock: configs/locks/diagnostics/convnextv2_tiny_pretrained_asset.yaml
   training: forbidden
   evaluation_split: validation
 student:

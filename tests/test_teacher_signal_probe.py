@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from src.utils.teacher_signal_probe import (
+    apply_common_space_maps,
+    build_common_space_maps,
     build_common_space,
     build_interaction_design,
     derive_all_transitions,
@@ -122,3 +125,27 @@ def test_direct_visual_logit_gate_uses_concordance_shift_and_either_shuffle_drop
     assert passed["pass"] is True
     assert passed["conditions"]["direct_shuffle_ap_or_auroc_drop_ge_0.02"] is True
     assert failed["pass"] is False
+
+
+def test_probe_family_reuses_one_query_map_and_visual_map_per_dimension() -> None:
+    maps, receipt = build_common_space_maps([2, 2, 3], 4, output_dim=5, seed=42)
+    visual_2 = np.ones((1, 2, 2), dtype=np.float32)
+    visual_3 = np.ones((1, 2, 3), dtype=np.float32)
+    query = np.ones((1, 2, 4), dtype=np.float32)
+
+    _, query_2 = apply_common_space_maps(visual_2, query, maps)
+    _, query_3 = apply_common_space_maps(visual_3, query, maps)
+
+    assert receipt["query_map_sha256"]
+    assert receipt["visual_map_sha256"].keys() == {"2", "3"}
+    assert np.array_equal(query_2, query_3)
+
+
+def test_probe_family_rejects_unregistered_visual_dimension() -> None:
+    maps, _ = build_common_space_maps(2, 4, output_dim=5, seed=42)
+    with pytest.raises(ValueError, match="no shared visual map"):
+        apply_common_space_maps(
+            np.ones((1, 2, 3), dtype=np.float32),
+            np.ones((1, 2, 4), dtype=np.float32),
+            maps,
+        )

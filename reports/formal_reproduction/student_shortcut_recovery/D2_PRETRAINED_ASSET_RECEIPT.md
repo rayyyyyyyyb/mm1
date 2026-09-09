@@ -29,12 +29,15 @@ offline `timm` load, state-dict fingerprint, and the zero-training VQP gate are
 still pending. An earlier query reported an RTX 4070 Laptop GPU and therefore
 correctly caused a no-mutation stop. A fresh direct SSH query now reports
 `DESKTOP-LPN6MT3` with `NVIDIA GeForce RTX 5090, 32607 MiB`; the target is
-reachable again. No upload, cache mutation, or D2 training had been started at
-the time of this identity recheck.
+reachable again. The D2 probe now requires the tracked lock to be passed into
+an explicit offline safetensors load; it will not call `timm` with
+`pretrained=True` or silently use a cache hit. No D2 training had been started
+at the time of this identity recheck.
 
 ## Scientific interpretation
 
 This receipt is an asset lock, not evidence that D2 improves the boundary. The
-scientific D2 status remains
-`D2_BLOCKED_BY_PRETRAINED_ASSET_NOT_TESTED` until the remote cache is installed,
-loaded offline, and the preregistered zero-training gate is executed.
+E0.1 remains `BLOCKED_BY_TARGET_5090_ENVIRONMENT` until the remote target has
+run the locked offline load and initialization-parity audit. The scientific D2
+status remains untested until the separately authorized zero-training VQP gate
+is executed. Asset integrity is not scientific evidence.

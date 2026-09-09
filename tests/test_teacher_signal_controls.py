@@ -136,6 +136,20 @@ def test_materialize_rejects_any_unregistered_change(tmp_path: Path) -> None:
         controls.materialize_config(wrapper_path, repo_root, tmp_path / "diagnostic" / "noncanonical")
 
 
+def test_materialize_rejects_reproduction_implementation_mode_change(tmp_path: Path) -> None:
+    """Runner metadata may vary, but implementation semantics are scientific."""
+
+    repo_root = Path(__file__).resolve().parents[1]
+    wrapper = yaml.safe_load(
+        (repo_root / "configs/diagnostics/recovery/ov_orthkd_d1_centered_visual_seed42_800.yaml").read_text(encoding="utf-8")
+    )
+    wrapper["overrides"]["reproduction"] = {"implementation_mode": "invented_mode"}
+    wrapper_path = tmp_path / "wrapper.yaml"
+    wrapper_path.write_text(yaml.safe_dump(wrapper, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="must differ from fixed C2 baseline only"):
+        controls.materialize_config(wrapper_path, repo_root, tmp_path / "diagnostic" / "noncanonical")
+
+
 def test_d3_materializes_only_positive_visual_logit_weight(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     wrapper_path = tmp_path / "d3.yaml"
