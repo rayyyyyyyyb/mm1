@@ -4615,3 +4615,8 @@
 
 - Added the final E0.1 readiness report, refreshed Phase D/closure/current-status wording, and recorded the complete-test receipt. These are documentation/evidence updates only; no training, gate, cache, data, checkpoint, or model bytes changed.
 - Rechecked the final source boundary: the only large model bytes remain ignored under local/remote `tmp`; Git staging contains code, compact receipts, locks, tests, and reports only. The next public commit will be the clean handoff after one final ledger/hash check.
+
+### 1012. 2026-09-09: final handoff state
+
+- Read-only remote closeout: host `DESKTOP-LPN6MT3`, RTX 5090 at 488 MiB / 32,607 MiB, 0% utilization, 45 C; no `audit_d2_readiness`, `train_ov_orthkd`, or pytest process remains (`0` relevant processes).
+- Local worktree is clean and `git ls-remote origin refs/heads/repro/student-shortcut-recovery` equals `ffcb8479ddad0fdb3f3cc097fae38290130eedc0`. Parent and repository ledgers remain byte-identical. E0.1 final status is `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`; scientific D2 gate, D2 800-step control, D3, Full, second seed, schedule extension, and test evaluation remain stopped.
