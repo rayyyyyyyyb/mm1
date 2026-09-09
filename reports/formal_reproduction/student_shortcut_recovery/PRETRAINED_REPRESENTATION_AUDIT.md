@@ -21,10 +21,11 @@ at revision `b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817` and verified locally:
 bytes were fetched through an exact-revision mirror transport and checked
 against official API metadata. Installation into the isolated 5090 cache and
 offline loading remain pending because SSH port 22 was unreachable during this
-check. The endpoint currently reports an RTX 4070 Laptop GPU rather than the
-target 5090, so the verified asset has not been uploaded there. No random
-state was substituted for a pretrained state, and no optimizer, update, or
-checkpoint write occurred.
+check. An earlier endpoint query reported an RTX 4070 Laptop GPU and was left
+untouched; a fresh direct query now reports the target RTX 5090 with 32,607 MiB.
+The verified asset has not yet been installed there. No random state was
+substituted for a pretrained state, and no optimizer, update, or checkpoint
+write occurred.
 
 The preregistered D2 superiority gate cannot be evaluated without the actual
 pretrained state (`pretrained VQP >= random + 0.05` and `>= QP + 0.02`), so

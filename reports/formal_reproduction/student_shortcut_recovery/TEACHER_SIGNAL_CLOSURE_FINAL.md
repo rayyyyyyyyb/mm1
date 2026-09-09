@@ -64,5 +64,6 @@ label alignment, and config resolver passed \`35 passed, 2 skipped\` (exit
 passed (exit \`0\`). The local full collection is environment-limited because
 the host lacks \`timm\` (collection exit \`2\`), so no assertion failure is
 attributed to E0. A prior fresh 839-file snapshot on the locked 5090 had 601
-tests passing, but the E0 edits have not yet been deployed there: the configured
-endpoint currently identifies an RTX 4070 host rather than the target 5090.
+tests passing, but the E0 edits have not yet been deployed there. An earlier
+query identified an RTX 4070 and was left untouched; the latest direct SSH
+query now identifies the target RTX 5090 with 32,607 MiB.

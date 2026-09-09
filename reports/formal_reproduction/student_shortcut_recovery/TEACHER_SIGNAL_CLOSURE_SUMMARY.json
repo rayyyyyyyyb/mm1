@@ -45,7 +45,7 @@
     "current_c2_visual_vqp_mixed_concordance": 0.4886993603411514,
     "random_audio_control_vqp_mixed_concordance": 0.4554371002132196,
     "timm_pretrained_visual_vqp_mixed_concordance": null,
-    "reason": "exact convnextv2_tiny.fcmae_ft_in22k_in1k asset is locally verified but the configured endpoint currently resolves to an RTX 4070 host, so target 5090 cache installation and offline load remain pending",
+    "reason": "exact convnextv2_tiny.fcmae_ft_in22k_in1k asset is locally verified and the target RTX 5090 is reachable again; cache installation and offline load remain pending",
     "optimizer_step_executed": false,
     "checkpoint_written": false
   },

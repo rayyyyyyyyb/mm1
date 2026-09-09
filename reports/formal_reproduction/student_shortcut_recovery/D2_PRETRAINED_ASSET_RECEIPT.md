@@ -26,10 +26,11 @@ only; it does not change the model ID or revision.
 The verified bytes are intentionally under ignored `tmp/` and are not staged
 or uploaded to GitHub. Installation into the isolated 5090 Hugging Face cache,
 offline `timm` load, state-dict fingerprint, and the zero-training VQP gate are
-still pending because the configured SSH endpoint currently resolves to
-`DESKTOP-LPN6MT3` with an `NVIDIA GeForce RTX 4070 Laptop GPU`, not the target
-RTX 5090. No upload, cache mutation, or D2 training has been started on that
-non-target host.
+still pending. An earlier query reported an RTX 4070 Laptop GPU and therefore
+correctly caused a no-mutation stop. A fresh direct SSH query now reports
+`DESKTOP-LPN6MT3` with `NVIDIA GeForce RTX 5090, 32607 MiB`; the target is
+reachable again. No upload, cache mutation, or D2 training had been started at
+the time of this identity recheck.
 
 ## Scientific interpretation
 

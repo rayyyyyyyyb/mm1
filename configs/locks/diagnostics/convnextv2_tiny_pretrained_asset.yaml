@@ -35,10 +35,11 @@ local_receipt:
 remote_receipt:
   host: LXT@100.119.122.101
   observed_hostname: DESKTOP-LPN6MT3
-  observed_gpu: NVIDIA GeForce RTX 4070 Laptop GPU
+  observed_gpu: NVIDIA GeForce RTX 5090
+  observed_memory_mib: 32607
   cache_root: null
   model_sha256_verified: null
-  status: endpoint_reachable_but_not_target_rtx5090
+  status: target_rtx5090_reachable_install_pending
 guardrails:
   visual_pretrained: true
   audio_pretrained: false

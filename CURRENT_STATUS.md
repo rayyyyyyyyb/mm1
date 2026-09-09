@@ -114,7 +114,8 @@ GitHub 包含完整代码、配置、locks、测试以及本次运行的小型�
 下一道门是把已从官方来源锁定并在本地验证的
 `convnextv2_tiny.fcmae_ft_in22k_in1k` 精确 pretrained 权重部署到目标 5090，
 记录 model ID、revision、文件名、字节数和 SHA256，并验证不是随机 fallback；
-当前配置的 SSH endpoint 实际识别为 RTX 4070 主机，因此尚未上传或运行。
+早先一次 SSH 查询识别为 RTX 4070，因而没有写入；最新直接查询已重新识别
+为 RTX 5090（32,607 MiB），目标当前可访问，但尚未上传或运行。
 只有零训练 superiority gate 通过后才允许 D2 的 800-step validation-only
 控制。D3 已修正为 `loss.alpha_strong_logit` 单变量，但正权重未公开，必须
 先恢复 provenance，或另行预注册 train-only 梯度匹配并锁值；不得用

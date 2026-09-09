@@ -4548,3 +4548,7 @@
 ### 999. 2026-09-09: handoff verification recorded
 
 - Final handoff verification was prepared: the branch is intended to remain clean, the public branch is to match local HEAD, and the parent/R2 ledgers are to remain byte-identical. No experiment or remote target mutation is authorized by this ledger entry.
+
+### 1000. 2026-09-09: target GPU identity revalidated
+
+- Ran a fresh read-only Tailscale/SSH identity check. `100.119.122.101` is online as `DESKTOP-LPN6MT3`, and the direct remote `nvidia-smi` result is now `NVIDIA GeForce RTX 5090, 32607 MiB`. This supersedes the earlier transient 4070 observation for current-state decisions; no upload, cache mutation, or experiment was performed during the check.
