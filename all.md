@@ -4626,3 +4626,8 @@
 - The final ledger-only commit is `d4f40a49265914776a229efc00c18e49ecffbc64` (`docs: record final E0.1 handoff state`); the local worktree is clean and the public branch resolves to the same SHA.
 - Recomputed both ledgers after push: `扩刊/all.md` and `扩刊/OV-OrthKD-R2/all.md` are byte-identical with SHA256 `CD19BEC3C2B2BE4FF5D11B8F0D1564F6BA5E5A6FD6D5C7FE6AADCABA5199AD91`.
 - This corrects the pre-commit observation recorded in entry 1012 (which necessarily named the prior `ffcb847` head); no source, data, weight, cache, or training state changed during this closeout.
+
+### 1014. 2026-09-09: post-push verification
+
+- Commit `499dd7737f0c00e7d984788e763987a15a985e59` is present locally and on `origin/repro/student-shortcut-recovery`; `git status --porcelain` is empty.
+- After Git's normal working-tree line-ending normalization, both ledgers still match byte-for-byte at SHA256 `48B566A64F5C85115AC7A89A78D01579DF4122B0EC7DF57272C4DF842B4A6601`.
