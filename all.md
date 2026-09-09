@@ -4620,3 +4620,9 @@
 
 - Read-only remote closeout: host `DESKTOP-LPN6MT3`, RTX 5090 at 488 MiB / 32,607 MiB, 0% utilization, 45 C; no `audit_d2_readiness`, `train_ov_orthkd`, or pytest process remains (`0` relevant processes).
 - Local worktree is clean and `git ls-remote origin refs/heads/repro/student-shortcut-recovery` equals `ffcb8479ddad0fdb3f3cc097fae38290130eedc0`. Parent and repository ledgers remain byte-identical. E0.1 final status is `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`; scientific D2 gate, D2 800-step control, D3, Full, second seed, schedule extension, and test evaluation remain stopped.
+
+### 1013. 2026-09-09: final publication verification
+
+- The final ledger-only commit is `d4f40a49265914776a229efc00c18e49ecffbc64` (`docs: record final E0.1 handoff state`); the local worktree is clean and the public branch resolves to the same SHA.
+- Recomputed both ledgers after push: `扩刊/all.md` and `扩刊/OV-OrthKD-R2/all.md` are byte-identical with SHA256 `CD19BEC3C2B2BE4FF5D11B8F0D1564F6BA5E5A6FD6D5C7FE6AADCABA5199AD91`.
+- This corrects the pre-commit observation recorded in entry 1012 (which necessarily named the prior `ffcb847` head); no source, data, weight, cache, or training state changed during this closeout.
