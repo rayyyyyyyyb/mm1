@@ -4540,3 +4540,7 @@
 ### 997. 2026-09-09: final GitHub synchronization check
 
 - Pushed the final fail-closed validation commit; local HEAD and `origin/repro/student-shortcut-recovery` are both `0cea4bfbb51e872c3e5e8d2d80be290ef7a17d33`. `git status --porcelain` is empty, and parent/R2 `all.md` SHA256 values remain identical.
+
+### 998. 2026-09-09: ledger commit synchronization
+
+- Added this final ledger synchronization entry after verifying the preceding public head `64d265912630df5df1bba58e8dcbc2fdc0c200b8`; the worktree was clean and both ledgers were byte-identical before recording this entry.
