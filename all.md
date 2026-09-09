@@ -4532,3 +4532,7 @@
 ### 995. 2026-09-09: E0 commit created
 
 - Committed the reviewed E0/state correction and D2 asset-lock package as `d0ca144` (`repro: correct bounded-control status and lock D2 asset`), 29 files changed, 738 insertions, 109 deletions. The staged artifact audit excluded all transient `tmp/` bytes and large assets.
+
+### 996. 2026-09-09: fail-closed D2 config validation tightened
+
+- Tightened the nested D2 probe resolver to reject a missing or non-mapping `protocol` before reading `zero_training_only`, preserving fail-closed behavior. Independent post-edit checks again passed: focused pytest `35 passed, 2 skipped`, Ruff, compileall, and diff-check all exited `0`.

@@ -83,7 +83,8 @@ def _load_probe_config(path: str | Path) -> dict[str, Any]:
         raise ValueError("resolved pretrained probe config requires student settings")
     if student.get("visual_pretrained") is not True or student.get("audio_pretrained") is not False:
         raise ValueError("D2 zero-training probe requires visual_pretrained=true and audio_pretrained=false")
-    if resolved.get("protocol", {}).get("zero_training_only") is not True:
+    protocol = resolved.get("protocol")
+    if not isinstance(protocol, Mapping) or protocol.get("zero_training_only") is not True:
         raise ValueError("D2 representation probe must remain zero-training-only")
     return resolved
 
