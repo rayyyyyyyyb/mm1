@@ -1,0 +1,19 @@
+﻿{
+    "schema_version":  1,
+    "status":  "PASS",
+    "started_at":  "2026-09-10T04:49:19.6673221Z",
+    "completed_at":  "2026-09-10T04:55:09.3533332Z",
+    "elapsed_seconds":  349.686,
+    "hostname":  "DESKTOP-LPN6MT3",
+    "process_id":  26080,
+    "candidate_archive_sha256":  "18689cfb018db713e9e39f0e79d3c5d10a98db754e70a1852b4f6c851d7e873b",
+    "command":  "E:\\OV-OrthKD-R0\\env\\.venv\\Scripts\\python.exe -m pytest -q",
+    "exit_code":  0,
+    "stdout_bytes":  1688,
+    "stdout_sha256":  "7872a8036c1eb7560248c3c4c9faaabc621552e568b568312d5fa74854358247",
+    "stderr_bytes":  0,
+    "stderr_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "git_status_after":  [
+
+                         ]
+}

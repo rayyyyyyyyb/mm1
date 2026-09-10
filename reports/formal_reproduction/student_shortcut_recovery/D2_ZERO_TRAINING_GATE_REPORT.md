@@ -90,6 +90,44 @@ historical invalid measurements. They are not directly comparable because
 the corrected run aligns every loader pass by real ID and reuses one projection
 map family instead of changing the query map between QP and VQP.
 
+## Exact-candidate full test
+
+Commit `c0dca35ec226ba87ecd4ae4bcbfd7a37a04e0e30` was exported as a
+tracked-files-only archive (3,117,462 bytes, SHA256
+`18689cfb018db713e9e39f0e79d3c5d10a98db754e70a1852b4f6c851d7e873b`) and
+deployed to a fresh isolated directory on `DESKTOP-LPN6MT3`. Read-only
+junctions expose the existing data, teacher assets, weights, and upstream
+repositories without placing any of those bytes in Git. The two tracked
+manual-source receipts had identical SHA256 values before and after the
+junction was installed, and the candidate worktree remained clean.
+
+The first complete test attempt found an environment defect: the
+non-interactive SSH `PATH` did not contain the already installed MinGit. It
+therefore ended with `644 passed, 36 failed`; all 36 failures were
+`FileNotFoundError` at tests that spawn `git`, rather than assertion failures
+in the candidate. Its receipt and raw output are retained with the suffix
+`.attempt1_missing_git`. No source file was changed.
+
+The same candidate was rerun after prepending the verified
+`E:/OV-OrthKD-R0/env/Git/cmd` directory to `PATH`:
+
+- command: `python -m pytest -q`;
+- result: `680 passed in 343.81s (0:05:43)`;
+- process exit: `0`;
+- runner interval: 2026-09-10T04:49:19Z through 04:55:09Z;
+- stdout: 1,688 bytes, SHA256
+  `7872a8036c1eb7560248c3c4c9faaabc621552e568b568312d5fa74854358247`;
+- stderr: 0 bytes, SHA256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`;
+- post-test Git status: clean.
+
+The deployment receipt SHA256 is
+`d2b4421dd1f6a9b7ee347a470ab4bfbc1970a0b47adadf4e12f86148fd7cc497`.
+The successful test receipt SHA256 is
+`028ba64ed21912744de2bae72ac555d78f196a4f4bccd2109a2e05314163272f`.
+All verification receipts, both attempts, and both auditable PowerShell
+helpers are retained with the repository evidence.
+
 ## Artifact audit and decision
 
 The independent auditor recomputed both inequalities and verified cross-pass

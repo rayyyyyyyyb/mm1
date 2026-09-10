@@ -4662,3 +4662,34 @@
 - Added a standard-library independent auditor that verifies frozen T=10/seed/sample/split boundaries, exact runtime/config/checkpoint/asset identities, all cross-pass alignment hashes, shared projection maps, real query grouping, identical QP baselines, worker/exit/stderr receipts, and independently recomputes both scientific inequalities. Five tamper tests cover alignment drift, nonshared maps, fabricated PASS, test access, and changed QP.
 - The independent audit exited `0` with `ARTIFACT_AUDIT_PASS`, `errors=[]`, and scientific status `VISUAL_PRETRAINING_CONTROL_FAIL`; D2 800-step, D3, Full, test, second seed, and schedule extension flags are all false. The result/report copies under the repository and `扩刊/复现` are byte-identical.
 - Focused gate-auditor tests passed `5 passed`; the combined D2 alignment/load/readiness/control suite passed `44 passed, 1 skipped`; Ruff, compileall, diff-check, and BOM-aware parsing of 322 JSON / 73 YAML documents all exited `0`. Updated current-status, closure, asset, Phase D, web-handoff, and evidence-index documents without changing the frozen producer or scientific thresholds.
+
+### 1020. 2026-09-10: exact D2 gate candidate frozen
+
+- A staged diff-check initially reported only Markdown line-ending spaces in the new D2 report heading. Removed those spaces from both report copies; the next staged diff-check exited `0`, and repository/`复现` report bytes remained identical.
+- Created candidate commit `c0dca35ec226ba87ecd4ae4bcbfd7a37a04e0e30` (`diagnostic: record D2 zero-training gate failure`): 24 files changed, 1,799 insertions, 88 deletions. The candidate worktree was clean.
+- Exported the candidate as a tracked-files-only 3,117,462-byte archive, SHA256 `18689cfb018db713e9e39f0e79d3c5d10a98db754e70a1852b4f6c851d7e873b`, and uploaded that exact archive to the RTX 5090 host. No data, model, checkpoint, or cache bytes were included.
+
+### 1021. 2026-09-10: isolated full-test deployment recovered safely
+
+- The first isolated deployment correctly refused to replace the candidate's tracked `data/downloads` placeholder directory, so no test started. Inspection of the earlier passing snapshot established the intended layout: a parent `downloads` junction, child `ov_ave/source` and `ov_ave/exported` junctions, and separate read-only asset/repository junctions.
+- A subsequent inline recovery command exceeded the Windows command-line limit before mutation. Added and uploaded an auditable setup helper (4,255 bytes, SHA256 `f39334e9d9852123998a58f242788c0e5a67858b38199b3070c5ee94726b8bc1`) with absolute-path containment checks. It moved only the two tracked download receipt files into the disposable verification backup, created eight junctions to existing shared assets, and proved the two files' SHA256 values unchanged through the junction.
+- Deployment succeeded in `E:/OV-OrthKD-R3/d2-gate-test-c0dca35`; candidate Git status remained clean. The deployment receipt SHA256 is `d2b4421dd1f6a9b7ee347a470ab4bfbc1970a0b47adadf4e12f86148fd7cc497`.
+
+### 1022. 2026-09-10: full-test environment failure identified
+
+- A hidden `Start-Process` launcher returned a PID but its child exited before writing state; both launcher logs were empty. No pytest process or source mutation resulted, so the same runner was started in a monitored foreground SSH session.
+- The first complete pytest attempt ran 348.687 seconds and ended with `644 passed, 36 failed`, process exit `1`, empty stderr, and clean Git status. Independent log inspection counted 36 failed-summary lines, 105 `FileNotFoundError` occurrences, and zero `AssertionError` occurrences: every failure belonged to tests that spawn `git`, which was absent from the non-interactive SSH `PATH`.
+- Preserved the first attempt's state, receipt, exit file, and 551,662-byte raw stdout under the suffix `.attempt1_missing_git`; raw stdout SHA256 is `fe97671efece41950ff5fd6948b30b4c5ec1ed0626ab8f78e0179508bfe40654`. No candidate source or test was changed.
+
+### 1023. 2026-09-10: exact-candidate full verification passed
+
+- Corrected only the external verification runner by prepending verified MinGit directory `E:/OV-OrthKD-R0/env/Git/cmd` to `PATH`; final runner SHA256 is `53ec8c026bc3cdbdcce970a8b13701df284a1f9a2bf9260e380a67705831b8c4`. The candidate archive and source bytes remained unchanged.
+- The same exact candidate completed `python -m pytest -q` on `DESKTOP-LPN6MT3`: `680 passed in 343.81s (0:05:43)`, runner elapsed 349.686 seconds, exit `0`, stderr 0 bytes, and post-test Git status clean. Stdout SHA256 is `7872a8036c1eb7560248c3c4c9faaabc621552e568b568312d5fa74854358247`; successful receipt SHA256 is `028ba64ed21912744de2bae72ac555d78f196a4f4bccd2109a2e05314163272f`.
+- Collected deployment, both test attempts, and the two PowerShell helpers into `复现/student_shortcut_recovery/d2_zero_training_gate_20260910`, copied the compact/raw verification evidence into the repository, and expanded both byte-identical D2 reports. This was verification only: no training, test-set evaluation, model update, or checkpoint occurred.
+
+### 1024. 2026-09-10: independent closeout checks
+
+- Replayed the independent D2 artifact auditor after full-test collection: exit `0`, `ARTIFACT_AUDIT_PASS`, `errors=[]`, unchanged `VISUAL_PRETRAINING_CONTROL_FAIL`, and output SHA256 `9733ce7e9e89558013450c0d4d2021087f2ddc4ca3b3aba1585249c10d9fce0a`. All future-run authorization flags remain false.
+- Re-ran the five gate-auditor tests (`5 passed in 0.08s`, exit `0`). Parsed all 325 repository JSON documents and all 73 YAML documents without error. PowerShell AST parsing found zero errors in the setup/runner copies; their repository and `复现` hashes are pairwise identical.
+- Staged-evidence audit found 17 files, no dataset/model/checkpoint/archive path or extension, no file at or above 50 MiB, and staged diff-check exit `0`. The largest staged file is the required ledger at 897,372 bytes; the first-attempt diagnostic log is 551,662 bytes.
+- Read-only remote closeout found zero relevant pytest/audit/training processes. The RTX 5090 was idle at 488/32,607 MiB, 0% utilization, 41 C; remote setup/runner hashes still matched the local evidence at `f39334e9...b8bc1` and `53ec8c02...1b8c4`.

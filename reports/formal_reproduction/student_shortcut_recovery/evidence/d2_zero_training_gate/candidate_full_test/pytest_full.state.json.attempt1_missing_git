@@ -1,0 +1,9 @@
+﻿{
+    "schema_version":  1,
+    "status":  "FAIL",
+    "started_at":  "2026-09-10T04:42:03.5171783Z",
+    "completed_at":  "2026-09-10T04:47:52.2044987Z",
+    "elapsed_seconds":  348.687,
+    "exit_code":  1,
+    "receipt":  "E:\\OV-OrthKD-R3\\d2-gate-test-c0dca35\\verification\\pytest_full.receipt.json"
+}

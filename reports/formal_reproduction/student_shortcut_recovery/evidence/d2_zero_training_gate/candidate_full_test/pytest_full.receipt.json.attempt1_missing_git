@@ -1,0 +1,19 @@
+﻿{
+    "schema_version":  1,
+    "status":  "FAIL",
+    "started_at":  "2026-09-10T04:42:03.5171783Z",
+    "completed_at":  "2026-09-10T04:47:52.2044987Z",
+    "elapsed_seconds":  348.687,
+    "hostname":  "DESKTOP-LPN6MT3",
+    "process_id":  9404,
+    "candidate_archive_sha256":  "18689cfb018db713e9e39f0e79d3c5d10a98db754e70a1852b4f6c851d7e873b",
+    "command":  "E:\\OV-OrthKD-R0\\env\\.venv\\Scripts\\python.exe -m pytest -q",
+    "exit_code":  1,
+    "stdout_bytes":  551662,
+    "stdout_sha256":  "fe97671efece41950ff5fd6948b30b4c5ec1ed0626ab8f78e0179508bfe40654",
+    "stderr_bytes":  0,
+    "stderr_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "git_status_after":  [
+
+                         ]
+}
