@@ -1,0 +1,817 @@
+{
+  "schema_version": 1,
+  "status": "D2_PROBE_READY_FOR_ZERO_TRAINING_GATE",
+  "scientific_status": "VISUAL_PRETRAINING_CONTROL_FAIL",
+  "protocol": {
+    "task_segments": 10,
+    "sample_count_per_split": 256,
+    "seed": 42,
+    "zero_training_only": true,
+    "optimizer_constructed": false,
+    "optimizer_step_executed": false,
+    "checkpoint_written": false,
+    "probe_gate": "timm_pretrained_vqp_mixed_concordance >= random_vqp + 0.05 and >= qp + 0.02"
+  },
+  "subset_ids_sha256": {
+    "train": "a2e2fecef576cf11d9e13efad6b64c57f2b06b18fc3eb2897b49f4d40f3f403a",
+    "validation": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8"
+  },
+  "checkpoint_sha256": "1b997952d2f9bb89b3783352655b044671a72a84ed76dcd6c4b8be6bf29cecf0",
+  "backbones": {
+    "visual": "convnextv2_tiny.fcmae_ft_in22k_in1k",
+    "audio": "tf_efficientnetv2_b2.in1k"
+  },
+  "pretrained_asset_lock": "E:\\OV-OrthKD-R3\\d2-e0-1-d7b29ca\\repo\\configs\\locks\\diagnostics\\convnextv2_tiny_pretrained_asset.yaml",
+  "pretrained_asset_receipt": {
+    "model_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k",
+    "revision": "b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817",
+    "config_path": "E:\\OV-OrthKD-R3\\d2-e0-1-d7b29ca\\repo\\tmp\\d2_pretrained_asset\\b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817\\config.json",
+    "config_sha256": "a9adf5b660f85c08af085b19a80a47b942f574e62211f7af6c3c7b6fe2a88eb6",
+    "weights_path": "E:\\OV-OrthKD-R3\\d2-e0-1-d7b29ca\\repo\\tmp\\d2_pretrained_asset\\b1dd46230e80bf4cc3fa0c3c905db2c3ec53a817\\model.safetensors",
+    "weights_sha256": "6652fd90fc9c23977659e58515778e16fbbcd43f0b01fc693089cebe6d64c2a9",
+    "source_state_key_sha256": "dcae30d4a74adba8a659830e14f2f3ffa02dee51afcdf873480bbc5e2f56ff51",
+    "source_state_tensor_sha256": "bd92db7f811465a831aad5ec369139ab438d6794c5cdd5cb16d4c4db320a972b",
+    "loaded_backbone_key_sha256": "3c91d2e3a30ca535610670209165fcb6237153e892d420266f6092f91eaa2b3d",
+    "loaded_backbone_tensor_sha256": "d8bcbc7225bedef0202e5f47613a4232eab9a7bbeef2be571831266361bafe90",
+    "missing_keys": [],
+    "unexpected_head_keys": [
+      "head.fc.bias",
+      "head.fc.weight"
+    ],
+    "parameter_count": 27866496,
+    "feature_dim": 768,
+    "pretrained_lookup_disabled": true,
+    "offline_only": true,
+    "load_api": "safetensors.torch.load_file",
+    "resolved_pretrained_cfg": {
+      "architecture": "convnextv2_tiny",
+      "tag": "fcmae_ft_in22k_in1k",
+      "custom_load": false,
+      "input_size": [
+        3,
+        224,
+        224
+      ],
+      "fixed_input_size": false,
+      "interpolation": "bicubic",
+      "crop_pct": 0.875,
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ],
+      "num_classes": 1000,
+      "first_conv": "stem.0",
+      "classifier": "head.fc",
+      "hf_hub_id": "timm/convnextv2_tiny.fcmae_ft_in22k_in1k"
+    }
+  },
+  "alignment": {
+    "random_visual": {
+      "train": {
+        "pre_alignment_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "canonical_post_alignment_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "label_hash": "b66968f2474dd9266020991ec92b19e480d01af944c29c6f1e03d4eeb6e65753",
+        "query_string_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "query_embedding_hash": "44b233c6b078542b59b03bdcf1f1bc37afaaef4c330a97724b14433f60986d6e",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      },
+      "validation": {
+        "pre_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "canonical_post_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "label_hash": "8eb5a35b5bb87252fbb69c51eb97f4091409cf4d4cd4b692b9dd5b67672d8333",
+        "query_string_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "query_embedding_hash": "2001a2a96c656b43f6cf5d98a10df2c980b26234b23f536d076d7795dc679e79",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      }
+    },
+    "timm_pretrained_visual": {
+      "train": {
+        "pre_alignment_id_hash": "ea83ece5cfcaf758e8cc8c44598101db8cae002df39b89a35e6675bf8e774af0",
+        "canonical_post_alignment_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "label_hash": "b66968f2474dd9266020991ec92b19e480d01af944c29c6f1e03d4eeb6e65753",
+        "query_string_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "query_embedding_hash": "44b233c6b078542b59b03bdcf1f1bc37afaaef4c330a97724b14433f60986d6e",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      },
+      "validation": {
+        "pre_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "canonical_post_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "label_hash": "8eb5a35b5bb87252fbb69c51eb97f4091409cf4d4cd4b692b9dd5b67672d8333",
+        "query_string_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "query_embedding_hash": "2001a2a96c656b43f6cf5d98a10df2c980b26234b23f536d076d7795dc679e79",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      }
+    },
+    "current_c2_visual": {
+      "train": {
+        "pre_alignment_id_hash": "cbf549e69d1bd10036951e345c90dbde2f14c2e5cc310fb90e1e4e3a957aba13",
+        "canonical_post_alignment_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "label_hash": "b66968f2474dd9266020991ec92b19e480d01af944c29c6f1e03d4eeb6e65753",
+        "query_string_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "query_embedding_hash": "44b233c6b078542b59b03bdcf1f1bc37afaaef4c330a97724b14433f60986d6e",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      },
+      "validation": {
+        "pre_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "canonical_post_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "label_hash": "8eb5a35b5bb87252fbb69c51eb97f4091409cf4d4cd4b692b9dd5b67672d8333",
+        "query_string_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "query_embedding_hash": "2001a2a96c656b43f6cf5d98a10df2c980b26234b23f536d076d7795dc679e79",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      }
+    },
+    "random_audio_control": {
+      "train": {
+        "pre_alignment_id_hash": "6ce16ecef5d21d59098c93924c0288fa4caf036468fe3141df02d34e0077ed53",
+        "canonical_post_alignment_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "label_hash": "b66968f2474dd9266020991ec92b19e480d01af944c29c6f1e03d4eeb6e65753",
+        "query_string_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "query_embedding_hash": "44b233c6b078542b59b03bdcf1f1bc37afaaef4c330a97724b14433f60986d6e",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      },
+      "validation": {
+        "pre_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "canonical_post_alignment_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "label_hash": "8eb5a35b5bb87252fbb69c51eb97f4091409cf4d4cd4b692b9dd5b67672d8333",
+        "query_string_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "query_embedding_hash": "2001a2a96c656b43f6cf5d98a10df2c980b26234b23f536d076d7795dc679e79",
+        "sequence_mask_hash": "293bd7b3c38a1e54135c07e9f1d97103dc50ce4f0accf6ecd680b71001799579",
+        "selected_segment_indices_hash": "61bd5533811bb9cf8d8219d17c2a202935b54dff88b6376a5cc80ffe092a79e3"
+      }
+    }
+  },
+  "projection_maps": {
+    "seed": 42,
+    "output_dim": 128,
+    "visual_map_sha256": {
+      "768": "51d292437d75fefa03e85125d0690319685ad8fe4bba72cb38a3292c6457c028",
+      "1408": "a7bf0e815ec7ff750259c053f8357d14f7e01cdf7e44c68f293a752752141308"
+    },
+    "query_map_sha256": "6033fee877eb4380864eb544d622330d5d20a11e78e0d5a6c1753c4964f4a6f3"
+  },
+  "probes": {
+    "random_visual": {
+      "name": "random_visual",
+      "qp": {
+        "global": {
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.49424307036247334,
+          "video_macro_concordance": 0.5014153955853174,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.5940077453793927,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.5618463178012565,
+          "baseline_auroc": 0.5942531892815723,
+          "shuffle_ap_mean": 0.5592266962843763,
+          "shuffle_auroc_mean": 0.5948271256790576,
+          "shuffle_ap_drop": 0.0026196215168802217,
+          "shuffle_auroc_drop": -0.000573936397485264
+        },
+        "transitions": {
+          "all_transition_auroc": 0.4686689814814814,
+          "onset_auroc": 0.4857840920778649,
+          "offset_auroc": 0.4834728263278493,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "vqp": {
+        "global": {
+          "ap": 0.5465512822343777,
+          "auroc": 0.5535951901361167,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.4906183368869936,
+          "video_macro_concordance": 0.4885340711805556,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.5465512822343777,
+          "auroc": 0.5535951901361167,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.5935586408519399,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.5465512822343777,
+          "baseline_auroc": 0.5535951901361167,
+          "shuffle_ap_mean": 0.5512759098063712,
+          "shuffle_auroc_mean": 0.5624138558261613,
+          "shuffle_ap_drop": -0.004724627571993545,
+          "shuffle_auroc_drop": -0.008818665690044636
+        },
+        "transitions": {
+          "all_transition_auroc": 0.5061315035273368,
+          "onset_auroc": 0.48526400971855393,
+          "offset_auroc": 0.49269227582033637,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "visual_shape": [
+        256,
+        10,
+        768
+      ],
+      "query_shape": [
+        256,
+        1024
+      ],
+      "alignment": {
+        "train_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "validation_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "train_query_id_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "validation_query_id_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070"
+      },
+      "projection_maps": {
+        "seed": 42,
+        "output_dim": 128,
+        "visual_map_sha256": {
+          "768": "51d292437d75fefa03e85125d0690319685ad8fe4bba72cb38a3292c6457c028",
+          "1408": "a7bf0e815ec7ff750259c053f8357d14f7e01cdf7e44c68f293a752752141308"
+        },
+        "query_map_sha256": "6033fee877eb4380864eb544d622330d5d20a11e78e0d5a6c1753c4964f4a6f3"
+      },
+      "macro_grouping": {
+        "source": "batch.query",
+        "validation_sample_count": 256,
+        "unique_query_count": 53,
+        "validation_query_counts": {
+          "arc welding": 1,
+          "baby laughter": 11,
+          "basketball bounce": 16,
+          "bird chirping": 6,
+          "bowling impact": 3,
+          "cattle mooing": 2,
+          "chainsawing trees": 13,
+          "chicken crowing": 28,
+          "child singing": 1,
+          "child speech": 6,
+          "church bell ringing": 3,
+          "crow cawing": 3,
+          "dog barking": 11,
+          "electric shaver": 10,
+          "engine accelerating": 3,
+          "female singing": 8,
+          "female speech": 2,
+          "fire truck siren": 1,
+          "fireworks banging": 1,
+          "frog croaking": 2,
+          "gibbon howling": 1,
+          "goose honking": 13,
+          "helicopter": 7,
+          "horse clip-clop": 3,
+          "lions roaring": 7,
+          "motorboat": 1,
+          "mynah bird singing": 1,
+          "ocean burbling": 1,
+          "people burping": 6,
+          "people cheering": 2,
+          "people clapping": 11,
+          "people sniggering": 4,
+          "people whistling": 3,
+          "playing banjo": 1,
+          "playing bass drum": 1,
+          "playing bass guitar": 1,
+          "playing bassoon": 7,
+          "playing drum kit": 6,
+          "playing electric guitar": 2,
+          "playing glockenspiel": 1,
+          "playing harp": 1,
+          "playing mandolin": 1,
+          "playing piano": 6,
+          "playing saxophone": 5,
+          "playing sitar": 2,
+          "race car": 2,
+          "singing bowl": 1,
+          "slot machine": 1,
+          "train horning": 15,
+          "turkey gobbling": 4,
+          "typing on typewriter": 2,
+          "vacuum cleaner cleaning floors": 4,
+          "volcano explosion": 2
+        },
+        "validation_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "qp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "vqp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "validation_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "qp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "vqp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8"
+      }
+    },
+    "timm_pretrained_visual": {
+      "name": "timm_pretrained_visual",
+      "qp": {
+        "global": {
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.49424307036247334,
+          "video_macro_concordance": 0.5014153955853174,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.5940077453793927,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.5618463178012565,
+          "baseline_auroc": 0.5942531892815723,
+          "shuffle_ap_mean": 0.5592266962843763,
+          "shuffle_auroc_mean": 0.5948271256790576,
+          "shuffle_ap_drop": 0.0026196215168802217,
+          "shuffle_auroc_drop": -0.000573936397485264
+        },
+        "transitions": {
+          "all_transition_auroc": 0.4686689814814814,
+          "onset_auroc": 0.4857840920778649,
+          "offset_auroc": 0.4834728263278493,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "vqp": {
+        "global": {
+          "ap": 0.5572415038562084,
+          "auroc": 0.5508691936763719,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.5127931769722814,
+          "video_macro_concordance": 0.5101463293650793,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.5572415038562084,
+          "auroc": 0.5508691936763719,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.6105512616030564,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.5572415038562084,
+          "baseline_auroc": 0.5508691936763719,
+          "shuffle_ap_mean": 0.5540959220356816,
+          "shuffle_auroc_mean": 0.5542628212171155,
+          "shuffle_ap_drop": 0.0031455818205268216,
+          "shuffle_auroc_drop": -0.003393627540743571
+        },
+        "transitions": {
+          "all_transition_auroc": 0.5094664902998236,
+          "onset_auroc": 0.5202841823160355,
+          "offset_auroc": 0.4807237576194395,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "visual_shape": [
+        256,
+        10,
+        768
+      ],
+      "query_shape": [
+        256,
+        1024
+      ],
+      "alignment": {
+        "train_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "validation_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "train_query_id_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "validation_query_id_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070"
+      },
+      "projection_maps": {
+        "seed": 42,
+        "output_dim": 128,
+        "visual_map_sha256": {
+          "768": "51d292437d75fefa03e85125d0690319685ad8fe4bba72cb38a3292c6457c028",
+          "1408": "a7bf0e815ec7ff750259c053f8357d14f7e01cdf7e44c68f293a752752141308"
+        },
+        "query_map_sha256": "6033fee877eb4380864eb544d622330d5d20a11e78e0d5a6c1753c4964f4a6f3"
+      },
+      "macro_grouping": {
+        "source": "batch.query",
+        "validation_sample_count": 256,
+        "unique_query_count": 53,
+        "validation_query_counts": {
+          "arc welding": 1,
+          "baby laughter": 11,
+          "basketball bounce": 16,
+          "bird chirping": 6,
+          "bowling impact": 3,
+          "cattle mooing": 2,
+          "chainsawing trees": 13,
+          "chicken crowing": 28,
+          "child singing": 1,
+          "child speech": 6,
+          "church bell ringing": 3,
+          "crow cawing": 3,
+          "dog barking": 11,
+          "electric shaver": 10,
+          "engine accelerating": 3,
+          "female singing": 8,
+          "female speech": 2,
+          "fire truck siren": 1,
+          "fireworks banging": 1,
+          "frog croaking": 2,
+          "gibbon howling": 1,
+          "goose honking": 13,
+          "helicopter": 7,
+          "horse clip-clop": 3,
+          "lions roaring": 7,
+          "motorboat": 1,
+          "mynah bird singing": 1,
+          "ocean burbling": 1,
+          "people burping": 6,
+          "people cheering": 2,
+          "people clapping": 11,
+          "people sniggering": 4,
+          "people whistling": 3,
+          "playing banjo": 1,
+          "playing bass drum": 1,
+          "playing bass guitar": 1,
+          "playing bassoon": 7,
+          "playing drum kit": 6,
+          "playing electric guitar": 2,
+          "playing glockenspiel": 1,
+          "playing harp": 1,
+          "playing mandolin": 1,
+          "playing piano": 6,
+          "playing saxophone": 5,
+          "playing sitar": 2,
+          "race car": 2,
+          "singing bowl": 1,
+          "slot machine": 1,
+          "train horning": 15,
+          "turkey gobbling": 4,
+          "typing on typewriter": 2,
+          "vacuum cleaner cleaning floors": 4,
+          "volcano explosion": 2
+        },
+        "validation_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "qp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "vqp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "validation_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "qp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "vqp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8"
+      }
+    },
+    "current_c2_visual": {
+      "name": "current_c2_visual",
+      "qp": {
+        "global": {
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.49424307036247334,
+          "video_macro_concordance": 0.5014153955853174,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.5940077453793927,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.5618463178012565,
+          "baseline_auroc": 0.5942531892815723,
+          "shuffle_ap_mean": 0.5592266962843763,
+          "shuffle_auroc_mean": 0.5948271256790576,
+          "shuffle_ap_drop": 0.0026196215168802217,
+          "shuffle_auroc_drop": -0.000573936397485264
+        },
+        "transitions": {
+          "all_transition_auroc": 0.4686689814814814,
+          "onset_auroc": 0.4857840920778649,
+          "offset_auroc": 0.4834728263278493,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "vqp": {
+        "global": {
+          "ap": 0.5367781722879155,
+          "auroc": 0.5496471952633828,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.5174840085287846,
+          "video_macro_concordance": 0.5244447544642856,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.5367781722879155,
+          "auroc": 0.5496471952633828,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.6218456278903519,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.5367781722879155,
+          "baseline_auroc": 0.5496471952633828,
+          "shuffle_ap_mean": 0.5282921588030632,
+          "shuffle_auroc_mean": 0.5431194836110603,
+          "shuffle_ap_drop": 0.008486013484852228,
+          "shuffle_auroc_drop": 0.006527711652322465
+        },
+        "transitions": {
+          "all_transition_auroc": 0.5013067680776014,
+          "onset_auroc": 0.5437790969584884,
+          "offset_auroc": 0.5174213677700843,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "visual_shape": [
+        256,
+        10,
+        768
+      ],
+      "query_shape": [
+        256,
+        1024
+      ],
+      "alignment": {
+        "train_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "validation_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "train_query_id_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "validation_query_id_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070"
+      },
+      "projection_maps": {
+        "seed": 42,
+        "output_dim": 128,
+        "visual_map_sha256": {
+          "768": "51d292437d75fefa03e85125d0690319685ad8fe4bba72cb38a3292c6457c028",
+          "1408": "a7bf0e815ec7ff750259c053f8357d14f7e01cdf7e44c68f293a752752141308"
+        },
+        "query_map_sha256": "6033fee877eb4380864eb544d622330d5d20a11e78e0d5a6c1753c4964f4a6f3"
+      },
+      "macro_grouping": {
+        "source": "batch.query",
+        "validation_sample_count": 256,
+        "unique_query_count": 53,
+        "validation_query_counts": {
+          "arc welding": 1,
+          "baby laughter": 11,
+          "basketball bounce": 16,
+          "bird chirping": 6,
+          "bowling impact": 3,
+          "cattle mooing": 2,
+          "chainsawing trees": 13,
+          "chicken crowing": 28,
+          "child singing": 1,
+          "child speech": 6,
+          "church bell ringing": 3,
+          "crow cawing": 3,
+          "dog barking": 11,
+          "electric shaver": 10,
+          "engine accelerating": 3,
+          "female singing": 8,
+          "female speech": 2,
+          "fire truck siren": 1,
+          "fireworks banging": 1,
+          "frog croaking": 2,
+          "gibbon howling": 1,
+          "goose honking": 13,
+          "helicopter": 7,
+          "horse clip-clop": 3,
+          "lions roaring": 7,
+          "motorboat": 1,
+          "mynah bird singing": 1,
+          "ocean burbling": 1,
+          "people burping": 6,
+          "people cheering": 2,
+          "people clapping": 11,
+          "people sniggering": 4,
+          "people whistling": 3,
+          "playing banjo": 1,
+          "playing bass drum": 1,
+          "playing bass guitar": 1,
+          "playing bassoon": 7,
+          "playing drum kit": 6,
+          "playing electric guitar": 2,
+          "playing glockenspiel": 1,
+          "playing harp": 1,
+          "playing mandolin": 1,
+          "playing piano": 6,
+          "playing saxophone": 5,
+          "playing sitar": 2,
+          "race car": 2,
+          "singing bowl": 1,
+          "slot machine": 1,
+          "train horning": 15,
+          "turkey gobbling": 4,
+          "typing on typewriter": 2,
+          "vacuum cleaner cleaning floors": 4,
+          "volcano explosion": 2
+        },
+        "validation_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "qp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "vqp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "validation_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "qp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "vqp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8"
+      }
+    },
+    "random_audio_control": {
+      "name": "random_audio_control",
+      "qp": {
+        "global": {
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.49424307036247334,
+          "video_macro_concordance": 0.5014153955853174,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.5618463178012565,
+          "auroc": 0.5942531892815723,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.5940077453793927,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.5618463178012565,
+          "baseline_auroc": 0.5942531892815723,
+          "shuffle_ap_mean": 0.5592266962843763,
+          "shuffle_auroc_mean": 0.5948271256790576,
+          "shuffle_ap_drop": 0.0026196215168802217,
+          "shuffle_auroc_drop": -0.000573936397485264
+        },
+        "transitions": {
+          "all_transition_auroc": 0.4686689814814814,
+          "onset_auroc": 0.4857840920778649,
+          "offset_auroc": 0.4834728263278493,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "vqp": {
+        "global": {
+          "ap": 0.623990484331,
+          "auroc": 0.6539077092107672,
+          "valid_segments": 2560
+        },
+        "mixed": {
+          "pair_weighted_concordance": 0.6788912579957356,
+          "video_macro_concordance": 0.6925190662202382,
+          "mixed_videos": 256,
+          "mixed_pairs": 4690,
+          "ap": 0.623990484331,
+          "auroc": 0.6539077092107672,
+          "valid_segments": 2560
+        },
+        "per_query_macro_ap": 0.6988669628326518,
+        "shuffle": {
+          "repeats": 100,
+          "seed": 42,
+          "baseline_ap": 0.623990484331,
+          "baseline_auroc": 0.6539077092107672,
+          "shuffle_ap_mean": 0.558051802018532,
+          "shuffle_auroc_mean": 0.5724663523164256,
+          "shuffle_ap_drop": 0.06593868231246802,
+          "shuffle_auroc_drop": 0.08144135689434162
+        },
+        "transitions": {
+          "all_transition_auroc": 0.5956845238095239,
+          "onset_auroc": 0.6626295596959458,
+          "offset_auroc": 0.662788613671534,
+          "adjacent_valid_pairs": 2304,
+          "transition_count": 504
+        }
+      },
+      "visual_shape": [
+        256,
+        10,
+        1408
+      ],
+      "query_shape": [
+        256,
+        1024
+      ],
+      "alignment": {
+        "train_id_hash": "ca088053e7f3da89513a11f4878ce6e0f6695e54ef3e4c04e0b16fd4af4a0747",
+        "validation_id_hash": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "train_query_id_hash": "bfc5c0f897e1439342cfdcd77c9019eec61f4a2c58e0a0a4512a41ce67d08c7f",
+        "validation_query_id_hash": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070"
+      },
+      "projection_maps": {
+        "seed": 42,
+        "output_dim": 128,
+        "visual_map_sha256": {
+          "768": "51d292437d75fefa03e85125d0690319685ad8fe4bba72cb38a3292c6457c028",
+          "1408": "a7bf0e815ec7ff750259c053f8357d14f7e01cdf7e44c68f293a752752141308"
+        },
+        "query_map_sha256": "6033fee877eb4380864eb544d622330d5d20a11e78e0d5a6c1753c4964f4a6f3"
+      },
+      "macro_grouping": {
+        "source": "batch.query",
+        "validation_sample_count": 256,
+        "unique_query_count": 53,
+        "validation_query_counts": {
+          "arc welding": 1,
+          "baby laughter": 11,
+          "basketball bounce": 16,
+          "bird chirping": 6,
+          "bowling impact": 3,
+          "cattle mooing": 2,
+          "chainsawing trees": 13,
+          "chicken crowing": 28,
+          "child singing": 1,
+          "child speech": 6,
+          "church bell ringing": 3,
+          "crow cawing": 3,
+          "dog barking": 11,
+          "electric shaver": 10,
+          "engine accelerating": 3,
+          "female singing": 8,
+          "female speech": 2,
+          "fire truck siren": 1,
+          "fireworks banging": 1,
+          "frog croaking": 2,
+          "gibbon howling": 1,
+          "goose honking": 13,
+          "helicopter": 7,
+          "horse clip-clop": 3,
+          "lions roaring": 7,
+          "motorboat": 1,
+          "mynah bird singing": 1,
+          "ocean burbling": 1,
+          "people burping": 6,
+          "people cheering": 2,
+          "people clapping": 11,
+          "people sniggering": 4,
+          "people whistling": 3,
+          "playing banjo": 1,
+          "playing bass drum": 1,
+          "playing bass guitar": 1,
+          "playing bassoon": 7,
+          "playing drum kit": 6,
+          "playing electric guitar": 2,
+          "playing glockenspiel": 1,
+          "playing harp": 1,
+          "playing mandolin": 1,
+          "playing piano": 6,
+          "playing saxophone": 5,
+          "playing sitar": 2,
+          "race car": 2,
+          "singing bowl": 1,
+          "slot machine": 1,
+          "train horning": 15,
+          "turkey gobbling": 4,
+          "typing on typewriter": 2,
+          "vacuum cleaner cleaning floors": 4,
+          "volcano explosion": 2
+        },
+        "validation_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "qp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "vqp_query_ids_sha256": "00ba0463ec411e44b5cfd345e8c145a91201dc292d4882abbd24368f265c2070",
+        "validation_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "qp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8",
+        "vqp_sample_ids_sha256": "90eadc41edf8f57226576d81093a951a0d565ae0e190f53a797cbc213627f8e8"
+      }
+    }
+  },
+  "gate": {
+    "random_vqp_mixed_concordance": 0.4906183368869936,
+    "timm_pretrained_vqp_mixed_concordance": 0.5127931769722814,
+    "qp_mixed_concordance": 0.49424307036247334,
+    "pass": false
+  }
+}

@@ -4,13 +4,19 @@ Start with [TEACHER_SIGNAL_CLOSURE_FINAL.md](TEACHER_SIGNAL_CLOSURE_FINAL.md),
 the detailed [TEACHER_SIGNAL_CLOSURE_AUDIT.md](TEACHER_SIGNAL_CLOSURE_AUDIT.md),
 and the [D3 orchestration correction](D3_VISUAL_LOGIT_ORCHESTRATION_CORRECTION.md).
 The current state is `NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY`: D1 was
-executed and failed, D2 is exact-asset/load/parity ready but its corrected
-zero-training gate is unexecuted, and D3
+executed and failed; D2's exact-asset/load/parity checks passed but its corrected
+zero-training scientific gate returned `VISUAL_PRETRAINING_CONTROL_FAIL`; and D3
 is mechanically repaired but remains positive-weight-provenance-blocked and
 unexecuted. Current-T10 direct visual logits are healthy; the reconstructed
 feature probe proves decodability but is not archival-exact Table 2 evidence;
 Phase C proves visual mean-component dominance, not multi-loss directional
 agreement. Formal Full remains on hold.
+
+The completed D2 gate and its independent artifact audit are documented in
+[D2_ZERO_TRAINING_GATE_REPORT.md](D2_ZERO_TRAINING_GATE_REPORT.md). Pretrained
+VQP concordance was `0.512793`, versus random VQP `0.490618` and QP `0.494243`;
+the registered `+0.05` and `+0.02` conjunctive margins both failed. D2 800-step
+training is therefore not authorized.
 
 The earlier web handoff is [WEB_REVIEW_HANDOFF.md](WEB_REVIEW_HANDOFF.md). The
 latest frozen readout audit is [FROZEN_FEATURE_PROBE_RESULTS.md](FROZEN_FEATURE_PROBE_RESULTS.md).

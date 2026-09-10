@@ -1,6 +1,6 @@
 # Teacher-signal closure — final handoff
 
-Date: 2026-09-09
+Date: 2026-09-10
 Branch: \`repro/student-shortcut-recovery\`
 
 ## Decision
@@ -31,9 +31,12 @@ evaluation, second seed, schedule extension, or Full run was performed.
 - Phase C: \`VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED\`. Across four strata
   and 128 read-only batches, mixed visual mean/centered gradient ratio is
   \`5.275533\`; this does not claim multi-loss directional agreement.
-- D2 E0.1: \`D2_PROBE_READY_FOR_ZERO_TRAINING_GATE\`. The exact locked visual
-  asset passed two offline loads and non-visual initialization parity on the
-  RTX 5090. The corrected zero-training scientific gate has not been executed.
+- D2: the exact locked visual asset passed two offline loads and non-visual
+  initialization parity on the RTX 5090. The corrected 256-record-per-split
+  zero-training gate then completed with artifact PASS but scientific status
+  \`VISUAL_PRETRAINING_CONTROL_FAIL\`: pretrained VQP concordance \`0.512793\`
+  exceeded random by only \`0.022175\` (required \`0.05\`) and QP by only
+  \`0.018550\` (required \`0.02\`).
 - D1 centered visual control: exactly \`800\` applied updates (\`803\` attempts,
   \`3\` AMP skips), seed \`42\`, validation-only. AP \`0.708303\`, AUROC \`0.603108\`,
   mixed tie-aware concordance \`0.499469\`, and mean temporal logit std
@@ -51,8 +54,8 @@ diagnostic path and are not committed. \`TEACHER_SIGNAL_CLOSURE_SUMMARY.json\`
 contains machine-readable values and the prior C2 evidence remains in
 \`projector_collapse_summary.json\`.
 
-Only D1 training was executed. D2's corrected zero-training probe is ready but
-unrun, Phase B lacks raw videos, and D3 is mechanically valid but
+Only D1 training was executed. D2's zero-training probe ran without model
+training and failed its frozen superiority gate, Phase B lacks raw videos, and D3 is mechanically valid but
 weight-provenance-blocked. This branch does not authorize D2 training or formal
 Full training.
 
@@ -70,4 +73,7 @@ query identified an RTX 4070 and was left untouched; the latest direct SSH
 query now identifies the target RTX 5090 with 32,607 MiB. E0.1 then ran a
 no-training readiness audit there: exact offline load, repeatability, and 643
 non-visual initialization entries passed; all optimizer/forward/backward/
-checkpoint/test/scientific-gate flags remained false.
+checkpoint/test/scientific-gate flags remained false. The subsequently
+authorized D2 zero-training gate exited 0, wrote no model artifact, passed its
+independent artifact audit, and failed scientifically; see
+\`D2_ZERO_TRAINING_GATE_REPORT.md\`.

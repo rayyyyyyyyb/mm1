@@ -1,6 +1,6 @@
 # OV-OrthKD 当前正式复现状态
 
-更新日期：2026-09-09
+更新日期：2026-09-10
 
 结果发布分支：`repro/canonical-seed42-results`
 
@@ -20,7 +20,7 @@
 - 教师 feature：可解码，但 `TABLE2_FEATURE_PROBE_PROTOCOL_UNRESOLVED`
 - Phase C：`VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED`
 - D1：`D1_CENTERED_VISUAL_CONTROL_FAIL`
-- D2 E0.1：`D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`（精确离线权重与初始化一致性已通过；科学 gate 尚未运行）
+- D2：`VISUAL_PRETRAINING_CONTROL_FAIL`（精确离线权重、初始化一致性和产物审计通过；零训练 superiority gate 两项阈值均未通过）
 - D3：编排已修复，正权重 provenance 未恢复，尚未执行
 - 正式 Full：`FORMAL_FULL_HOLD`
 - evaluator 覆盖：原运行缺失；post-hoc 官方 segment 公式已补算，未来输出代码已修复
@@ -111,13 +111,13 @@ GitHub 包含完整代码、配置、locks、测试以及本次运行的小型�
 
 ## 下一步边界
 
-下一道门是把已从官方来源锁定并在本地验证的
-`convnextv2_tiny.fcmae_ft_in22k_in1k` 精确 pretrained 权重部署到目标 5090，
-记录 model ID、revision、文件名、字节数和 SHA256，并验证不是随机 fallback；
-早先一次 SSH 查询识别为 RTX 4070，因而没有写入；最新直接查询已重新识别
-为 RTX 5090（32,607 MiB），目标当前可访问，但尚未上传或运行。
-只有零训练 superiority gate 通过后才允许 D2 的 800-step validation-only
-控制。D3 已修正为 `loss.alpha_strong_logit` 单变量，但正权重未公开，必须
-先恢复 provenance，或另行预注册 train-only 梯度匹配并锁值；不得用
-validation sweep 猜权重。正式 Full、test、第二 seed 和 schedule 延长继续
-禁止。
+精确 `convnextv2_tiny.fcmae_ft_in22k_in1k` 资产已在 RTX 5090 上完成离线
+加载闭环；随后执行的 256-record-per-split、seed 42、validation-only
+零训练 gate 产物审计通过，但科学判定为 `VISUAL_PRETRAINING_CONTROL_FAIL`。
+pretrained VQP concordance 为 `0.512793`，仅比 random VQP `0.490618` 高
+`0.022175`（要求 `0.05`），仅比 QP `0.494243` 高 `0.018550`（要求
+`0.02`）。因此 D2 800-step 不获授权。D3 已修正为
+`loss.alpha_strong_logit` 单变量，但正权重未公开，必须先恢复 provenance，
+或另行预注册 train-only 梯度匹配并锁值；不得用 validation sweep 猜权重。
+正式 Full、test、第二 seed 和 schedule 延长继续禁止。详见
+`reports/formal_reproduction/student_shortcut_recovery/D2_ZERO_TRAINING_GATE_REPORT.md`。

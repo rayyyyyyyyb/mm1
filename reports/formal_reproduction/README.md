@@ -1,6 +1,6 @@
 # Canonical seed42 正式复现证据入口
 
-> **2026-09-01 最新诊断：** A0、S3、S4、S7 之后的 A–F zero/near-zero-training 审计已完整通过。官方 JPG 有真实时间变化；视觉 temporal std 在 step 400 前已于 backbone 路径塌缩，事后强制 gate 不能恢复；canonical Full projector 的现有 mean reduction 将 loss/gradient 精确缩小 256×，但 disposable clone 可正常更新。现在只授权 S8 identity + fixed-equal-gate 单变量诊断，正式 Full 继续暂停。请先读 [A–F 报告](student_shortcut_recovery/ZERO_TRAINING_AUDITS.md) 与 [最新网页审查交接](student_shortcut_recovery/WEB_REVIEW_HANDOFF.md)。
+> **2026-09-10 最新诊断：** D2 精确 ConvNeXtV2 资产、离线加载和初始化一致性均已通过；随后授权的 256-record-per-split、validation-only 零训练 gate 产物审计通过，但科学判定为 `VISUAL_PRETRAINING_CONTROL_FAIL`。pretrained VQP concordance 为 `0.512793`，相对 random 与 QP 的增益 `0.022175/0.018550` 均低于冻结阈值 `0.05/0.02`。D2 800-step、D3、正式 Full、test、第二 seed 和 schedule 延长均未获授权。请先读 [D2 gate 报告](student_shortcut_recovery/D2_ZERO_TRAINING_GATE_REPORT.md) 与 [最新 closure](student_shortcut_recovery/TEACHER_SIGNAL_CLOSURE_FINAL.md)。
 
 本目录是给独立审阅者和诊断对话使用的网页入口。它把正式训练所用的完整代码树，与本次运行的小型结果、实际 resolved config、环境冻结、数据/教师/evaluator 身份哈希和最终审计收据放在同一个 Git commit 中。
 

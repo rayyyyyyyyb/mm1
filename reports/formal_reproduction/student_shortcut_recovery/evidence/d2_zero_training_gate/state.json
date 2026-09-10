@@ -1,0 +1,8 @@
+﻿{
+    "status":  "completed",
+    "message":  "D2 zero-training gate completed; scientific result is in JSON",
+    "pid":  3580,
+    "updated_at":  "2026-09-10T02:24:48.8610278Z",
+    "exit_code":  0,
+    "result_path":  "E:\\OV-OrthKD-R3\\d2_zero_training_gate_20260910\\d2_zero_training_gate.json"
+}

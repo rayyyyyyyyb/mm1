@@ -1,5 +1,5 @@
 schema_version: 1
-status: local_verified_remote_install_pending
+status: remote_offline_load_verified
 purpose: D2_visual_pretrained_zero_training_probe_and_bounded_control
 model:
   id: timm/convnextv2_tiny.fcmae_ft_in22k_in1k
@@ -45,7 +45,12 @@ remote_receipt:
   loaded_backbone_parameter_count: 27866496
   loaded_backbone_feature_dim: 768
   loaded_backbone_state_sha256: d8bcbc7225bedef0202e5f47613a4232eab9a7bbeef2be571831266361bafe90
-  status: d2_probe_ready_for_zero_training_gate
+  status: remote_offline_load_verified
+  scientific_gate_receipt:
+    date: 2026-09-10
+    result_sha256: 5f29e4ca172334e9e041cac7e57ca11c6adb9d5d5686c7629cd8435d680f898c
+    artifact_status: ARTIFACT_AUDIT_PASS
+    scientific_status: VISUAL_PRETRAINING_CONTROL_FAIL
 guardrails:
   visual_pretrained: true
   audio_pretrained: false

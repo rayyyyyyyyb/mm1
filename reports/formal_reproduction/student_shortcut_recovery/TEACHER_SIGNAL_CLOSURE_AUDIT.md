@@ -105,12 +105,14 @@ non-feature identity fields, shares one projection map family, and groups
 per-query macro by real query strings.
 
 The exact asset passed byte verification, two identical offline timm loads,
-and bitwise non-visual initialization parity on the RTX 5090. The resulting
-readiness status is `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`; the corrected
-zero-training gate itself was deliberately not executed. Therefore D2 still
-has no scientific result and no bounded training is authorized. Formal Full,
-second seed, 3,200-step extension, test evaluation, and canonical-cache
-overwrite remain forbidden.
+and bitwise non-visual initialization parity on the RTX 5090. The subsequently
+authorized corrected gate completed on 256 records per split. Pretrained VQP
+mixed concordance was `0.512793`, versus random VQP `0.490618` and QP
+`0.494243`. Its gains, `0.022175` and `0.018550`, fail the frozen conjunctive
+requirements `0.05` and `0.02`. The independent artifact audit passed, so the
+scientific status is `VISUAL_PRETRAINING_CONTROL_FAIL`; D2 bounded training is
+not authorized. Formal Full, second seed, 3,200-step extension, test
+evaluation, and canonical-cache overwrite remain forbidden.
 
 ## Phase D1 — centered visual-feature control
 
@@ -137,8 +139,8 @@ concordance from `0.509331` to `0.499469`, and decision temporal std from
 diagnostic under the current reconstructed protocol; it does not reject every
 centered-supervision design or the paper's absolute-geometry feature loss.
 
-D2 800-step training remains unexecuted; only its corrected zero-training probe
-is now ready. Independent review also found that
+D2 800-step training remains unexecuted because its corrected zero-training
+probe failed. Independent review also found that
 D3 had incorrectly registered `student.path_mode` and read a nonexistent
 Phase D gate. E0 repairs D3 to use `loss.alpha_strong_logit` and the Phase A
 direct-logit gate, while preserving `student.path_mode=explicit_projected` and

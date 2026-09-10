@@ -38,18 +38,28 @@
     "rng_state_unchanged": true
   },
   "phase_d": {
-    "status": "D2_PROBE_READY_FOR_ZERO_TRAINING_GATE",
-    "scientific_status": "D2_ZERO_TRAINING_GATE_NOT_EXECUTED",
+    "status": "FAIL",
+    "artifact_status": "ARTIFACT_AUDIT_PASS",
+    "scientific_status": "VISUAL_PRETRAINING_CONTROL_FAIL",
     "sample_count_per_split": 256,
-    "random_visual_vqp_mixed_concordance": 0.5230277185501067,
-    "current_c2_visual_vqp_mixed_concordance": 0.4886993603411514,
-    "random_audio_control_vqp_mixed_concordance": 0.4554371002132196,
-    "timm_pretrained_visual_vqp_mixed_concordance": null,
-    "reason": "exact convnextv2_tiny.fcmae_ft_in22k_in1k asset passed two offline loads and non-visual initialization parity on the target RTX 5090; corrected zero-training gate remains intentionally unexecuted",
+    "qp_mixed_concordance": 0.49424307036247334,
+    "random_visual_vqp_mixed_concordance": 0.4906183368869936,
+    "current_c2_visual_vqp_mixed_concordance": 0.5174840085287846,
+    "random_audio_control_vqp_mixed_concordance": 0.6788912579957356,
+    "timm_pretrained_visual_vqp_mixed_concordance": 0.5127931769722814,
+    "pretrained_minus_random": 0.02217484008528786,
+    "required_pretrained_minus_random": 0.05,
+    "pretrained_minus_qp": 0.018550106609808104,
+    "required_pretrained_minus_qp": 0.02,
+    "gate_pass": false,
+    "reason": "the exact offline asset and corrected ID-aligned/shared-map probe passed artifact audit, but pretrained VQP failed both frozen superiority thresholds",
     "readiness_receipt": "d2_e0_1_readiness.json",
-    "scientific_gate_executed": false,
+    "gate_receipt": "evidence/d2_zero_training_gate/d2_zero_training_gate.json",
+    "artifact_audit_receipt": "d2_zero_training_gate_audit.json",
+    "scientific_gate_executed": true,
     "optimizer_step_executed": false,
-    "checkpoint_written": false
+    "checkpoint_written": false,
+    "d2_800_step_authorized": false
   },
   "phase_d1": {
     "status": "FAIL",
@@ -86,6 +96,6 @@
     "schedule_extension": false,
     "test_evaluation": false,
     "formal_full_status": "FORMAL_FULL_HOLD",
-    "bounded_controls": "D1_failed_D2_probe_ready_gate_not_executed_D3_repaired_weight_unresolved_not_executed"
+    "bounded_controls": "D1_failed_D2_zero_training_gate_failed_D3_repaired_weight_unresolved_not_executed"
   }
 }

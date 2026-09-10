@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "status": "ARTIFACT_AUDIT_PASS",
+  "scientific_status": "VISUAL_PRETRAINING_CONTROL_FAIL",
+  "errors": [],
+  "source_artifacts": {
+    "result": {
+      "path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\reports\\formal_reproduction\\student_shortcut_recovery\\evidence\\d2_zero_training_gate\\d2_zero_training_gate.json",
+      "size_bytes": 33683,
+      "sha256": "5f29e4ca172334e9e041cac7e57ca11c6adb9d5d5686c7629cd8435d680f898c"
+    },
+    "input_receipt": {
+      "path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\reports\\formal_reproduction\\student_shortcut_recovery\\evidence\\d2_zero_training_gate\\input_receipt.json",
+      "size_bytes": 3843,
+      "sha256": "3da5a39f9fafa274b372b6c9f9ea645d6a1a0527e8560ec7311443531ff7774f"
+    },
+    "state": {
+      "path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\reports\\formal_reproduction\\student_shortcut_recovery\\evidence\\d2_zero_training_gate\\state.json",
+      "size_bytes": 313,
+      "sha256": "fa670699a98a06cb3033405c4880ca797bcded3705ff8a42c4f5dba6c7790839"
+    },
+    "exit_code": {
+      "path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\reports\\formal_reproduction\\student_shortcut_recovery\\evidence\\d2_zero_training_gate\\exit_code.txt",
+      "size_bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    "stderr": {
+      "path": "C:\\Users\\lwz20\\Desktop\\OV-OrthKD-Collaboration-Base1\\扩刊\\OV-OrthKD-R2\\reports\\formal_reproduction\\student_shortcut_recovery\\evidence\\d2_zero_training_gate\\stderr.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "gate_recomputation": {
+    "random_vqp_mixed_concordance": 0.4906183368869936,
+    "pretrained_vqp_mixed_concordance": 0.5127931769722814,
+    "qp_mixed_concordance": 0.49424307036247334,
+    "pretrained_minus_random": 0.02217484008528786,
+    "required_pretrained_minus_random": 0.05,
+    "pretrained_minus_qp": 0.018550106609808104,
+    "required_pretrained_minus_qp": 0.02,
+    "random_margin": -0.027825159914712128,
+    "qp_margin": -0.0014498933901918587,
+    "pass": false
+  },
+  "identity_checks": {
+    "sample_alignment": true,
+    "shared_projection_maps": true,
+    "real_query_grouping": true,
+    "locked_offline_asset": true
+  },
+  "authorization": {
+    "d2_800_step": false,
+    "d3": false,
+    "formal_full": false,
+    "test_evaluation": false,
+    "second_seed": false,
+    "schedule_extension": false
+  }
+}

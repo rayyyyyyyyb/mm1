@@ -1,10 +1,22 @@
 # Student shortcut recovery：网页审查交接
 
-日期：2026-09-02
+日期：2026-09-10
 
-当前状态：**S9 paper-additive 单变量诊断与其后的只读 frozen-feature probe 均已完成。两者 artifact/runtime 均 PASS；S9 预注册科学判定为 FAIL，冻结 probe 的 S8 主点判定为 `VISUAL_INFORMATION_NOT_DECODABLE`。没有授权任何下一实验或正式 Full。**
+当前状态：**D2 精确 pretrained-visual 零训练 gate 已完成，artifact/runtime 为 PASS，但预注册科学判定为 `VISUAL_PRETRAINING_CONTROL_FAIL`。D1、D2 均未恢复边界；D3 正权重仍无 provenance。没有授权 D2 800-step、D3 或正式 Full。**
 
 这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough；S8 相对 S7 仅将 gate 从 learned softmax 改为从初始化起固定 `0.5/0.5`；S9 相对 S8 仅将 fusion 从 concat MLP 改为 paper-additive。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
+
+## 最新裁决：D2 zero-training gate
+
+完整协议、输入哈希、shape、结果和独立审计见
+[D2_ZERO_TRAINING_GATE_REPORT.md](D2_ZERO_TRAINING_GATE_REPORT.md)。本轮在 RTX
+5090 上使用 256 records/split、seed 42、validation-only 和修正后的真实 ID
+对齐/共享映射协议。精确 pretrained VQP concordance 为 `0.512793`，random VQP
+为 `0.490618`，QP 为 `0.494243`。两项增益 `+0.022175/+0.018550` 均未达到
+冻结的 `+0.05/+0.02` 门槛。独立 artifact audit 为 PASS、errors=0，但科学
+结论必须为 FAIL；D2 800-step 不获授权。更强的 audio positive control
+concordance `0.678891` 表明该 probe 能检测到标签对齐信息，不是统一的
+probe floor。
 
 ## 最新裁决：冻结特征可解码性
 

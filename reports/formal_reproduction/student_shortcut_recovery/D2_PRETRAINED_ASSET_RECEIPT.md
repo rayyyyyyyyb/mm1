@@ -1,6 +1,6 @@
 # D2 pretrained-visual asset receipt
 
-Date: 2026-09-09
+Date: 2026-09-10
 Branch: `repro/student-shortcut-recovery`
 
 ## Locked asset
@@ -38,7 +38,10 @@ an explicit offline safetensors load; it will not call `timm` with
 ## Scientific interpretation
 
 This receipt is an asset lock, not evidence that D2 improves the boundary.
-E0.1 is now `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`: the remote locked load and
-bitwise non-visual initialization-parity audit both passed. The scientific D2
-status remains untested until the separately authorized zero-training VQP gate
-is executed. Asset integrity and readiness are not scientific evidence.
+E0.1 reached `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`: the remote locked load
+and bitwise non-visual initialization-parity audit both passed. The separately
+authorized zero-training VQP gate subsequently ran and returned
+`VISUAL_PRETRAINING_CONTROL_FAIL`; pretrained concordance gained only
+`0.022175` over random (required `0.05`) and `0.018550` over QP (required
+`0.02`). See `D2_ZERO_TRAINING_GATE_REPORT.md`. Asset integrity remained a
+prerequisite and was not treated as scientific evidence.

@@ -4,6 +4,11 @@ Date: 2026-09-09
 Branch: `repro/student-shortcut-recovery`  
 Final E0.1 status: `D2_PROBE_READY_FOR_ZERO_TRAINING_GATE`
 
+Subsequent result (2026-09-10): the separately authorized zero-training gate
+has now run and returned `VISUAL_PRETRAINING_CONTROL_FAIL` with an independent
+`ARTIFACT_AUDIT_PASS`. This document remains the historical readiness receipt;
+see `D2_ZERO_TRAINING_GATE_REPORT.md` for the observed scientific result.
+
 This status authorizes only the already preregistered zero-training D2 probe.
 It does **not** report a scientific D2 result and does not authorize the
 800-step D2 control, Full training, test evaluation, a second seed, or a longer
