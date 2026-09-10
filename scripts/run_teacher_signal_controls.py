@@ -173,7 +173,7 @@ def authorize_control(name: str, evidence: Mapping[str, Any]) -> dict[str, Any]:
         authorized = teacher and mean_dominance
         reason = "Phase A teacher gate and Phase C visual-mean-dominance gate"
     elif name == "D2_visual_pretrained_800":
-        authorized = teacher and phase_d.get("scientific_status") == "VISUAL_PRETRAINING_CONTROL_PASS"
+        authorized = teacher and phase_d.get("scientific_status") == "D2_ZERO_TRAINING_DECODABILITY_GATE_PASS"
         reason = "Phase A teacher gate and frozen pretrained-visual superiority gate"
     elif name == "D3_visual_logit_800":
         authorized = visual_logit_gate["pass"]

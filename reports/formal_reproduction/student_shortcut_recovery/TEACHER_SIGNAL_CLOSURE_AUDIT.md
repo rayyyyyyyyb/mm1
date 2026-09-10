@@ -110,7 +110,7 @@ authorized corrected gate completed on 256 records per split. Pretrained VQP
 mixed concordance was `0.512793`, versus random VQP `0.490618` and QP
 `0.494243`. Its gains, `0.022175` and `0.018550`, fail the frozen conjunctive
 requirements `0.05` and `0.02`. The independent artifact audit passed, so the
-scientific status is `VISUAL_PRETRAINING_CONTROL_FAIL`; D2 bounded training is
+scientific status is `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`; the old D2 bounded training is
 not authorized. Formal Full, second seed, 3,200-step extension, test
 evaluation, and canonical-cache overwrite remain forbidden.
 

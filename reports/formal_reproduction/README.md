@@ -1,6 +1,6 @@
 # Canonical seed42 正式复现证据入口
 
-> **2026-09-10 最新诊断：** D2 精确 ConvNeXtV2 资产、离线加载和初始化一致性均已通过；随后授权的 256-record-per-split、validation-only 零训练 gate 产物审计通过，但科学判定为 `VISUAL_PRETRAINING_CONTROL_FAIL`。pretrained VQP concordance 为 `0.512793`，相对 random 与 QP 的增益 `0.022175/0.018550` 均低于冻结阈值 `0.05/0.02`。D2 800-step、D3、正式 Full、test、第二 seed 和 schedule 延长均未获授权。请先读 [D2 gate 报告](student_shortcut_recovery/D2_ZERO_TRAINING_GATE_REPORT.md) 与 [最新 closure](student_shortcut_recovery/TEACHER_SIGNAL_CLOSURE_FINAL.md)。
+> **2026-09-10 最新诊断：** D2 精确 ConvNeXtV2 资产、离线加载和初始化一致性均已通过；随后授权的 256-record-per-split、validation-only 零训练 gate 产物审计通过，但精确科学判定为 `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`。它只否定该 frozen-probe 强门槛，不等于训练控制失败；训练效应另记为 `PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED`。pretrained VQP concordance 为 `0.512793`，相对 random 与 QP 的增益 `0.022175/0.018550` 均低于冻结阈值 `0.05/0.02`。旧 D2 800-step、D3、正式 Full、test、第二 seed 和 schedule 延长均未获授权。请先读 [D2 gate 报告](student_shortcut_recovery/D2_ZERO_TRAINING_GATE_REPORT.md) 与 [D2A 预注册](student_shortcut_recovery/D2A_PAIRED_EARLY_DYNAMICS_PREREGISTRATION.md)。
 
 本目录是给独立审阅者和诊断对话使用的网页入口。它把正式训练所用的完整代码树，与本次运行的小型结果、实际 resolved config、环境冻结、数据/教师/evaluator 身份哈希和最终审计收据放在同一个 Git commit 中。
 

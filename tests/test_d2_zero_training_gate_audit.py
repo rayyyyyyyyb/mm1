@@ -45,7 +45,8 @@ def _write_documents(directory: Path, result: dict, inputs: dict) -> None:
 def test_real_d2_gate_artifacts_pass_integrity_but_fail_scientific_gate() -> None:
     report = _audit(EVIDENCE)
     assert report["status"] == "ARTIFACT_AUDIT_PASS"
-    assert report["scientific_status"] == "VISUAL_PRETRAINING_CONTROL_FAIL"
+    assert report["scientific_status"] == "D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL"
+    assert report["producer_scientific_status"] == "VISUAL_PRETRAINING_CONTROL_FAIL"
     assert report["gate_recomputation"]["pass"] is False
     assert report["authorization"]["d2_800_step"] is False
     assert report["errors"] == []

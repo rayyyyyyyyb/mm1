@@ -34,7 +34,7 @@ evaluation, second seed, schedule extension, or Full run was performed.
 - D2: the exact locked visual asset passed two offline loads and non-visual
   initialization parity on the RTX 5090. The corrected 256-record-per-split
   zero-training gate then completed with artifact PASS but scientific status
-  \`VISUAL_PRETRAINING_CONTROL_FAIL\`: pretrained VQP concordance \`0.512793\`
+  \`D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL\`: pretrained VQP concordance \`0.512793\`
   exceeded random by only \`0.022175\` (required \`0.05\`) and QP by only
   \`0.018550\` (required \`0.02\`).
 - D1 centered visual control: exactly \`800\` applied updates (\`803\` attempts,

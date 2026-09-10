@@ -255,10 +255,21 @@ def audit_d2_zero_training_gate(
         require(math.isclose(float(reported_gate.get("qp_mixed_concordance")), qp, abs_tol=1e-15), "reported QP differs from probe")
         gate_pass = pretrained_vqp >= random_vqp + 0.05 and pretrained_vqp >= qp + 0.02
         require(reported_gate.get("pass") is gate_pass, "producer gate boolean differs from independent recomputation")
-        expected_scientific_status = (
-            "VISUAL_PRETRAINING_CONTROL_PASS" if gate_pass else "VISUAL_PRETRAINING_CONTROL_FAIL"
+        precise_scientific_status = (
+            "D2_ZERO_TRAINING_DECODABILITY_GATE_PASS"
+            if gate_pass
+            else "D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL"
         )
-        require(result.get("scientific_status") == expected_scientific_status, "scientific status differs from recomputed gate")
+        legacy_scientific_status = (
+            "VISUAL_PRETRAINING_CONTROL_PASS"
+            if gate_pass
+            else "VISUAL_PRETRAINING_CONTROL_FAIL"
+        )
+        require(
+            result.get("scientific_status")
+            in {precise_scientific_status, legacy_scientific_status},
+            "scientific status differs from recomputed gate",
+        )
     except Exception as exc:
         errors.append(f"gate recomputation failure: {type(exc).__name__}: {exc}")
 
@@ -267,8 +278,11 @@ def audit_d2_zero_training_gate(
         "schema_version": 1,
         "status": audit_status,
         "scientific_status": (
-            "VISUAL_PRETRAINING_CONTROL_PASS" if gate_pass else "VISUAL_PRETRAINING_CONTROL_FAIL"
+            "D2_ZERO_TRAINING_DECODABILITY_GATE_PASS"
+            if gate_pass
+            else "D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL"
         ),
+        "producer_scientific_status": result.get("scientific_status"),
         "errors": errors,
         "source_artifacts": {
             name: {"path": str(path), "size_bytes": path.stat().st_size, "sha256": _sha256_file(path)}

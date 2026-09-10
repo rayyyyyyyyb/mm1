@@ -8,7 +8,13 @@ Target: `DESKTOP-LPN6MT3`, NVIDIA GeForce RTX 5090
 
 Artifact status: `ARTIFACT_AUDIT_PASS`
 
-Scientific status: `VISUAL_PRETRAINING_CONTROL_FAIL`
+Scientific status: `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`
+
+The immutable producer evidence retains the earlier broad label
+`VISUAL_PRETRAINING_CONTROL_FAIL`. The independent auditor normalizes it to
+the precise status above. This zero-training frozen probe did not test the
+effect of pretrained initialization during gradient training; that separate
+question is `PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED`.
 
 ## Scope and protocol
 
@@ -137,7 +143,7 @@ It returned `ARTIFACT_AUDIT_PASS` with no errors. The producer JSON SHA256 is
 `5f29e4ca172334e9e041cac7e57ca11c6adb9d5d5686c7629cd8435d680f898c`;
 the independent audit is `d2_zero_training_gate_audit.json`.
 
-Because the scientific status is `VISUAL_PRETRAINING_CONTROL_FAIL`, D2
+Because the scientific status is `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`, the old D2
 800-step training is **not authorized**. D3, Full, test evaluation, a second
 seed, and schedule extension also remain unauthorized. This rejects this exact
 pretrained-visual candidate as the next bounded control under the registered

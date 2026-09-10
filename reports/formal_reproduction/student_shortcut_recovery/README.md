@@ -5,7 +5,8 @@ the detailed [TEACHER_SIGNAL_CLOSURE_AUDIT.md](TEACHER_SIGNAL_CLOSURE_AUDIT.md),
 and the [D3 orchestration correction](D3_VISUAL_LOGIT_ORCHESTRATION_CORRECTION.md).
 The current state is `NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY`: D1 was
 executed and failed; D2's exact-asset/load/parity checks passed but its corrected
-zero-training scientific gate returned `VISUAL_PRETRAINING_CONTROL_FAIL`; and D3
+zero-training scientific gate returned `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`;
+the pretrained-initialization training effect remained untested; and D3
 is mechanically repaired but remains positive-weight-provenance-blocked and
 unexecuted. Current-T10 direct visual logits are healthy; the reconstructed
 feature probe proves decodability but is not archival-exact Table 2 evidence;

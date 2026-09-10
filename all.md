@@ -4699,3 +4699,34 @@
 - Committed the full-test receipts, raw evidence, verification helpers, report extension, and chronological ledger as `00bb14032651d72e603cf80e8dd117289bc3a565` (`test: record D2 gate full verification`), following exact tested candidate `c0dca35ec226ba87ecd4ae4bcbfd7a37a04e0e30`.
 - Pushed branch `repro/student-shortcut-recovery` to GitHub and verified that local and remote heads both resolved to `00bb14032651d72e603cf80e8dd117289bc3a565` before this ledger-only closeout record was appended.
 - Published status remains `ARTIFACT_AUDIT_PASS` / `VISUAL_PRETRAINING_CONTROL_FAIL`. D2 800-step, D3, formal Full, test evaluation, a second seed, and schedule extension remain unauthorized and were not started.
+
+### 1026. 2026-09-10: new independent D2 review accepted with a scope correction
+
+- Read the complete 12,982-byte web review, SHA256 `d0ccb741af872287e3875f8689f0b4519135fdcfafcd366d89746715402f3b7f`. Its arithmetic and artifact assessment agree with the locked evidence.
+- Accepted the semantic correction: the executed control was a zero-training frozen-probe decodability gate, not a gradient-trained pretrained student. The raw immutable producer receipt retains its historical label, but current code/status documents will normalize it to `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL` and add `PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED`.
+- Accepted a new, separately preregistered D2A question: pair random and exact locked-pretrained visual initialization for 400 attempted batches, validation only, with identical non-visual initialization, shared batches/augmentations, fixed checkpoints, AMP/clip receipts, and a fixed step-400 gate. Original D2 800-step, D3, Full, test, second seed, and schedule extension remain blocked.
+
+### 1027. 2026-09-10: D2A preregistration and implementation drafted
+
+- Added the fail-closed `D2A_PAIRED_PRETRAINED_EARLY_DYNAMICS_400` YAML and preregistration report. The frozen primary budget is 400 attempted batches; snapshots are 0/25/50/100/200/400; input hashes are 1/10/50/100/200/400; only validation is available; no test, second seed, D3, Full, old D2, or automatic extension is authorized.
+- Added exact locked-state injection into an already seeded visual encoder, non-visual initialization comparison, early-dynamics path/gate collection, raw prediction summaries, fixed-gate arithmetic, and deterministic batch/input receipts.
+- Added a dedicated paired runner that constructs both full arms through the same random path, replaces only the pretrained arm's visual backbone, gives both arms the same already-augmented batch tensors and matched dropout RNG, records separate AMP/clip/visual/audio-gradient receipts, saves atomic resume state at registered snapshots, and never selects a best checkpoint.
+- Added a separate artifact auditor that recomputes AP, AUROC, mixed concordance, temporal shuffles, causal deltas, and the step-400 gate from raw validation NPZ files; it also verifies paired identities, exact T=10, batch plan, input schedule, optimizer receipts, locked asset, and all hold guards.
+
+### 1028. 2026-09-10: status semantics corrected without rewriting raw evidence
+
+- Changed future zero-training producer and current auditor terminology to `D2_ZERO_TRAINING_DECODABILITY_GATE_PASS/FAIL`. The auditor accepts the immutable legacy producer label only for historical evidence and records it separately as `producer_scientific_status`.
+- Updated current-status, closure, asset-lock, readiness, report, README, and web-handoff documents; added `PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED`. The immutable producer JSON under `evidence/d2_zero_training_gate` was not modified.
+- Re-ran the independent historical D2 auditor: exit `0`, `ARTIFACT_AUDIT_PASS`, normalized `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`, legacy producer label recorded, and no errors.
+
+### 1029. 2026-09-10: first D2A independent code checks
+
+- The first focused pytest collection failed before tests because the local environment lacks `timm`; moved the pure deterministic batch-plan helper out of the runtime script into the dependency-light D2A utility. The rerun passed `26 passed, 1 skipped` in 5.23 seconds; the skip is the existing CUDA-only diagnostic test.
+- The first Ruff pass found three mechanical issues (two placeholder-free f-strings and one unused import). Corrected them with no behavior change; the independent rerun returned `All checks passed!`. Python compilation and `git diff --check` also exited `0`.
+- Confirmed SSH access to `DESKTOP-LPN6MT3`; the NVIDIA GeForce RTX 5090 is reachable and idle at 489/32,607 MiB and 0% utilization. No experiment had been launched at this point.
+
+### 1030. 2026-09-10: D2A audit tests and preregistration review passed
+
+- Added independent-auditor tamper tests for probability/logit inconsistency, non-official segment order, fixed gate conjunctions, and the exclusive predicted-positive-rate ceiling.
+- Re-ran the enlarged focused suite: `28 passed, 1 skipped` in 5.15 seconds, exit `0`. Ruff returned `All checks passed!`, and `git diff --check` exited `0` with only the repository's expected LF-to-CRLF notices.
+- Verified the D2A audit CLI help locally. The runner help cannot import in the lightweight local environment because `timm` is intentionally installed only in the 5090 runtime; this is an environment dependency, not an experiment result. The exact runner will therefore be import- and smoke-tested on the locked GPU environment before any 400-batch observation.

@@ -98,43 +98,45 @@ def resolve_locked_asset(
     return lock, resolved
 
 
-def load_locked_timm_encoder(
+def _load_locked_state_into_backbone(
+    backbone: Any,
     model_name: str,
     lock_path: str | Path,
     *,
     asset_root: str | Path | None = None,
-) -> tuple[Any, dict[str, Any]]:
-    """Construct a timm encoder without network access and load the locked state."""
+) -> dict[str, Any]:
+    """Load verified safetensors bytes into an already constructed backbone."""
 
     lock, files = resolve_locked_asset(lock_path, asset_root)
     locked_id = str(lock["model"]["id"])
     expected_name = locked_id.removeprefix("timm/")
     if str(model_name) != expected_name:
-        raise ValueError(f"model name {model_name!r} does not match locked id {locked_id!r}")
+        raise ValueError(
+            f"model name {model_name!r} does not match locked id {locked_id!r}"
+        )
 
-    import timm
     from safetensors.torch import load_file
 
-    # Explicitly disable timm's pretrained lookup.  The only weights entering
-    # the model are the bytes verified above.
-    backbone = timm.create_model(
-        str(model_name), pretrained=False, num_classes=0, global_pool="avg"
-    )
     source_state = load_file(str(files["model.safetensors"]), device="cpu")
     target_state = backbone.state_dict()
     missing_source = sorted(set(target_state) - set(source_state))
     unexpected_source = sorted(set(source_state) - set(target_state))
-    allowed_unexpected = [key for key in unexpected_source if str(key).startswith("head.")]
+    allowed_unexpected = [
+        key for key in unexpected_source if str(key).startswith("head.")
+    ]
     if missing_source or set(unexpected_source) != set(allowed_unexpected):
         raise ValueError(
             "locked timm state keys do not match model: "
             f"missing={missing_source}, unexpected={unexpected_source}"
         )
     load_result = backbone.load_state_dict(source_state, strict=False)
-    if load_result.missing_keys or set(load_result.unexpected_keys) != set(allowed_unexpected):
+    if load_result.missing_keys or set(load_result.unexpected_keys) != set(
+        allowed_unexpected
+    ):
         raise ValueError(
             "locked timm state load was not exact: "
-            f"missing={load_result.missing_keys}, unexpected={load_result.unexpected_keys}"
+            f"missing={load_result.missing_keys}, "
+            f"unexpected={load_result.unexpected_keys}"
         )
     loaded_state = backbone.state_dict()
     pretrained_cfg = getattr(backbone, "pretrained_cfg", {})
@@ -157,7 +159,7 @@ def load_locked_timm_encoder(
         )
         if isinstance(pretrained_cfg, Mapping) and key in pretrained_cfg
     }
-    receipt = {
+    return {
         "model_id": locked_id,
         "revision": str(lock["model"]["revision"]),
         "config_path": str(files["config.json"]),
@@ -170,13 +172,69 @@ def load_locked_timm_encoder(
         "loaded_backbone_tensor_sha256": _state_tensor_sha256(loaded_state),
         "missing_keys": list(load_result.missing_keys),
         "unexpected_head_keys": sorted(allowed_unexpected),
-        "parameter_count": int(sum(parameter.numel() for parameter in backbone.parameters())),
+        "parameter_count": int(
+            sum(parameter.numel() for parameter in backbone.parameters())
+        ),
         "feature_dim": int(getattr(backbone, "num_features", 0)),
         "pretrained_lookup_disabled": True,
         "offline_only": True,
         "load_api": "safetensors.torch.load_file",
         "resolved_pretrained_cfg": stable_pretrained_cfg,
     }
+
+
+def load_locked_timm_state_into_encoder(
+    encoder: Any,
+    model_name: str,
+    lock_path: str | Path,
+    *,
+    asset_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Replace only an existing encoder's backbone with exact locked weights.
+
+    Constructing the student before this call keeps every non-visual tensor on
+    the same seeded random path in paired-initialization experiments.
+    """
+
+    backbone = getattr(encoder, "backbone", None)
+    if backbone is None:
+        raise TypeError("encoder must expose a .backbone module")
+    receipt = _load_locked_state_into_backbone(
+        backbone,
+        model_name,
+        lock_path,
+        asset_root=asset_root,
+    )
+    receipt["loaded_into_existing_encoder"] = True
+    return receipt
+
+
+def load_locked_timm_encoder(
+    model_name: str,
+    lock_path: str | Path,
+    *,
+    asset_root: str | Path | None = None,
+) -> tuple[Any, dict[str, Any]]:
+    """Construct a timm encoder without network access and load the locked state."""
+
+    lock, _ = resolve_locked_asset(lock_path, asset_root)
+    locked_id = str(lock["model"]["id"])
+    expected_name = locked_id.removeprefix("timm/")
+    if str(model_name) != expected_name:
+        raise ValueError(f"model name {model_name!r} does not match locked id {locked_id!r}")
+
+    import timm
+    # Explicitly disable timm's pretrained lookup.  The only weights entering
+    # the model are the bytes verified above.
+    backbone = timm.create_model(
+        str(model_name), pretrained=False, num_classes=0, global_pool="avg"
+    )
+    receipt = _load_locked_state_into_backbone(
+        backbone,
+        model_name,
+        lock_path,
+        asset_root=asset_root,
+    )
     return backbone, receipt
 
 

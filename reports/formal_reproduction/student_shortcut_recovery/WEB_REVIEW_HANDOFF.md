@@ -2,7 +2,9 @@
 
 日期：2026-09-10
 
-当前状态：**D2 精确 pretrained-visual 零训练 gate 已完成，artifact/runtime 为 PASS，但预注册科学判定为 `VISUAL_PRETRAINING_CONTROL_FAIL`。D1、D2 均未恢复边界；D3 正权重仍无 provenance。没有授权 D2 800-step、D3 或正式 Full。**
+当前状态：**D2 精确 pretrained-visual 零训练 gate 已完成，artifact/runtime 为 PASS，但精确科学判定为 `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`。它没有检验训练效应；该状态另记为 `PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED`。D1、D2 frozen probe 均未恢复边界；D3 正权重仍无 provenance。没有授权旧 D2 800-step、D3 或正式 Full。**
+
+新的 `D2A_PAIRED_PRETRAINED_EARLY_DYNAMICS_400` 已在结果观察前独立预注册；它是 validation-only 的严格配对训练控制，不改变旧 D2 的 FAIL，也不自动授权或启动任何后续实验。
 
 这份入口供独立审阅者直接从 GitHub 网页核对。A0 是无训练的 checkpoint 捷径/模态诊断；S3 是相对三轮 S0 仅打开学生预训练的单变量诊断；S4 仅关闭现有训练图像增强；S7 仅将学生 temporal path 从 Transformer 改为 identity passthrough；S8 相对 S7 仅将 gate 从 learned softmax 改为从初始化起固定 `0.5/0.5`；S9 相对 S8 仅将 fusion 从 concat MLP 改为 paper-additive。所有运行均严格保持官方 `T_task=10`，没有任何 10→16 标签、logit 或指标转换；`T_max=16` 仅为位置编码容量。
 

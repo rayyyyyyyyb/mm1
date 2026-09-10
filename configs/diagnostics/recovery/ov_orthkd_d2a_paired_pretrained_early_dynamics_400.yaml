@@ -1,0 +1,55 @@
+schema_version: 1
+base_config: configs/diagnostics/recovery/ov_orthkd_visual_only_sum_feature_seed42_no_workers.yaml
+control:
+  name: D2A_PAIRED_PRETRAINED_EARLY_DYNAMICS_400
+  claim: exact_visual_pretraining_initialization_effect_on_early_training_dynamics
+  attempted_batches: 400
+  checkpoints: [0, 25, 50, 100, 200, 400]
+  input_hash_steps: [1, 10, 50, 100, 200, 400]
+  evaluation_split: validation
+  evaluation_batch_size: 16
+  temporal_shuffle_repeats: 100
+  task_segments: 10
+  test_evaluation: false
+  second_seed: false
+  formal_full: false
+  old_d2_800_step: false
+  resume_checkpoint: paired_resume.pt
+  sole_scientific_difference: student.visual_pretrained_initialization
+arms:
+  random:
+    visual_pretrained: false
+    audio_pretrained: false
+  pretrained:
+    visual_pretrained: true
+    audio_pretrained: false
+pretrained_asset:
+  lock: configs/locks/diagnostics/convnextv2_tiny_pretrained_asset.yaml
+  load_mode: same_seed_random_model_then_locked_visual_state_replace
+  network_lookup: false
+common_overrides:
+  loss:
+    strong_teacher_projector_update_mode: static_zero_lr_keep_grad
+    weak_teacher_projector_update_mode: trainable
+    text_teacher_projector_update_mode: trainable
+  training:
+    gradient_clipping:
+      scope: optimizer_groups_with_positive_lr
+gate:
+  primary_checkpoint: 400
+  pretrained_minus_random_mixed_concordance_min: 0.020
+  supporting_required_count: 2
+  pretrained_decision_temporal_std_min: 0.003
+  pretrained_temporal_shuffle_ap_or_auroc_drop_min: 0.010
+  pretrained_visual_zero_mixed_concordance_drop_min: 0.010
+  pretrained_validation_ap_floor_relative_to_random: -0.020
+  pretrained_predicted_positive_rate_max_exclusive: 0.98
+on_pass:
+  authorize_only: same_pretrained_arm_extension_to_800_applied_updates
+  automatic_extension: false
+  test_evaluation: false
+  formal_full: false
+preprocessing_provenance_gap:
+  current_common_transform: fixed_resize_224x224_imagenet_normalization
+  locked_checkpoint_eval_transform: bicubic_resize_center_crop_pct_0.875_imagenet_normalization
+  resolution: keep_current_common_transform_for_single_variable_pair

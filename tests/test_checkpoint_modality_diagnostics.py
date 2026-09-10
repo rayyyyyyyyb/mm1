@@ -13,6 +13,7 @@ from scripts.diagnose_checkpoint_modalities import (
     apply_content_ablation,
     collect_ablation_matrix,
     collect_ablation_predictions,
+    collect_early_dynamics_matrix,
     summarize_model_paths,
     summarize_prediction_response,
     summarize_tensor_scale,
@@ -156,12 +157,14 @@ class _DummyStudent(nn.Module):
         fused = visual + audio + query
         return {
             "query_features": query,
+            "visual_backbone_features": visual * 2,
             "visual_tokens": visual,
             "audio_tokens": audio,
             "fused_tokens_before_position": fused,
             "shared_features": fused,
             "decision_features": fused,
             "segment_logits": fused.squeeze(-1),
+            "gate_weights": torch.softmax(torch.cat([visual, audio], dim=-1), dim=-1),
         }
 
 
@@ -242,6 +245,19 @@ def test_collection_rejects_non_task_length_before_reporting_metrics() -> None:
 
 def test_declared_ablation_matrix_is_exact() -> None:
     assert ABLATION_MODES == ("original", "visual_zero", "audio_zero", "both_zero")
+
+
+def test_early_dynamics_matrix_collects_visual_backbone_and_gate_receipts() -> None:
+    predictions, paths = collect_early_dynamics_matrix(
+        _DummyStudent(),
+        [_batch()],
+        torch.device("cpu"),
+        expected_task_segments=2,
+    )
+    assert set(predictions) == {"original", "visual_zero", "audio_zero"}
+    assert "visual_backbone_features" in paths
+    assert paths["gate_weights"]["valid_rows"] == 4
+    assert paths["gate_weights"]["visual_mean"] + paths["gate_weights"]["audio_mean"] == pytest.approx(1.0)
 
 
 def test_cli_help_runs_without_importing_timm_from_an_external_cwd(

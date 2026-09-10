@@ -11,6 +11,7 @@ from src.utils.locked_pretrained import (
     _state_key_sha256,
     _state_tensor_sha256,
     compare_nonvisual_initialization,
+    load_locked_timm_state_into_encoder,
     resolve_locked_asset,
 )
 
@@ -90,3 +91,29 @@ def test_nonvisual_initialization_parity_is_bitwise_and_excludes_visual() -> Non
     candidate["temporal.bias"] = torch.tensor([4.0])
     with pytest.raises(ValueError, match="non-visual initialization differs"):
         compare_nonvisual_initialization(reference, candidate)
+
+
+def test_locked_state_can_be_injected_into_existing_encoder(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Encoder:
+        backbone = torch.nn.Linear(2, 2)
+
+    called = {}
+
+    def fake_loader(backbone, model_name, lock_path, *, asset_root=None):
+        called.update(
+            backbone=backbone,
+            model_name=model_name,
+            lock_path=lock_path,
+            asset_root=asset_root,
+        )
+        return {"weights_sha256": "a" * 64}
+
+    monkeypatch.setattr(
+        "src.utils.locked_pretrained._load_locked_state_into_backbone", fake_loader
+    )
+    encoder = Encoder()
+    receipt = load_locked_timm_state_into_encoder(
+        encoder, "fake", "lock.yaml", asset_root="asset"
+    )
+    assert called["backbone"] is encoder.backbone
+    assert receipt["loaded_into_existing_encoder"] is True

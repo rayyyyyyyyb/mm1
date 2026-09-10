@@ -19,7 +19,9 @@ grouping.
 The exact pretrained candidate gains `0.0221748401` over random visual, below
 the required `0.05`, and gains `0.0185501066` over QP, below the required
 `0.02`. Both registered conditions were conjunctive. The resulting scientific
-status is therefore `VISUAL_PRETRAINING_CONTROL_FAIL`.
+status is therefore `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`. This is a
+zero-training decodability result, not a verdict on pretrained initialization
+after gradient training.
 
 The earlier `0.523028 / 0.488699 / 0.455437` measurements are historical only.
 They cannot be compared directly with the corrected numbers because repeated

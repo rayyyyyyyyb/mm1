@@ -38,6 +38,15 @@ REQUIRED_PATHS = (
     "decision_features",
     "segment_logits",
 )
+EARLY_DYNAMICS_PATHS = (
+    "visual_backbone_features",
+    "visual_tokens",
+    "audio_tokens",
+    "fused_tokens_before_position",
+    "shared_features",
+    "decision_features",
+    "segment_logits",
+)
 
 
 def _sha256(path: Path) -> str:
@@ -150,10 +159,16 @@ def summarize_tensor_scale(
 
 
 def summarize_model_paths(
-    outputs: Mapping[str, Any], sequence_mask: torch.Tensor
+    outputs: Mapping[str, Any],
+    sequence_mask: torch.Tensor,
+    *,
+    path_names: Sequence[str] = REQUIRED_PATHS,
 ) -> dict[str, Any]:
     summaries: dict[str, Any] = {}
-    for name in REQUIRED_PATHS:
+    selected = tuple(path_names)
+    if not selected or len(set(selected)) != len(selected):
+        raise ValueError("path_names must be non-empty and unique")
+    for name in selected:
         tensor = outputs.get(name)
         if tensor is None:
             raise RuntimeError(f"Student output is missing required diagnostic path: {name}")
@@ -208,6 +223,44 @@ class _ScaleAccumulator:
                     "temporal_sample_count": self.temporal_sample_count,
                 }
             ),
+        }
+
+
+class _GateAccumulator:
+    def __init__(self) -> None:
+        self.valid_rows = 0
+        self.visual_sum = 0.0
+        self.audio_sum = 0.0
+        self.entropy_sum = 0.0
+        self.saturated_rows = 0
+
+    def update(self, gate_weights: torch.Tensor, sequence_mask: torch.Tensor) -> None:
+        if gate_weights.ndim != 3 or gate_weights.shape[-1] != 2:
+            raise ValueError("gate_weights must have shape [B,T,2]")
+        mask = sequence_mask.detach().to(device=gate_weights.device).bool()
+        if tuple(gate_weights.shape[:2]) != tuple(mask.shape):
+            raise ValueError("gate_weights and sequence_mask leading shapes differ")
+        rows = gate_weights.detach()[mask].to(dtype=torch.float64, device="cpu")
+        if rows.numel() == 0 or not bool(torch.isfinite(rows).all()):
+            raise ValueError("gate_weights must contain finite valid rows")
+        if not bool(torch.allclose(rows.sum(dim=-1), torch.ones(rows.shape[0], dtype=rows.dtype), atol=1e-6, rtol=0.0)):
+            raise ValueError("gate_weights must sum to one")
+        self.valid_rows += int(rows.shape[0])
+        self.visual_sum += float(rows[:, 0].sum())
+        self.audio_sum += float(rows[:, 1].sum())
+        entropy = -(rows.clamp_min(1e-12) * rows.clamp_min(1e-12).log()).sum(dim=-1)
+        self.entropy_sum += float(entropy.sum())
+        self.saturated_rows += int((rows.max(dim=-1).values >= 0.95).sum())
+
+    def finalize(self) -> dict[str, Any]:
+        if self.valid_rows <= 0:
+            raise RuntimeError("Gate accumulator is empty")
+        return {
+            "valid_rows": self.valid_rows,
+            "visual_mean": self.visual_sum / self.valid_rows,
+            "audio_mean": self.audio_sum / self.valid_rows,
+            "entropy_mean": self.entropy_sum / self.valid_rows,
+            "saturation_rate_at_0_95": self.saturated_rows / self.valid_rows,
         }
 
 
@@ -267,6 +320,8 @@ def _collect_ablation_modes(
     modes: Sequence[str],
     expected_task_segments: int,
     path_modes: set[str],
+    path_names: Sequence[str] = REQUIRED_PATHS,
+    gate_modes: set[str] | None = None,
     max_batches: int | None = None,
 ) -> tuple[dict[str, dict[str, np.ndarray]], dict[str, dict[str, Any]]]:
     selected_modes = tuple(modes)
@@ -277,6 +332,14 @@ def _collect_ablation_modes(
         raise ValueError(f"Unsupported ablation modes: {unknown}")
     if not path_modes.issubset(set(selected_modes)):
         raise ValueError("path_modes must be a subset of evaluated modes")
+    selected_path_names = tuple(path_names)
+    if not selected_path_names or len(set(selected_path_names)) != len(
+        selected_path_names
+    ):
+        raise ValueError("path_names must be non-empty and unique")
+    selected_gate_modes = set(gate_modes or ())
+    if not selected_gate_modes.issubset(set(selected_modes)):
+        raise ValueError("gate_modes must be a subset of evaluated modes")
     student.eval()
     common: dict[str, list[Any]] = {
         "ids": [],
@@ -288,8 +351,11 @@ def _collect_ablation_modes(
     sample_offsets = [0]
     logits_by_mode: dict[str, list[float]] = {mode: [] for mode in selected_modes}
     scale_accumulators: dict[str, dict[str, _ScaleAccumulator]] = {
-        mode: {name: _ScaleAccumulator() for name in REQUIRED_PATHS}
+        mode: {name: _ScaleAccumulator() for name in selected_path_names}
         for mode in path_modes
+    }
+    gate_accumulators = {
+        mode: _GateAccumulator() for mode in selected_gate_modes
     }
 
     for batch_index, batch in enumerate(loader):
@@ -342,13 +408,24 @@ def _collect_ablation_modes(
                     float(batch_logits[sample_index, index]) for index in indices
                 )
             if mode in path_modes:
-                summaries = summarize_model_paths(outputs, ablated["sequence_mask"])
-                if set(summaries) != set(REQUIRED_PATHS):
+                summaries = summarize_model_paths(
+                    outputs,
+                    ablated["sequence_mask"],
+                    path_names=selected_path_names,
+                )
+                if set(summaries) != set(selected_path_names):
                     raise RuntimeError("Path validation did not cover every required output")
-                for name in REQUIRED_PATHS:
+                for name in selected_path_names:
                     scale_accumulators[mode][name].update(
                         outputs[name], ablated["sequence_mask"]
                     )
+            if mode in selected_gate_modes:
+                gate_weights = outputs.get("gate_weights")
+                if not isinstance(gate_weights, torch.Tensor):
+                    raise RuntimeError("Student did not return tensor gate_weights")
+                gate_accumulators[mode].update(
+                    gate_weights, ablated["sequence_mask"]
+                )
 
     if len(sample_offsets) == 1:
         raise RuntimeError("No evaluation samples were collected")
@@ -377,6 +454,8 @@ def _collect_ablation_modes(
         }
         for mode in path_modes
     }
+    for mode, accumulator in gate_accumulators.items():
+        path_summaries.setdefault(mode, {})["gate_weights"] = accumulator.finalize()
     return predictions_by_mode, path_summaries
 
 
@@ -433,6 +512,45 @@ def collect_ablation_matrix(
         ):
             if not np.array_equal(reference[name], candidate[name]):
                 raise RuntimeError(f"Ablation {mode} changed evaluation field {name}")
+    return predictions, paths["original"]
+
+
+@torch.no_grad()
+def collect_early_dynamics_matrix(
+    student: torch.nn.Module,
+    loader: Iterable[Mapping[str, Any]],
+    device: torch.device,
+    *,
+    expected_task_segments: int,
+    max_batches: int | None = None,
+) -> tuple[dict[str, dict[str, np.ndarray]], dict[str, Any]]:
+    """Collect validation-only D2A paths, gates, and paired zero ablations."""
+
+    modes = ("original", "visual_zero", "audio_zero")
+    predictions, paths = _collect_ablation_modes(
+        student,
+        loader,
+        device,
+        modes=modes,
+        expected_task_segments=expected_task_segments,
+        path_modes={"original"},
+        path_names=EARLY_DYNAMICS_PATHS,
+        gate_modes={"original"},
+        max_batches=max_batches,
+    )
+    reference = predictions["original"]
+    for mode in modes[1:]:
+        candidate = predictions[mode]
+        for name in (
+            "ids",
+            "queries",
+            "split_types",
+            "sample_offsets",
+            "segment_indices",
+            "labels",
+        ):
+            if not np.array_equal(reference[name], candidate[name]):
+                raise RuntimeError(f"D2A ablation {mode} changed evaluation field {name}")
     return predictions, paths["original"]
 
 

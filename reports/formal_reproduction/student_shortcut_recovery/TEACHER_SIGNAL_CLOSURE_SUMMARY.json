@@ -40,7 +40,9 @@
   "phase_d": {
     "status": "FAIL",
     "artifact_status": "ARTIFACT_AUDIT_PASS",
-    "scientific_status": "VISUAL_PRETRAINING_CONTROL_FAIL",
+    "scientific_status": "D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL",
+    "producer_scientific_status": "VISUAL_PRETRAINING_CONTROL_FAIL",
+    "pretrained_visual_initialization_training_effect": "PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED",
     "sample_count_per_split": 256,
     "qp_mixed_concordance": 0.49424307036247334,
     "random_visual_vqp_mixed_concordance": 0.4906183368869936,

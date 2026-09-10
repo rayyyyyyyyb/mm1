@@ -20,7 +20,9 @@
 - 教师 feature：可解码，但 `TABLE2_FEATURE_PROBE_PROTOCOL_UNRESOLVED`
 - Phase C：`VISUAL_MEAN_COMPONENT_DOMINANCE_CONFIRMED`
 - D1：`D1_CENTERED_VISUAL_CONTROL_FAIL`
-- D2：`VISUAL_PRETRAINING_CONTROL_FAIL`（精确离线权重、初始化一致性和产物审计通过；零训练 superiority gate 两项阈值均未通过）
+- D2：`D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`（精确离线权重、初始化一致性和产物审计通过；零训练 frozen-probe gate 两项阈值均未通过）
+- 预训练视觉初始化的训练效应：`PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED`；零训练 probe 不得外推为训练控制失败
+- D2A：`D2A_PAIRED_PRETRAINED_EARLY_DYNAMICS_400` 已独立预注册，尚未观察结果；只比较精确预训练视觉初始化与随机视觉初始化的前 400 个 attempted batch
 - D3：编排已修复，正权重 provenance 未恢复，尚未执行
 - 正式 Full：`FORMAL_FULL_HOLD`
 - evaluator 覆盖：原运行缺失；post-hoc 官方 segment 公式已补算，未来输出代码已修复
@@ -113,7 +115,7 @@ GitHub 包含完整代码、配置、locks、测试以及本次运行的小型�
 
 精确 `convnextv2_tiny.fcmae_ft_in22k_in1k` 资产已在 RTX 5090 上完成离线
 加载闭环；随后执行的 256-record-per-split、seed 42、validation-only
-零训练 gate 产物审计通过，但科学判定为 `VISUAL_PRETRAINING_CONTROL_FAIL`。
+零训练 gate 产物审计通过，但其精确科学判定为 `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`；它没有训练预训练学生，因此同时记录 `PRETRAINED_VISUAL_INITIALIZATION_TRAINING_EFFECT_UNTESTED`。
 pretrained VQP concordance 为 `0.512793`，仅比 random VQP `0.490618` 高
 `0.022175`（要求 `0.05`），仅比 QP `0.494243` 高 `0.018550`（要求
 `0.02`）。因此 D2 800-step 不获授权。D3 已修正为

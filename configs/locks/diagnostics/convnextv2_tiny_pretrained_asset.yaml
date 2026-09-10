@@ -50,7 +50,7 @@ remote_receipt:
     date: 2026-09-10
     result_sha256: 5f29e4ca172334e9e041cac7e57ca11c6adb9d5d5686c7629cd8435d680f898c
     artifact_status: ARTIFACT_AUDIT_PASS
-    scientific_status: VISUAL_PRETRAINING_CONTROL_FAIL
+    scientific_status: D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL
 guardrails:
   visual_pretrained: true
   audio_pretrained: false

@@ -533,9 +533,9 @@ def audit_zero_training_representations(
         "scientific_status": (
             "BLOCKED_BY_ASSET_IDENTITY"
             if pretrained_error is not None
-            else "VISUAL_PRETRAINING_CONTROL_PASS"
+            else "D2_ZERO_TRAINING_DECODABILITY_GATE_PASS"
             if gate
-            else "VISUAL_PRETRAINING_CONTROL_FAIL"
+            else "D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL"
         ),
         "protocol": {
             "task_segments": 10,

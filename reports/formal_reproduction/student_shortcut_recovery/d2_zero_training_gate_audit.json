@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "status": "ARTIFACT_AUDIT_PASS",
-  "scientific_status": "VISUAL_PRETRAINING_CONTROL_FAIL",
+  "scientific_status": "D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL",
+  "producer_scientific_status": "VISUAL_PRETRAINING_CONTROL_FAIL",
   "errors": [],
   "source_artifacts": {
     "result": {
