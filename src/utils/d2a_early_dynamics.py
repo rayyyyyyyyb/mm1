@@ -20,6 +20,49 @@ D2A_INPUT_HASH_STEPS = (1, 10, 50, 100, 200, 400)
 D2A_MODES = ("original", "visual_zero", "audio_zero")
 
 
+def json_safe(value: Any) -> Any:
+    """Represent non-finite diagnostic values without emitting invalid JSON."""
+
+    if isinstance(value, float) and not np.isfinite(value):
+        if np.isnan(value):
+            return "NaN"
+        return "Infinity" if value > 0 else "-Infinity"
+    if isinstance(value, Mapping):
+        return {str(key): json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(item) for item in value]
+    return value
+
+
+def summarize_receipt_range(
+    rows: Sequence[Mapping[str, Any]], start: int, end: int
+) -> dict[str, Any]:
+    selected = [row for row in rows if start < int(row["attempted_step"]) <= end]
+    if end > 0 and not selected:
+        raise RuntimeError("missing optimizer receipts for checkpoint interval")
+    result: dict[str, Any] = {
+        "attempted_start_exclusive": start,
+        "attempted_end": end,
+    }
+    for name in (
+        "visual_encoder_grad_norm",
+        "audio_encoder_grad_norm",
+        "clip_coefficient",
+    ):
+        values = [float(row[name]) for row in selected]
+        finite = [value for value in values if np.isfinite(value)]
+        result[name] = {
+            "count": len(values),
+            "finite_count": len(finite),
+            "nonfinite_count": len(values) - len(finite),
+            "finite_mean": float(np.mean(finite)) if finite else None,
+            "last": json_safe(values[-1]) if values else None,
+        }
+    result["applied_count"] = sum(bool(row["applied"]) for row in selected)
+    result["overflow_count"] = sum(bool(row["overflow"]) for row in selected)
+    return result
+
+
 def build_fixed_batch_plan(
     dataset_size: int, batch_size: int, seed: int
 ) -> list[list[int]]:

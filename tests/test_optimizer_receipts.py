@@ -31,3 +31,15 @@ def test_clip_receipt_reports_global_and_group_norms() -> None:
     assert set(norms) == {"a", "b"}
     assert abs(sum(shares.values()) - 1.0) < 1e-6
     assert clipped is True
+
+
+def test_nonfinite_gradient_norm_has_zero_clip_coefficient_and_is_clipped() -> None:
+    parameter = nn.Parameter(torch.tensor([1.0]))
+    parameter.grad = torch.tensor([float("nan")])
+    group = {"group_name": "student", "params": [parameter]}
+    pre, coefficient, _norms, _shares, clipped = clip_gradients_with_receipt(
+        [parameter], [group], 1.0
+    )
+    assert torch.isnan(torch.tensor(pre))
+    assert coefficient == 0.0
+    assert clipped is True

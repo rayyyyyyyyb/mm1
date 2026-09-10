@@ -4730,3 +4730,23 @@
 - Added independent-auditor tamper tests for probability/logit inconsistency, non-official segment order, fixed gate conjunctions, and the exclusive predicted-positive-rate ceiling.
 - Re-ran the enlarged focused suite: `28 passed, 1 skipped` in 5.15 seconds, exit `0`. Ruff returned `All checks passed!`, and `git diff --check` exited `0` with only the repository's expected LF-to-CRLF notices.
 - Verified the D2A audit CLI help locally. The runner help cannot import in the lightweight local environment because `timm` is intentionally installed only in the 5090 runtime; this is an environment dependency, not an experiment result. The exact runner will therefore be import- and smoke-tested on the locked GPU environment before any 400-batch observation.
+
+### 1031. 2026-09-10: D2A preregistration frozen before observation
+
+- Committed the preregistration, runner, auditor, semantic correction, tests, and ledger as `c0da779d9471fd3f9d6346944aaf09f49e0b9048` (`diagnostic: preregister paired pretrained early dynamics`): 29 files changed, 2,443 insertions, 44 deletions.
+- Pushed `repro/student-shortcut-recovery` before any D2A observation and verified the remote branch at the same SHA. Exported a 3,182,183-byte tracked archive with SHA256 `ad24557da30c72ab024503840c85c48d6b597f0e7fc9ffd764624f5cf63df302`.
+- Deployed that archive to fresh `E:/OV-OrthKD-R3/d2a-c0da779/repo`; the deployment receipt reports PASS and eight verified junctions to existing data, teacher cache, weights, and upstream source assets.
+
+### 1032. 2026-09-10: exact-candidate verification environment repaired
+
+- Full-test attempt 1 finished in 362.29 seconds with `686 passed, 2 failed`, exit `1`, empty stderr. Both failures were deployment-only `git check-attr` errors because a tracked archive intentionally has no `.git` metadata; no code assertion failed.
+- GitHub clone from the 5090 was reset by the network, so created and uploaded a 3,673,030-byte offline Git bundle, SHA256 `bec0973ca5744ee12805f51a739627c4e5c02c2f1ab9679121c75a90c3c92322`. Attached its exact `c0da779...` metadata and populated the no-checkout index with `git read-tree HEAD`, without modifying working-tree files.
+- Full-test attempt 2 finished in 341.72 seconds with `687 passed, 1 failed`, exit `1`, empty stderr. The only failure was the canonical clean-tree guard detecting an unnecessary untracked root `proposed_method` junction. Removed only that verified junction with `[System.IO.Directory]::Delete`; its shared target remained intact and the repository became clean.
+- Re-ran the two previously affected tests after cleanup: `2 passed in 209.94s`, exit `0`. Final full-test attempt 3 then passed `688 passed in 338.86s`, exit `0`, empty stderr SHA256 `e3b0c442...b855`, stdout SHA256 `8a738cae...6255`, exact HEAD `c0da779...`, and clean tracked status.
+
+### 1033. 2026-09-10: real-data D2A wiring smoke exposed a receipt defect
+
+- Ran a one-attempt, one-validation-batch smoke on the RTX 5090. It completed in 67.97 seconds with exit `0`, empty stderr, exact locked visual weight SHA256 `6652fd90...c2a9`, identical 625-key non-visual student initialization hashes, identical 18-key loss hashes, and `D2A_SMOKE_NO_SCIENTIFIC_VERDICT`.
+- Both arms correctly detected first-attempt AMP overflow and applied zero optimizer updates. The actual shared batch contained four official T=10 samples and input composite SHA256 `55d78203...dc8b`.
+- Independent receipt inspection found that Python JSON emitted non-standard `Infinity/NaN`, and the shared clipping helper reported coefficient `1.0` when the norm was `NaN`. This does not alter the correct AMP skip, but it is not an acceptable audit representation. Formal D2A was not started.
+- Changed non-finite clip coefficients to `0.0` with `clipped=true`; added strict JSON-safe string encoding plus finite/nonfinite interval counts. The expanded focused suite passed `32 passed, 1 skipped` in 8.08 seconds; Ruff, Python compilation, and diff-check all exited `0`.

@@ -105,7 +105,10 @@ def clip_gradients_with_receipt(
     if not active_parameters:
         raise ValueError("clip_parameters must not be empty")
     pre_norm = _norm(active_parameters)
-    coefficient = min(1.0, max_norm / max(pre_norm, 1e-12))
+    norm_is_finite = math.isfinite(pre_norm)
+    coefficient = (
+        min(1.0, max_norm / max(pre_norm, 1e-12)) if norm_is_finite else 0.0
+    )
     group_norms = {
         str(group["group_name"]): _norm(group["params"])
         for group in groups
@@ -116,4 +119,10 @@ def clip_gradients_with_receipt(
         for name, value in group_norms.items()
     }
     torch.nn.utils.clip_grad_norm_(active_parameters, max_norm)
-    return pre_norm, coefficient, group_norms, group_contributions, pre_norm > max_norm
+    return (
+        pre_norm,
+        coefficient,
+        group_norms,
+        group_contributions,
+        (not norm_is_finite) or pre_norm > max_norm,
+    )

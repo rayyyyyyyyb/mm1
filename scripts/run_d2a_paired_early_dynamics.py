@@ -43,8 +43,10 @@ from src.utils.d2a_early_dynamics import (  # noqa: E402
     batch_input_receipt,
     build_fixed_batch_plan,
     canonical_sha256,
+    json_safe,
     materialize_d2a_configs,
     recompute_d2a_gate,
+    summarize_receipt_range,
     summarize_d2a_evaluation,
 )
 from src.utils.locked_pretrained import (  # noqa: E402
@@ -92,7 +94,15 @@ def parse_args() -> argparse.Namespace:
 
 def _atomic_json(path: Path, value: Any) -> None:
     atomic_write_text(
-        path, json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+        path,
+        json.dumps(
+            json_safe(value),
+            indent=2,
+            ensure_ascii=False,
+            sort_keys=True,
+            allow_nan=False,
+        )
+        + "\n",
     )
 
 
@@ -327,29 +337,17 @@ def _train_one(
 def _write_jsonl(path: Path, rows: list[Mapping[str, Any]]) -> None:
     atomic_write_text(
         path,
-        "".join(json.dumps(dict(row), ensure_ascii=False, sort_keys=True) + "\n" for row in rows),
+        "".join(
+            json.dumps(
+                json_safe(dict(row)),
+                ensure_ascii=False,
+                sort_keys=True,
+                allow_nan=False,
+            )
+            + "\n"
+            for row in rows
+        ),
     )
-
-
-def _range_summary(rows: list[Mapping[str, Any]], start: int, end: int) -> dict[str, Any]:
-    selected = [row for row in rows if start < int(row["attempted_step"]) <= end]
-    if end > 0 and not selected:
-        raise RuntimeError("missing optimizer receipts for checkpoint interval")
-    result: dict[str, Any] = {"attempted_start_exclusive": start, "attempted_end": end}
-    for name in (
-        "visual_encoder_grad_norm",
-        "audio_encoder_grad_norm",
-        "clip_coefficient",
-    ):
-        values = [float(row[name]) for row in selected]
-        result[name] = {
-            "count": len(values),
-            "mean": float(np.mean(values)) if values else None,
-            "last": values[-1] if values else None,
-        }
-    result["applied_count"] = sum(bool(row["applied"]) for row in selected)
-    result["overflow_count"] = sum(bool(row["overflow"]) for row in selected)
-    return result
 
 
 def _evaluate_arm(
@@ -625,7 +623,9 @@ def main() -> None:
                     "attempted_step": local_index,
                     "arms": summaries,
                     "training_interval": {
-                        role: _range_summary(receipts[role], prior_checkpoint, local_index)
+                        role: summarize_receipt_range(
+                            receipts[role], prior_checkpoint, local_index
+                        )
                         for role in ROLES
                     },
                 }

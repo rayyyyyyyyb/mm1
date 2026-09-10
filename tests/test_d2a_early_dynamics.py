@@ -12,9 +12,11 @@ from src.utils.d2a_early_dynamics import (
     D2A_CHECKPOINTS,
     batch_input_receipt,
     build_fixed_batch_plan,
+    json_safe,
     materialize_d2a_configs,
     recompute_d2a_gate,
     summarize_d2a_evaluation,
+    summarize_receipt_range,
     validate_d2a_wrapper,
 )
 
@@ -144,3 +146,30 @@ def test_input_receipt_hashes_content_and_metadata() -> None:
     changed["frame"][0, 0, 0, 0, 0] = 1
     assert batch_input_receipt(changed)["composite_sha256"] != receipt["composite_sha256"]
     assert D2A_CHECKPOINTS == (0, 25, 50, 100, 200, 400)
+
+
+def test_nonfinite_amp_receipts_are_standard_json_safe_and_summarized() -> None:
+    rows = [
+        {
+            "attempted_step": 1,
+            "applied": False,
+            "overflow": True,
+            "visual_encoder_grad_norm": float("inf"),
+            "audio_encoder_grad_norm": float("nan"),
+            "clip_coefficient": 0.0,
+        },
+        {
+            "attempted_step": 2,
+            "applied": True,
+            "overflow": False,
+            "visual_encoder_grad_norm": 2.0,
+            "audio_encoder_grad_norm": 1.0,
+            "clip_coefficient": 0.5,
+        },
+    ]
+    safe = json_safe(rows)
+    assert safe[0]["visual_encoder_grad_norm"] == "Infinity"
+    assert safe[0]["audio_encoder_grad_norm"] == "NaN"
+    summary = summarize_receipt_range(rows, 0, 2)
+    assert summary["visual_encoder_grad_norm"]["finite_mean"] == 2.0
+    assert summary["visual_encoder_grad_norm"]["nonfinite_count"] == 1
