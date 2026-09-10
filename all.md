@@ -4693,3 +4693,9 @@
 - Re-ran the five gate-auditor tests (`5 passed in 0.08s`, exit `0`). Parsed all 325 repository JSON documents and all 73 YAML documents without error. PowerShell AST parsing found zero errors in the setup/runner copies; their repository and `复现` hashes are pairwise identical.
 - Staged-evidence audit found 17 files, no dataset/model/checkpoint/archive path or extension, no file at or above 50 MiB, and staged diff-check exit `0`. The largest staged file is the required ledger at 897,372 bytes; the first-attempt diagnostic log is 551,662 bytes.
 - Read-only remote closeout found zero relevant pytest/audit/training processes. The RTX 5090 was idle at 488/32,607 MiB, 0% utilization, 41 C; remote setup/runner hashes still matched the local evidence at `f39334e9...b8bc1` and `53ec8c02...1b8c4`.
+
+### 1025. 2026-09-10: D2 gate evidence published
+
+- Committed the full-test receipts, raw evidence, verification helpers, report extension, and chronological ledger as `00bb14032651d72e603cf80e8dd117289bc3a565` (`test: record D2 gate full verification`), following exact tested candidate `c0dca35ec226ba87ecd4ae4bcbfd7a37a04e0e30`.
+- Pushed branch `repro/student-shortcut-recovery` to GitHub and verified that local and remote heads both resolved to `00bb14032651d72e603cf80e8dd117289bc3a565` before this ledger-only closeout record was appended.
+- Published status remains `ARTIFACT_AUDIT_PASS` / `VISUAL_PRETRAINING_CONTROL_FAIL`. D2 800-step, D3, formal Full, test evaluation, a second seed, and schedule extension remain unauthorized and were not started.
