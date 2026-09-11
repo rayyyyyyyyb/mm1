@@ -1,12 +1,38 @@
 # Student shortcut recovery
 
+## Latest D2A paired early-dynamics result
+
+The preregistered `D2A_PAIRED_PRETRAINED_EARLY_DYNAMICS_400` control is now
+complete. Its independent artifact audit is **PASS**, while its frozen
+step-400 scientific gate is **FAIL**:
+`D2A_PRETRAINED_EARLY_DYNAMICS_FAIL`. The exact locked ConvNeXtV2 visual
+initialization did not recover label-aligned temporal dynamics within the
+registered 400 attempted batches. The pretrained arm ended with a predicted
+positive rate of `1.0`, decision temporal standard deviation `0.0002408`, and
+no supporting criterion passed; its AP was `0.725495` versus random `0.745006`.
+
+The complete compact evidence is in
+[`evidence/d2a_paired_early_dynamics_59e4a1c/`](evidence/d2a_paired_early_dynamics_59e4a1c/)
+and the interpretation is in
+[`D2A_RESULTS_FINAL.md`](D2A_RESULTS_FINAL.md). The raw validation NPZ files
+and the 1.13-GB resume checkpoint remain outside Git on the RTX 5090 and in
+the local `扩刊/复现/d2a_formal_d2a_59e4a1c` staging directory.
+
+This D2A result does **not** authorize the 800-step extension, test evaluation,
+D3, Full, a second seed, or schedule changes. The previously corrected D2
+zero-training result remains a separate
+`D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`; D2A now closes the previously
+untested pretrained-initialization training-effect question with a negative
+bounded-control result.
+
 Start with [TEACHER_SIGNAL_CLOSURE_FINAL.md](TEACHER_SIGNAL_CLOSURE_FINAL.md),
 the detailed [TEACHER_SIGNAL_CLOSURE_AUDIT.md](TEACHER_SIGNAL_CLOSURE_AUDIT.md),
 and the [D3 orchestration correction](D3_VISUAL_LOGIT_ORCHESTRATION_CORRECTION.md).
 The current state is `NO_EXECUTED_BOUNDED_CONTROL_RECOVERS_BOUNDARY`: D1 was
 executed and failed; D2's exact-asset/load/parity checks passed but its corrected
 zero-training scientific gate returned `D2_ZERO_TRAINING_DECODABILITY_GATE_FAIL`;
-the pretrained-initialization training effect remained untested; and D3
+the separately preregistered pretrained-initialization training-effect control
+then failed its step-400 gate; and D3
 is mechanically repaired but remains positive-weight-provenance-blocked and
 unexecuted. Current-T10 direct visual logits are healthy; the reconstructed
 feature probe proves decodability but is not archival-exact Table 2 evidence;

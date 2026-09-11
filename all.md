@@ -4750,3 +4750,49 @@
 - Both arms correctly detected first-attempt AMP overflow and applied zero optimizer updates. The actual shared batch contained four official T=10 samples and input composite SHA256 `55d78203...dc8b`.
 - Independent receipt inspection found that Python JSON emitted non-standard `Infinity/NaN`, and the shared clipping helper reported coefficient `1.0` when the norm was `NaN`. This does not alter the correct AMP skip, but it is not an acceptable audit representation. Formal D2A was not started.
 - Changed non-finite clip coefficients to `0.0` with `clipped=true`; added strict JSON-safe string encoding plus finite/nonfinite interval counts. The expanded focused suite passed `32 passed, 1 skipped` in 8.08 seconds; Ruff, Python compilation, and diff-check all exited `0`.
+
+### 1034. 2026-09-11: non-finite receipt fix frozen and independently verified
+
+- Committed the strict non-finite receipt correction as `59e4a1cd5f23114da43abca2e9d20e5fb85f77d9` (`fix: serialize nonfinite optimizer receipts safely`) and pushed `repro/student-shortcut-recovery`; the increment contains 6 files with 139 insertions and 26 deletions.
+- Updated the 5090 deployment through a 12,366-byte incremental Git bundle with SHA256 `754bd75a8789487e66c62f3a9a09b516b08644316139e1ca7f9ca9711ef805e7`, fast-forwarded to the exact commit, and verified a clean worktree. The remote focused suite passed `33 passed in 20.47s`.
+- Repeated the one-attempt real-data wiring smoke: exit `0` in 70.03 seconds, empty stderr, and strict JSON parsing passed for all 8 JSON plus 3 JSONL artifacts. The non-finite receipt is now represented as `"pre_clip_global_norm":"NaN"`, `"clip_coefficient":0.0`, and `"clipped":true`; no scientific verdict was taken from the smoke.
+- Ran the final exact-commit full suite on the 5090: `690 passed in 347.13s`, exit `0`; stderr was empty with SHA256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`, stdout SHA256 was `9e965b75a8c14009348366972f0915125ea941d2efe44656354b707c477980da`, and the remote worktree remained clean.
+
+### 1035. 2026-09-11: formal preregistered D2A launched on the RTX 5090
+
+- Prepared a persistent external worker and atomic state receipt for the exact clean commit `59e4a1cd5f23114da43abca2e9d20e5fb85f77d9`. The first `Start-Process` launcher did not survive the SSH service boundary and created neither output nor state, so no experiment was started by that attempt.
+- Replaced only the external launch mechanism with `Win32_Process.Create`, which returned worker PID `3712` and created `E:/OV-OrthKD-R3/d2a-c0da779/d2a_formal_state.json` with status `running`. The frozen producer code and preregistered configuration were not changed.
+- The formal output root is `E:/OV-OrthKD-R3/d2a_paired_early_dynamics_20260911_59e4a1c`. Initial evidence contains the two resolved configs, the 400-by-4 deterministic batch plan, and the 90,033-byte initialization receipt; stderr is empty. A live Python process holds approximately 2.9 GB working memory while step-0 validation is in progress.
+- No automatic extension, test-set evaluation, D3, formal Full, second seed, or schedule change has been launched.
+
+### 1036. 2026-09-11: first formal snapshot arm completed and fail-closed postprocessing armed
+
+- Confirmed the validation manifest contains 5,798 samples and the train manifest 13,182. Each D2A snapshot therefore evaluates 57,980 official T=10 segment positions for each of two arms and three content modes.
+- At 11:49 local time, `step_000/random` completed and atomically wrote `original.npz`, `visual_zero.npz`, `audio_zero.npz`, and `summary.json` (2,253,758 bytes total). The pretrained step-0 arm then began; the formal worker, Python process, GPU allocation, and empty stderr remained healthy.
+- Added and independently parsed `复现/d2a_postprocess_worker_59e4a1c.ps1`; PowerShell parser errors were `0`, and the exact file SHA256 was `1cb68a181bd07641d16f16ffcf60f6564bdba425e0a3c9dfd4fc86af6eb52d8e`. Remote bytes matched before launch.
+- Launched the postprocess watcher through `Win32_Process.Create` as PID `25972`. Its atomic state is `waiting_for_formal_exit`; it can run the frozen independent auditor only after formal exit `0`, a completed formal receipt, exact clean HEAD `59e4a1c`, and a present `result.json`. Any formal failure withholds the audit, and no prohibited experiment can be launched by this watcher.
+
+### 1037. 2026-09-11: observed the immutable random-arm step-0 summary
+
+- Read the already atomically closed validation summary without changing the running experiment. It contains exactly 5,798 samples / 57,980 official T=10 segments, 1,967 mixed-label samples, and 36,329 mixed comparison pairs.
+- Before training, random-arm original AP/AUROC were `0.5687494902/0.4307024158`, predicted-positive rate `0.8962228355`, mixed concordance `0.4916733188`, and decision-feature within-sample temporal standard deviation `0.0458201673`.
+- The random-arm step-0 mixed temporal shuffle drops were AP `-0.0007216506` and AUROC `+0.0018934587`; visual-zero concordance drop was `+0.0785598282`, while audio-zero concordance drop was `-0.0218558177`. These are descriptive pre-training values only; the preregistered decision remains exclusively the independently audited paired step-400 gate.
+
+### 1038. 2026-09-11: D2A formal run and independent audit completed
+
+- Verified the 5090 formal worker receipt: status `completed`, exit `0`, exact commit `59e4a1cd5f23114da43abca2e9d20e5fb85f77d9`, elapsed `14019.5817446` seconds, producer result SHA256 `8d2810cc9a75dcee06ab48a5433dd2ca608f7254ec3df75500f6478c7281a515`, and empty stderr SHA256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- All six registered snapshots (`0/25/50/100/200/400`) are present for both random and pretrained arms, with original/visual-zero/audio-zero NPZ and summaries. Both optimizer receipt streams contain 400 attempted rows; both arms applied 394 updates.
+- Persistent postprocess status is `completed`, exit `0`, exact same commit. Remote audit JSON SHA256 is `726c5755c0a6d5efd7998a52a4df1c47408ee77e02e1f4d7fa2e9638fdd097f5`; audit Markdown SHA256 is `48f5c6032f1c98d7de00d46ec4345736524fda7ed1ed5b95d274836b4c49efa0`.
+- Final independent gate: concordance delta `+0.0967271` passed and validation AP delta `-0.0195109` passed, but decision temporal std `0.0002408`, shuffle AP/AUROC drops `0.0005216/0.0009803`, visual-zero concordance drop `-0.0001376`, and pretrained predicted-positive rate `1.0` all failed. Supporting criteria count was `0/3`; scientific status is `D2A_PRETRAINED_EARLY_DYNAMICS_FAIL`.
+
+### 1039. 2026-09-11: local raw-NPZ audit and evidence packaging
+
+- Downloaded compact D2A evidence to `扩刊/复现/d2a_formal_d2a_59e4a1c`; the 1.125-GB `paired_resume.pt` and official data were deliberately not copied into Git. The local staging includes all raw validation NPZ files for independent checking, but only compact receipts are staged for the repository.
+- The first local auditor invocation exited `1` because flattened optimizer receipt filenames did not match the auditor's expected `random/` and `pretrained/` directories. Reconstructed those two role directories without changing bytes and reran; local auditor exit was `0`.
+- Local and remote audit JSON hashes are identical (`726c5755...097f`), as are the Markdown hashes (`48f5c603...efa0`). The local independent result is artifact PASS / scientific FAIL with an empty failure list, confirming no transfer or report-generation discrepancy.
+- Added `D2A_RESULTS_FINAL.md`, updated the recovery README with the latest status and boundary, and copied compact producer/auditor/trajectory/initialization/batch/input/optimizer/state receipts under `evidence/d2a_paired_early_dynamics_59e4a1c/`. `git diff --check` passed; the two ledger files remain byte-identical at SHA256 `C64431E874C8A4ECBC5B5AD9C2F78518C1C935663B44F12E2BBE7CAAEF089258`.
+
+### 1040. 2026-09-11: D2A closure boundary
+
+- The current repository conclusion is `D2A_ARTIFACT_AUDIT_PASS` plus `D2A_PRETRAINED_EARLY_DYNAMICS_FAIL`. Exact pretrained visual initialization did not recover registered label-aligned temporal dynamics by 400 attempted batches; the pretrained arm ended at AP `0.725495` versus random `0.745006` and predicted-positive rate `1.0`.
+- No 800-step extension, test evaluation, D3, formal Full, second seed, scheduler change, or canonical-cache overwrite was started or authorized. Any future intervention requires a new human-approved preregistration.

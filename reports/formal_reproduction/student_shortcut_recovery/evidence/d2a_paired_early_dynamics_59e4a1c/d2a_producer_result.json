@@ -1,0 +1,58 @@
+{
+  "applied_updates": {
+    "pretrained": 394,
+    "random": 394
+  },
+  "artifact_status": "D2A_ARTIFACT_PENDING_AUDIT",
+  "attempted_batches": 400,
+  "authorization": {
+    "automatic_extension": false,
+    "d3": false,
+    "formal_full": false,
+    "old_d2_800_step": false,
+    "same_pretrained_arm_extension_to_800_applied_updates": false,
+    "second_seed": false,
+    "test_evaluation": false
+  },
+  "completed": true,
+  "control": "D2A_PAIRED_PRETRAINED_EARLY_DYNAMICS_400",
+  "gate": {
+    "authorization": {
+      "automatic_extension": false,
+      "d3": false,
+      "formal_full": false,
+      "old_d2_800_step": false,
+      "same_pretrained_arm_extension_to_800_applied_updates": false,
+      "second_seed": false,
+      "test_evaluation": false
+    },
+    "observed": {
+      "pretrained_decision_temporal_std": 0.00024077488519275324,
+      "pretrained_minus_random_mixed_concordance": 0.09672713259379562,
+      "pretrained_minus_random_validation_ap": -0.019510898647627672,
+      "pretrained_predicted_positive_rate": 1.0,
+      "pretrained_shuffle_ap_drop": 0.0005216390583230313,
+      "pretrained_shuffle_auroc_drop": 0.0009803289854386499,
+      "pretrained_visual_zero_mixed_concordance_drop": -0.0001376310936166414
+    },
+    "pass": false,
+    "primary_checkpoint": 400,
+    "requirements": {
+      "pretrained_minus_random_mixed_concordance": true,
+      "pretrained_predicted_positive_rate": false,
+      "pretrained_validation_ap_floor": true,
+      "supporting_criteria_count": false
+    },
+    "scientific_status": "D2A_PRETRAINED_EARLY_DYNAMICS_FAIL",
+    "supporting": {
+      "pretrained_decision_temporal_std": false,
+      "pretrained_mixed_shuffle_ap_or_auroc_drop": false,
+      "pretrained_visual_zero_mixed_concordance_drop": false
+    },
+    "supporting_pass_count": 0
+  },
+  "requested_attempted_batches": 400,
+  "schema_version": 1,
+  "scientific_status": "D2A_PRETRAINED_EARLY_DYNAMICS_FAIL",
+  "smoke_only": false
+}

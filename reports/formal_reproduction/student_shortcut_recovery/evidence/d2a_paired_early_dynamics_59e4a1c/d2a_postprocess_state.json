@@ -1,0 +1,18 @@
+﻿{
+    "schema_version":  1,
+    "status":  "completed",
+    "exit_code":  0,
+    "formal_exit_code":  0,
+    "pid":  25972,
+    "started_at":  "2026-09-11T03:53:35.4824076Z",
+    "finished_at":  "2026-09-11T07:18:11.5981901Z",
+    "elapsed_seconds":  12276.1157825,
+    "commit":  "59e4a1cd5f23114da43abca2e9d20e5fb85f77d9",
+    "run":  "E:\\OV-OrthKD-R3\\d2a_paired_early_dynamics_20260911_59e4a1c",
+    "audit_json":  "E:\\OV-OrthKD-R3\\d2a_paired_early_dynamics_20260911_59e4a1c\\d2a_artifact_audit.json",
+    "audit_markdown":  "E:\\OV-OrthKD-R3\\d2a_paired_early_dynamics_20260911_59e4a1c\\D2A_PAIRED_EARLY_DYNAMICS_REPORT.md",
+    "audit_json_sha256":  "726c5755c0a6d5efd7998a52a4df1c47408ee77e02e1f4d7fa2e9638fdd097f5",
+    "audit_markdown_sha256":  "48f5c6032f1c98d7de00d46ec4345736524fda7ed1ed5b95d274836b4c49efa0",
+    "stdout_sha256":  "1f87c21ba47bc604ad314572c1dbae0ae4a2f11b530dec438aab8a15045eae0d",
+    "stderr_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

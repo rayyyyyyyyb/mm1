@@ -1,0 +1,201 @@
+{
+  "amp_applied_masks_identical": true,
+  "applied_updates": {
+    "pretrained": 394,
+    "random": 394
+  },
+  "artifact_status": "D2A_ARTIFACT_AUDIT_PASS",
+  "attempted_batches": 400,
+  "authorization": {
+    "automatic_extension": false,
+    "d3": false,
+    "formal_full": false,
+    "test_evaluation": false
+  },
+  "failures": [],
+  "forbidden_test_artifacts": [],
+  "independent_gate": {
+    "observed": {
+      "pretrained_decision_temporal_std": 0.00024077488519275324,
+      "pretrained_minus_random_mixed_concordance": 0.09672713259379562,
+      "pretrained_minus_random_validation_ap": -0.019510898647627672,
+      "pretrained_predicted_positive_rate": 1.0,
+      "pretrained_shuffle_ap_drop": 0.0005216390583230313,
+      "pretrained_shuffle_auroc_drop": 0.0009803289854386499,
+      "pretrained_visual_zero_mixed_concordance_drop": -0.0001376310936166414
+    },
+    "pass": false,
+    "requirements": {
+      "concordance_delta": true,
+      "predicted_positive_rate": false,
+      "support_count": false,
+      "validation_ap_floor": true
+    },
+    "scientific_status": "D2A_PRETRAINED_EARLY_DYNAMICS_FAIL",
+    "support": {
+      "decision_temporal_std": false,
+      "shuffle_drop": false,
+      "visual_zero_drop": false
+    }
+  },
+  "raw_metrics_by_checkpoint": {
+    "0": {
+      "pretrained": {
+        "audio_zero_mixed_concordance_drop": -0.031462468000770794,
+        "mixed_pair_weighted_concordance": 0.4704230779817776,
+        "predicted_positive_rate": 0.8094687823387375,
+        "shuffle": {
+          "ap_drop": -0.006609179616815397,
+          "auroc_drop": -0.004965683887261152
+        },
+        "validation_ap": 0.5691654616037387,
+        "validation_auroc": 0.4279805071164071,
+        "visual_zero_mixed_concordance_drop": 0.09003826144402544
+      },
+      "random": {
+        "audio_zero_mixed_concordance_drop": -0.02185581766632716,
+        "mixed_pair_weighted_concordance": 0.4916733188361915,
+        "predicted_positive_rate": 0.8962228354605036,
+        "shuffle": {
+          "ap_drop": -0.0007216505514857641,
+          "auroc_drop": 0.0018934586559091748
+        },
+        "validation_ap": 0.56874949019143,
+        "validation_auroc": 0.43070241582043517,
+        "visual_zero_mixed_concordance_drop": 0.07855982823639518
+      }
+    },
+    "25": {
+      "pretrained": {
+        "audio_zero_mixed_concordance_drop": 0.004872140714030193,
+        "mixed_pair_weighted_concordance": 0.5173552809050621,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.0020724685224989825,
+          "auroc_drop": 0.0022596761774922314
+        },
+        "validation_ap": 0.6417648913678136,
+        "validation_auroc": 0.5390625959939876,
+        "visual_zero_mixed_concordance_drop": -0.13875966858432653
+      },
+      "random": {
+        "audio_zero_mixed_concordance_drop": 0.07616504720746509,
+        "mixed_pair_weighted_concordance": 0.5943185884555039,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.0029809888806423546,
+          "auroc_drop": 0.0020965574195125347
+        },
+        "validation_ap": 0.6402200555902862,
+        "validation_auroc": 0.529702285785921,
+        "visual_zero_mixed_concordance_drop": -0.054529439290924575
+      }
+    },
+    "50": {
+      "pretrained": {
+        "audio_zero_mixed_concordance_drop": -0.010900382614440207,
+        "mixed_pair_weighted_concordance": 0.4954994632387349,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": -0.0010851035348773408,
+          "auroc_drop": -0.0015245236934960937
+        },
+        "validation_ap": 0.7111403991629381,
+        "validation_auroc": 0.5948996065976186,
+        "visual_zero_mixed_concordance_drop": -0.08809766302403038
+      },
+      "random": {
+        "audio_zero_mixed_concordance_drop": 0.11331167937460429,
+        "mixed_pair_weighted_concordance": 0.6276390762200996,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.015335715878368683,
+          "auroc_drop": 0.015631691309069606
+        },
+        "validation_ap": 0.6661492596555749,
+        "validation_auroc": 0.5678609503159662,
+        "visual_zero_mixed_concordance_drop": -0.01358418893996538
+      }
+    },
+    "100": {
+      "pretrained": {
+        "audio_zero_mixed_concordance_drop": 0.0019405984199949433,
+        "mixed_pair_weighted_concordance": 0.5033994880123317,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.000991322017945162,
+          "auroc_drop": -3.100493910423996e-05
+        },
+        "validation_ap": 0.7431964265695561,
+        "validation_auroc": 0.6238389963819353,
+        "visual_zero_mixed_concordance_drop": -0.08921247488232542
+      },
+      "random": {
+        "audio_zero_mixed_concordance_drop": 0.012441850862946913,
+        "mixed_pair_weighted_concordance": 0.5250763852569572,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.000392100413214691,
+          "auroc_drop": 0.0003720305368232202
+        },
+        "validation_ap": 0.7220945991646347,
+        "validation_auroc": 0.6072838221823935,
+        "visual_zero_mixed_concordance_drop": -0.03392606457650915
+      }
+    },
+    "200": {
+      "pretrained": {
+        "audio_zero_mixed_concordance_drop": 0.08983181480360042,
+        "mixed_pair_weighted_concordance": 0.5795920614385202,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.001182915220324765,
+          "auroc_drop": 0.0014491574777766303
+        },
+        "validation_ap": 0.7265757368699917,
+        "validation_auroc": 0.6288988645454198,
+        "visual_zero_mixed_concordance_drop": -0.04536320845605446
+      },
+      "random": {
+        "audio_zero_mixed_concordance_drop": 0.02976960554928565,
+        "mixed_pair_weighted_concordance": 0.5353299017313992,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.0009173025321596029,
+          "auroc_drop": 0.00038890649059264426
+        },
+        "validation_ap": 0.734418370082897,
+        "validation_auroc": 0.6164354650057736,
+        "visual_zero_mixed_concordance_drop": -0.004197748355308395
+      }
+    },
+    "400": {
+      "pretrained": {
+        "audio_zero_mixed_concordance_drop": 0.07842219714277854,
+        "mixed_pair_weighted_concordance": 0.5893638690853038,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.0005216390583230313,
+          "auroc_drop": 0.0009803289854386499
+        },
+        "validation_ap": 0.7254947745557834,
+        "validation_auroc": 0.6062841252234242,
+        "visual_zero_mixed_concordance_drop": -0.0001376310936166414
+      },
+      "random": {
+        "audio_zero_mixed_concordance_drop": -0.006936607118280147,
+        "mixed_pair_weighted_concordance": 0.4926367364915082,
+        "predicted_positive_rate": 1.0,
+        "shuffle": {
+          "ap_drop": 0.0005436725639063056,
+          "auroc_drop": 7.035659518028758e-05
+        },
+        "validation_ap": 0.745005673203411,
+        "validation_auroc": 0.6236815804592071,
+        "visual_zero_mixed_concordance_drop": 0.022378815822070575
+      }
+    }
+  },
+  "schema_version": 1,
+  "scientific_status": "D2A_PRETRAINED_EARLY_DYNAMICS_FAIL"
+}
