@@ -4796,3 +4796,9 @@
 
 - The current repository conclusion is `D2A_ARTIFACT_AUDIT_PASS` plus `D2A_PRETRAINED_EARLY_DYNAMICS_FAIL`. Exact pretrained visual initialization did not recover registered label-aligned temporal dynamics by 400 attempted batches; the pretrained arm ended at AP `0.725495` versus random `0.745006` and predicted-positive rate `1.0`.
 - No 800-step extension, test evaluation, D3, formal Full, second seed, scheduler change, or canonical-cache overwrite was started or authorized. Any future intervention requires a new human-approved preregistration.
+
+### 1041. 2026-09-11: D2A evidence committed and pushed
+
+- Committed the final compact evidence, README status correction, D2A interpretation report, and chronological ledger as `97dc050c944f058d2936f25367402420dde8ea2b` (`results: record D2A pretrained early dynamics failure`): 14 files changed, 7,462 insertions, 1 deletion.
+- Pushed `repro/student-shortcut-recovery` to GitHub and verified local and remote heads are identical at `97dc050c944f058d2936f25367402420dde8ea2b`. The worktree was clean immediately after the push.
+- The repository now exposes `D2A_RESULTS_FINAL.md` plus compact evidence under `reports/formal_reproduction/student_shortcut_recovery/evidence/d2a_paired_early_dynamics_59e4a1c/`; large raw NPZ/checkpoint/data assets remain excluded by design.
